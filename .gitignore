@@ -1,0 +1,52 @@
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.d
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# This repo only
+obj*
+out*
+.DS_Store
+*_backup
+testing*
+michael*
+
+
+# LaTeX extras
+*.aux
+*.log
+*.bbl
+*.toc
+*.synctex*
