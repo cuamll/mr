@@ -37,6 +37,7 @@ Session.vim
 
 # This repo only
 obj*
+mod*
 out*
 .DS_Store
 *_backup
