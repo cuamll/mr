@@ -7,8 +7,8 @@ module linear_solver
   integer, private :: a,b,c,x,y,z,kx,ky,kz,i
   real*8, private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2
   real*8, private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
-  real*8, public :: u_tot
-  real*8, dimension(:), allocatable, private :: twopibyL
+  real*8, public :: u_tot, g_zero
+  real*8, dimension(:), allocatable, private :: cosine
   save
 
   contains
@@ -18,10 +18,11 @@ module linear_solver
   ! L, v(x,y,z), mnabphi_x/y/z, pi, volume, q
 !  integer :: a,b,c,x,y,z,kx,ky,kz
 !  real*8 :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,pi,q,u_tot
-!  real*8 :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,twopibyL(L/2-1),charge,volume
+!  real*8 :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,cosine(L/2-1),charge,volume
 
   u_tot=0.0
-  allocate(twopibyL(L/2-1))
+  g_zero=0.0
+  allocate(cosine(L/2-1))
   allocate(pos(L))
   allocate(neg(L))
 
@@ -109,19 +110,75 @@ module linear_solver
                 m1r2=(-1)**r2-m1r1
 
                 ! This vector makes the cos arguments easier to look at
+                ! - add *lambda in denominator if lambda != 1
                 do i=1,((L/2)-1)
-                  twopibyL(i)=(2*pi*i)/L
+                  cosine(i)=(2*pi*i)/(L)
                 end do
 
-                ! Now for the actual sum over k-space. Here we define
-                ! -nabla phi_x(a,b,c) ~ (G(a,b,c)-G(a-1,b,c)) - i.e. we define
-                ! nabla as a backward-difference grad, I find that easier to
-                ! explain it. As explained above the weird terms outside the
-                ! triple do loop are simplifications for when one or more of the
+                ! -nabla phi_x(a,b,c) ~ -(G(a,b,c)-G(a-1,b,c))
+                ! The weird terms outside the triple do loop are
+                ! simplifications for when one or more of the
                 ! k_{\mu}s give us (\pm 1)^p1, etc.
 
+                ! if using lambda != 1, need terms like this
+                ! sum_x=sum_x+charge*(cos(pi*r1/lambda)*cos(pi*q1/lambda)&
+                !       *(cos(pi*p2/lambda)-cos(pi*p1/lambda))&
+                !       /(3-3*cos(pi/lambda)))
+
+                ! these are for lambda = 1
+                ! all three k_mu = L/2:
+                sum_x=sum_x+charge*(m1r1*m1q1*m1p2/6)
+                sum_y=sum_y+charge*(m1r1*m1p1*m1q2/6)
+                sum_z=sum_z+charge*(m1p1*m1q1*m1r2/6)
+                g_zero=g_zero+charge*(1/6)
+
+                ! terms with two k_mu = 0 and one k_mu = L/2:
+                sum_x=sum_x+charge*(m1p2*(m1q1+m1r1)/4)
+                sum_y=sum_y+charge*(m1q2*(m1p1+m1r1)/4)
+                sum_z=sum_z+charge*(m1r2*(m1q1+m1p1)/4)
+                g_zero=g_zero+charge*(3/4)
+
+                !terms with two L/2 and one 0:
+                sum_x=sum_x+charge*(m1p2/2)
+                sum_y=sum_y+charge*(m1q2/2)
+                sum_z=sum_z+charge*(m1r2/2)
+                g_zero=g_zero+charge*(3/2)
+
                 do kx=1,((L/2)-1)
+                ! terms with two of the k_mu = 0 or L/2 go here
+                sum_x=sum_x+charge*2*(cos(cosine(kx)*p2)-cos(cosine(kx)*p1))*(1+m1q1*m1r1+m1r1+m1q1)&
+                      +charge*2*(m1p2*(cos(cosine(kx)*q1)*(1+m1r1)+(cos(cosine(kx)*r1)*(1+m1q1))))
+                sum_y=sum_y+charge*2*(cos(cosine(kx)*q2)-cos(cosine(kx)*q1))*(1+m1p1*m1r1+m1r1+m1p1)&
+                      +charge*2*(m1q2*(cos(cosine(kx)*p1)*(1+m1r1)+(cos(cosine(kx)*r1)*(1+m1p1))))
+                sum_z=sum_z+charge*2*(cos(cosine(kx)*r2)-cos(cosine(kx)*p1))*(1+m1q1*m1p1+m1p1+m1q1)&
+                      +charge*2*(m1r2*(cos(cosine(kx)*q1)*(1+m1p1)+(cos(cosine(kx)*p1)*(1+m1q1))))
+                g_zero=g_zero+charge*2*((3/(5-cos(cosine(kx))))&
+                       +(3/(1-cos(cosine(kx))))+(6/(3-cos(cosine(kx)))))
+
                   do ky=1,((L/2)-1)
+                  ! terms with one of the k_mu = 0 or L/2 go here
+                  sum_x=sum_x+charge&
+                        *(4*(cos(cosine(ky)*r1)*(1+m1q1)&
+                        +cos(cosine(ky)*q1)*(1+m1r1)&
+                        *(cos(cosine(kx)*p2)-cos(cosine(kx)*p1)))&
+                        +((cos(cosine(kx)*r1)*cos(cosine(ky)*q1)&
+                          +cos(cosine(kx)*q1)*cos(cosine(ky)*r1))*(m1p2)))
+                  sum_y=sum_y+charge&
+                        *(4*(cos(cosine(ky)*r1)*(1+m1p1)&
+                        +cos(cosine(ky)*p1)*(1+m1r1)&
+                        *(cos(cosine(kx)*q2)-cos(cosine(kx)*q1)))&
+                        +((cos(cosine(kx)*r1)*cos(cosine(ky)*p1)&
+                          +cos(cosine(kx)*p1)*cos(cosine(ky)*r1))*(m1q2)))
+                  sum_z=sum_z+charge&
+                        *(4*(cos(cosine(ky)*p1)*(1+m1q1)&
+                        +cos(cosine(ky)*q1)*(1+m1p1)&
+                        *(cos(cosine(kx)*r2)-cos(cosine(kx)*r1)))&
+                        +((cos(cosine(kx)*p1)*cos(cosine(ky)*q1)&
+                          +cos(cosine(kx)*q1)*cos(cosine(ky)*p1))*(m1r2)))
+                  g_zero=g_zero+charge*4&
+                        *(3/(4-cos(cosine(kx)-cos(cosine(ky))))&
+                        +3/(2-cos(cosine(kx))-cos(cosine(ky))))
+
                     do kz=1,((L/2)-1)
 
                       ! There are various ways to make this faster
@@ -129,23 +186,26 @@ module linear_solver
                       ! and also we can pull out some simplifications
                       ! ...I'm working on it
 
-                      sum_x=sum_x+charge*(cos(twopibyL(kx)*p1)&
-                      *cos(twopibyL(ky)*q1)*cos(twopibyL(kz)*r1)&
-                      -cos(twopibyL(kx)*p2)*cos(twopibyL(ky)*q1)&
-                      *cos(twopibyL(kz)*r1))/(3-cos(twopibyL(kx))&
-                      -cos(twopibyL(ky))-cos(twopibyL(kz)))
+                      sum_x=sum_x+charge*(-1)*8*(cos(cosine(kx)*p1)&
+                      *cos(cosine(ky)*q1)*cos(cosine(kz)*r1)&
+                      -cos(cosine(kx)*p2)*cos(cosine(ky)*q1)&
+                      *cos(cosine(kz)*r1))/(3-cos(cosine(kx))&
+                      -cos(cosine(ky))-cos(cosine(kz)))
 
-                      sum_y=sum_y+charge*(cos(twopibyL(kx)*p1)&
-                      *cos(twopibyL(ky)*q1)*cos(twopibyL(kz)*r1)&
-                      -cos(twopibyL(kx)*p1)*cos(twopibyL(ky)*q2)&
-                      *cos(twopibyL(kz)*r1))/(3-cos(twopibyL(kx))&
-                      -cos(twopibyL(ky))-cos(twopibyL(kz)))
+                      sum_y=sum_y+charge*(-1)*8*(cos(cosine(kx)*p1)&
+                      *cos(cosine(ky)*q1)*cos(cosine(kz)*r1)&
+                      -cos(cosine(kx)*p1)*cos(cosine(ky)*q2)&
+                      *cos(cosine(kz)*r1))/(3-cos(cosine(kx))&
+                      -cos(cosine(ky))-cos(cosine(kz)))
 
-                      sum_z=sum_z+charge*(cos(twopibyL(kx)*p1)&
-                      *cos(twopibyL(ky)*q1)*cos(twopibyL(kz)*r1)&
-                      -cos(twopibyL(kx)*p1)*cos(twopibyL(ky)*q1)&
-                      *cos(twopibyL(kz)*r2))/(3-cos(twopibyL(kx))&
-                      -cos(twopibyL(ky))-cos(twopibyL(kz)))
+                      sum_z=sum_z+charge*(-1)*8*(cos(cosine(kx)*p1)&
+                      *cos(cosine(ky)*q1)*cos(cosine(kz)*r1)&
+                      -cos(cosine(kx)*p1)*cos(cosine(ky)*q1)&
+                      *cos(cosine(kz)*r2))/(3-cos(cosine(kx))&
+                      -cos(cosine(ky))-cos(cosine(kz)))
+
+                    g_zero=g_zero+8*(1/(3-cos(cosine(kx))&
+                      -cos(cosine(ky))-cos(cosine(kz))))
 
                     end do ! kz do loop
                   end do ! ky do loop
@@ -158,9 +218,12 @@ module linear_solver
         end do ! x do loop
 
         ! need to declare these arrays and volume somewhere
-        mnphi_x(a,b,c)=sum_x/volume
-        mnphi_y(a,b,c)=sum_y/volume
-        mnphi_z(a,b,c)=sum_z/volume
+        ! had volume here before instead of L**3
+        mnphi_x(a,b,c)=sum_x/L**3
+        mnphi_y(a,b,c)=sum_y/L**3
+        mnphi_z(a,b,c)=sum_z/L**3
+
+        g_zero=g_zero/L**3
 
         u_tot=u_tot+mnphi_x(a,b,c)**2+mnphi_y(a,b,c)**2+mnphi_z(a,b,c)**2
 
@@ -170,18 +233,20 @@ module linear_solver
 
   write (*,*) u_tot
 
-  do a=1,L
-    do b=1,L
-      do c=1,L
-        ! print electric field config.
-        ! "(I1.1, I1.1, I1.1, ES9.8E4, ES9.8E4, ES9.8E4)"
-        write (*,*) &
-          a,", ",b,", ",c," = ("&
-          ,mnphi_x(a,b,c),",",mnphi_y(a,b,c),",",mnphi_z(a,b,c),")."
+  write (*,*) g_zero
 
-      end do
-    end do
-  end do
+  !do a=1,L
+  !  do b=1,L
+  !    do c=1,L
+  !      ! print electric field config.
+  !      ! "(I1.1, I1.1, I1.1, ES9.8E4, ES9.8E4, ES9.8E4)"
+  !      write (*,*) &
+  !        a,", ",b,", ",c," = ("&
+  !        ,mnphi_x(a,b,c),",",mnphi_y(a,b,c),",",mnphi_z(a,b,c),")."
+
+  !    end do ! a loop for e-field print out
+  !  end do ! b loop for ""
+  !end do ! c loop for ""
 
   end subroutine linsol
 end module linear_solver

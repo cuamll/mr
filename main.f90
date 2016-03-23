@@ -38,11 +38,12 @@ read(1,*)((v_temp(row,col),col=1,L),row=1,L**2)
 v = reshape(v_temp, (/L,L,L/))
 deallocate(v_temp) ! we don't need it anymore
 
-do j=1,L
-  do i=1,L
-    write(*,*) (v(i,j,k), k=1,L)
-  enddo
-enddo
+! don't need to print lattice anymore
+! do j=1,L
+!   do i=1,L
+!     write(*,*) (v(i,j,k), k=1,L)
+!   enddo
+! enddo
 
 call linsol
 
