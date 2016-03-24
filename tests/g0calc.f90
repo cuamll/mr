@@ -1,12 +1,12 @@
 program g0calc
   implicit none
-  integer :: i,nx,ny,nz,L(12)
+  integer :: i,nx,ny,nz,L(15)
   real*8 :: g_zero,kx,ky,kz,pi,a
 
   pi=3.141592653589793
-  L (1:12) = (/ 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 100 /)
+  L (1:15) = (/ 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 50, 60, 100 /)
 
-  do i=1,12
+  do i=1,15
     g_zero=0.0
     a=1.0
 

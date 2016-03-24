@@ -7,7 +7,7 @@ module linear_solver
   integer, private :: a,b,c,x,y,z,kx,ky,kz,i
   real*8, private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2
   real*8, private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
-  real*8, public :: u_tot, g_zero
+  real*8, public :: u_tot, g_zero, g_z_sum
   real*8, dimension(:), allocatable, private :: cosine
   save
 
@@ -125,25 +125,28 @@ module linear_solver
                 !       *(cos(pi*p2/lambda)-cos(pi*p1/lambda))&
                 !       /(3-3*cos(pi/lambda)))
 
-                ! these are for lambda = 1
                 ! all three k_mu = L/2:
                 sum_x=sum_x+charge*(m1r1*m1q1*m1p2/6)
                 sum_y=sum_y+charge*(m1r1*m1p1*m1q2/6)
                 sum_z=sum_z+charge*(m1p1*m1q1*m1r2/6)
-                g_zero=g_zero+charge*(1/6)
+                g_zero=g_zero+(1/6)
 
-                ! terms with two k_mu = 0 and one k_mu = L/2:
+                ! terms with two L/2 and one 0:
+
+                ! changing the (3/4) (3/2) to (4/4) (4/2) gives the
+                ! right answer to four decimal places. can't be right though
                 sum_x=sum_x+charge*(m1p2*(m1q1+m1r1)/4)
                 sum_y=sum_y+charge*(m1q2*(m1p1+m1r1)/4)
                 sum_z=sum_z+charge*(m1r2*(m1q1+m1p1)/4)
-                g_zero=g_zero+charge*(3/4)
+                g_zero=g_zero+(3/4)
 
-                !terms with two L/2 and one 0:
+                ! terms with two k_mu = 0 and one k_mu = L/2:
                 sum_x=sum_x+charge*(m1p2/2)
                 sum_y=sum_y+charge*(m1q2/2)
                 sum_z=sum_z+charge*(m1r2/2)
-                g_zero=g_zero+charge*(3/2)
+                g_zero=g_zero+(3/2)
 
+                ! integer division does floor, essentially
                 do kx=1,((L/2)-1)
                 ! terms with two of the k_mu = 0 or L/2 go here
                 sum_x=sum_x+charge*2*(cos(cosine(kx)*p2)-cos(cosine(kx)*p1))*(1+m1q1*m1r1+m1r1+m1q1)&
@@ -152,7 +155,7 @@ module linear_solver
                       +charge*2*(m1q2*(cos(cosine(kx)*p1)*(1+m1r1)+(cos(cosine(kx)*r1)*(1+m1p1))))
                 sum_z=sum_z+charge*2*(cos(cosine(kx)*r2)-cos(cosine(kx)*p1))*(1+m1q1*m1p1+m1p1+m1q1)&
                       +charge*2*(m1r2*(cos(cosine(kx)*q1)*(1+m1p1)+(cos(cosine(kx)*p1)*(1+m1q1))))
-                g_zero=g_zero+charge*2*((3/(5-cos(cosine(kx))))&
+                g_zero=g_zero+2*((3/(5-cos(cosine(kx))))&
                        +(3/(1-cos(cosine(kx))))+(6/(3-cos(cosine(kx)))))
 
                   do ky=1,((L/2)-1)
@@ -175,8 +178,8 @@ module linear_solver
                         *(cos(cosine(kx)*r2)-cos(cosine(kx)*r1)))&
                         +((cos(cosine(kx)*p1)*cos(cosine(ky)*q1)&
                           +cos(cosine(kx)*q1)*cos(cosine(ky)*p1))*(m1r2)))
-                  g_zero=g_zero+charge*4&
-                        *(3/(4-cos(cosine(kx)-cos(cosine(ky))))&
+                  g_zero=g_zero+4&
+                        *(3/(4-cos(cosine(kx))-cos(cosine(ky)))&
                         +3/(2-cos(cosine(kx))-cos(cosine(ky))))
 
                     do kz=1,((L/2)-1)
