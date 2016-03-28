@@ -1,6 +1,6 @@
 module common
   implicit none
-  real, public :: q, lambda, volume
+  real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z
   integer, public :: L
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v

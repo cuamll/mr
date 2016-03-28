@@ -11,6 +11,9 @@ integer, dimension(:,:), allocatable :: v_temp
 q = 1.0 ! charge magnitude
 lambda = 1.0 ! lattice spacing
 volume = lambda**3 ! duh
+ebar_x = 0.0
+ebar_y = 0.0
+ebar_z = 0.0
 
 ! note: getarg(pos, value) does argc/argv
 
@@ -22,6 +25,8 @@ write(*,*) "Lattice dimension L: "
 read(*,*) L
 allocate(v_temp(L**2,L))
 allocate(v(L,L,L))
+allocate(pos(L))
+allocate(neg(L))
 
 ! irrotational part of E-field
 allocate(mnphi_x(L,L,L))
@@ -35,7 +40,7 @@ read(1,*)((v_temp(row,col),col=1,L),row=1,L**2)
 !  write(*,*) (v_temp(i,j), j=1,L)
 !enddo
 
-v = reshape(v_temp, (/L,L,L/))
+v = reshape(v_temp, (/L,L,L/), ORDER = (/2,3,1/))
 deallocate(v_temp) ! we don't need it anymore
 
 ! don't need to print lattice anymore
