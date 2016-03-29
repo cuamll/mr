@@ -30,8 +30,8 @@ module linear_solver
   do a=1,L
     do b=1,L
       do c=1,L
-        ! Basically, we can think of the {a,b,c} as the sum over \vec{x} in
-        ! G(\vec{x},vec{x'}, and the {x,y,z} as the \vec{x'}.
+        ! Basically, we can think of the {a,b,c} as the sum over \vec{x}
+        ! in G(\vec{x},vec{x'}, and the {x,y,z} as the \vec{x'}.
 
         ! initialise the sums, idiot
         sum_x=0.0
@@ -42,14 +42,16 @@ module linear_solver
           do y=1,L
             do z=1,L
 
-              charge=q*v(x,y,z)
+              if (v(x,y,z).ne.0) then ! non-zero charge at (x,y,z)
 
-              if (v(x,y,z).ne.0) then ! finds a non-zero charge at (x,y,z)
-
+                charge=q*v(x,y,z)
                 nch=nch+1
-                sum_x=sum_x+charge*(-1)*(lgf(a,b,c,x,y,z)-lgf(a,b,c,neg(x),y,z))
-                sum_y=sum_y+charge*(-1)*(lgf(a,b,c,x,y,z)-lgf(a,b,c,x,neg(y),z))
-                sum_z=sum_z+charge*(-1)*(lgf(a,b,c,x,y,z)-lgf(a,b,c,x,y,neg(z)))
+                sum_x=sum_x+charge*(-1)&
+                      *(lgf(a,b,c,x,y,z)-lgf(a,b,c,neg(x),y,z))
+                sum_y=sum_y+charge*(-1)&
+                      *(lgf(a,b,c,x,y,z)-lgf(a,b,c,x,neg(y),z))
+                sum_z=sum_z+charge*(-1)&
+                      *(lgf(a,b,c,x,y,z)-lgf(a,b,c,x,y,neg(z)))
 
                 if (v(a,b,c).ne.0) then
                   if (a.eq.x.and.b.eq.y.and.c.eq.z) then
@@ -73,7 +75,8 @@ module linear_solver
         ebar_y=ebar_y+mnphi_x(a,b,c)
         ebar_z=ebar_z+mnphi_x(a,b,c)
 
-        u_tot=u_tot+mnphi_x(a,b,c)**2+mnphi_y(a,b,c)**2+mnphi_z(a,b,c)**2
+        u_tot=u_tot+mnphi_x(a,b,c)**2&
+              +mnphi_y(a,b,c)**2+mnphi_z(a,b,c)**2
 
       end do ! c do loop
     end do ! b do loop
@@ -96,24 +99,20 @@ module linear_solver
   do a=1,L
     do b=1,L
       do c=1,L
-        ! Basically, we can think of the {a,b,c} as the sum over \vec{xprime} in
-        ! G(\vec{x},vec{xprime}, and the {x,y,z} as the \vec{x}.
-        ! {kx,ky,kz} are then the sum over k-space in G(\vec{x},\vec{xprime})
-
         do x=1,L
           do y=1,L
             do z=1,L
 
               lgf(a,b,c,x,y,z)=0.0
 
-              ! these need to be real numbers for cos etc to work later
+              ! these need to be real, for cos to work later
               p1=float(a-x)
               q1=float(b-y)
               r1=float(c-z)
 
-              ! these need to be within [L/2,-L/2]. The Green's function is
-              ! even though because we use cosines, so it doesn't matter
-              ! whether it's positive or negative.
+              ! these need to be within [L/2,-L/2]. The Green's
+              ! function is even though because we use cosines, so it
+              ! doesn't matter whether it's positive or negative.
 
               if (p1.gt.float(L/2)) then
                 p1=p1-float(L)
