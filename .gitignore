@@ -41,9 +41,10 @@ mod*
 out*
 .DS_Store
 *_backup
-testing*
+test*
 michael*
-linsol*
+linso*
+lattice.dat
 
 
 # LaTeX extras

@@ -5,8 +5,10 @@ module common
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
+  real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   ! probably more things need to go here
 
+  integer, public :: have_lgf = 0
   real, parameter, public :: pi=3.141592653589793
   real, parameter, public :: twopi=6.283185307179586
   real, parameter, public :: e=2.718281828459045

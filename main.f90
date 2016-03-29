@@ -32,6 +32,7 @@ allocate(neg(L))
 allocate(mnphi_x(L,L,L))
 allocate(mnphi_y(L,L,L))
 allocate(mnphi_z(L,L,L))
+allocate(lgf(L,L,L,L,L,L))
 
 open(unit=1, file=filename)
 read(1,*)((v_temp(row,col),col=1,L),row=1,L**2)
