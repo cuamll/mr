@@ -15,6 +15,7 @@ module io
       read(1,*) lambda
       read(1,*) q
       read(1,*) lattfile
+      read(1,*) seed
       ! more things can go here as needed
 
       volume=lambda**3

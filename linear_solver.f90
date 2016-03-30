@@ -21,8 +21,6 @@ module linear_solver
   nch=0
   allocate(cosine(L/2-1))
 
-  call PBCs
-
   if (have_lgf.eq.0) then
     call lgfcalc
   end if
