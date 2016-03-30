@@ -7,6 +7,7 @@ module common
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   ! probably more things need to go here
+  character(len=11) :: lattfile
 
   integer, public :: have_lgf = 0
   real, parameter, public :: pi=3.141592653589793
