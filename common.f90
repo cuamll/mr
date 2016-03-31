@@ -1,16 +1,18 @@
 module common
   implicit none
-  real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z
-  integer, public :: L,seed,accepth,acceptr,acceptg
+  real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
+  integer, public :: L,seed,accepth,acceptr,acceptg,iterations
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
+  real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
+  real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   ! probably more things need to go here
-  character(len=11) :: lattfile
+  character(len=11), public :: lattfile
 
   integer, public :: have_lgf = 0
-  real*8, public :: rot_ratio = 0.2 ! er think about this more
+  real*8, public :: rot_ratio, g_ratio
   real, parameter, public :: eps_0=1.0
   real, parameter, public :: pi=3.141592653589793
   real, parameter, public :: twopi=6.283185307179586
@@ -59,8 +61,8 @@ module common
       PARAMETER (Maxseed = 900000000)
       REAL u(97), c, cd, cm
       INTEGER i97, j97, ivec
-      COMMON /raset1/ u, c, cd, cm, i97, j97, ivec 
- 
+      COMMON /raset1/ u, c, cd, cm, i97, j97, ivec
+
       seed = mod(seed,Maxseed)
       ij = seed / 30082
       kl = seed - (30082 * ij)
@@ -104,7 +106,7 @@ module common
       IMPLICIT NONE
       REAL u(97), c, cd, cm, uni, rand
       INTEGER i97, j97, ivec
-      COMMON /raset1/ u, c, cd, cm, i97, j97, ivec 
+      COMMON /raset1/ u, c, cd, cm, i97, j97, ivec
 
       uni = u(i97) - u(j97)
       IF( uni .LT. 0.0 ) uni = uni + 1.0

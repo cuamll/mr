@@ -12,27 +12,18 @@ module io
     if (start_file_there) then
       open(unit=1, file=in_file)
       read(1,*) L
+      read(1,*) iterations
+      read(1,*) temp
       read(1,*) lambda
       read(1,*) q
       read(1,*) lattfile
       read(1,*) seed
+      read(1,*) rot_ratio
+      read(1,*) g_ratio
       ! more things can go here as needed
 
-      volume=lambda**3
-
-      allocate(v(L,L,L))
-      allocate(pos(L))
-      allocate(neg(L))
-      allocate(mnphi_x(L,L,L))
-      allocate(mnphi_y(L,L,L))
-      allocate(mnphi_z(L,L,L))
-      allocate(e_rot_x(L,L,L))
-      allocate(e_rot_y(L,L,L))
-      allocate(e_rot_z(L,L,L))
-      allocate(e_x(L,L,L))
-      allocate(e_y(L,L,L))
-      allocate(e_z(L,L,L))
-      allocate(lgf(L,L,L,L,L,L))
+      volume = lambda**3
+      beta = 1.0/temp
 
     else
       write (*,*) "can't find input file"

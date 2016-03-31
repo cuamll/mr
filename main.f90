@@ -9,17 +9,26 @@ program mr
   implicit none
   integer :: i, j, k, row, col
   integer, dimension(:,:), allocatable :: v_temp
-  real*8 :: temp,beta
 
-  temp = 2.0 ! need a temperature to do Metropolis
-  beta = 1.0 / temp
   ebar_x  =  0.0
   ebar_y  =  0.0
   ebar_z  =  0.0
 
-  ! allocations for common variables done by read_input
   call read_input
 
+  allocate(v(L,L,L))
+  allocate(pos(L))
+  allocate(neg(L))
+  allocate(mnphi_x(L,L,L))
+  allocate(mnphi_y(L,L,L))
+  allocate(mnphi_z(L,L,L))
+  allocate(e_rot_x(L,L,L))
+  allocate(e_rot_y(L,L,L))
+  allocate(e_rot_z(L,L,L))
+  allocate(e_x(L,L,L))
+  allocate(e_y(L,L,L))
+  allocate(e_z(L,L,L))
+  allocate(lgf(L,L,L,L,L,L))
   allocate(v_temp(L**2,L))
 
   write(*,*) 'L = ',L
@@ -37,24 +46,43 @@ program mr
   close(2)
 
   call randinit(seed)
-  write(*,*) rand(seed)
 
   call linsol
+
+  ! set e_x to irrotational - temporary solution
+  do i = 1,L
+    do j = 1,L
+      do k = 1,L
+        e_x(i,j,k) = mnphi_x(i,j,k)
+        e_y(i,j,k) = mnphi_y(i,j,k)
+        e_z(i,j,k) = mnphi_z(i,j,k)
+
+        e_rot_x(i,j,k) = 0.0
+        e_rot_y(i,j,k) = 0.0
+        e_rot_z(i,j,k) = 0.0
+      end do
+    end do
+  end do
+
+  call update()
 
   stop
 
 end program mr
 
-subroutine update(iter)
-  integer :: i,n,x,y,z,v1,v2
+subroutine update()
+  use common
+  implicit none
+  integer :: i,j,k,m,n,x,y,z,v1,v2,glob
   real :: chooser
-  real*8 :: old_e,new_e,delta_e,eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: hop_inc,delta
+  real*8 :: old_e,new_e,delta_e,eo1,eo2,eo3,eo4,en1,en2,en3,en4,utotal
+  real*8 :: hop_inc,delta,g_thr
 
   hop_inc = q / (eps_0 * lambda**2)
   g_thr = pi/float(L) ! if |ebar_i| > this, charges are winding
+  glob = 0
 
-  do n = 1,iter
+  do n = 1,iterations
 
     ! charge hop updates
     accepth = 0
@@ -250,7 +278,8 @@ subroutine update(iter)
     ! plaquette rot. update
     acceptr=0
 
-    do i = 1,L**3*rot_ratio
+    ! NOTE TO SELF: might need a + 1 next to that int cast
+    do i = 1,int(L**3 * rot_ratio)
 
       x = int(rand() * L) + 1
       y = int(rand() * L) + 1
@@ -346,7 +375,8 @@ subroutine update(iter)
     acceptg = 0
     if (glob.eq.1) then
 
-      do i = 1,g_ratio
+      ! NOTE TO SELF: again this int cast prob needs changing
+      do i = 1,int(L**3 * g_ratio)
         ! x-component
         chooser = rand()
 
@@ -481,5 +511,14 @@ subroutine update(iter)
     end if ! end glob.eq.1 block
 
   end do ! end n_iteration block
+
+  do j = 1,L
+    do k = 1,L
+      do m = 1,L
+        utotal = utotal + e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2
+      end do
+    end do
+  end do
+  write(*,*) 'U_tot = ',utotal
 
 end subroutine update
