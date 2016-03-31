@@ -20,11 +20,27 @@ module io
 
       volume=lambda**3
 
+      allocate(v(L,L,L))
+      allocate(pos(L))
+      allocate(neg(L))
+      allocate(mnphi_x(L,L,L))
+      allocate(mnphi_y(L,L,L))
+      allocate(mnphi_z(L,L,L))
+      allocate(e_rot_x(L,L,L))
+      allocate(e_rot_y(L,L,L))
+      allocate(e_rot_z(L,L,L))
+      allocate(e_x(L,L,L))
+      allocate(e_y(L,L,L))
+      allocate(e_z(L,L,L))
+      allocate(lgf(L,L,L,L,L,L))
+
     else
-      write (*,*) "can't find input file, sort it out"
+      write (*,*) "can't find input file"
       stop
     end if
+
     close(1)
+
   end subroutine read_input
 
 end module io

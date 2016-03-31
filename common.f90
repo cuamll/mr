@@ -1,7 +1,7 @@
 module common
   implicit none
   real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z
-  integer, public :: L,seed
+  integer, public :: L,seed,accepth,acceptr,acceptg
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
@@ -10,6 +10,8 @@ module common
   character(len=11) :: lattfile
 
   integer, public :: have_lgf = 0
+  real*8, public :: rot_ratio = 0.2 ! er think about this more
+  real, parameter, public :: eps_0=1.0
   real, parameter, public :: pi=3.141592653589793
   real, parameter, public :: twopi=6.283185307179586
   real, parameter, public :: e=2.718281828459045
