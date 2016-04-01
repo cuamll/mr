@@ -73,7 +73,7 @@ end program mr
 subroutine update()
   use common
   implicit none
-  integer :: i,j,k,m,n,x,y,z,v1,v2,glob
+  integer :: i,j,k,m,n,x,y,z,v1,v2,glob,totq
   real :: chooser
   real*8 :: old_e,new_e,delta_e,eo1,eo2,eo3,eo4,en1,en2,en3,en4,utotal
   real*8 :: hop_inc,delta,g_thr
@@ -81,6 +81,8 @@ subroutine update()
   hop_inc = q / (eps_0 * lambda**2)
   g_thr = pi/float(L) ! if |ebar_i| > this, charges are winding
   glob = 0
+  totq = 0
+  utotal = 0.0
 
   do n = 1,iterations
 
@@ -514,11 +516,18 @@ subroutine update()
 
   do j = 1,L
     do k = 1,L
+      write (*,*) v(j,k,1:L)
       do m = 1,L
         utotal = utotal + e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2
+        totq = totq + v(j,k,m)
       end do
     end do
   end do
+  write (*,*) '----- final results -----'
   write(*,*) 'U_tot = ',utotal
+  write (*,*) 'total charge = ',totq
+  write (*,*) 'hop moves accepted = ',accepth
+  write (*,*) 'rot moves accepted = ',acceptr
+  write (*,*) 'ebar moves accepted = ',acceptg
 
 end subroutine update
