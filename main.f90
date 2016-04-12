@@ -64,218 +64,181 @@ program mr
     end do
   end do
 
-  call update()
+  call upcan()
 
   stop
 
 end program mr
 
-subroutine update()
+subroutine upcan()
   use common
   implicit none
-  integer :: i,j,k,m,n,x,y,z,v1,v2,glob,totq
-  real :: chooser
-  real*8 :: old_e,new_e,delta_e,eo1,eo2,eo3,eo4,en1,en2,en3,en4,utotal
-  real*8 :: hop_inc,delta,g_thr
+  integer :: x,y,z,n,charge,glob,i,j,k,m
+  real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
+  real*8 :: hop_inc, old_e, new_e, delta_e, utotal, totq,g_thr
+  real :: chooser, delta
 
-  hop_inc = q / (eps_0 * lambda**2)
-  g_thr = pi/float(L) ! if |ebar_i| > this, charges are winding
   glob = 0
   totq = 0
   utotal = 0.0
+  g_thr = pi / float(L)
 
+  ! charge hop sweep
   do n = 1,iterations
 
-    ! charge hop updates
+    ! charge hop sweep
     accepth = 0
 
-    do i = 1,L**3
-      ! one sweep is L**3 attempts
-      ! pick a random (x,y,z)
+    do i = 1, L**3
+
+      ! pick a random site
       x = int(rand() * L) + 1
       y = int(rand() * L) + 1
       z = int(rand() * L) + 1
 
-      chooser = rand()
-      if (chooser.lt.(1.0 / 3.0)) then ! x component
+      ! pick a non-zero charge - we want to keep it canonical
+      if (v(x,y,z).ne.0) then
 
-        eo1 = e_x(x,y,z)
+        charge = v(x,y,z)
+        ! i think this takes care of any sign issues when hopping
+        hop_inc = charge / (eps_0 * lambda**2)
         chooser = rand()
 
-        if (chooser.lt.(0.5)) then ! decrease bond
+        if (chooser.lt.(1.0 / 3.0)) then
+          ! x component
+          eo1 = e_x(x,y,z)
+          chooser = rand()
 
-          en1 = eo1 - hop_inc
-          old_e = 0.5 * eo1**2
-          new_e = 0.5 * en1**2
-          delta_e = new_e - old_e
-          v1 = v(x,y,z) + 1
-          v2 = v(neg(x),y,z) - 1
+          if (chooser.lt.0.5) then ! we try and move the fucker left
+            en1 = eo1 - hop_inc
+            old_e = 0.5 * eo1**2
+            new_e = 0.5 * en1**2
+            delta_e = new_e - old_e
+            ! i think we can just set v(x,y,z) = 0
+            ! if we're enforcing |v| <= 1
+            if ((abs(v(x,y,z)).le.1).and.(v(neg(x),y,z).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-          if ((abs(v1).le.1).and.(abs(v2).le.1)) then ! enforce |v| <= 1
-            if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+                accepth = accepth + 1
+                e_x(x,y,z) = en1
+                v(neg(x),y,z) = charge
+                v(x,y,z) = 0
 
-              e_x(x,y,z) = en1
-              v(x,y,z) = v1
-              v(neg(x),y,z) = v2
-              ebar_x = ebar_x - (hop_inc / L**3) ! track evolution
-              accepth = accepth + 1
+              end if
+            end if
 
-              if (ebar_x.gt.g_thr.or.(ebar_x.le.((-1)*g_thr))&
-                .and.(glob.eq.0)) then
-                glob = 1
-              end if ! end global winding check
+          else ! move the fucker to the right
 
-            end if ! end Metropolis check
-          end if ! end |v| < =  1 check
+            en1 = eo1 - hop_inc
+            old_e = 0.5 * eo1**2
+            new_e = 0.5 * en1**2
+            delta_e = new_e - old_e
 
-        else ! increase bond
+            if ((abs(v(x,y,z)).le.1).and.(v(pos(x),y,z).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-          en1 = eo1 + hop_inc
-          old_e = 0.5 * eo1**2
-          new_e = 0.5 * en1**2
-          delta_e = new_e - old_e
-          v1 = v(x,y,z) - 1
-          v2 = v(neg(x),y,z) + 1
+                accepth = accepth + 1
+                e_x(x,y,z) = en1
+                v(pos(x),y,z) = charge
+                v(x,y,z) = 0
 
-          if ((abs(v1).le.1).and.(abs(v2).le.1)) then
-            if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+              end if
+            end if
 
-              e_x(x,y,z) = en1
-              v(x,y,z) = v1
-              v(neg(x),y,z) = v2
-              ebar_x = ebar_x + (hop_inc / L**3)
-              accepth = accepth + 1
+          end if ! end of left-right movement choice
 
-              if (ebar_x.gt.g_thr.or.(ebar_x.le.((-1)*g_thr))&
-                .and.(glob.eq.0)) then
-                glob = 1
-              end if ! end global winding check
 
-            end if ! end Metropolis check
-          end if ! end |v| < =  1 check
+        else if (chooser.gt.(2.0 / 3.0)) then ! y component
 
-        end if ! end of x block
+          eo1 = e_y(x,y,z)
+          chooser = rand()
 
-      else if (chooser.ge.(2.0 / 3.0)) then ! y component
+          if (chooser.lt.0.5) then ! we try and move the fucker left
+            en1 = eo1 - hop_inc
+            old_e = 0.5 * eo1**2
+            new_e = 0.5 * en1**2
+            delta_e = new_e - old_e
+            ! i think we can just set v(x,y,z) = 0
+            ! if we're enforcing |v| <= 1
+            if ((abs(v(x,y,z)).le.1).and.(v(x,neg(y),z).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-        eo1 = e_y(x,y,z)
-        chooser = rand()
+                accepth = accepth + 1
+                e_y(x,y,z) = en1
+                v(x,neg(y),z) = charge
+                v(x,y,z) = 0
 
-        if (chooser.lt.(0.5)) then ! decrease bond
+              end if
+            end if
 
-          en1 = eo1 - hop_inc
-          old_e = 0.5 * eo1**2
-          new_e = 0.5 * en1**2
-          delta_e = new_e - old_e
-          v1 = v(x,y,z) + 1
-          v2 = v(x,neg(y),z) - 1
+          else ! move the fucker to the right
 
-          if ((abs(v1).le.1).and.(abs(v2).le.1)) then ! enforce |v| <= 1
-            if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+            en1 = eo1 - hop_inc
+            old_e = 0.5 * eo1**2
+            new_e = 0.5 * en1**2
+            delta_e = new_e - old_e
 
-              e_y(x,y,z) = en1
-              v(x,y,z) = v1
-              v(x,neg(y),z) = v2
-              ebar_y = ebar_y - (hop_inc / L**3) ! track evolution
-              accepth = accepth + 1
+            if ((abs(v(x,y,z)).le.1).and.(v(x,pos(y),z).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-              if (ebar_x.gt.g_thr.or.(ebar_x.le.((-1)*g_thr))&
-                .and.(glob.eq.0)) then
-                glob = 1
-              end if ! end global winding check
+                accepth = accepth + 1
+                e_y(x,y,z) = en1
+                v(x,pos(y),z) = charge
+                v(x,y,z) = 0
 
-            end if ! end Metropolis check
-          end if ! end |v| < =  1 check
+              end if
+            end if
 
-        else ! increase bond
+          end if ! end of left-right movement choice
 
-          en1 = eo1 + hop_inc
-          old_e = 0.5 * eo1**2
-          new_e = 0.5 * en1**2
-          delta_e = new_e - old_e
-          v1 = v(x,y,z) - 1
-          v2 = v(x,neg(y),z) + 1
+        else ! z component
 
-          if ((abs(v1).le.1).and.(abs(v2).le.1)) then
-            if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+          eo1 = e_z(x,y,z)
+          chooser = rand()
 
-              e_y(x,y,z) = en1
-              v(x,y,z) = v1
-              v(x,neg(y),z) = v2
-              ebar_y = ebar_y + (hop_inc / L**3)
-              accepth = accepth + 1
+          if (chooser.lt.0.5) then ! we try and move the fucker left
+            en1 = eo1 - hop_inc
+            old_e = 0.5 * eo1**2
+            new_e = 0.5 * en1**2
+            delta_e = new_e - old_e
+            ! i think we can just set v(x,y,z) = 0
+            ! if we're enforcing |v| <= 1
+            if ((abs(v(x,y,z)).le.1).and.(v(x,y,neg(z)).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-              if (ebar_x.gt.g_thr.or.(ebar_x.le.((-1)*g_thr))&
-                .and.(glob.eq.0)) then
-                glob = 1
-              end if ! end global winding check
+                accepth = accepth + 1
+                e_z(x,y,z) = en1
+                v(x,y,neg(z)) = charge
+                v(x,y,z) = 0
 
-            end if ! end Metropolis check
-          end if ! end |v| < =  1 check
+              end if
+            end if
 
-        end if ! end of y block
+          else ! move the fucker to the right
 
-      else ! z component
+            en1 = eo1 - hop_inc
+            old_e = 0.5 * eo1**2
+            new_e = 0.5 * en1**2
+            delta_e = new_e - old_e
 
-        eo1 = e_z(x,y,z)
-        chooser = rand()
+            if ((abs(v(x,y,z)).le.1).and.(v(x,y,pos(z)).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-        if (chooser.lt.(0.5)) then ! decrease bond
+                accepth = accepth + 1
+                e_z(x,y,z) = en1
+                v(x,y,pos(z)) = charge
+                v(x,y,z) = 0
 
-          en1 = eo1 - hop_inc
-          old_e = 0.5 * eo1**2
-          new_e = 0.5 * en1**2
-          delta_e = new_e - old_e
-          v1 = v(x,y,z) + 1
-          v2 = v(x,y,neg(z)) - 1
+              end if
+            end if
 
-          if ((abs(v1).le.1).and.(abs(v2).le.1)) then ! enforce |v| <= 1
-            if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+          end if ! end of left-right movement choice
 
-              e_z(x,y,z) = en1
-              v(x,y,z) = v1
-              v(x,y,neg(z)) = v2
-              ebar_z = ebar_z - (hop_inc / L**3) ! track evolution
-              accepth = accepth + 1
+        end if ! end of component chooser
 
-              if (ebar_x.gt.g_thr.or.(ebar_x.le.((-1)*g_thr))&
-                .and.(glob.eq.0)) then
-                glob = 1
-              end if ! end global winding check
+      end if ! end of v(x,y,z).ne.0 block
 
-            end if ! end Metropolis check
-          end if ! end |v| < =  1 check
-
-        else ! increase bond
-
-          en1 = eo1 + hop_inc
-          old_e = 0.5 * eo1**2
-          new_e = 0.5 * en1**2
-          delta_e = new_e - old_e
-          v1 = v(x,y,z) - 1
-          v2 = v(x,y,neg(z)) + 1
-
-          if ((abs(v1).le.1).and.(abs(v2).le.1)) then
-            if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-              e_z(x,y,z) = en1
-              v(x,y,z) = v1
-              v(x,y,neg(z)) = v2
-              ebar_z = ebar_z + (hop_inc / L**3)
-              accepth = accepth + 1
-
-              if (ebar_x.gt.g_thr.or.(ebar_x.le.((-1)*g_thr))&
-                .and.(glob.eq.0)) then
-                glob = 1
-              end if ! end global winding check
-
-            end if ! end Metropolis check
-          end if ! end |v| < =  1 check
-
-        end if ! end of z block
-      end if ! end of x/y/z block
-
-    end do ! end of charge hop updates????
+    end do ! end charge hop sweep
 
     ! plaquette rot. update
     acceptr=0
@@ -512,7 +475,7 @@ subroutine update()
 
     end if ! end glob.eq.1 block
 
-  end do ! end n_iteration block
+  end do ! end iteration loop
 
   do j = 1,L
     do k = 1,L
@@ -530,4 +493,4 @@ subroutine update()
   write (*,*) 'rot moves accepted = ',acceptr
   write (*,*) 'ebar moves accepted = ',acceptg
 
-end subroutine update
+end subroutine upcan
