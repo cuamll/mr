@@ -1,6 +1,6 @@
-! maggs - rossetto algorithm on cubic lattice
+! maggs-rossetto algorithm on cubic lattice
 ! i'll write proper docs at some point
-! callum gray, UCL / ENS Lyon, 2016. do what you like with it
+! callum gray, UCL / ENS Lyon, 2016. do wat u like
 program mr
 
   use common
@@ -8,11 +8,13 @@ program mr
   use io
   implicit none
   integer :: i, j, k, row, col
+  real :: u_rot
   integer, dimension(:,:), allocatable :: v_temp
 
   ebar_x  =  0.0
   ebar_y  =  0.0
   ebar_z  =  0.0
+  u_rot = 0.0
 
   call read_input
 
@@ -30,8 +32,6 @@ program mr
   allocate(e_z(L,L,L))
   allocate(lgf(L,L,L,L,L,L))
   allocate(v_temp(L**2,L))
-
-  write(*,*) 'L = ',L
 
   call PBCs
 
@@ -66,6 +66,22 @@ program mr
 
   call upcan()
 
+  call linsol
+
+  do i = 1,L
+    do j = 1,L
+      do k = 1,L
+
+        u_rot = u_rot + (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
+        (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
+        (e_z(i,j,k) - mnphi_z(i,j,k))**2
+
+      end do
+    end do
+  end do
+
+  write (*,*) 'u_rot. = ',u_rot
+
   stop
 
 end program mr
@@ -82,13 +98,12 @@ subroutine upcan()
   totq = 0
   utotal = 0.0
   g_thr = pi / float(L)
+  accepth = 0
 
   ! charge hop sweep
   do n = 1,iterations
 
     ! charge hop sweep
-    accepth = 0
-
     do i = 1, L**3
 
       ! pick a random site
@@ -251,7 +266,7 @@ subroutine upcan()
       z = int(rand() * L) + 1
       ! NOTE TO SELF : next line needs changing
       ! it's for the field increment, not an if statement
-      delta = rand()
+      delta = 2 * rot_delt * (rand() - 0.5)
 
       chooser=rand()
       if (chooser.lt.(1.0/3.0)) then ! xy-plane plaquette
@@ -270,7 +285,7 @@ subroutine upcan()
         new_e = 0.5*(en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
-        if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
           e_x(x,y,z) = en1
           e_y(x,y,z) = en2
@@ -296,7 +311,7 @@ subroutine upcan()
         new_e = 0.5*(en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
-        if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
           e_x(x,y,z) = en1
           e_z(x,y,z) = en2
@@ -322,7 +337,7 @@ subroutine upcan()
         new_e = 0.5*(en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
-        if ((delta_e.lt.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
           e_y(x,y,z) = en1
           e_z(x,y,z) = en2
@@ -479,10 +494,13 @@ subroutine upcan()
 
   do j = 1,L
     do k = 1,L
-      write (*,*) v(j,k,1:L)
+      ! write (*,*) v(j,k,1:L)
       do m = 1,L
         utotal = utotal + e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2
-        totq = totq + v(j,k,m)
+        totq = totq + abs(v(j,k,m))
+        if (v(j,k,m).ne.0) then
+          write (*,*) j, k, m, v(j,k,m)
+        end if
       end do
     end do
   end do

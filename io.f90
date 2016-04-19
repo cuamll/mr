@@ -16,6 +16,7 @@ module io
       read(1,*) temp
       read(1,*) lambda
       read(1,*) q
+      read(1,*) rot_delt
       read(1,*) lattfile
       read(1,*) seed
       read(1,*) rot_ratio
@@ -23,7 +24,11 @@ module io
       ! more things can go here as needed
 
       volume = lambda**3
-      beta = 1.0/temp
+      beta = 1.0 / temp
+
+      write (*,*) 'L = ',L
+      write (*,*) 'T = ',temp
+      write (*,*) 'rot. update ratio = ',rot_ratio
 
     else
       write (*,*) "can't find input file"

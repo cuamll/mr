@@ -17,8 +17,10 @@ module linear_solver
 
   ! some things need initialising
   u_tot=0.0
+  u_self = 0.0
   u_int=0.0
   nch=0
+
   allocate(cosine(L/2-1))
 
   if (have_lgf.eq.0) then
@@ -82,13 +84,15 @@ module linear_solver
 
   nch=nch/L**3 ! bc we count nch once for each abc
 
-  write (*,*) 'sum E_ij^2 =',u_tot
+  write (*,*) 'irrot E_ij^2 =',u_tot
 
   write(*,*) "self_e from lgf(0) * n charges = ",u_self
 
   write(*,*) 'u_int calculated in loop = ',u_int
 
   write (*,*) 'V*Ebar^2 = ',L**3*ebar_x**2+ebar_y**2+ebar_z**2
+
+  deallocate(cosine)
 
   end subroutine linsol
 
