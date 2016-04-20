@@ -16,6 +16,8 @@ program mr
   ebar_z  =  0.0
   u_rot = 0.0
 
+  write(*,*)
+
   call read_input
 
   allocate(v(L,L,L))
@@ -82,6 +84,8 @@ program mr
 
   write (*,*) 'u_rot. = ',u_rot
 
+  write(*,*)
+
   stop
 
 end program mr
@@ -94,7 +98,7 @@ subroutine upcan()
   real*8 :: hop_inc, old_e, new_e, delta_e, utotal, totq,g_thr
   real :: chooser, delta
 
-  glob = 0
+  glob = 1
   totq = 0
   utotal = 0.0
   g_thr = pi / float(L)
@@ -138,6 +142,7 @@ subroutine upcan()
                 e_x(x,y,z) = en1
                 v(neg(x),y,z) = charge
                 v(x,y,z) = 0
+                ebar_x = ebar_x - hop_inc
 
               end if
             end if
@@ -156,6 +161,7 @@ subroutine upcan()
                 e_x(x,y,z) = en1
                 v(pos(x),y,z) = charge
                 v(x,y,z) = 0
+                ebar_x = ebar_x + hop_inc
 
               end if
             end if
@@ -182,6 +188,7 @@ subroutine upcan()
                 e_y(x,y,z) = en1
                 v(x,neg(y),z) = charge
                 v(x,y,z) = 0
+                ebar_y = ebar_y - hop_inc
 
               end if
             end if
@@ -200,6 +207,7 @@ subroutine upcan()
                 e_y(x,y,z) = en1
                 v(x,pos(y),z) = charge
                 v(x,y,z) = 0
+                ebar_y = ebar_y + hop_inc
 
               end if
             end if
@@ -225,6 +233,7 @@ subroutine upcan()
                 e_z(x,y,z) = en1
                 v(x,y,neg(z)) = charge
                 v(x,y,z) = 0
+                ebar_z = ebar_z - hop_inc
 
               end if
             end if
@@ -243,6 +252,7 @@ subroutine upcan()
                 e_z(x,y,z) = en1
                 v(x,y,pos(z)) = charge
                 v(x,y,z) = 0
+                ebar_z = ebar_z + hop_inc
 
               end if
             end if
@@ -362,7 +372,7 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = 2 * pi * (pi - float(L) * ebar_x)
+          delta_e = (pi - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -381,7 +391,7 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = 2 * pi * (pi + float(L) * ebar_x)
+          delta_e = (pi + float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -405,7 +415,7 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = 2 * pi * (pi - float(L) * ebar_y)
+          delta_e = (pi - float(L) * ebar_y)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -424,7 +434,7 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = 2 * pi * (pi + float(L) * ebar_y)
+          delta_e = (pi + float(L) * ebar_y)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -448,7 +458,7 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = 2 * pi * (pi - float(L) * ebar_z)
+          delta_e = (pi - float(L) * ebar_z)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -467,7 +477,7 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = 2 * pi * (pi + float(L) * ebar_z)
+          delta_e = (pi + float(L) * ebar_z)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
