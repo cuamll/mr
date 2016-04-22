@@ -518,8 +518,8 @@ subroutine upcan()
   write (*,*) '----- final results -----'
   write(*,*) 'U_tot = ',utotal
   write (*,*) 'total charge = ',totq
-  write (*,*) 'hop moves accepted = ',accepth,float(accepth) / (iterations * totq)
-  write (*,*) 'rot moves accepted = ',acceptr,float(acceptr) / (iterations * L**3 * rot_ratio)
-  write (*,*) 'ebar moves accepted = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio)
+  write (*,*) 'hop moves  = ',accepth,float(accepth) / (iterations * totq)
+  write (*,*) 'rot moves  = ',acceptr,float(acceptr) / (iterations * L**3 * rot_ratio)
+  write (*,*) 'ebar moves = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio)
 
 end subroutine upcan
