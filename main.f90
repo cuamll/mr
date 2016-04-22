@@ -196,6 +196,7 @@ subroutine upcan()
           else ! move the fucker to the right
 
             en1 = eo1 - hop_inc
+
             old_e = 0.5 * eo1**2
             new_e = 0.5 * en1**2
             delta_e = new_e - old_e
@@ -372,7 +373,7 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = (pi - float(L) * ebar_x)
+          delta_e = (0.5 - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -391,7 +392,7 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = (pi + float(L) * ebar_x)
+          delta_e = (0.5 + float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -415,7 +416,7 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = (pi - float(L) * ebar_y)
+          delta_e = (0.5 - float(L) * ebar_y)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -434,7 +435,7 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = (pi + float(L) * ebar_y)
+          delta_e = (0.5 + float(L) * ebar_y)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -458,7 +459,7 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = (pi - float(L) * ebar_z)
+          delta_e = (0.5 - float(L) * ebar_z)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -477,7 +478,7 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = (pi + float(L) * ebar_z)
+          delta_e = (0.5 + float(L) * ebar_z)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -517,8 +518,8 @@ subroutine upcan()
   write (*,*) '----- final results -----'
   write(*,*) 'U_tot = ',utotal
   write (*,*) 'total charge = ',totq
-  write (*,*) 'hop moves accepted = ',accepth
-  write (*,*) 'rot moves accepted = ',acceptr
-  write (*,*) 'ebar moves accepted = ',acceptg
+  write (*,*) 'hop moves accepted = ',accepth,float(accepth) / (iterations * totq)
+  write (*,*) 'rot moves accepted = ',acceptr,float(acceptr) / (iterations * L**3 * rot_ratio)
+  write (*,*) 'ebar moves accepted = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio)
 
 end subroutine upcan
