@@ -98,10 +98,10 @@ subroutine upcan()
   real*8 :: hop_inc, old_e, new_e, delta_e, utotal, totq,g_thr
   real :: chooser, delta
 
-  glob = 1
+  glob = 0
   totq = 0
   utotal = 0.0
-  g_thr = pi / float(L)
+  g_thr = 1 / float(L)
   accepth = 0
 
   ! charge hop sweep
@@ -129,7 +129,7 @@ subroutine upcan()
           chooser = rand()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
-            en1 = eo1 - hop_inc
+            en1 = eo1 + hop_inc
             old_e = 0.5 * eo1**2
             new_e = 0.5 * en1**2
             delta_e = new_e - old_e
@@ -167,6 +167,9 @@ subroutine upcan()
             end if
 
           end if ! end of left-right movement choice
+          if (ebar_x.gt.(1/float(L)).or.ebar_x.lt.((-1)/float(L))) then
+            glob = 1
+          end if
 
 
         else if (chooser.gt.(2.0 / 3.0)) then ! y component
@@ -175,7 +178,7 @@ subroutine upcan()
           chooser = rand()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
-            en1 = eo1 - hop_inc
+            en1 = eo1 + hop_inc
             old_e = 0.5 * eo1**2
             new_e = 0.5 * en1**2
             delta_e = new_e - old_e
@@ -214,6 +217,9 @@ subroutine upcan()
             end if
 
           end if ! end of left-right movement choice
+          if (ebar_y.gt.(1/float(L)).or.ebar_y.lt.((-1)/float(L))) then
+            glob = 1
+          end if
 
         else ! z component
 
@@ -221,7 +227,7 @@ subroutine upcan()
           chooser = rand()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
-            en1 = eo1 - hop_inc
+            en1 = eo1 + hop_inc
             old_e = 0.5 * eo1**2
             new_e = 0.5 * en1**2
             delta_e = new_e - old_e
@@ -259,6 +265,9 @@ subroutine upcan()
             end if
 
           end if ! end of left-right movement choice
+          if (ebar_z.gt.(1/float(L)).or.ebar_z.lt.((-1)/float(L))) then
+            glob = 1
+          end if
 
         end if ! end of component chooser
 
