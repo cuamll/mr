@@ -28,7 +28,8 @@ module io
 
       write (*,*) 'L = ',L
       write (*,*) 'T = ',temp
-      write (*,*) 'rot. update ratio = ',rot_ratio
+      write (*,*) 'iter = ',iterations
+      write (*,*) 'rot. ratio = ',rot_ratio
 
     else
       write (*,*) "can't find input file"
@@ -38,5 +39,11 @@ module io
     close(1)
 
   end subroutine read_input
+
+  subroutine measurements
+
+    ! set up the various arrays we need to keep track of shit
+
+  end subroutine measurements
 
 end module io

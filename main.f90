@@ -103,6 +103,8 @@ subroutine upcan()
   utotal = 0.0
   g_thr = 1 / float(L)
   accepth = 0
+  acceptr=0
+  acceptg=0
 
   ! charge hop sweep
   do n = 1,iterations
@@ -276,14 +278,23 @@ subroutine upcan()
     end do ! end charge hop sweep
 
     ! plaquette rot. update
-    acceptr=0
 
     ! NOTE TO SELF: might need a + 1 next to that int cast
     do i = 1,int(L**3 * rot_ratio)
 
+      eo1 = 0.0
+      eo2 = 0.0
+      eo3 = 0.0
+      eo4 = 0.0
+      en1 = 0.0
+      en2 = 0.0
+      en3 = 0.0
+      en4 = 0.0
+
       x = int(rand() * L) + 1
       y = int(rand() * L) + 1
       z = int(rand() * L) + 1
+
       ! NOTE TO SELF : next line needs changing
       ! it's for the field increment, not an if statement
       delta = 2 * rot_delt * (rand() - 0.5)
@@ -301,11 +312,16 @@ subroutine upcan()
         en3 = eo3 - delta
         en4 = eo4 + delta
 
-        old_e = 0.5*(eo1**2 + eo2**2 + eo3**2 + eo4**2)
-        new_e = 0.5*(en1**2 + en2**2 + en3**2 + en4**2)
+        old_e = 0.5 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
+        new_e = 0.5 * (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
         if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+
+          !write (*,*) "x-y plane rot:"
+          !write (*,*) x, y, z
+          !write (*,*) x, neg(y), z
+          !write (*,*) neg(x), y, z
 
           e_x(x,y,z) = en1
           e_y(x,y,z) = en2
@@ -333,6 +349,11 @@ subroutine upcan()
 
         if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
+          !write (*,*) "x-z plane rot:"
+          !write (*,*) x, y, z
+          !write (*,*) x, y, neg(z)
+          !write (*,*) neg(x), y, z
+
           e_x(x,y,z) = en1
           e_z(x,y,z) = en2
           e_x(x,y,neg(z)) = en3
@@ -359,6 +380,11 @@ subroutine upcan()
 
         if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
+          !write (*,*) "y-z plane rot:"
+          !write (*,*) x, y, z
+          !write (*,*) x, y, neg(z)
+          !write (*,*) x, neg(y), z
+
           e_y(x,y,z) = en1
           e_z(x,y,z) = en2
           e_y(x,y,neg(z)) = en3
@@ -372,7 +398,6 @@ subroutine upcan()
     end do ! end rotational
 
     ! e bar update
-    acceptg = 0
     if (glob.eq.1) then
 
       ! NOTE TO SELF: again this int cast prob needs changing
