@@ -9,6 +9,7 @@ module common
   real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
   real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
+  real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
   ! probably more things need to go here
   character(len=11), public :: lattfile
 

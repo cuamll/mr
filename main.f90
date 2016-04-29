@@ -86,6 +86,8 @@ program mr
 
   write(*,*)
 
+  call write_output
+
   stop
 
 end program mr
@@ -95,19 +97,35 @@ subroutine upcan()
   implicit none
   integer :: x,y,z,n,charge,glob,i,j,k,m
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
+  real*8 :: u_tot_run
   real*8 :: hop_inc, old_e, new_e, delta_e, utotal, totq,g_thr
   real :: chooser, delta
 
   glob = 0
   totq = 0
   utotal = 0.0
+  u_tot_run = 0.0
   g_thr = 1 / float(L)
   accepth = 0
   acceptr=0
   acceptg=0
 
+  do i = 1,L
+    do j = 1,L
+      do k = 1,L
+        u_tot_run = u_tot_run + e_x(i,j,k)**2 + &
+                    e_y(i,j,k)**2 + e_z(i,j,k)**2
+      end do
+    end do
+  end do
+
+  energy(1) = u_tot_run
+  sq_energy(1) = u_tot_run**2
+
   ! charge hop sweep
   do n = 1,iterations
+
+  utotal = 0.0
 
     ! charge hop sweep
     do i = 1, L**3
@@ -145,6 +163,7 @@ subroutine upcan()
                 v(neg(x),y,z) = charge
                 v(x,y,z) = 0
                 ebar_x = ebar_x - hop_inc
+                u_tot_run = u_tot_run + 2 * delta_e
 
               end if
             end if
@@ -164,6 +183,7 @@ subroutine upcan()
                 v(pos(x),y,z) = charge
                 v(x,y,z) = 0
                 ebar_x = ebar_x + hop_inc
+                u_tot_run = u_tot_run + 2 * delta_e
 
               end if
             end if
@@ -194,6 +214,7 @@ subroutine upcan()
                 v(x,neg(y),z) = charge
                 v(x,y,z) = 0
                 ebar_y = ebar_y - hop_inc
+                u_tot_run = u_tot_run + 2 * delta_e
 
               end if
             end if
@@ -214,6 +235,7 @@ subroutine upcan()
                 v(x,pos(y),z) = charge
                 v(x,y,z) = 0
                 ebar_y = ebar_y + hop_inc
+                u_tot_run = u_tot_run + 2 * delta_e
 
               end if
             end if
@@ -243,6 +265,7 @@ subroutine upcan()
                 v(x,y,neg(z)) = charge
                 v(x,y,z) = 0
                 ebar_z = ebar_z - hop_inc
+                u_tot_run = u_tot_run + 2 * delta_e
 
               end if
             end if
@@ -262,6 +285,7 @@ subroutine upcan()
                 v(x,y,pos(z)) = charge
                 v(x,y,z) = 0
                 ebar_z = ebar_z + hop_inc
+                u_tot_run = u_tot_run + 2 * delta_e
 
               end if
             end if
@@ -328,6 +352,7 @@ subroutine upcan()
           e_x(x,neg(y),z) = en3
           e_y(neg(x),y,z) = en4
           acceptr = acceptr + 1
+          u_tot_run = u_tot_run + 2 * delta_e
 
         end if ! end of Metropolis check
 
@@ -359,6 +384,7 @@ subroutine upcan()
           e_x(x,y,neg(z)) = en3
           e_z(neg(x),y,z) = en4
           acceptr = acceptr + 1
+          u_tot_run = u_tot_run + 2 * delta_e
 
         end if ! end of Metropolis check
 
@@ -390,6 +416,7 @@ subroutine upcan()
           e_y(x,y,neg(z)) = en3
           e_z(x,neg(y),z) = en4
           acceptr = acceptr + 1
+          u_tot_run = u_tot_run + 2 * delta_e
 
         end if ! end of Metropolis check
 
@@ -422,6 +449,7 @@ subroutine upcan()
                 end do
               end do
             end do
+            u_tot_run = u_tot_run + 2 * delta_e
           end if ! end weird Metropolis block
 
         else
@@ -442,6 +470,7 @@ subroutine upcan()
                 end do
               end do
             end do
+            u_tot_run = u_tot_run + 2 * delta_e
           end if ! end weird Metropolis block
         end if
 
@@ -465,6 +494,7 @@ subroutine upcan()
                 end do
               end do
             end do
+            u_tot_run = u_tot_run + 2 * delta_e
           end if ! end weird Metropolis block
 
         else
@@ -485,6 +515,7 @@ subroutine upcan()
                 end do
               end do
             end do
+            u_tot_run = u_tot_run + 2 * delta_e
           end if ! end weird Metropolis block
         end if
 
@@ -508,6 +539,7 @@ subroutine upcan()
                 end do
               end do
             end do
+            u_tot_run = u_tot_run + 2 * delta_e
           end if ! end weird Metropolis block
 
         else
@@ -528,6 +560,7 @@ subroutine upcan()
                 end do
               end do
             end do
+            u_tot_run = u_tot_run + 2 * delta_e
           end if ! end weird Metropolis block
         end if
 
@@ -535,7 +568,12 @@ subroutine upcan()
 
     end if ! end glob.eq.1 block
 
+  energy(n + 1) = u_tot_run
+  sq_energy(n + 1) = u_tot_run**2
+
   end do ! end iteration loop
+
+  utotal = 0.0
 
   do j = 1,L
     do k = 1,L
