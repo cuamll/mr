@@ -44,6 +44,8 @@ module io
   end subroutine read_input
 
   subroutine write_output
+
+    ! guess what this one does
     use common
     implicit none
     character(10) :: energy_filename
@@ -51,7 +53,10 @@ module io
     integer :: i
     real*8 :: avg_e, avg_e2, prefac, sp_he
 
-    ! guess what this one does
+    avg_e = 0.0
+    avg_e2 = 0.0
+    sp_he = 0.0
+
     energy_filename = "energy.out"
     sq_energy_filename = "sq_energy.out"
 
@@ -72,14 +77,23 @@ module io
       avg_e2 = avg_e2 + sq_energy(i)
     end do
 
+    write (*,*) "<U_tot> = ", avg_e / iterations
+    write (*,*) "N T = ",L**3 * temp
+
     avg_e = avg_e / (iterations * L**3)
     avg_e2 = avg_e2 / (iterations * L**3 * L**3)
 
-    ! this prefactor is wrong somehow - gas constant???
-    prefac = (L**3) / (temp**2)
-    sp_he = prefac * (avg_e2 - (avg_e * avg_e))
+    ! prefactor troubles
+    prefac = 1.0 / (L**3 * temp**2)
 
-    write (*,*) "specific heat = ",sp_he
+    write(*,*) "avg_e after normalisation = ",avg_e
+    write(*,*) "avg_e^2 after normalisation = ",avg_e2
+    write(*,*) "prefactor = ",prefac
+
+    sp_he = prefac * ((avg_e2) - ((avg_e)**2))
+
+    write (*,*) "sp. heat (C) = ",sp_he
+    write (*,*) "C / (N) = ",sp_he / (L**3)
 
     close(2)
     close(3)

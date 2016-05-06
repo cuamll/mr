@@ -163,7 +163,7 @@ subroutine upcan()
                 v(neg(x),y,z) = charge
                 v(x,y,z) = 0
                 ebar_x = ebar_x - hop_inc
-                u_tot_run = u_tot_run + 2 * delta_e
+                u_tot_run = u_tot_run + delta_e
 
               end if
             end if
@@ -183,7 +183,7 @@ subroutine upcan()
                 v(pos(x),y,z) = charge
                 v(x,y,z) = 0
                 ebar_x = ebar_x + hop_inc
-                u_tot_run = u_tot_run + 2 * delta_e
+                u_tot_run = u_tot_run + delta_e
 
               end if
             end if
@@ -214,7 +214,7 @@ subroutine upcan()
                 v(x,neg(y),z) = charge
                 v(x,y,z) = 0
                 ebar_y = ebar_y - hop_inc
-                u_tot_run = u_tot_run + 2 * delta_e
+                u_tot_run = u_tot_run + delta_e
 
               end if
             end if
@@ -235,7 +235,7 @@ subroutine upcan()
                 v(x,pos(y),z) = charge
                 v(x,y,z) = 0
                 ebar_y = ebar_y + hop_inc
-                u_tot_run = u_tot_run + 2 * delta_e
+                u_tot_run = u_tot_run + delta_e
 
               end if
             end if
@@ -265,7 +265,7 @@ subroutine upcan()
                 v(x,y,neg(z)) = charge
                 v(x,y,z) = 0
                 ebar_z = ebar_z - hop_inc
-                u_tot_run = u_tot_run + 2 * delta_e
+                u_tot_run = u_tot_run + delta_e
 
               end if
             end if
@@ -285,7 +285,7 @@ subroutine upcan()
                 v(x,y,pos(z)) = charge
                 v(x,y,z) = 0
                 ebar_z = ebar_z + hop_inc
-                u_tot_run = u_tot_run + 2 * delta_e
+                u_tot_run = u_tot_run + delta_e
 
               end if
             end if
@@ -352,7 +352,7 @@ subroutine upcan()
           e_x(x,neg(y),z) = en3
           e_y(neg(x),y,z) = en4
           acceptr = acceptr + 1
-          u_tot_run = u_tot_run + 2 * delta_e
+          u_tot_run = u_tot_run + delta_e
 
         end if ! end of Metropolis check
 
@@ -384,7 +384,7 @@ subroutine upcan()
           e_x(x,y,neg(z)) = en3
           e_z(neg(x),y,z) = en4
           acceptr = acceptr + 1
-          u_tot_run = u_tot_run + 2 * delta_e
+          u_tot_run = u_tot_run + delta_e
 
         end if ! end of Metropolis check
 
@@ -416,7 +416,7 @@ subroutine upcan()
           e_y(x,y,neg(z)) = en3
           e_z(x,neg(y),z) = en4
           acceptr = acceptr + 1
-          u_tot_run = u_tot_run + 2 * delta_e
+          u_tot_run = u_tot_run + delta_e
 
         end if ! end of Metropolis check
 
@@ -449,7 +449,7 @@ subroutine upcan()
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + 2 * delta_e
+            u_tot_run = u_tot_run + delta_e
           end if ! end weird Metropolis block
 
         else
@@ -470,7 +470,7 @@ subroutine upcan()
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + 2 * delta_e
+            u_tot_run = u_tot_run + delta_e
           end if ! end weird Metropolis block
         end if
 
@@ -494,7 +494,7 @@ subroutine upcan()
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + 2 * delta_e
+            u_tot_run = u_tot_run + delta_e
           end if ! end weird Metropolis block
 
         else
@@ -515,7 +515,7 @@ subroutine upcan()
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + 2 * delta_e
+            u_tot_run = u_tot_run + delta_e
           end if ! end weird Metropolis block
         end if
 
@@ -539,7 +539,7 @@ subroutine upcan()
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + 2 * delta_e
+            u_tot_run = u_tot_run + delta_e
           end if ! end weird Metropolis block
 
         else
@@ -560,7 +560,7 @@ subroutine upcan()
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + 2 * delta_e
+            u_tot_run = u_tot_run + delta_e
           end if ! end weird Metropolis block
         end if
 
