@@ -50,12 +50,13 @@ module io
     implicit none
     character(10) :: energy_filename
     character(13) :: sq_energy_filename
-    integer :: i
+    integer :: i, N
     real*8 :: avg_e, avg_e2, prefac, sp_he
 
     avg_e = 0.0
     avg_e2 = 0.0
     sp_he = 0.0
+    N = 3 * L**3
 
     energy_filename = "energy.out"
     sq_energy_filename = "sq_energy.out"
@@ -78,13 +79,13 @@ module io
     end do
 
     write (*,*) "<U_tot> = ", avg_e / iterations
-    write (*,*) "N T = ",L**3 * temp
+    write (*,*) "N T = ",N * temp
 
-    avg_e = avg_e / (iterations * L**3)
-    avg_e2 = avg_e2 / (iterations * L**3 * L**3)
+    avg_e = avg_e / (iterations * N)
+    avg_e2 = avg_e2 / (iterations * N**2)
 
     ! prefactor troubles
-    prefac = 1.0 / (L**3 * temp**2)
+    prefac = 1.0 * N / (temp**2)
 
     write(*,*) "avg_e after normalisation = ",avg_e
     write(*,*) "avg_e^2 after normalisation = ",avg_e2

@@ -97,7 +97,7 @@ subroutine upcan()
   implicit none
   integer :: x,y,z,n,charge,glob,i,j,k,m
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot_run
+  real*8 :: u_tot_run,avg_e,avg_e2
   real*8 :: hop_inc, old_e, new_e, delta_e, utotal, totq,g_thr
   real :: chooser, delta
 
@@ -121,6 +121,8 @@ subroutine upcan()
 
   energy(1) = u_tot_run
   sq_energy(1) = u_tot_run**2
+
+  write(*,*) "en, sq. en = ",energy(1),sq_energy(1)
 
   ! charge hop sweep
   do n = 1,iterations
@@ -571,6 +573,31 @@ subroutine upcan()
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
 
+  !sq_energy(n + 1) = 0.0
+
+  !do j=1,L
+  !  do k = 1,L
+  !    do m = 1,L
+
+  !      sq_energy(n + 1) = sq_energy(n + 1) + 0.25 * &
+  !                   (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)**2
+
+  !    end do
+  !  end do
+  !end do
+
+  avg_e = 0.0
+  avg_e2 = 0.0
+  do m=1,n+1
+    avg_e = avg_e + energy(m)
+    avg_e2 = avg_e2 + sq_energy(m)
+  end do
+
+  avg_e = avg_e/ (n + 1)
+  avg_e2 = avg_e2/ (n + 1)
+
+  write(*,*) "<U^2>, <U>^2 = ",avg_e2,avg_e*avg_e
+
   end do ! end iteration loop
 
   utotal = 0.0
@@ -579,7 +606,7 @@ subroutine upcan()
     do k = 1,L
       ! write (*,*) v(j,k,1:L)
       do m = 1,L
-        utotal = utotal + e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2
+        utotal = utotal + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
         totq = totq + abs(v(j,k,m))
         if (v(j,k,m).ne.0) then
           write (*,*) j, k, m, v(j,k,m)
