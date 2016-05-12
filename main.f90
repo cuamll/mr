@@ -7,10 +7,11 @@ program mr
   use linear_solver
   use io
   implicit none
-  integer :: i, j, k, row, col
+  integer :: i, j, k, row, col, tot_q
   real :: u_rot
   integer, dimension(:,:), allocatable :: v_temp
 
+  tot_q = 0
   ebar_x  =  0.0
   ebar_y  =  0.0
   ebar_z  =  0.0
@@ -49,7 +50,34 @@ program mr
 
   call randinit(seed)
 
-  call linsol
+  do i = 1,L
+    do j = 1,L
+      do k = 1,L
+
+        tot_q = tot_q + abs(v(i,j,k))
+
+      end do
+    end do
+  end do
+
+  if (tot_q.ne.0) then
+    call linsol
+  else
+    do i = 1,L
+      do j = 1,L
+        do k = 1,L
+
+          mnphi_x(i,j,k) = 0.0
+          mnphi_y(i,j,k) = 0.0
+          mnphi_z(i,j,k) = 0.0
+          e_x(i,j,k) = 0.0
+          e_y(i,j,k) = 0.0
+          e_z(i,j,k) = 0.0
+
+        end do
+      end do
+    end do
+  end if
 
   ! set e_x to irrotational - temporary solution
   do i = 1,L
@@ -68,7 +96,9 @@ program mr
 
   call upcan()
 
-  call linsol
+  if (tot_q.ne.0) then
+    call linsol
+  end if
 
   do i = 1,L
     do j = 1,L
@@ -97,7 +127,7 @@ subroutine upcan()
   implicit none
   integer :: x,y,z,n,charge,glob,i,j,k,m
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot_run,avg_e,avg_e2
+  real*8 :: u_tot,u_tot_run,avg_e,avg_e2
   real*8 :: hop_inc, old_e, new_e, delta_e, utotal, totq,g_thr
   real :: chooser, delta
 
@@ -570,21 +600,30 @@ subroutine upcan()
 
     end if ! end glob.eq.1 block
 
-  energy(n + 1) = u_tot_run
-  sq_energy(n + 1) = u_tot_run**2
+  u_tot = 0.0
+  do j = 1,L
+    do k = 1,L
+      do m = 1,L
 
-  !sq_energy(n + 1) = 0.0
+        delta = 2 * (rand() - 0.5)
+        e_x(j,k,m) = delta
 
-  !do j=1,L
-  !  do k = 1,L
-  !    do m = 1,L
+        delta = 2 * (rand() -0.5)
+        e_y(j,k,m) = delta
 
-  !      sq_energy(n + 1) = sq_energy(n + 1) + 0.25 * &
-  !                   (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)**2
+        delta = 2 * (rand() -0.5)
+        e_z(j,k,m) = delta
 
-  !    end do
-  !  end do
-  !end do
+        u_tot = u_tot + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
+
+      end do
+    end do
+  end do
+
+  ! replace with u_tot_run
+  energy(n + 1) = u_tot
+  sq_energy(n + 1) = u_tot**2
+
 
   avg_e = 0.0
   avg_e2 = 0.0
@@ -596,7 +635,7 @@ subroutine upcan()
   avg_e = avg_e/ (n + 1)
   avg_e2 = avg_e2/ (n + 1)
 
-  write(*,*) "<U^2>, <U>^2 = ",avg_e2,avg_e*avg_e
+  !write(*,*) "<U^2>, <U>^2, ratio = ",avg_e2,avg_e*avg_e,(avg_e2/(avg_e**2))
 
   end do ! end iteration loop
 

@@ -50,13 +50,13 @@ module io
     implicit none
     character(10) :: energy_filename
     character(13) :: sq_energy_filename
-    integer :: i, N
+    integer*8 :: i, N
     real*8 :: avg_e, avg_e2, prefac, sp_he
 
     avg_e = 0.0
     avg_e2 = 0.0
     sp_he = 0.0
-    N = 3 * L**3
+    N = L**3
 
     energy_filename = "energy.out"
     sq_energy_filename = "sq_energy.out"
@@ -78,7 +78,9 @@ module io
       avg_e2 = avg_e2 + sq_energy(i)
     end do
 
-    write (*,*) "<U_tot> = ", avg_e / iterations
+    write (*,*) "<U> = ", avg_e / iterations
+    write (*,*) "sum U^2 / iter = ",avg_e2 / iterations
+    write (*,*) "N^2 = ",N**2
     write (*,*) "N T = ",N * temp
 
     avg_e = avg_e / (iterations * N)
@@ -95,6 +97,9 @@ module io
 
     write (*,*) "sp. heat (C) = ",sp_he
     write (*,*) "C / (N) = ",sp_he / (L**3)
+
+
+    write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
 
     close(2)
     close(3)
