@@ -100,19 +100,19 @@ program mr
     call linsol
   end if
 
-  do i = 1,L
-    do j = 1,L
-      do k = 1,L
+  !do i = 1,L
+  !  do j = 1,L
+  !    do k = 1,L
 
-        u_rot = u_rot + (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
-        (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
-        (e_z(i,j,k) - mnphi_z(i,j,k))**2
+  !      u_rot = u_rot + (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
+  !      (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
+  !      (e_z(i,j,k) - mnphi_z(i,j,k))**2
 
-      end do
-    end do
-  end do
+  !    end do
+  !  end do
+  !end do
 
-  write (*,*) 'u_rot. = ',u_rot
+  !write (*,*) 'u_rot. = ',u_rot
 
   write(*,*)
 
@@ -151,8 +151,6 @@ subroutine upcan()
 
   energy(1) = u_tot_run
   sq_energy(1) = u_tot_run**2
-
-  write(*,*) "en, sq. en = ",energy(1),sq_energy(1)
 
   ! charge hop sweep
   do n = 1,iterations
@@ -600,29 +598,29 @@ subroutine upcan()
 
     end if ! end glob.eq.1 block
 
-  u_tot = 0.0
-  do j = 1,L
-    do k = 1,L
-      do m = 1,L
+  !u_tot = 0.0
+  !do j = 1,L
+  !  do k = 1,L
+  !    do m = 1,L
 
-        delta = 2 * (rand() - 0.5)
-        e_x(j,k,m) = delta
+  !      delta = 2 * (rand() - 0.5)
+  !      e_x(j,k,m) = delta
 
-        delta = 2 * (rand() -0.5)
-        e_y(j,k,m) = delta
+  !      delta = 2 * (rand() -0.5)
+  !      e_y(j,k,m) = delta
 
-        delta = 2 * (rand() -0.5)
-        e_z(j,k,m) = delta
+  !      delta = 2 * (rand() -0.5)
+  !      e_z(j,k,m) = delta
 
-        u_tot = u_tot + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
+  !      u_tot = u_tot + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
 
-      end do
-    end do
-  end do
+  !    end do
+  !  end do
+  !end do
 
   ! replace with u_tot_run
-  energy(n + 1) = u_tot
-  sq_energy(n + 1) = u_tot**2
+  energy(n + 1) = u_tot_run
+  sq_energy(n + 1) = u_tot_run**2
 
 
   avg_e = 0.0
@@ -639,23 +637,22 @@ subroutine upcan()
 
   end do ! end iteration loop
 
-  utotal = 0.0
+  !utotal = 0.0
 
-  do j = 1,L
-    do k = 1,L
-      ! write (*,*) v(j,k,1:L)
-      do m = 1,L
-        utotal = utotal + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
-        totq = totq + abs(v(j,k,m))
-        if (v(j,k,m).ne.0) then
-          write (*,*) j, k, m, v(j,k,m)
-        end if
-      end do
-    end do
-  end do
-  write (*,*) '----- final results -----'
-  write(*,*) 'U_tot = ',utotal
-  write (*,*) 'total charge = ',totq
+  !do j = 1,L
+  !  do k = 1,L
+  !    ! write (*,*) v(j,k,1:L)
+  !    do m = 1,L
+  !      utotal = utotal + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
+  !      totq = totq + abs(v(j,k,m))
+  !      if (v(j,k,m).ne.0) then
+  !        write (*,*) j, k, m, v(j,k,m)
+  !      end if
+  !    end do
+  !  end do
+  !end do
+  write (*,*)
+  write (*,*) '----- move stats -----'
   write (*,*) 'hop moves  = ',accepth,float(accepth) / (iterations * totq)
   write (*,*) 'rot moves  = ',acceptr,float(acceptr) / (iterations * L**3 * rot_ratio)
   write (*,*) 'ebar moves = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio)

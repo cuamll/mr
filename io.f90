@@ -79,8 +79,8 @@ module io
     end do
 
     write (*,*) "<U> = ", avg_e / iterations
-    write (*,*) "sum U^2 / iter = ",avg_e2 / iterations
-    write (*,*) "N^2 = ",N**2
+    !write (*,*) "sum U^2 / iter = ",avg_e2 / iterations
+    !write (*,*) "N^2 = ",N**2
     write (*,*) "N T = ",N * temp
 
     avg_e = avg_e / (iterations * N)
@@ -89,17 +89,19 @@ module io
     ! prefactor troubles
     prefac = 1.0 * N / (temp**2)
 
-    write(*,*) "avg_e after normalisation = ",avg_e
-    write(*,*) "avg_e^2 after normalisation = ",avg_e2
+    write(*,*)
+    write(*,*) "<U> norm. = ",avg_e
+    write(*,*) "<U>^2 norm. = ",avg_e**2
+    write(*,*) "<U^2> norm. = ",avg_e2
     write(*,*) "prefactor = ",prefac
+    write(*,*)
 
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
     write (*,*) "sp. heat (C) = ",sp_he
     write (*,*) "C / (N) = ",sp_he / (L**3)
-
-
     write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
+    write(*,*)
 
     close(2)
     close(3)
