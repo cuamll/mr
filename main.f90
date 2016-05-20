@@ -17,8 +17,6 @@ program mr
   ebar_z  =  0.0
   u_rot = 0.0
 
-  write(*,*)
-
   call read_input
 
   allocate(v(L,L,L))
@@ -101,19 +99,19 @@ program mr
     call linsol
   end if
 
-  !do i = 1,L
-  !  do j = 1,L
-  !    do k = 1,L
+  do i = 1,L
+    do j = 1,L
+      do k = 1,L
 
-  !      u_rot = u_rot + (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
-  !      (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
-  !      (e_z(i,j,k) - mnphi_z(i,j,k))**2
+        u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
+        (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
+        (e_z(i,j,k) - mnphi_z(i,j,k))**2
 
-  !    end do
-  !  end do
-  !end do
+      end do
+    end do
+  end do
 
-  !write (*,*) 'u_rot. = ',u_rot
+  write (*,*) 'u_rot. = ',u_rot
 
   write(*,*)
 
@@ -142,11 +140,19 @@ subroutine upcan()
   acceptg=0
   one=1.0
 
+  write(*,*)
+  write(*,*) " --- start: charge positions ---"
+
   do i = 1,L
     do j = 1,L
       do k = 1,L
         u_tot_run = u_tot_run + e_x(i,j,k)**2 + &
                     e_y(i,j,k)**2 + e_z(i,j,k)**2
+
+        totq = totq + abs(v(j,k,m))
+        if (v(i,j,k).ne.0) then
+          write (*,*) i, j, k, v(i,j,k)
+        end if
       end do
     end do
   end do
@@ -676,24 +682,24 @@ subroutine upcan()
 
   end do ! end iteration loop
 
-  !utotal = 0.0
+  write(*,*)
+  write(*,*) " --- end: charge positions ---"
 
-  !do j = 1,L
-  !  do k = 1,L
-  !    ! write (*,*) v(j,k,1:L)
-  !    do m = 1,L
-  !      utotal = utotal + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
-  !      totq = totq + abs(v(j,k,m))
-  !      if (v(j,k,m).ne.0) then
-  !        write (*,*) j, k, m, v(j,k,m)
-  !      end if
-  !    end do
-  !  end do
-  !end do
+  do j = 1,L
+    do k = 1,L
+      do m = 1,L
+        totq = totq + abs(v(j,k,m))
+        if (v(j,k,m).ne.0) then
+          write (*,*) j, k, m, v(j,k,m)
+        end if
+      end do
+    end do
+  end do
+
   write (*,*)
   write (*,*) '----- move stats -----'
-  !write (*,*) 'hop moves  = ',accepth,float(accepth) / (iterations * totq)
+  write (*,*) 'hop moves  = ',accepth,float(accepth) / (iterations * totq)
   write (*,*) 'rot moves  = ',acceptr,float(acceptr) / (iterations * L**3 * rot_ratio)
-  !write (*,*) 'ebar moves = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio)
+  write (*,*) 'ebar moves = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio)
 
 end subroutine upcan

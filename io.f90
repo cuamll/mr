@@ -30,6 +30,8 @@ module io
       allocate(energy_run(iterations + 1))
       allocate(sq_energy(iterations + 1))
 
+      write(*,*)
+      write(*,*) " --- input parameters ---"
       write (*,*) 'L = ',L
       write (*,*) 'T = ',temp
       write (*,*) 'iter = ',iterations
@@ -91,6 +93,7 @@ module io
     prefac = 1.0 * N / (temp**2)
 
     write(*,*)
+    write(*,*) " --- averages and specific heat ---"
     write(*,*) "<U> norm. = ",avg_e
     write(*,*) "<U>^2 norm. = ",avg_e**2
     write(*,*) "<U^2> norm. = ",avg_e2

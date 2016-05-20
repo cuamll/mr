@@ -75,8 +75,8 @@ module linear_solver
         ebar_y=ebar_y+mnphi_x(a,b,c)
         ebar_z=ebar_z+mnphi_x(a,b,c)
 
-        u_tot=u_tot+mnphi_x(a,b,c)**2&
-              +mnphi_y(a,b,c)**2+mnphi_z(a,b,c)**2
+        u_tot=u_tot+0.5*(mnphi_x(a,b,c)**2&
+              +mnphi_y(a,b,c)**2+mnphi_z(a,b,c)**2)
 
       end do ! c do loop
     end do ! b do loop
@@ -84,12 +84,11 @@ module linear_solver
 
   nch=nch/L**3 ! bc we count nch once for each abc
 
+  write(*,*)
+  write(*,*) " --- linear solver results ---"
   write (*,*) 'irrot E_ij^2 =',u_tot
-
   write(*,*) "self_e from lgf(0) * n charges = ",u_self
-
   write(*,*) 'u_int calculated in loop = ',u_int
-
   write (*,*) 'V*Ebar^2 = ',L**3*ebar_x**2+ebar_y**2+ebar_z**2
 
   deallocate(cosine)
