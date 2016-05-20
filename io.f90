@@ -52,8 +52,9 @@ module io
     use common
     implicit none
     character(10) :: energy_filename
+    character(11) :: efield_filename
     character(13) :: sq_energy_filename
-    integer*8 :: i, N
+    integer*8 :: i, j, k, N
     real*8 :: avg_e, avg_e2, prefac, sp_he
 
     avg_e = 0.0
@@ -63,9 +64,11 @@ module io
 
     energy_filename = "energy.out"
     sq_energy_filename = "sq_energy.out"
+    efield_filename = "e_field.out"
 
     open(unit=2, file=energy_filename)
     open(unit=3, file=sq_energy_filename)
+    open(unit=4, file=efield_filename)
 
     ! write out the parameters in the energy file
     write (2,*) "L",L
@@ -77,14 +80,25 @@ module io
     do i = 1,iterations + 1
       write(2,*) i - 1, energy(i)
       write(3,*) i - 1, sq_energy(i)
+
       avg_e = avg_e + energy(i)
       avg_e2 = avg_e2 + sq_energy(i)
     end do
 
-    write (*,*) "<U> = ", avg_e / iterations
+    do i = 1,L
+      do j = 1,L
+        do k = 1,L
+
+        write (4,*) i, j, k, e_x(i,j,k), e_y(i,j,k), e_z(i,j,k)
+
+        end do
+      end do
+    end do
+
+    !write (*,*) "<U> = ", avg_e / iterations
     !write (*,*) "sum U^2 / iter = ",avg_e2 / iterations
     !write (*,*) "N^2 = ",N**2
-    write (*,*) "N T = ",N * temp
+    !write (*,*) "N T = ",N * temp
 
     avg_e = avg_e / (iterations * N)
     avg_e2 = avg_e2 / (iterations * N**2)
@@ -94,18 +108,18 @@ module io
 
     write(*,*)
     write(*,*) " --- averages and specific heat ---"
-    write(*,*) "<U> norm. = ",avg_e
-    write(*,*) "<U>^2 norm. = ",avg_e**2
-    write(*,*) "<U^2> norm. = ",avg_e2
-    write(*,*) "prefactor = ",prefac
+    !write(*,*) "<U> norm. = ",avg_e
+    !write(*,*) "<U>^2 norm. = ",avg_e**2
+    !write(*,*) "<U^2> norm. = ",avg_e2
+    !write(*,*) "prefactor = ",prefac
     write(*,*)
 
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
     write (*,*) "sp. heat (C) = ",sp_he
-    write (*,*) "C / (N) = ",sp_he / (L**3)
-    write (*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
-    write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
+    !write (*,*) "C / (N) = ",sp_he / (L**3)
+    !write (*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
+    !write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
     write(*,*)
 
     close(2)

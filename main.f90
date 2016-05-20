@@ -103,6 +103,7 @@ program mr
     do j = 1,L
       do k = 1,L
 
+      ! this doesn't seem right
         u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
         (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
         (e_z(i,j,k) - mnphi_z(i,j,k))**2
