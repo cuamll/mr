@@ -160,7 +160,7 @@ subroutine upcan()
   utotal = 0.0
 
     ! charge hop sweep
-    do i = 1, L**3
+    do i = 1, int(L**3 * hop_ratio)
 
       ! pick a random site
       x = int(rand() * L) + 1

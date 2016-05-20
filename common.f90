@@ -14,7 +14,7 @@ module common
   character(len=11), public :: lattfile
 
   integer, public :: have_lgf = 0
-  real*8, public :: rot_ratio, g_ratio
+  real*8, public :: rot_ratio, g_ratio, hop_ratio
   real, parameter, public :: eps_0=1.0
   real, parameter, public :: pi=3.141592653589793
   real, parameter, public :: twopi=6.283185307179586

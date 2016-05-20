@@ -19,6 +19,7 @@ module io
       read(1,*) rot_delt
       read(1,*) lattfile
       read(1,*) seed
+      read(1,*) hop_ratio
       read(1,*) rot_ratio
       read(1,*) g_ratio
 
