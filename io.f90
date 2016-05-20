@@ -100,6 +100,7 @@ module io
 
     write (*,*) "sp. heat (C) = ",sp_he
     write (*,*) "C / (N) = ",sp_he / (L**3)
+    write (*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
     write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
     write(*,*)
 
