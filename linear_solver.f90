@@ -163,4 +163,104 @@ module linear_solver
   have_lgf=1
 
   end subroutine lgfcalc
+
+  subroutine linalg
+
+    ! use LAPACK to solve Poisson equation
+    use common
+    implicit none
+    real*8, dimension(:), allocatable :: phi, rho
+    integer*8, dimension(:,:), allocatable :: grad_sq
+    integer*8 :: i,j,k,x
+    integer*8 :: coord(3)
+    integer*8, dimension(4,4) :: testmat
+
+    allocate(phi(L**3))
+    allocate(rho(L**3))
+    allocate(grad_sq(L**3,L**3))
+
+    write(*,*)
+    write(*,*) " --- LAPACK Poisson solution ---"
+
+    ! initialise potential & grad_sq to zero just in case
+    do i = 1,L
+      phi(i) = 0.0
+      do j = 1,L
+        grad_sq(i,j) = 0
+        do k = 1,L
+
+          x = (i - 1)*L**2 + (j - 1)*L + k
+
+          ! - grad^2 phi = rho/e_0
+          rho(x) = (1) * float(v(i,j,k))
+          !write (*,*) "i,j,k,x,backward",i,j,k,x,(((x-1)/L**2)+1),(modulo(((x-1)/L),L)+1),modulo(x-1,L)+1
+          if ((((x-1)/L**2)+1).ne.i.or.(modulo((x-1)/L,L)+1).ne.j.or.(modulo(x-1,L)+1).ne.k) then
+          write(*,*) "one of the indices isn't right, ABORT MISSION"
+        end if
+
+        !coord = (/ i, j, k /)
+        !write(*,*) "test index functions: ",coord(1),coord(2),coord(3),three_to_one(coord),one_to_three(three_to_one(coord))
+
+        end do
+      end do
+    end do
+
+    !do i = 1,4
+    !  do j = 1,4
+
+    !    testmat = reshape( (/ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 /), (/ 4, 4 /) )
+    !    write(*,*) "index shit:",i, j, testmat(i,j)
+
+    !  end do
+    !end do
+
+
+    ! derivatives for laplacian
+    do i = 1,L**3
+      grad_sq(i,i) = 6
+
+      ! positive x neighbour
+      coord = one_to_three(i)
+      !write (*,*) coord(1),coord(2),coord(3),i
+      coord(1) = pos(coord(1))
+      !write (*,*) coord(1),coord(2),coord(3),three_to_one(coord)
+      write (*,*) x,three_to_one(coord)
+      grad_sq(i,three_to_one(coord)) = -1
+
+      ! negative x neighbour
+      coord = one_to_three(i)
+      coord(1) = neg(coord(1))
+      grad_sq(i,three_to_one(coord)) = -1
+
+      ! positive y neighbour
+      coord = one_to_three(i)
+      coord(2) = pos(coord(2))
+      grad_sq(i,three_to_one(coord)) = -1
+
+      ! negative y neighbour
+      coord = one_to_three(i)
+      coord(2) = neg(coord(2))
+      grad_sq(i,three_to_one(coord)) = -1
+
+      ! positive z neighbour
+      coord = one_to_three(i)
+      coord(3) = pos(coord(3))
+      grad_sq(i,three_to_one(coord)) = -1
+
+      ! negative z neighbour
+      coord = one_to_three(i)
+      coord(3) = neg(coord(3))
+      grad_sq(i,three_to_one(coord)) = -1
+
+    end do
+
+    do i = 1,L**3
+      do j = 1,L**3
+        write (*,"(I8.3)",advance="no") grad_sq(i,j)
+      end do
+      write(*,*)
+    end do
+
+  end subroutine linalg
+
 end module linear_solver

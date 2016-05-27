@@ -32,6 +32,20 @@ module common
       return
     end subroutine PBCs
 
+    function one_to_three(x) result(coord)
+      integer*8, intent(in) :: x
+      integer*8 :: coord(3)
+      coord(1) = (x - 1)/L**2 + 1
+      coord(2) = modulo((x - 1)/L,L) + 1
+      coord(3) = modulo(x - 1,L) + 1
+    end function one_to_three
+
+    function three_to_one(coord) result(x)
+      integer*8, intent(in) :: coord(3)
+      integer*8 :: x
+      x = (coord(1) - 1) * L**2 + (coord(2) - 1) * L + coord(3)
+    end function three_to_one
+
 
 
 !----------------------------------------------------------------------C

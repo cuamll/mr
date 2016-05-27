@@ -19,6 +19,7 @@ program mr
 
   call read_input
 
+  ! for some reason allocating these elsewhere doesn't work
   allocate(v(L,L,L))
   allocate(pos(L))
   allocate(neg(L))
@@ -103,7 +104,7 @@ program mr
     do j = 1,L
       do k = 1,L
 
-      ! this doesn't seem right
+      ! does it make sense to do this?
         u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
         (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
         (e_z(i,j,k) - mnphi_z(i,j,k))**2
@@ -116,24 +117,26 @@ program mr
 
   write(*,*)
 
+  call linalg
+
   call write_output
 
   stop
 
 end program mr
 
+! canonical ensemble - MC / Metropolis updates
 subroutine upcan()
   use common
   implicit none
   integer :: x,y,z,n,charge,glob,i,j,k,m,pm1
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
   real*8 :: u_tot,u_tot_run,avg_e,avg_e2,one
-  real*8 :: hop_inc, old_e, new_e, delta_e, utotal, totq,g_thr
+  real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
 
   glob = 0
   totq = 0
-  utotal = 0.0
   u_tot_run = 0.0
   g_thr = 1 / float(L)
   accepth = 0
@@ -163,8 +166,6 @@ subroutine upcan()
 
   ! charge hop sweep
   do n = 1,iterations
-
-  utotal = 0.0
 
     ! charge hop sweep
     do i = 1, int(L**3 * hop_ratio)
