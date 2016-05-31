@@ -32,7 +32,10 @@ program mr
   allocate(e_x(L,L,L))
   allocate(e_y(L,L,L))
   allocate(e_z(L,L,L))
-  allocate(flux(L,L,L))
+  allocate(e_x_lapack(L,L,L))
+  allocate(e_y_lapack(L,L,L))
+  allocate(e_z_lapack(L,L,L))
+  allocate(phi_lapack(L,L,L))
   allocate(lgf(L,L,L,L,L,L))
   allocate(v_temp(L**2,L))
 

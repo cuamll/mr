@@ -6,7 +6,9 @@ module common
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
-  real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z, flux
+  real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
+  real*8, dimension(:,:,:), allocatable, public :: phi_lapack, e_x_lapack
+  real*8, dimension(:,:,:), allocatable, public :: e_y_lapack, e_z_lapack
   real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run

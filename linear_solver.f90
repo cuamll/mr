@@ -169,15 +169,20 @@ module linear_solver
     ! use LAPACK to solve Poisson equation
     use common
     implicit none
+    integer :: INFO
     real*8, dimension(:), allocatable :: phi, rho
-    integer*8, dimension(:,:), allocatable :: grad_sq
+    integer, dimension(:), allocatable :: IPIV_lapack
+    real*8, dimension(:,:), allocatable :: grad_sq
     integer*8 :: i,j,k,x
     integer*8 :: coord(3)
+    real*8 :: lapack_energy
     integer*8, dimension(4,4) :: testmat
 
     allocate(phi(L**3))
     allocate(rho(L**3))
+    allocate(IPIV_lapack(L**3))
     allocate(grad_sq(L**3,L**3))
+    INFO = 0
 
     write(*,*)
     write(*,*) " --- LAPACK Poisson solution ---"
@@ -217,49 +222,87 @@ module linear_solver
 
     ! derivatives for laplacian
     do i = 1,L**3
-      grad_sq(i,i) = 6
+      grad_sq(i,i) = 6.0
 
       ! positive x neighbour
       coord = one_to_three(i)
       !write (*,*) coord(1),coord(2),coord(3),i
       coord(1) = pos(coord(1))
       !write (*,*) coord(1),coord(2),coord(3),three_to_one(coord)
-      write (*,*) x,three_to_one(coord)
-      grad_sq(i,three_to_one(coord)) = -1
+      grad_sq(i,three_to_one(coord)) = -1.0
 
       ! negative x neighbour
       coord = one_to_three(i)
       coord(1) = neg(coord(1))
-      grad_sq(i,three_to_one(coord)) = -1
+      grad_sq(i,three_to_one(coord)) = -1.0
 
       ! positive y neighbour
       coord = one_to_three(i)
       coord(2) = pos(coord(2))
-      grad_sq(i,three_to_one(coord)) = -1
+      grad_sq(i,three_to_one(coord)) = -1.0
 
       ! negative y neighbour
       coord = one_to_three(i)
       coord(2) = neg(coord(2))
-      grad_sq(i,three_to_one(coord)) = -1
+      grad_sq(i,three_to_one(coord)) = -1.0
 
       ! positive z neighbour
       coord = one_to_three(i)
       coord(3) = pos(coord(3))
-      grad_sq(i,three_to_one(coord)) = -1
+      grad_sq(i,three_to_one(coord)) = -1.0
 
       ! negative z neighbour
       coord = one_to_three(i)
       coord(3) = neg(coord(3))
-      grad_sq(i,three_to_one(coord)) = -1
+      grad_sq(i,three_to_one(coord)) = -1.0
 
     end do
 
+    !do i = 1,L**3
+    !  do j = 1,L**3
+    !    write (*,"(I8.3)",advance="no") grad_sq(i,j)
+    !  end do
+    !  write(*,*)
+    !end do
+
+    ! solve
+    call dgesv(L**3,1,grad_sq,L**3,IPIV_lapack,rho,L**3,INFO)
+    !call dpbsv('U',L**3,L**3-1,1,AB_lapack,L**3,rho,L**3,INFO)
+    write (*,*) "lapack ran - INFO = ",INFO
+
+    ! translate back to 3d array
     do i = 1,L**3
-      do j = 1,L**3
-        write (*,"(I8.3)",advance="no") grad_sq(i,j)
-      end do
-      write(*,*)
+      coord = one_to_three(i)
+      phi_lapack(coord(1),coord(2),coord(3)) = rho(i)
     end do
+
+    write(*,*) " --- LAPACK - E fields ---"
+    ! take grad to get fields
+    do i = 1,L
+      do j = 1,L
+        do k = 1,L
+          e_x_lapack(i,j,k) = (phi_lapack(pos(i),j,k) &
+                              - phi_lapack(i,j,k))/lambda
+          e_y_lapack(i,j,k) = (phi_lapack(i,pos(j),k) &
+                              - phi_lapack(i,j,k))/lambda
+          e_z_lapack(i,j,k) = (phi_lapack(i,j,pos(k)) &
+                              - phi_lapack(i,j,k))/lambda
+          !e_x_lapack(i,j,k) = (phi_lapack(i,j,k) &
+          !                    - phi_lapack(neg(i),j,k))/lambda
+          !e_y_lapack(i,j,k) = (phi_lapack(i,j,k) &
+          !                    - phi_lapack(i,neg(j),k))/lambda
+          !e_z_lapack(i,j,k) = (phi_lapack(i,j,k) &
+          !                    - phi_lapack(i,j,neg(k)))/lambda
+          lapack_energy = lapack_energy + 0.5 * (e_x_lapack(i,j,k)**2 &
+                        + e_y_lapack(i,j,k)**2 + e_z_lapack(i,j,k)**2)
+          write (*,*) i,j,k,e_x_lapack(i,j,k),mnphi_x(i,j,k)
+        end do
+      end do
+    end do
+
+    write(*,*)
+
+    write (*,*) "lapack energy: ",lapack_energy
 
   end subroutine linalg
 

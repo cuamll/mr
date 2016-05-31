@@ -108,7 +108,7 @@ module io
 
     write(*,*)
     write(*,*) " --- averages and specific heat ---"
-    !write(*,*) "<U> norm. = ",avg_e
+    write(*,*) "<U> norm. = ",avg_e
     !write(*,*) "<U>^2 norm. = ",avg_e**2
     !write(*,*) "<U^2> norm. = ",avg_e2
     !write(*,*) "prefactor = ",prefac
