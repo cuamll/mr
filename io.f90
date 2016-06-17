@@ -23,6 +23,12 @@ module io
       read(1,*) rot_ratio
       read(1,*) g_ratio
 
+      ! Check L is even
+      if (modulo(L,2)==1) then
+        write(*,*) "L is odd - try again"
+        STOP
+      end if
+
       ! set up other variables, allocations etc.
       volume = lambda**3
       beta = 1.0 / temp
@@ -125,6 +131,76 @@ module io
     close(2)
     close(3)
 
+    call correlations
+
   end subroutine write_output
+
+  subroutine correlations
+
+    ! calculate charge-charge correlations, I guess
+    ! Fourier transform the field and then time average
+    ! Project out transverse part, it should be flat
+    ! Longitudinal part should display pinch points
+    ! Width of pinch points --> charge density
+    use common
+    implicit none
+    real*8, dimension(:,:,:), allocatable :: e_kx, e_ky, e_kz
+    !real*8, dimension(:,:,:,:), allocatable :: real_vec, k_vec
+    integer :: i, j, k, m, n, p
+    complex*16 :: imag, kdotx
+
+    imag = (0.0,1.0)
+
+    ! I think L + 1, to allow for components with k_mu = 0?
+    ! Need to be careful of K = (0,0,0) though
+    ! can i allocate here? not actually sure
+    allocate(e_kx(L+1,L+1,L+1))
+    allocate(e_ky(L+1,L+1,L+1))
+    allocate(e_kz(L+1,L+1,L+1))
+
+    ! Fourier transform
+    do i = -L/2, L/2
+      do j = -L/2, L/2
+        do k = -L/2, L/2
+
+          e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = 0.0
+          e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = 0.0
+          e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = 0.0
+
+          ! vec(q) = vec(0) term:
+          if (i.eq.0.and.j.eq.0.and.k.eq.0) then
+            write (*,*) "q=0 term; need to work this out"
+            write (*,*) "e_kx(",i,j,k,") = ",e_kx(i,j,k)
+            CYCLE
+          end if
+
+          ! m,n,p are the real space coordinates
+          do m = 1,L
+            do n = 1,L
+              do p = 1,L
+
+                kdotx = ((-1)*imag*((2*pi*(m-1)*i/(L*lambda)) + &
+                        (2*pi*(n-1)*j/(L*lambda)) + &
+                        (2*pi*(p-1)*k/(L*lambda))))
+
+                e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) + e**(kdotx)*e_x(m,n,p)
+                e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) + e**(kdotx)*e_y(m,n,p)
+                e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) + e**(kdotx)*e_z(m,n,p)
+
+              end do
+            end do
+          end do
+
+          write (*,*) "e_kx(",(2*pi*i/L*lambda),(2*pi*j/L*lambda),(2*pi*k/L*lambda),") = ",e_kx(i,j,k),e_ky(i,j,k),e_kz(i,j,k)
+
+        end do
+      end do
+    end do
+
+    deallocate(e_kx)
+    deallocate(e_ky)
+    deallocate(e_kz)
+
+  end subroutine correlations
 
 end module io

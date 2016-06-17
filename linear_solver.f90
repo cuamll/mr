@@ -276,7 +276,7 @@ module linear_solver
       phi_lapack(coord(1),coord(2),coord(3)) = rho(i)
     end do
 
-    write(*,*) " --- LAPACK - E fields ---"
+    !write(*,*) " --- LAPACK - E fields ---"
     ! take grad to get fields
     do i = 1,L
       do j = 1,L
@@ -295,7 +295,7 @@ module linear_solver
           !                    - phi_lapack(i,j,neg(k)))/lambda
           lapack_energy = lapack_energy + 0.5 * (e_x_lapack(i,j,k)**2 &
                         + e_y_lapack(i,j,k)**2 + e_z_lapack(i,j,k)**2)
-          write (*,*) i,j,k,e_x_lapack(i,j,k),mnphi_x(i,j,k)
+          !write (*,*) i,j,k,e_x_lapack(i,j,k),mnphi_x(i,j,k)
         end do
       end do
     end do
