@@ -144,10 +144,13 @@ module io
     ! Width of pinch points --> charge density
     use common
     implicit none
-    real*8, dimension(:,:,:), allocatable :: e_kx, e_ky, e_kz
+    complex*16, dimension(:,:,:), allocatable :: e_kx, e_ky, e_kz
     !real*8, dimension(:,:,:,:), allocatable :: real_vec, k_vec
     integer :: i, j, k, m, n, p
     complex*16 :: imag, kdotx
+    character(13) :: e_k_filename
+
+    e_k_filename = "e_fourier.out"
 
     imag = (0.0,1.0)
 
@@ -179,24 +182,50 @@ module io
             do n = 1,L
               do p = 1,L
 
-                kdotx = ((-1)*imag*((2*pi*(m-1)*i/(L*lambda)) + &
-                        (2*pi*(n-1)*j/(L*lambda)) + &
-                        (2*pi*(p-1)*k/(L*lambda))))
+                kdotx = ((-1)*imag*2*pi*(((m-1)*i/(L*lambda)) + &
+                        ((n-1)*j/(L*lambda)) + &
+                        ((p-1)*k/(L*lambda))))
 
-                e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) + e**(kdotx)*e_x(m,n,p)
-                e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) + e**(kdotx)*e_y(m,n,p)
-                e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) + e**(kdotx)*e_z(m,n,p)
+                e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = &
+                            e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) &
+                            + e**(kdotx)*e_x(m,n,p)
+                e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = &
+                            e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) &
+                            + e**(kdotx)*e_y(m,n,p)
+                e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = &
+                            e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) &
+                            + e**(kdotx)*e_z(m,n,p)
 
               end do
             end do
           end do
 
-          write (*,*) "e_kx(",(2*pi*i/L*lambda),(2*pi*j/L*lambda),(2*pi*k/L*lambda),") = ",e_kx(i,j,k),e_ky(i,j,k),e_kz(i,j,k)
+          !write (*,*) "e_kx(",(2*pi*i/L*lambda),&
+          !  (2*pi*j/L*lambda),(2*pi*k/L*lambda),") = ",&
+          !  e_kx(i,j,k),e_ky(i,j,k),e_kz(i,j,k)
 
         end do
       end do
     end do
 
+    ! now we need to do a (?) thermal (?) average to get correlations
+
+    open(unit=5, file=e_k_filename)
+
+    do i = 1,L + 1
+      do j = 1,L + 1
+        do k = 1,L + 1
+
+        write (5,*) 2*pi*(i - 1 - L/2)/L*lambda, &
+          2*pi*(j - 1 - L/2)/L*lambda, &
+          2*pi*(k - 1 - L/2)/L*lambda, &
+          e_kx(i,j,k), e_ky(i,j,k), e_kz(i,j,k)
+
+        end do
+      end do
+    end do
+
+    close(5)
     deallocate(e_kx)
     deallocate(e_ky)
     deallocate(e_kz)
