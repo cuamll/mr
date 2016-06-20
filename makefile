@@ -24,6 +24,7 @@ ifeq ($(UNAME), Linux)
 endif
 
 OBJECTS = common.o io.o linear_solver.o
+MODS = $(OBJECTS:.o=.mod)
 
 $(EXECNAME) : $(OBJECTS)
 	$(GF) $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
@@ -32,4 +33,13 @@ $(EXECNAME) : $(OBJECTS)
 	$(GF) $(DEBUGFLAG) -c $<
 
 # add this if need be, can't be arsed to fuck around rn
-.PHONY: clean cleaner
+.PHONY: clean clean_obj clean_mod
+
+clean:
+	\rm -f $(OBJECTS) $(MODS) $(EXECNAME)
+
+clean_obj:
+	\rm -f $(OBJECTS)
+
+clean_mods:
+	\rm -f $(MODS)

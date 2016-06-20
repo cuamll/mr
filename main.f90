@@ -156,7 +156,7 @@ subroutine upcan()
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
 
-  glob = 0
+  glob = 1
   totq = 0
   u_tot_run = 0.0
   g_thr = 1 / float(L)
@@ -174,7 +174,7 @@ subroutine upcan()
         u_tot_run = u_tot_run + e_x(i,j,k)**2 + &
                     e_y(i,j,k)**2 + e_z(i,j,k)**2
 
-        totq = totq + abs(v(j,k,m))
+        totq = totq + abs(v(i,j,k))
         if (v(i,j,k).ne.0) then
           write (*,*) i, j, k, v(i,j,k)
         end if
