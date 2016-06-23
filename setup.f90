@@ -161,8 +161,8 @@ module setup
     call randinit(seed)
     call allocations
     call latt_init
-    call arrays_init
     call PBCs
+    call arrays_init
 
   end subroutine do_setup
 

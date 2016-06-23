@@ -213,14 +213,15 @@ subroutine upcan()
                     e_y(i,j,k)**2 + e_z(i,j,k)**2
 
         totq = totq + abs(v(i,j,k))
-        write (*,*) "total charges: ",totq
-        write(*,*)
         if (v(i,j,k).ne.0) then
           write (*,*) i, j, k, v(i,j,k)
         end if
       end do
     end do
   end do
+
+  write (*,*) "total charges: ",totq
+  write(*,*)
 
   energy(1) = u_tot_run
   sq_energy(1) = u_tot_run**2
@@ -806,14 +807,14 @@ subroutine upcan()
     do k = 1,L
       do m = 1,L
         totq = totq + abs(v(j,k,m))
-        write (*,*) "total charges: ",totq
-        write(*,*)
         if (v(j,k,m).ne.0) then
           write (*,*) j, k, m, v(j,k,m)
         end if
       end do
     end do
   end do
+  write (*,*) "total charges: ",totq
+  write(*,*)
 
   write (*,*)
   write (*,*) '----- move stats -----'
