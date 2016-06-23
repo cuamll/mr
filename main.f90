@@ -230,7 +230,7 @@ subroutine upcan()
   do n = 1,iterations
 
     ! charge hop sweep
-    do i = 1, int(L**3 * hop_ratio)
+    do i = 1, int(L**3 * 2*hop_ratio)
 
       ! pick a random site
       x = int(rand() * L) + 1
@@ -569,7 +569,7 @@ subroutine upcan()
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_x = ebar_x - 2 * g_thr
-            acceptg = acceptg + 1
+            !acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
                 do m = 1,L
@@ -589,7 +589,7 @@ subroutine upcan()
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_x = ebar_x + 2 * g_thr
-            acceptg = acceptg + 1
+            !acceptg = acceptg + 1
 
             do j = 1,L
               do k = 1,L
@@ -614,7 +614,7 @@ subroutine upcan()
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_y = ebar_y - 2 * g_thr
-            acceptg = acceptg + 1
+            !acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
                 do m = 1,L
@@ -634,7 +634,7 @@ subroutine upcan()
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_y = ebar_y + 2 * g_thr
-            acceptg = acceptg + 1
+            !acceptg = acceptg + 1
 
             do j = 1,L
               do k = 1,L
