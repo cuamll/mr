@@ -6,109 +6,133 @@ program mr
   use common
   use linear_solver
   use io
+  use setup
   implicit none
   integer :: i, j, k, n, row, col, tot_q
-  real :: u_rot
-  integer, dimension(:,:), allocatable :: v_temp
 
-  tot_q = 0
-  ebar_x  =  0.0
-  ebar_y  =  0.0
-  ebar_z  =  0.0
-  u_rot = 0.0
+  call do_setup
+  !tot_q = 0
+  !ebar_x  =  0.0
+  !ebar_y  =  0.0
+  !ebar_z  =  0.0
+  !u_rot = 0.0
 
-  call read_input
+  !call read_input
 
-  ! for some reason allocating these elsewhere doesn't work
-  allocate(v(L,L,L))
-  allocate(pos(L))
-  allocate(neg(L))
-  allocate(mnphi_x(L,L,L))
-  allocate(mnphi_y(L,L,L))
-  allocate(mnphi_z(L,L,L))
-  allocate(e_rot_x(L,L,L))
-  allocate(e_rot_y(L,L,L))
-  allocate(e_rot_z(L,L,L))
-  allocate(e_x(L,L,L))
-  allocate(e_y(L,L,L))
-  allocate(e_z(L,L,L))
-  allocate(e_x_lapack(L,L,L))
-  allocate(e_y_lapack(L,L,L))
-  allocate(e_z_lapack(L,L,L))
-  allocate(phi_lapack(L,L,L))
-  allocate(lgf(L,L,L,L,L,L))
-  allocate(v_temp(L**2,L))
-  allocate(e_kx(L+1,L+1,L+1))
-  allocate(e_ky(L+1,L+1,L+1))
-  allocate(e_kz(L+1,L+1,L+1))
-  allocate(rho_k(L+1,L+1,L+1))
-  allocate(ch_ch(L+1,L+1,L+1,iterations))
-  allocate(struc(L+1,L+1,L+1))
+  !! for some reason allocating these elsewhere doesn't work
+  !allocate(v(L,L,L))
+  !allocate(pos(L))
+  !allocate(neg(L))
+  !allocate(mnphi_x(L,L,L))
+  !allocate(mnphi_y(L,L,L))
+  !allocate(mnphi_z(L,L,L))
+  !allocate(e_rot_x(L,L,L))
+  !allocate(e_rot_y(L,L,L))
+  !allocate(e_rot_z(L,L,L))
+  !allocate(e_x(L,L,L))
+  !allocate(e_y(L,L,L))
+  !allocate(e_z(L,L,L))
+  !allocate(e_x_lapack(L,L,L))
+  !allocate(e_y_lapack(L,L,L))
+  !allocate(e_z_lapack(L,L,L))
+  !allocate(phi_lapack(L,L,L))
+  !allocate(lgf(L,L,L,L,L,L))
+  !allocate(v_temp(L**2,L))
+  !allocate(e_kx(L+1,L+1,L+1))
+  !allocate(e_ky(L+1,L+1,L+1))
+  !allocate(e_kz(L+1,L+1,L+1))
+  !allocate(rho_k(L+1,L+1,L+1))
+  !allocate(ch_ch(L+1,L+1,L+1,iterations))
+  !allocate(struc(L+1,L+1,L+1))
 
-  call PBCs
+  !call PBCs
 
-  open(unit = 2, file = lattfile)
-  read(2,*)((v_temp(row,col),col = 1,L),row = 1,L**2)
+  !open(unit = 2, file = lattfile)
+  !read(2,*)((v_temp(row,col),col = 1,L),row = 1,L**2)
 
-  ! 2,3,1 makes x,y,z correspond with what you expect from the file
-  ! doesn't actually make any difference so long as you're consistent
-  v  =  reshape(v_temp, (/ L,L,L /), ORDER  =  (/ 2,3,1 /))
+  !! 2,3,1 makes x,y,z correspond with what you expect from the file
+  !! doesn't actually make any difference so long as you're consistent
+  !v  =  reshape(v_temp, (/ L,L,L /), ORDER  =  (/ 2,3,1 /))
 
-  deallocate(v_temp) ! we don't need it anymore
-  close(2)
+  !deallocate(v_temp) ! we don't need it anymore
+  !close(2)
 
-  call randinit(seed)
+  !call randinit(seed)
 
-  do i = 1,L
-    do j = 1,L
-      do k = 1,L
+  !do i = 1,L
+  !  do j = 1,L
+  !    do k = 1,L
 
-        struc(i,j,k) = 0.0
-        tot_q = tot_q + abs(v(i,j,k))
+  !      struc(i,j,k) = 0.0
+  !      tot_q = tot_q + abs(v(i,j,k))
 
-        do n = 1,iterations
-          ch_ch(i,j,k,n) = 0.0
-        end do
+  !      do n = 1,iterations
+  !        ch_ch(i,j,k,n) = 0.0
+  !      end do
 
-      end do
-    end do
-  end do
+  !      if (add_charges.ne.0) then
+  !        v(i,j,k) = 0
+  !      end if
 
-  if (tot_q.ne.0) then
-    call linsol
-  else
-    do i = 1,L
-      do j = 1,L
-        do k = 1,L
+  !    end do
+  !  end do
+  !end do
 
-          mnphi_x(i,j,k) = 0.0
-          mnphi_y(i,j,k) = 0.0
-          mnphi_z(i,j,k) = 0.0
-          e_x(i,j,k) = 0.0
-          e_y(i,j,k) = 0.0
-          e_z(i,j,k) = 0.0
+  !if (add_charges.ne.0) then
+  !  do n = 1,add_charges
+  !    i = int(rand() * L)
+  !    j = int(rand() * L)
+  !    k = int(rand() * L)
+  !    if (n.le.add_charges/2.and.
+  !  end do
+  !end if
 
-        end do
-      end do
-    end do
-  end if
+  !if (tot_q.ne.0) then
+  !  call linsol
+  !else
+  !  do i = 1,L
+  !    do j = 1,L
+  !      do k = 1,L
 
-  ! set e_x to irrotational - temporary solution
-  do i = 1,L
-    do j = 1,L
-      do k = 1,L
-        e_x(i,j,k) = mnphi_x(i,j,k)
-        e_y(i,j,k) = mnphi_y(i,j,k)
-        e_z(i,j,k) = mnphi_z(i,j,k)
+  !        mnphi_x(i,j,k) = 0.0
+  !        mnphi_y(i,j,k) = 0.0
+  !        mnphi_z(i,j,k) = 0.0
+  !        e_x(i,j,k) = 0.0
+  !        e_y(i,j,k) = 0.0
+  !        e_z(i,j,k) = 0.0
 
-        e_rot_x(i,j,k) = 0.0
-        e_rot_y(i,j,k) = 0.0
-        e_rot_z(i,j,k) = 0.0
-      end do
-    end do
-  end do
+  !      end do
+  !    end do
+  !  end do
+  !end if
+
+  !! set e_x to irrotational - temporary solution
+  !do i = 1,L
+  !  do j = 1,L
+  !    do k = 1,L
+  !      e_x(i,j,k) = mnphi_x(i,j,k)
+  !      e_y(i,j,k) = mnphi_y(i,j,k)
+  !      e_z(i,j,k) = mnphi_z(i,j,k)
+
+  !      e_rot_x(i,j,k) = 0.0
+  !      e_rot_y(i,j,k) = 0.0
+  !      e_rot_z(i,j,k) = 0.0
+  !    end do
+  !  end do
+  !end do
 
   call upcan()
+
+  ! best to check again, just in case
+  do i = 1,L
+    do j = 1,L
+      do k = 1,L
+
+        tot_q = tot_q + abs(v(i,j,k))
+
+      end do
+    end do
+  end do
 
   if (tot_q.ne.0) then
     call linsol
@@ -189,6 +213,8 @@ subroutine upcan()
                     e_y(i,j,k)**2 + e_z(i,j,k)**2
 
         totq = totq + abs(v(i,j,k))
+        write (*,*) "total charges: ",totq
+        write(*,*)
         if (v(i,j,k).ne.0) then
           write (*,*) i, j, k, v(i,j,k)
         end if
@@ -780,6 +806,8 @@ subroutine upcan()
     do k = 1,L
       do m = 1,L
         totq = totq + abs(v(j,k,m))
+        write (*,*) "total charges: ",totq
+        write(*,*)
         if (v(j,k,m).ne.0) then
           write (*,*) j, k, m, v(j,k,m)
         end if

@@ -2,7 +2,7 @@ module common
   implicit none
   real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
   real, public :: rot_delt
-  integer, public :: L,seed,accepth,acceptr,acceptg,iterations
+  integer, public :: L,seed,accepth,acceptr,acceptg,iterations,add_charges
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z

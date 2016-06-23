@@ -23,7 +23,7 @@ ifeq ($(UNAME), Linux)
 	LFLAGS = $(DEBUGFLAG) $(LIBS)
 endif
 
-OBJECTS = common.o io.o linear_solver.o
+OBJECTS = common.o io.o linear_solver.o setup.o
 MODS = $(OBJECTS:.o=.mod)
 
 $(EXECNAME) : $(OBJECTS)

@@ -18,6 +18,7 @@ module io
       read(1,*) q
       read(1,*) rot_delt
       read(1,*) lattfile
+      read(1,*) add_charges
       read(1,*) seed
       read(1,*) hop_ratio
       read(1,*) rot_ratio
@@ -26,6 +27,10 @@ module io
       ! Check L is even
       if (modulo(L,2)==1) then
         write(*,*) "L is odd - try again"
+        STOP
+      end if
+      if (modulo(add_charges,2)==1) then
+        write(*,*) "can't add an odd number of charges - try again"
         STOP
       end if
 
