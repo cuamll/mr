@@ -7,7 +7,7 @@ program mr
   use linear_solver
   use io
   implicit none
-  integer :: i, j, k, row, col, tot_q
+  integer :: i, j, k, n, row, col, tot_q
   real :: u_rot
   integer, dimension(:,:), allocatable :: v_temp
 
@@ -38,6 +38,12 @@ program mr
   allocate(phi_lapack(L,L,L))
   allocate(lgf(L,L,L,L,L,L))
   allocate(v_temp(L**2,L))
+  allocate(e_kx(L+1,L+1,L+1))
+  allocate(e_ky(L+1,L+1,L+1))
+  allocate(e_kz(L+1,L+1,L+1))
+  allocate(rho_k(L+1,L+1,L+1))
+  allocate(ch_ch(L+1,L+1,L+1,iterations))
+  allocate(struc(L+1,L+1,L+1))
 
   call PBCs
 
@@ -57,7 +63,12 @@ program mr
     do j = 1,L
       do k = 1,L
 
+        struc(i,j,k) = 0.0
         tot_q = tot_q + abs(v(i,j,k))
+
+        do n = 1,iterations
+          ch_ch(i,j,k,n) = 0.0
+        end do
 
       end do
     end do
@@ -150,11 +161,13 @@ end program mr
 subroutine upcan()
   use common
   implicit none
-  integer :: x,y,z,n,charge,glob,i,j,k,m,pm1
+  integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
   real*8 :: u_tot,u_tot_run,avg_e,avg_e2,one
+  real*8 :: dot,dot_avg ! probably won't need the avg
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
+  complex*16 :: imag, kdotx
 
   glob = 1
   totq = 0
@@ -164,6 +177,7 @@ subroutine upcan()
   acceptr=0
   acceptg=0
   one=1.0
+  imag = (0.0,1.0)
 
   write(*,*)
   write(*,*) " --- start: charge positions ---"
@@ -686,20 +700,74 @@ subroutine upcan()
     avg_e2 = avg_e2 + sq_energy(m)
   end do
 
-  avg_e = avg_e/ (n + 1)
-  avg_e2 = avg_e2/ (n + 1)
+  avg_e = avg_e / (n + 1)
+  avg_e2 = avg_e2 / (n + 1)
 
-  !do j = 1,L
-  !  do k = 1,L
-  !    do m = 1,L
+    ! Fourier transform
+    do kx = -L/2, L/2
+      do ky = -L/2, L/2
+        do kz = -L/2, L/2
 
-  !      flux(j,k,m) = e_x(j,k,m) + e_y(j,k,m) + e_z(j,k,m) + e_x(pos(j),k,m) + e_y(j,pos(k),m) + e_z(j,k,pos(m))
+          ! for array indices
+          i = kx + 1 + L/2
+          j = ky + 1 + L/2
+          k = kz + 1 + L/2
 
-  !    end do
-  !    !write (*,*) (flux(j,k,m), m=1,L)
-  !  end do
-  !end do
-  !write (*,*)
+          e_kx(i,j,k) = 0.0
+          e_ky(i,j,k) = 0.0
+          e_kz(i,j,k) = 0.0
+
+          ! vec(q) = vec(0) term:
+          if (i.eq.0.and.j.eq.0.and.k.eq.0) then
+            write (*,*) "q=0 term; need to work this out"
+            write (*,*) "e_kx(",i,j,k,") = ",e_kx(i,j,k)
+            CYCLE
+          end if
+
+          ! m,p,s are the real space coordinates
+          do m = 1,L
+            do p = 1,L
+              do s = 1,L
+
+                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                        ((p-1)*ky/(L*lambda)) + &
+                        ((s-1)*kz/(L*lambda))))
+
+                e_kx(i,j,k) = e_kx(i,j,k) + e**(kdotx)*e_x(m,p,s)
+                e_ky(i,j,k) = e_ky(i,j,k) + e**(kdotx)*e_y(m,p,s)
+                e_kz(i,j,k) = e_kz(i,j,k) + e**(kdotx)*e_z(m,p,s)
+
+                if (v(m,p,s).ne.0) then ! there's a charge
+
+                  ! FT of charge distribution
+                  kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                          ((p-1)*ky/(L*lambda)) + &
+                          ((s-1)*kz/(L*lambda))))
+                  rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * e**(kdotx)
+
+                end if
+
+              end do
+            end do
+          end do
+
+          ! now we need to do a (?) thermal (?) average to get correlations
+          ! this is the dot of the fourier space field with itself at i,j,k
+          dot = (e_kx(i,j,k) * CONJG(e_kx(i,j,k))) +&
+                (e_ky(i,j,k) * CONJG(e_ky(i,j,k))) +&
+                (e_kz(i,j,k) * CONJG(e_kz(i,j,k)))
+
+          !write (*,*) "E \cdot E (",2*pi*i/(L*lambda),2*pi*j/(L*lambda),2*pi*k/(L*lambda),") = ",dot
+
+          dot_avg = dot_avg + dot
+
+          ! second part is weirdly addressed bc of loop structure
+          ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
+          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) * rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+
+        end do
+      end do
+    end do
 
   !write(*,*) "<U^2>, <U>^2, ratio = ",avg_e2,avg_e*avg_e,(avg_e2/(avg_e**2))
 
