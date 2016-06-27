@@ -11,117 +11,10 @@ program mr
   integer :: i, j, k, n, row, col, tot_q
 
   call do_setup
-  !tot_q = 0
-  !ebar_x  =  0.0
-  !ebar_y  =  0.0
-  !ebar_z  =  0.0
-  !u_rot = 0.0
-
-  !call read_input
-
-  !! for some reason allocating these elsewhere doesn't work
-  !allocate(v(L,L,L))
-  !allocate(pos(L))
-  !allocate(neg(L))
-  !allocate(mnphi_x(L,L,L))
-  !allocate(mnphi_y(L,L,L))
-  !allocate(mnphi_z(L,L,L))
-  !allocate(e_rot_x(L,L,L))
-  !allocate(e_rot_y(L,L,L))
-  !allocate(e_rot_z(L,L,L))
-  !allocate(e_x(L,L,L))
-  !allocate(e_y(L,L,L))
-  !allocate(e_z(L,L,L))
-  !allocate(e_x_lapack(L,L,L))
-  !allocate(e_y_lapack(L,L,L))
-  !allocate(e_z_lapack(L,L,L))
-  !allocate(phi_lapack(L,L,L))
-  !allocate(lgf(L,L,L,L,L,L))
-  !allocate(v_temp(L**2,L))
-  !allocate(e_kx(L+1,L+1,L+1))
-  !allocate(e_ky(L+1,L+1,L+1))
-  !allocate(e_kz(L+1,L+1,L+1))
-  !allocate(rho_k(L+1,L+1,L+1))
-  !allocate(ch_ch(L+1,L+1,L+1,iterations))
-  !allocate(struc(L+1,L+1,L+1))
-
-  !call PBCs
-
-  !open(unit = 2, file = lattfile)
-  !read(2,*)((v_temp(row,col),col = 1,L),row = 1,L**2)
-
-  !! 2,3,1 makes x,y,z correspond with what you expect from the file
-  !! doesn't actually make any difference so long as you're consistent
-  !v  =  reshape(v_temp, (/ L,L,L /), ORDER  =  (/ 2,3,1 /))
-
-  !deallocate(v_temp) ! we don't need it anymore
-  !close(2)
-
-  !call randinit(seed)
-
-  !do i = 1,L
-  !  do j = 1,L
-  !    do k = 1,L
-
-  !      struc(i,j,k) = 0.0
-  !      tot_q = tot_q + abs(v(i,j,k))
-
-  !      do n = 1,iterations
-  !        ch_ch(i,j,k,n) = 0.0
-  !      end do
-
-  !      if (add_charges.ne.0) then
-  !        v(i,j,k) = 0
-  !      end if
-
-  !    end do
-  !  end do
-  !end do
-
-  !if (add_charges.ne.0) then
-  !  do n = 1,add_charges
-  !    i = int(rand() * L)
-  !    j = int(rand() * L)
-  !    k = int(rand() * L)
-  !    if (n.le.add_charges/2.and.
-  !  end do
-  !end if
-
-  !if (tot_q.ne.0) then
-  !  call linsol
-  !else
-  !  do i = 1,L
-  !    do j = 1,L
-  !      do k = 1,L
-
-  !        mnphi_x(i,j,k) = 0.0
-  !        mnphi_y(i,j,k) = 0.0
-  !        mnphi_z(i,j,k) = 0.0
-  !        e_x(i,j,k) = 0.0
-  !        e_y(i,j,k) = 0.0
-  !        e_z(i,j,k) = 0.0
-
-  !      end do
-  !    end do
-  !  end do
-  !end if
-
-  !! set e_x to irrotational - temporary solution
-  !do i = 1,L
-  !  do j = 1,L
-  !    do k = 1,L
-  !      e_x(i,j,k) = mnphi_x(i,j,k)
-  !      e_y(i,j,k) = mnphi_y(i,j,k)
-  !      e_z(i,j,k) = mnphi_z(i,j,k)
-
-  !      e_rot_x(i,j,k) = 0.0
-  !      e_rot_y(i,j,k) = 0.0
-  !      e_rot_z(i,j,k) = 0.0
-  !    end do
-  !  end do
-  !end do
 
   call upcan()
+
+  tot_q = 0
 
   ! best to check again, just in case
   do i = 1,L
@@ -138,20 +31,20 @@ program mr
     call linsol
   end if
 
-  do i = 1,L
-    do j = 1,L
-      do k = 1,L
+  !do i = 1,L
+  !  do j = 1,L
+  !    do k = 1,L
 
-      ! does it make sense to do this?
-        u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
-        (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
-        (e_z(i,j,k) - mnphi_z(i,j,k))**2
+  !    ! does it make sense to do this?
+  !      u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
+  !      (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
+  !      (e_z(i,j,k) - mnphi_z(i,j,k))**2
 
-      end do
-    end do
-  end do
+  !    end do
+  !  end do
+  !end do
 
-  write (*,*) 'u_rot. = ',u_rot
+  !write (*,*) 'u_rot. = ',u_rot
 
   write(*,*)
 
@@ -556,7 +449,7 @@ subroutine upcan()
     if (glob.eq.1) then
 
       ! NOTE TO SELF: again this int cast prob needs changing
-      do i = 1,int(L**3 * g_ratio)
+      do i = 1,int(L**3 * g_ratio) + 1
         ! x-component
         chooser = rand()
 
@@ -659,6 +552,7 @@ subroutine upcan()
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_z = ebar_z - 2 * g_thr
+            write (*,*) "ebar_z = ",ebar_z
             acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
