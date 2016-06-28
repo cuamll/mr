@@ -52,23 +52,7 @@ program mr
 
   call write_output
 
-  deallocate(v)
-  deallocate(pos)
-  deallocate(neg)
-  deallocate(mnphi_x)
-  deallocate(mnphi_y)
-  deallocate(mnphi_z)
-  deallocate(e_rot_x)
-  deallocate(e_rot_y)
-  deallocate(e_rot_z)
-  deallocate(e_x)
-  deallocate(e_y)
-  deallocate(e_z)
-  deallocate(e_x_lapack)
-  deallocate(e_y_lapack)
-  deallocate(e_z_lapack)
-  deallocate(phi_lapack)
-  deallocate(lgf)
+  call deallocations
 
   stop
 
@@ -449,20 +433,23 @@ subroutine upcan()
     if (glob.eq.1) then
 
       ! NOTE TO SELF: again this int cast prob needs changing
-      do i = 1,int(L**3 * g_ratio) + 1
+      do i = 1,int(L**3 * g_ratio)
         ! x-component
         chooser = rand()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = (0.5 - float(L) * ebar_x)
+          old_e = (u_tot_run + ebar_x)**2
+          new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          delta_e = new_e - old_e
+          !delta_e = (0.5 - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_x = ebar_x - 2 * g_thr
-            !acceptg = acceptg + 1
+            acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
                 do m = 1,L
@@ -475,14 +462,17 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = (0.5 + float(L) * ebar_x)
+          old_e = (u_tot_run + ebar_x)**2
+          new_e = (u_tot_run + ebar_x + g_thr * float(L))**2
+          delta_e = new_e - old_e
+          !delta_e = (0.5 - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_x = ebar_x + 2 * g_thr
-            !acceptg = acceptg + 1
+            acceptg = acceptg + 1
 
             do j = 1,L
               do k = 1,L
@@ -500,14 +490,17 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = (0.5 - float(L) * ebar_y)
+          old_e = (u_tot_run + ebar_x)**2
+          new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          delta_e = new_e - old_e
+          !delta_e = (0.5 - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_y = ebar_y - 2 * g_thr
-            !acceptg = acceptg + 1
+            acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
                 do m = 1,L
@@ -520,14 +513,17 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = (0.5 + float(L) * ebar_y)
+          old_e = (u_tot_run + ebar_x)**2
+          new_e = (u_tot_run + ebar_x + g_thr * float(L))**2
+          delta_e = new_e - old_e
+          !delta_e = (0.5 - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_y = ebar_y + 2 * g_thr
-            !acceptg = acceptg + 1
+            acceptg = acceptg + 1
 
             do j = 1,L
               do k = 1,L
@@ -545,14 +541,16 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          delta_e = (0.5 - float(L) * ebar_z)
+          old_e = (u_tot_run + ebar_x)**2
+          new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          delta_e = new_e - old_e
+          !delta_e = (0.5 - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_z = ebar_z - 2 * g_thr
-            write (*,*) "ebar_z = ",ebar_z
             acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
@@ -566,7 +564,10 @@ subroutine upcan()
 
         else
           ! NOTE TO SELF - check this little fucker
-          delta_e = (0.5 + float(L) * ebar_z)
+          old_e = (u_tot_run + ebar_x)**2
+          new_e = (u_tot_run + ebar_x + g_thr * float(L))**2
+          delta_e = new_e - old_e
+          !delta_e = (0.5 - float(L) * ebar_x)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -672,6 +673,12 @@ subroutine upcan()
             end do
           end do
 
+          ! normalise, idiot
+          e_kx(i,j,k) = e_kx(i,j,k) / L**3
+          e_ky(i,j,k) = e_ky(i,j,k) / L**3
+          e_kz(i,j,k) = e_kz(i,j,k) / L**3
+          rho_k(i,j,k) = rho_k(i,j,k) / L**3
+
           ! now we need to do a (?) thermal (?) average to get correlations
           ! this is the dot of the fourier space field with itself at i,j,k
           dot = (e_kx(i,j,k) * CONJG(e_kx(i,j,k))) +&
@@ -691,12 +698,14 @@ subroutine upcan()
     end do
 
   !write(*,*) "<U^2>, <U>^2, ratio = ",avg_e2,avg_e*avg_e,(avg_e2/(avg_e**2))
+  !write (*,*) "step = ",n," ebar = ",ebar_x,ebar_y,ebar_z
 
   end do ! end iteration loop
 
   write(*,*)
   write(*,*) " --- end: charge positions ---"
 
+  totq = 0
   do j = 1,L
     do k = 1,L
       do m = 1,L

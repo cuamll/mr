@@ -39,6 +39,35 @@ module setup
 
   end subroutine allocations
 
+  subroutine deallocations
+
+    deallocate(v)
+    deallocate(pos)
+    deallocate(neg)
+    deallocate(mnphi_x)
+    deallocate(mnphi_y)
+    deallocate(mnphi_z)
+    deallocate(e_rot_x)
+    deallocate(e_rot_y)
+    deallocate(e_rot_z)
+    deallocate(e_x)
+    deallocate(e_y)
+    deallocate(e_z)
+    deallocate(e_x_lapack)
+    deallocate(e_y_lapack)
+    deallocate(e_z_lapack)
+    deallocate(phi_lapack)
+    deallocate(lgf)
+    deallocate(v_temp)
+    deallocate(e_kx)
+    deallocate(e_ky)
+    deallocate(e_kz)
+    deallocate(rho_k)
+    deallocate(ch_ch)
+    deallocate(struc)
+
+  end subroutine deallocations
+
   subroutine latt_init
 
     tot_q = 0
