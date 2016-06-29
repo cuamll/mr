@@ -1,6 +1,7 @@
 module common
   implicit none
   real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
+  real, public :: eps_0
   real, public :: rot_delt
   integer, public :: L,seed,accepth,acceptr,acceptg,iterations,add_charges
   integer, dimension(:), allocatable, public :: pos,neg
@@ -20,7 +21,6 @@ module common
 
   integer, public :: have_lgf = 0
   real*8, public :: rot_ratio, g_ratio, hop_ratio
-  real, parameter, public :: eps_0=1.0
   real, parameter, public :: pi=3.141592653589793
   real, parameter, public :: twopi=6.283185307179586
   real, parameter, public :: e=2.718281828459045

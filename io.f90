@@ -36,6 +36,9 @@ module io
 
       ! set up other variables, allocations etc.
       volume = lambda**3
+      ! beta has dimensions of [e_0 * length]
+      ! need to figure out how that works exactly
+      eps_0 = 1.0 / L
       beta = 1.0 / temp
       allocate(energy(iterations + 1))
       allocate(energy_run(iterations + 1))

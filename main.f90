@@ -70,7 +70,7 @@ subroutine upcan()
   real :: chooser, delta
   complex*16 :: imag, kdotx
 
-  glob = 1
+  glob = 0
   totq = 0
   u_tot_run = 0.0
   g_thr = 1 / float(L)
@@ -106,8 +106,10 @@ subroutine upcan()
   ! charge hop sweep
   do n = 1,iterations
 
+  !write (*,*) "utot at start of step ",n," = ",u_tot_run
+
     ! charge hop sweep
-    do i = 1, int(L**3 * 2*hop_ratio)
+    do i = 1, int(L**3 * hop_ratio)
 
       ! pick a random site
       x = int(rand() * L) + 1
@@ -170,6 +172,8 @@ subroutine upcan()
           end if ! end of left-right movement choice
           if (ebar_x.gt.(1/float(L)).or.ebar_x.lt.((-1)/float(L))) then
             glob = 1
+          else
+            glob = 0
           end if
 
 
@@ -222,6 +226,8 @@ subroutine upcan()
           end if ! end of left-right movement choice
           if (ebar_y.gt.(1/float(L)).or.ebar_y.lt.((-1)/float(L))) then
             glob = 1
+          else
+            glob = 0
           end if
 
         else ! z component
@@ -272,6 +278,8 @@ subroutine upcan()
           end if ! end of left-right movement choice
           if (ebar_z.gt.(1/float(L)).or.ebar_z.lt.((-1)/float(L))) then
             glob = 1
+          else
+            glob = 0
           end if
 
         end if ! end of component chooser
@@ -280,7 +288,9 @@ subroutine upcan()
 
     end do ! end charge hop sweep
 
-    ! plaquette rot. update
+    !write (*,*) "utot after charge hops = ",u_tot_run
+
+    ! --- ROTATIONAL UPDATE ---
 
     ! NOTE TO SELF: might need a + 1 next to that int cast
     do i = 1,int(L**3 * rot_ratio)
@@ -428,9 +438,12 @@ subroutine upcan()
       end if ! end plane choice block
 
     end do ! end rotational
+    !write (*,*) "utot after rot. = ",u_tot_run
 
+    ! --- HARMONIC UPDATE ---
     ! e bar update
     if (glob.eq.1) then
+      !write (*,*) "step ",n," start of harmonic update: ",u_tot_run,"total moves accepted ",acceptg
 
       ! NOTE TO SELF: again this int cast prob needs changing
       do i = 1,int(L**3 * g_ratio)
@@ -439,8 +452,10 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          old_e = (u_tot_run + ebar_x)**2
-          new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          !old_e = (u_tot_run + ebar_x)**2
+          !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          old_e = 0.5 * ebar_x**2
+          new_e = 0.5 * (ebar_x - (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
@@ -448,22 +463,27 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_x = ebar_x - 2 * g_thr
+            ebar_x = ebar_x - (q/(L * eps_0)) 
             acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) - 2 * g_thr
+                  e_x(j,k,m) = e_x(j,k,m) - (q/(L**4 * eps_0))
                 end do
               end do
             end do
             u_tot_run = u_tot_run + delta_e
+            if (n.eq.16) then
+              write (*,*) "x - ",old_e,new_e,delta_e,u_tot_run
+            end if
           end if ! end weird Metropolis block
 
         else
           ! NOTE TO SELF - check this little fucker
-          old_e = (u_tot_run + ebar_x)**2
-          new_e = (u_tot_run + ebar_x + g_thr * float(L))**2
+          !old_e = (u_tot_run + ebar_x)**2
+          !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          old_e = 0.5 * ebar_x**2
+          new_e = 0.5 * (ebar_x + (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
@@ -471,17 +491,20 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_x = ebar_x + 2 * g_thr
+            ebar_x = ebar_x + (q/(L * eps_0)) 
             acceptg = acceptg + 1
 
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) + 2 * g_thr
+                  e_x(j,k,m) = e_x(j,k,m) + (q/(L**4 * eps_0))
                 end do
               end do
             end do
             u_tot_run = u_tot_run + delta_e
+            if (n.eq.16) then
+              write (*,*) "x + ",old_e,new_e,delta_e,u_tot_run
+            end if
           end if ! end weird Metropolis block
         end if
 
@@ -490,49 +513,59 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          old_e = (u_tot_run + ebar_x)**2
-          new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          !old_e = (u_tot_run + ebar_y)**2
+          !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
+          old_e = 0.5 * ebar_y**2
+          new_e = 0.5 * (ebar_y - (q/(L * eps_0)))**2
           delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_x)
+          !delta_e = (0.5 - float(L) * ebar_y)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_y = ebar_y - 2 * g_thr
+            ebar_y = ebar_y - (q/(L * eps_0)) 
             acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) - 2 * g_thr
+                  e_y(j,k,m) = e_y(j,k,m) - (q/(L**4 * eps_0))
                 end do
               end do
             end do
             u_tot_run = u_tot_run + delta_e
+            if (n.eq.16) then
+              write (*,*) "y - ",old_e,new_e,delta_e,u_tot_run
+            end if
           end if ! end weird Metropolis block
 
         else
           ! NOTE TO SELF - check this little fucker
-          old_e = (u_tot_run + ebar_x)**2
-          new_e = (u_tot_run + ebar_x + g_thr * float(L))**2
+          !old_e = (u_tot_run + ebar_y)**2
+          !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
+          old_e = 0.5 * ebar_y**2
+          new_e = 0.5 * (ebar_y + (q/(L * eps_0)))**2
           delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_x)
+          !delta_e = (0.5 - float(L) * ebar_y)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_y = ebar_y + 2 * g_thr
+            ebar_y = ebar_y + (q/(L * eps_0)) 
             acceptg = acceptg + 1
 
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) + 2 * g_thr
+                  e_y(j,k,m) = e_y(j,k,m) + (q/(L**4 * eps_0))
                 end do
               end do
             end do
             u_tot_run = u_tot_run + delta_e
+            if (n.eq.16) then
+              write (*,*) "y + ",old_e,new_e,delta_e,u_tot_run
+            end if
           end if ! end weird Metropolis block
         end if
 
@@ -541,79 +574,81 @@ subroutine upcan()
 
         if (chooser.lt.0.5) then
           ! NOTE TO SELF - check this little fucker
-          old_e = (u_tot_run + ebar_x)**2
-          new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
+          !old_e = (u_tot_run + ebar_z)**2
+          !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
+          old_e = 0.5 * ebar_z**2
+          new_e = 0.5 * (ebar_z - (q/(L * eps_0)))**2
           delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_x)
+          !delta_e = (0.5 - float(L) * ebar_z)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_z = ebar_z - 2 * g_thr
+            ebar_z = ebar_z - (q/(L * eps_0)) 
             acceptg = acceptg + 1
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) - 2 * g_thr
+                  e_z(j,k,m) = e_z(j,k,m) - (q/(L**4 * eps_0))
                 end do
               end do
             end do
             u_tot_run = u_tot_run + delta_e
+            if (n.eq.16) then
+              write (*,*) "z - ",old_e,new_e,delta_e,u_tot_run
+            end if
           end if ! end weird Metropolis block
 
         else
           ! NOTE TO SELF - check this little fucker
-          old_e = (u_tot_run + ebar_x)**2
-          new_e = (u_tot_run + ebar_x + g_thr * float(L))**2
+          !old_e = (u_tot_run + ebar_z)**2
+          !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
+          old_e = 0.5 * ebar_z**2
+          new_e = 0.5 * (ebar_z + (q/(L * eps_0)))**2
           delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_x)
+          !delta_e = (0.5 - float(L) * ebar_z)
 
           if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_z = ebar_z + 2 * g_thr
+            ebar_z = ebar_z + (q/(L * eps_0)) 
             acceptg = acceptg + 1
 
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) + 2 * g_thr
+                  e_z(j,k,m) = e_z(j,k,m) + (q/(L**4 * eps_0))
                 end do
               end do
             end do
             u_tot_run = u_tot_run + delta_e
+            if (n.eq.16) then
+              write (*,*) "z + ",old_e,new_e,delta_e,u_tot_run
+            end if
           end if ! end weird Metropolis block
         end if
 
         end do ! end global update loop
+        !write (*,*) "step ",n," end of harmonic update: ",u_tot_run,"total moves accepted ",acceptg
 
     end if ! end glob.eq.1 block
+    
+    u_tot = 0.0
+    do i = 1,L
+      do j = 1, L
+        do k = 1,L
+        u_tot = u_tot + 0.5 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
+        end do
+      end do
+    end do
 
-  !u_tot = 0.0
-  !do j = 1,L
-  !  do k = 1,L
-  !    do m = 1,L
+    !write(*,*) n,glob,u_tot_run,u_tot,ebar_x,ebar_y,ebar_z
 
-  !      delta = 2 * (rand() - 0.5)
-  !      e_x(j,k,m) = delta
-
-  !      delta = 2 * (rand() -0.5)
-  !      e_y(j,k,m) = delta
-
-  !      delta = 2 * (rand() -0.5)
-  !      e_z(j,k,m) = delta
-
-  !      u_tot = u_tot + 0.5 * (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
-
-  !    end do
-  !  end do
-  !end do
-
-  ! replace with u_tot_run
-  energy(n + 1) = u_tot_run
-  sq_energy(n + 1) = u_tot_run**2
+  ! replace with u_tot_run maybe?
+  energy(n + 1) = u_tot
+  sq_energy(n + 1) = u_tot**2
 
   avg_e = 0.0
   avg_e2 = 0.0
@@ -723,6 +758,6 @@ subroutine upcan()
   write (*,*) '----- move stats -----'
   write (*,*) 'hop moves  = ',accepth,float(accepth) / (iterations * totq)
   write (*,*) 'rot moves  = ',acceptr,float(acceptr) / (iterations * L**3 * rot_ratio)
-  write (*,*) 'ebar moves = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio)
+  write (*,*) 'ebar moves = ',acceptg,float(acceptg) / 3 / (iterations * L**3 * g_ratio)
 
 end subroutine upcan
