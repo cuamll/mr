@@ -164,63 +164,14 @@ module linear_solver
 
   end subroutine lgfcalc
 
-  subroutine linalg
+  subroutine grad_sq_calc
 
-    ! use LAPACK to solve Poisson equation
-    use common
-    implicit none
-    integer :: INFO
-    real*8, dimension(:), allocatable :: phi, rho
-    integer, dimension(:), allocatable :: IPIV_lapack
-    real*8, dimension(:,:), allocatable :: grad_sq
-    integer*8 :: i,j,k,x
+    integer*8 :: i
     integer*8 :: coord(3)
-    !real*8 :: lapack_energy
-    integer*8, dimension(4,4) :: testmat
 
-    allocate(phi(L**3))
-    allocate(rho(L**3))
-    allocate(IPIV_lapack(L**3))
     allocate(grad_sq(L**3,L**3))
-    INFO = 0
 
-    write(*,*)
-    write(*,*) " --- LAPACK Poisson solution ---"
-
-    ! initialise potential & grad_sq to zero just in case
-    do i = 1,L
-      phi(i) = 0.0
-      do j = 1,L
-        grad_sq(i,j) = 0
-        do k = 1,L
-
-          x = (i - 1)*L**2 + (j - 1)*L + k
-
-          ! - grad^2 phi = rho/e_0
-          rho(x) = (1) * float(v(i,j,k))
-          !write (*,*) "i,j,k,x,backward",i,j,k,x,(((x-1)/L**2)+1),(modulo(((x-1)/L),L)+1),modulo(x-1,L)+1
-          if ((((x-1)/L**2)+1).ne.i.or.(modulo((x-1)/L,L)+1).ne.j.or.(modulo(x-1,L)+1).ne.k) then
-          write(*,*) "one of the indices isn't right, ABORT MISSION"
-        end if
-
-        !coord = (/ i, j, k /)
-        !write(*,*) "test index functions: ",coord(1),coord(2),coord(3),three_to_one(coord),one_to_three(three_to_one(coord))
-
-        end do
-      end do
-    end do
-
-    !do i = 1,4
-    !  do j = 1,4
-
-    !    testmat = reshape( (/ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 /), (/ 4, 4 /) )
-    !    write(*,*) "index shit:",i, j, testmat(i,j)
-
-    !  end do
-    !end do
-
-
-    ! derivatives for laplacian
+    ! this only needs doing once
     do i = 1,L**3
       grad_sq(i,i) = 6.0
 
@@ -257,17 +208,59 @@ module linear_solver
       grad_sq(i,three_to_one(coord)) = -1.0
 
     end do
+    have_grad_sq = 1
 
-    !do i = 1,L**3
-    !  do j = 1,L**3
-    !    write (*,"(I8.3)",advance="no") grad_sq(i,j)
-    !  end do
-    !  write(*,*)
-    !end do
+  end subroutine grad_sq_calc
+
+  subroutine linalg
+
+    ! use LAPACK to solve Poisson equation
+    use common
+    implicit none
+    integer :: INFO
+    real*8, dimension(:), allocatable :: rho
+    integer, dimension(:), allocatable :: IPIV_lapack
+    integer*8 :: i,j,k,x
+    integer*8 :: coord(3)
+    !real*8 :: lapack_energy
+
+    allocate(rho(L**3))
+    allocate(IPIV_lapack(L**3))
+    INFO = 0
+    lapack_energy = 0.0
+
+    if (have_grad_sq.eq.0) then
+      call grad_sq_calc
+    end if
+
+    ! initialise field, potential to 0 just in case
+    do i = 1,L
+      do j = 1,L
+        do k = 1,L
+          e_x_lapack(i,j,k) = 0.0
+          e_y_lapack(i,j,k) = 0.0
+          e_z_lapack(i,j,k) = 0.0
+          phi_lapack(i,j,k) = 0.0
+
+          coord = (/ i, j, k /)
+          x = three_to_one(coord)
+
+          rho(x) = float(v(i,j,k))
+
+          if ((((x-1)/L**2)+1).ne.i.or.(modulo((x-1)/L,L)+1)&
+                 .ne.j.or.(modulo(x-1,L)+1).ne.k) then
+
+            write(*,*) "one of the indices isn't right, ABORT MISSION"
+            STOP
+
+          end if
+
+        end do
+      end do
+    end do
 
     ! solve
     call dgesv(L**3,1,grad_sq,L**3,IPIV_lapack,rho,L**3,INFO)
-    !call dpbsv('U',L**3,L**3-1,1,AB_lapack,L**3,rho,L**3,INFO)
     !write (*,*) "lapack ran - INFO = ",INFO
 
     ! translate back to 3d array
@@ -278,6 +271,7 @@ module linear_solver
 
     !write(*,*) " --- LAPACK - E fields ---"
     ! take grad to get fields
+    lapack_energy = 0.0
     do i = 1,L
       do j = 1,L
         do k = 1,L
@@ -287,22 +281,19 @@ module linear_solver
                               - phi_lapack(i,j,k))/lambda
           e_z_lapack(i,j,k) = (phi_lapack(i,j,pos(k)) &
                               - phi_lapack(i,j,k))/lambda
-          !e_x_lapack(i,j,k) = (phi_lapack(i,j,k) &
-          !                    - phi_lapack(neg(i),j,k))/lambda
-          !e_y_lapack(i,j,k) = (phi_lapack(i,j,k) &
-          !                    - phi_lapack(i,neg(j),k))/lambda
-          !e_z_lapack(i,j,k) = (phi_lapack(i,j,k) &
-          !                    - phi_lapack(i,j,neg(k)))/lambda
-          lapack_energy = lapack_energy + 0.5 * (e_x_lapack(i,j,k)**2 &
+
+          lapack_energy = lapack_energy + 0.5 * eps_0 * (e_x_lapack(i,j,k)**2 &
                         + e_y_lapack(i,j,k)**2 + e_z_lapack(i,j,k)**2)
-          !write (*,*) i,j,k,e_x_lapack(i,j,k),mnphi_x(i,j,k)
+
         end do
       end do
     end do
 
-    !write(*,*)
+    write(*,*)
 
-    !write (*,*) "lapack energy: ",lapack_energy
+    write (*,*) "lapack energy: ",lapack_energy
+    deallocate(rho)
+    deallocate(IPIV_lapack)
 
   end subroutine linalg
 

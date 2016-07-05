@@ -65,6 +65,7 @@ module setup
     deallocate(rho_k)
     deallocate(ch_ch)
     deallocate(struc)
+    deallocate(grad_sq)
 
   end subroutine deallocations
 

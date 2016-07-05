@@ -12,6 +12,7 @@ module common
   real*8, dimension(:,:,:), allocatable, public :: e_y_lapack, e_z_lapack
   real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
   real*8, dimension(:,:,:), allocatable, public :: struc
+  real*8, dimension(:,:), allocatable, public :: grad_sq
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
   real*8, dimension(:,:,:,:), allocatable, public :: ch_ch
@@ -20,6 +21,7 @@ module common
   character(len=11), public :: lattfile
 
   integer, public :: have_lgf = 0
+  integer, public :: have_grad_sq = 0
   real*8, public :: rot_ratio, g_ratio, hop_ratio
   real, parameter, public :: pi=3.141592653589793
   real, parameter, public :: twopi=6.283185307179586

@@ -61,10 +61,11 @@ end program mr
 ! canonical ensemble - MC / Metropolis updates
 subroutine upcan()
   use common
+  use linear_solver
   implicit none
   integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot,u_tot_run,avg_e,avg_e2,one
+  real*8 :: u_tot_run,avg_e,avg_e2,one
   real*8 :: dot,dot_avg ! probably won't need the avg
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
@@ -73,6 +74,8 @@ subroutine upcan()
   glob = 0
   totq = 0
   u_tot_run = 0.0
+  old_e = 0.0
+  new_e = 0.0
   g_thr = 1 / float(L)
   accepth = 0
   acceptr=0
@@ -83,6 +86,7 @@ subroutine upcan()
   write(*,*)
   write(*,*) " --- start: charge positions ---"
 
+  call linalg
   u_tot_run = lapack_energy
   do i = 1,L
     do j = 1,L
@@ -130,12 +134,13 @@ subroutine upcan()
 
             old_e = u_tot_run
             v(x,y,z) = 0
-            v(pos(x,y,z) = charge
+            v(pos(x),y,z) = charge
 
             call linalg
             ! after calling linalg, the new fields are in e_mu_lapack
             new_e = lapack_energy
             delta_e = new_e - old_e
+            write (*,*) old_e,new_e,delta_e
 
             if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
@@ -150,7 +155,7 @@ subroutine upcan()
 
               ! don't change the fields or energy, move the charge back
               v(x,y,z) = charge
-              v(pos(x,y,z) = 0
+              v(pos(x),y,z) = 0
               u_tot_run = old_e
 
             end if
@@ -163,7 +168,7 @@ subroutine upcan()
 
             old_e = u_tot_run
             v(x,y,z) = 0
-            v(neg(x,y,z) = charge
+            v(neg(x),y,z) = charge
 
             call linalg
             ! after calling linalg, the new fields are in e_mu_lapack
@@ -183,7 +188,7 @@ subroutine upcan()
 
               ! don't change the fields or energy, move the charge back
               v(x,y,z) = charge
-              v(neg(x,y,z) = 0
+              v(neg(x),y,z) = 0
               u_tot_run = old_e
 
             end if

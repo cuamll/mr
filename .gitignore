@@ -1,0 +1,5 @@
+*.out
+latts*
+*.mod
+*.o
+*_test*
