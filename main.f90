@@ -31,21 +31,6 @@ program mr
     call linsol
   end if
 
-  !do i = 1,L
-  !  do j = 1,L
-  !    do k = 1,L
-
-  !    ! does it make sense to do this?
-  !      u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
-  !      (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
-  !      (e_z(i,j,k) - mnphi_z(i,j,k))**2
-
-  !    end do
-  !  end do
-  !end do
-
-  !write (*,*) 'u_rot. = ',u_rot
-
   write(*,*)
 
   call linalg
@@ -131,8 +116,8 @@ subroutine upcan()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
             en1 = eo1 + hop_inc
-            old_e = 0.5 * eo1**2
-            new_e = 0.5 * en1**2
+            old_e = 0.5 * eps_0 * eo1**2
+            new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
             ! i think we can just set v(x,y,z) = 0
             ! if we're enforcing |v| <= 1
@@ -152,8 +137,8 @@ subroutine upcan()
           else ! move the fucker to the right
 
             en1 = eo1 - hop_inc
-            old_e = 0.5 * eo1**2
-            new_e = 0.5 * en1**2
+            old_e = 0.5 * eps_0 * eo1**2
+            new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
 
             if ((abs(v(x,y,z)).le.1).and.(v(pos(x),y,z).eq.0)) then
@@ -184,8 +169,8 @@ subroutine upcan()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
             en1 = eo1 + hop_inc
-            old_e = 0.5 * eo1**2
-            new_e = 0.5 * en1**2
+            old_e = 0.5 * eps_0 * eo1**2
+            new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
             ! i think we can just set v(x,y,z) = 0
             ! if we're enforcing |v| <= 1
@@ -206,8 +191,8 @@ subroutine upcan()
 
             en1 = eo1 - hop_inc
 
-            old_e = 0.5 * eo1**2
-            new_e = 0.5 * en1**2
+            old_e = 0.5 * eps_0 * eo1**2
+            new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
 
             if ((abs(v(x,y,z)).le.1).and.(v(x,pos(y),z).eq.0)) then
@@ -237,8 +222,8 @@ subroutine upcan()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
             en1 = eo1 + hop_inc
-            old_e = 0.5 * eo1**2
-            new_e = 0.5 * en1**2
+            old_e = 0.5 * eps_0 * eo1**2
+            new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
             ! i think we can just set v(x,y,z) = 0
             ! if we're enforcing |v| <= 1
@@ -258,8 +243,8 @@ subroutine upcan()
           else ! move the fucker to the right
 
             en1 = eo1 - hop_inc
-            old_e = 0.5 * eo1**2
-            new_e = 0.5 * en1**2
+            old_e = 0.5 * eps_0 * eo1**2
+            new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
 
             if ((abs(v(x,y,z)).le.1).and.(v(x,y,pos(z)).eq.0)) then
@@ -342,8 +327,8 @@ subroutine upcan()
         en4 = eo4 - delta
         !write(*,*) en1,en2,en3,en4
 
-        old_e = 0.5 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-        new_e = 0.5 * (en1**2 + en2**2 + en3**2 + en4**2)
+        old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
+        new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
         if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
@@ -378,8 +363,8 @@ subroutine upcan()
         en3 = eo3 + delta
         en4 = eo4 - delta
 
-        old_e = 0.5*(eo1**2 + eo2**2 + eo3**2 + eo4**2)
-        new_e = 0.5*(en1**2 + en2**2 + en3**2 + en4**2)
+        old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
+        new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
         if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
@@ -415,8 +400,8 @@ subroutine upcan()
         en3 = eo3 + delta
         en4 = eo4 - delta
 
-        old_e = 0.5*(eo1**2 + eo2**2 + eo3**2 + eo4**2)
-        new_e = 0.5*(en1**2 + en2**2 + en3**2 + en4**2)
+        old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
+        new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
         if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
@@ -454,8 +439,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_x)**2
           !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-          old_e = 0.5 * ebar_x**2
-          new_e = 0.5 * (ebar_x - (q/(L * eps_0)))**2
+          old_e = 0.5 * eps_0 * ebar_x**2
+          new_e = 0.5 * eps_0 * (ebar_x - (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
@@ -482,8 +467,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_x)**2
           !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-          old_e = 0.5 * ebar_x**2
-          new_e = 0.5 * (ebar_x + (q/(L * eps_0)))**2
+          old_e = 0.5 * eps_0 * ebar_x**2
+          new_e = 0.5 * eps_0 * (ebar_x + (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
@@ -515,8 +500,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_y)**2
           !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-          old_e = 0.5 * ebar_y**2
-          new_e = 0.5 * (ebar_y - (q/(L * eps_0)))**2
+          old_e = 0.5 * eps_0 * ebar_y**2
+          new_e = 0.5 * eps_0 * (ebar_y - (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_y)
 
@@ -543,8 +528,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_y)**2
           !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-          old_e = 0.5 * ebar_y**2
-          new_e = 0.5 * (ebar_y + (q/(L * eps_0)))**2
+          old_e = 0.5 * eps_0 * ebar_y**2
+          new_e = 0.5 * eps_0 * (ebar_y + (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_y)
 
@@ -576,8 +561,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_z)**2
           !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-          old_e = 0.5 * ebar_z**2
-          new_e = 0.5 * (ebar_z - (q/(L * eps_0)))**2
+          old_e = 0.5 * eps_0 * ebar_z**2
+          new_e = 0.5 * eps_0 * (ebar_z - (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_z)
 
@@ -604,8 +589,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_z)**2
           !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-          old_e = 0.5 * ebar_z**2
-          new_e = 0.5 * (ebar_z + (q/(L * eps_0)))**2
+          old_e = 0.5 * eps_0 * ebar_z**2
+          new_e = 0.5 * eps_0 * (ebar_z + (q/(L * eps_0)))**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_z)
 
@@ -639,7 +624,7 @@ subroutine upcan()
     do i = 1,L
       do j = 1, L
         do k = 1,L
-        u_tot = u_tot + 0.5 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
+        u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
         end do
       end do
     end do
