@@ -289,9 +289,7 @@ module linear_solver
       end do
     end do
 
-    write(*,*)
-
-    write (*,*) "lapack energy: ",lapack_energy
+    !write (*,*) "lapack energy: ",lapack_energy
     deallocate(rho)
     deallocate(IPIV_lapack)
 
