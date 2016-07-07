@@ -480,7 +480,7 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_x = ebar_x - ebar_inc 
+            ebar_x = ebar_x - ebar_inc
             acceptg = acceptg + 1
 
             do j = 1,L
@@ -505,7 +505,7 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_x = ebar_x + ebar_inc 
+            ebar_x = ebar_x + ebar_inc
             acceptg = acceptg + 1
 
             do j = 1,L
@@ -534,7 +534,7 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_y = ebar_y - ebar_inc 
+            ebar_y = ebar_y - ebar_inc
             acceptg = acceptg + 1
 
             do j = 1,L
@@ -559,7 +559,7 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_y = ebar_y + ebar_inc 
+            ebar_y = ebar_y + ebar_inc
             acceptg = acceptg + 1
 
             do j = 1,L
@@ -588,7 +588,7 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_z = ebar_z - ebar_inc 
+            ebar_z = ebar_z - ebar_inc
             acceptg = acceptg + 1
 
             do j = 1,L
@@ -614,7 +614,7 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_z = ebar_z + ebar_inc 
+            ebar_z = ebar_z + ebar_inc
             acceptg = acceptg + 1
 
             do j = 1,L
