@@ -156,30 +156,45 @@ module io
     real*8 :: dot, dot_avg
     integer :: i, j, k, m, n, p
     complex*16 :: imag, kdotx
-    character(7) :: struc_filename
+    character(7) :: struc_charge_filename
+    character(9) :: struc_field_filename
     character(74) :: struc_format_string
+    character(97) :: field_format_string
 
-    !format_string = "(ES18.9, ES18.9, ES18.9, ES18.9,&
-    !                & ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
+    field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
 
-    struc_filename = "s_q.out"
+    struc_charge_filename = "s_q.out"
+    struc_field_filename = "sab_q.out"
 
     do i = 1,L + 1
       do j = 1,L + 1
         do k = 1,L + 1
           do n = 1,iterations
 
-            struc(i,j,k) = struc(i,j,k) + ch_ch(i,j,k,n)
+            struc_charge(i,j,k) = struc_charge(i,j,k) + ch_ch(i,j,k,n)
+
+            ! could have just made more do loops for this
+            struc_field(1,1,i,j,k) = struc_field(1,1,i,j,k) + fe_fe(1,1,i,j,k,n) 
+            struc_field(1,2,i,j,k) = struc_field(1,2,i,j,k) + fe_fe(1,2,i,j,k,n) 
+            struc_field(1,3,i,j,k) = struc_field(1,3,i,j,k) + fe_fe(1,3,i,j,k,n) 
+            struc_field(2,1,i,j,k) = struc_field(2,1,i,j,k) + fe_fe(2,1,i,j,k,n) 
+            struc_field(2,2,i,j,k) = struc_field(2,2,i,j,k) + fe_fe(2,2,i,j,k,n) 
+            struc_field(2,3,i,j,k) = struc_field(2,3,i,j,k) + fe_fe(2,3,i,j,k,n) 
+            struc_field(3,1,i,j,k) = struc_field(3,1,i,j,k) + fe_fe(3,1,i,j,k,n) 
+            struc_field(3,2,i,j,k) = struc_field(3,2,i,j,k) + fe_fe(3,2,i,j,k,n) 
+            struc_field(3,3,i,j,k) = struc_field(3,3,i,j,k) + fe_fe(3,3,i,j,k,n) 
 
           end do
         end do
       end do
     end do
     
-    struc = struc / iterations
+    struc_charge = struc_charge / iterations
+    struc_field = struc_field / iterations
 
-    open(unit=5, file=struc_filename)
+    open(unit=5, file=struc_charge_filename)
+    open(unit=7, file=struc_field_filename)
 
     do i = 1,L + 1
       do j = 1,L + 1
@@ -190,7 +205,21 @@ module io
           2*pi*(i - 1 - L/2)/L*lambda,&
           2*pi*(j - 1 - L/2)/L*lambda,&
           2*pi*(k - 1 - L/2)/L*lambda,&
-          struc(i,j,k)
+          struc_charge(i,j,k)
+
+          write (7, field_format_string)&
+          2*pi*(i - 1 - L/2)/L*lambda,&
+          2*pi*(j - 1 - L/2)/L*lambda,&
+          2*pi*(k - 1 - L/2)/L*lambda,&
+          struc_field(1,1,i,j,k),&
+          struc_field(1,2,i,j,k),&
+          struc_field(1,3,i,j,k),&
+          struc_field(2,1,i,j,k),&
+          struc_field(2,2,i,j,k),&
+          struc_field(2,3,i,j,k),&
+          struc_field(3,1,i,j,k),&
+          struc_field(3,2,i,j,k),&
+          struc_field(3,3,i,j,k)
 
         end do
       end do

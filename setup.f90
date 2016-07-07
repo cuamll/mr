@@ -35,7 +35,9 @@ module setup
     allocate(e_kz(L+1,L+1,L+1))
     allocate(rho_k(L+1,L+1,L+1))
     allocate(ch_ch(L+1,L+1,L+1,iterations))
-    allocate(struc(L+1,L+1,L+1))
+    allocate(fe_fe(3,3,L+1,L+1,L+1,iterations))
+    allocate(struc_field(3,3,L+1,L+1,L+1))
+    allocate(struc_charge(L+1,L+1,L+1))
 
   end subroutine allocations
 
@@ -64,7 +66,9 @@ module setup
     deallocate(e_kz)
     deallocate(rho_k)
     deallocate(ch_ch)
-    deallocate(struc)
+    deallocate(fe_fe)
+    deallocate(struc_charge)
+    deallocate(struc_field)
 
   end subroutine deallocations
 
@@ -166,7 +170,16 @@ module setup
           e_rot_y(i,j,k) = 0.0
           e_rot_z(i,j,k) = 0.0
 
-          struc(i,j,k) = 0.0
+          struc_charge(i,j,k) = 0.0
+          struc_field(1,1,i,j,k) = 0.0
+          struc_field(1,2,i,j,k) = 0.0
+          struc_field(1,3,i,j,k) = 0.0
+          struc_field(2,1,i,j,k) = 0.0
+          struc_field(2,2,i,j,k) = 0.0
+          struc_field(2,3,i,j,k) = 0.0
+          struc_field(3,1,i,j,k) = 0.0
+          struc_field(3,2,i,j,k) = 0.0
+          struc_field(3,3,i,j,k) = 0.0
 
           do n = 1,iterations
             ch_ch(i,j,k,n) = 0.0

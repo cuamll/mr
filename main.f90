@@ -730,7 +730,29 @@ subroutine upcan()
 
           ! second part is weirdly addressed bc of loop structure
           ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
-          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) * rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) *&
+            rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+
+          ! there is probably a better way of doing this
+          ! folding e_mu into one three-vector would make it easier
+          fe_fe(1,1,i,j,k,n) = fe_fe(1,1,i,j,k,n) + (e_kx(i,j,k)&
+            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(1,2,i,j,k,n) = fe_fe(1,2,i,j,k,n) + (e_kx(i,j,k)&
+            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(1,3,i,j,k,n) = fe_fe(1,3,i,j,k,n) + (e_kx(i,j,k)&
+            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(2,1,i,j,k,n) = fe_fe(2,1,i,j,k,n) + (e_ky(i,j,k)&
+            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(2,2,i,j,k,n) = fe_fe(2,2,i,j,k,n) + (e_ky(i,j,k)&
+            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(2,3,i,j,k,n) = fe_fe(2,3,i,j,k,n) + (e_ky(i,j,k)&
+            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(3,1,i,j,k,n) = fe_fe(3,1,i,j,k,n) + (e_kz(i,j,k)&
+            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(3,2,i,j,k,n) = fe_fe(3,2,i,j,k,n) + (e_kz(i,j,k)&
+            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(3,3,i,j,k,n) = fe_fe(3,3,i,j,k,n) + (e_kz(i,j,k)&
+            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
 
         end do
       end do
