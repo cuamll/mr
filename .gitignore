@@ -48,6 +48,7 @@ mr_*
 *_uncorr*
 *_rot*
 lattice.dat
+latts*
 
 
 # LaTeX extras
