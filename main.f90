@@ -765,9 +765,6 @@ subroutine upcan()
       end do
     end do
 
-  !write(*,*) "<U^2>, <U>^2, ratio = ",avg_e2,avg_e*avg_e,(avg_e2/(avg_e**2))
-  !write (*,*) "step = ",n," ebar = ",ebar_x,ebar_y,ebar_z
-
   end do ! end iteration loop
 
   write(*,*)
