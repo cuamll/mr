@@ -50,7 +50,7 @@ subroutine upcan()
   integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
   real*8 :: u_tot,u_tot_run,avg_e,avg_e2,one
-  real*8 :: dot,dot_avg ! probably won't need the avg
+  real*8 :: dot,dot_avg,ebar_inc,e_inc,u_diff
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
   complex*16 :: imag, kdotx
@@ -92,6 +92,7 @@ subroutine upcan()
   do n = 1,iterations
 
   !write (*,*) "utot at start of step ",n," = ",u_tot_run
+    u_tot_run = u_tot
 
     ! charge hop sweep
     do i = 1, int(L**3 * hop_ratio)
@@ -432,6 +433,10 @@ subroutine upcan()
 
       ! NOTE TO SELF: again this int cast prob needs changing
       do i = 1,int(L**3 * g_ratio)
+
+        ebar_inc = q/(L * eps_0)
+        e_inc = ebar_inc / L**3
+
         ! x-component
         chooser = rand()
 
@@ -439,8 +444,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_x)**2
           !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-          old_e = 0.5 * eps_0 * ebar_x**2
-          new_e = 0.5 * eps_0 * (ebar_x - (q/(L * eps_0)))**2
+          old_e = u_tot_run**2
+          new_e = (u_tot_run - ebar_inc)**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
@@ -448,16 +453,18 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_x = ebar_x - (q/(L * eps_0)) 
+            ebar_x = ebar_x - ebar_inc 
             acceptg = acceptg + 1
+            u_tot_run = 0.0 
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) - (q/(L**4 * eps_0))
+                  e_x(j,k,m) = e_x(j,k,m) - e_inc
+                  u_tot_run = u_tot_run + 0.5 * eps_0 *&
+                              (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + delta_e
             if (n.eq.16) then
               write (*,*) "x - ",old_e,new_e,delta_e,u_tot_run
             end if
@@ -467,8 +474,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_x)**2
           !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-          old_e = 0.5 * eps_0 * ebar_x**2
-          new_e = 0.5 * eps_0 * (ebar_x + (q/(L * eps_0)))**2
+          old_e = u_tot_run**2
+          new_e = (u_tot_run + ebar_inc)**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
@@ -476,17 +483,19 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_x = ebar_x + (q/(L * eps_0)) 
+            ebar_x = ebar_x + ebar_inc 
             acceptg = acceptg + 1
 
+            u_tot_run = 0.0
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) + (q/(L**4 * eps_0))
+                  e_x(j,k,m) = e_x(j,k,m) + e_inc
+                  u_tot_run = u_tot_run + 0.5 * eps_0 *&
+                              (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + delta_e
             if (n.eq.16) then
               write (*,*) "x + ",old_e,new_e,delta_e,u_tot_run
             end if
@@ -500,8 +509,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_y)**2
           !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-          old_e = 0.5 * eps_0 * ebar_y**2
-          new_e = 0.5 * eps_0 * (ebar_y - (q/(L * eps_0)))**2
+          old_e = u_tot_run**2
+          new_e = (u_tot_run - ebar_inc)**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_y)
 
@@ -509,16 +518,18 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_y = ebar_y - (q/(L * eps_0)) 
+            ebar_y = ebar_y - ebar_inc 
             acceptg = acceptg + 1
+            u_tot_run = 0.0
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) - (q/(L**4 * eps_0))
+                  e_y(j,k,m) = e_y(j,k,m) - e_inc
+                  u_tot_run = u_tot_run + 0.5 * eps_0 *&
+                              (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + delta_e
             if (n.eq.16) then
               write (*,*) "y - ",old_e,new_e,delta_e,u_tot_run
             end if
@@ -528,8 +539,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_y)**2
           !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-          old_e = 0.5 * eps_0 * ebar_y**2
-          new_e = 0.5 * eps_0 * (ebar_y + (q/(L * eps_0)))**2
+          old_e = u_tot_run**2
+          new_e = (u_tot_run + ebar_inc)**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_y)
 
@@ -537,17 +548,19 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_y = ebar_y + (q/(L * eps_0)) 
+            ebar_y = ebar_y + ebar_inc 
             acceptg = acceptg + 1
 
+            u_tot_run = 0.0
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) + (q/(L**4 * eps_0))
+                  e_y(j,k,m) = e_y(j,k,m) + e_inc
+                  u_tot_run = u_tot_run + 0.5 * eps_0 *&
+                              (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + delta_e
             if (n.eq.16) then
               write (*,*) "y + ",old_e,new_e,delta_e,u_tot_run
             end if
@@ -561,8 +574,8 @@ subroutine upcan()
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_z)**2
           !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-          old_e = 0.5 * eps_0 * ebar_z**2
-          new_e = 0.5 * eps_0 * (ebar_z - (q/(L * eps_0)))**2
+          old_e = u_tot_run**2
+          new_e = (u_tot_run - ebar_inc)**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_z)
 
@@ -570,27 +583,26 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_z = ebar_z - (q/(L * eps_0)) 
+            ebar_z = ebar_z - ebar_inc 
             acceptg = acceptg + 1
+            u_tot_run = 0.0
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) - (q/(L**4 * eps_0))
+                  e_z(j,k,m) = e_z(j,k,m) - e_inc
+                  u_tot_run = u_tot_run + 0.5 * eps_0 *&
+                              (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + delta_e
-            if (n.eq.16) then
-              write (*,*) "z - ",old_e,new_e,delta_e,u_tot_run
-            end if
           end if ! end weird Metropolis block
 
         else
           ! NOTE TO SELF - check this little fucker
           !old_e = (u_tot_run + ebar_z)**2
           !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-          old_e = 0.5 * eps_0 * ebar_z**2
-          new_e = 0.5 * eps_0 * (ebar_z + (q/(L * eps_0)))**2
+          old_e = u_tot_run**2
+          new_e = (u_tot_run - ebar_inc)**2
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_z)
 
@@ -598,17 +610,19 @@ subroutine upcan()
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
-            ebar_z = ebar_z + (q/(L * eps_0)) 
+            ebar_z = ebar_z + ebar_inc 
             acceptg = acceptg + 1
 
+            u_tot_run = 0.0
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) + (q/(L**4 * eps_0))
+                  e_z(j,k,m) = e_z(j,k,m) + e_inc
+                  u_tot_run = u_tot_run + 0.5 * eps_0 *&
+                              (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
                 end do
               end do
             end do
-            u_tot_run = u_tot_run + delta_e
             if (n.eq.16) then
               write (*,*) "z + ",old_e,new_e,delta_e,u_tot_run
             end if
@@ -628,6 +642,11 @@ subroutine upcan()
         end do
       end do
     end do
+
+    u_diff = u_tot_run - u_tot
+    if (abs(u_diff).ge.0.00001) then
+      write (*,*) "u_diff = ",u_diff
+    end if
 
     !write(*,*) n,glob,u_tot_run,u_tot,ebar_x,ebar_y,ebar_z
 
