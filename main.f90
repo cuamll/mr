@@ -721,10 +721,10 @@ subroutine upcan()
           end do
 
           ! normalise, idiot
-          e_kx(i,j,k) = e_kx(i,j,k) / L**3
-          e_ky(i,j,k) = e_ky(i,j,k) / L**3
-          e_kz(i,j,k) = e_kz(i,j,k) / L**3
-          rho_k(i,j,k) = rho_k(i,j,k) / L**3
+          e_kx(i,j,k) = e_kx(i,j,k) / sqrt(float(L**3))
+          e_ky(i,j,k) = e_ky(i,j,k) / sqrt(float(L**3))
+          e_kz(i,j,k) = e_kz(i,j,k) / sqrt(float(L**3))
+          rho_k(i,j,k) = rho_k(i,j,k) / sqrt(float(L**3))
 
           ! second part is weirdly addressed bc of loop structure
           ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
