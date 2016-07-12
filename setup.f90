@@ -60,7 +60,6 @@ module setup
     deallocate(e_z_lapack)
     deallocate(phi_lapack)
     deallocate(lgf)
-    deallocate(v_temp)
     deallocate(e_kx)
     deallocate(e_ky)
     deallocate(e_kz)
