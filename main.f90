@@ -16,7 +16,6 @@ program mr
 
   tot_q = 0
 
-  ! best to check again, just in case
   do i = 1,L
     do j = 1,L
       do k = 1,L
@@ -88,13 +87,15 @@ subroutine upcan()
   energy(1) = u_tot_run
   sq_energy(1) = u_tot_run**2
 
-  ! charge hop sweep
+
   do n = 1,iterations
 
-  !write (*,*) "utot at start of step ",n," = ",u_tot_run
     u_tot_run = u_tot
 
-    ! charge hop sweep
+    ! --- START OF UPDATE BLOCKS ---
+
+    ! --- CHARGE HOP UPDATE ---
+
     do i = 1, int(L**3 * hop_ratio)
 
       ! pick a random site
@@ -102,11 +103,11 @@ subroutine upcan()
       y = int(rand() * L) + 1
       z = int(rand() * L) + 1
 
-      ! pick a non-zero charge - we want to keep it canonical
+      ! pick a non-zero charge - canonical!
       if (v(x,y,z).ne.0) then
 
         charge = v(x,y,z)
-        ! i think this takes care of any sign issues when hopping
+        ! this takes care of sign issues when hopping
         hop_inc = charge / (eps_0 * lambda**2)
         chooser = rand()
 
@@ -641,6 +642,8 @@ subroutine upcan()
 
     end if ! end glob.eq.1 block
 
+    ! --- END OF UPDATE BLOCKS ---
+
     u_tot = 0.0
     do i = 1,L
       do j = 1, L
@@ -654,8 +657,6 @@ subroutine upcan()
     if (abs(u_diff).ge.0.00001) then
       write (*,*) "HARM: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
     end if
-
-    !write(*,*) n,glob,u_tot_run,u_tot,ebar_x,ebar_y,ebar_z
 
   ! replace with u_tot_run maybe?
   energy(n + 1) = u_tot
@@ -724,16 +725,6 @@ subroutine upcan()
           e_ky(i,j,k) = e_ky(i,j,k) / L**3
           e_kz(i,j,k) = e_kz(i,j,k) / L**3
           rho_k(i,j,k) = rho_k(i,j,k) / L**3
-
-          ! now we need to do a (?) thermal (?) average to get correlations
-          ! this is the dot of the fourier space field with itself at i,j,k
-          dot = (e_kx(i,j,k) * CONJG(e_kx(i,j,k))) +&
-                (e_ky(i,j,k) * CONJG(e_ky(i,j,k))) +&
-                (e_kz(i,j,k) * CONJG(e_kz(i,j,k)))
-
-          !write (*,*) "E \cdot E (",2*pi*i/(L*lambda),2*pi*j/(L*lambda),2*pi*k/(L*lambda),") = ",dot
-
-          dot_avg = dot_avg + dot
 
           ! second part is weirdly addressed bc of loop structure
           ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
