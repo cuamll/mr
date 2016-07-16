@@ -381,7 +381,7 @@ subroutine upcan()
                 e_ky(i,j,k) = e_ky(i,j,k) + e**(kdotx)*e_y(m,p,s)
                 e_kz(i,j,k) = e_kz(i,j,k) + e**(kdotx)*e_z(m,p,s)
 
-                if (v(m,p,s).ne.0) then ! there's a charge
+                if (v(m,p,s).eq.1) then ! there's a charge
 
                   ! FT of charge distribution
                   kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
@@ -396,10 +396,10 @@ subroutine upcan()
           end do
 
           ! normalise, idiot
-          e_kx(i,j,k) = e_kx(i,j,k) / L**3
-          e_ky(i,j,k) = e_ky(i,j,k) / L**3
-          e_kz(i,j,k) = e_kz(i,j,k) / L**3
-          rho_k(i,j,k) = rho_k(i,j,k) / L**3
+          e_kx(i,j,k) = e_kx(i,j,k) / sqrt(float(L**3))
+          e_ky(i,j,k) = e_ky(i,j,k) / sqrt(float(L**3))
+          e_kz(i,j,k) = e_kz(i,j,k) / sqrt(float(L**3))
+          rho_k(i,j,k) = rho_k(i,j,k) / sqrt(float(L**3))
 
           ! now we need to do a (?) thermal (?) average to get correlations
           ! this is the dot of the fourier space field with itself at i,j,k
