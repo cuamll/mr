@@ -706,7 +706,7 @@ subroutine upcan()
                 e_ky(i,j,k) = e_ky(i,j,k) + e**(kdotx)*e_y(m,p,s)
                 e_kz(i,j,k) = e_kz(i,j,k) + e**(kdotx)*e_z(m,p,s)
 
-                if (v(m,p,s).ne.0) then ! there's a charge
+                if (v(m,p,s).eq.1) then ! calculate <++>!
 
                   ! FT of charge distribution
                   kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
