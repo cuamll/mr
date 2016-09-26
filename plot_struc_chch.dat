@@ -4,5 +4,5 @@ set view map
 unset key
 set lmargin at screen 0.1
 set rmargin at screen 0.85
-set title "Static structure factor for charge-charge correlations using Maggs-Rossetto\nk_x = {/Symbol p} plane"
-splot "s_ch_kxpi.out" w image
+set title "Static structure factor for charge-charge correlations - Maggs-Rossetto"
+splot "<awk '{ if(NR > 196 && NR < 246) print $2,$3,$4 }' s_q.out" w image

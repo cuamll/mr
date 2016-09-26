@@ -114,26 +114,38 @@ module io
     !write (*,*) "N^2 = ",N**2
     !write (*,*) "N T = ",N * temp
 
-    avg_e = avg_e / (iterations * N)
-    avg_e2 = avg_e2 / (iterations * N**2)
-
-    ! prefactor troubles
-    prefac = 1.0 * N / (temp**2)
+    avg_e = avg_e / (iterations)
+    avg_e2 = avg_e2 / (iterations)
 
     write(*,*)
     write(*,*) " --- averages and specific heat ---"
+    write(*,*) "avg_e unnormalised = ",avg_e
+    write(*,*) "avg_e^2 unnormalised = ",avg_e2
+
+    ! prefactor troubles
+    prefac = 1.0 * N / (temp**2)
+    sp_he = prefac * ((avg_e2) - ((avg_e)**2))
+
+    write(*,*) "prefactor = ",prefac
+    write(*,*) "sp. heat (C) = ",sp_he
+    write(*,*) "C / (N) = ",sp_he / N
+    write(*,*)
+
+    avg_e = avg_e / (N)
+    avg_e2 = avg_e2 / (N**2)
+
     write(*,*) "<U> norm. = ",avg_e
-    !write(*,*) "<U>^2 norm. = ",avg_e**2
-    !write(*,*) "<U^2> norm. = ",avg_e2
-    !write(*,*) "prefactor = ",prefac
+    write(*,*) "<U>^2 norm. = ",avg_e**2
+    write(*,*) "<U^2> norm. = ",avg_e2
+    write(*,*) "prefactor = ",prefac
     write(*,*)
 
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
-    write (*,*) "sp. heat (C) = ",sp_he
-    !write (*,*) "C / (N) = ",sp_he / (L**3)
-    !write (*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
-    !write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
+    write(*,*) "sp. heat (C) = ",sp_he
+    write(*,*) "C / (N) = ",sp_he / N
+    write(*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
+    write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
     write(*,*)
 
     close(2)
