@@ -34,7 +34,7 @@ module setup
     allocate(e_ky(L+1,L+1,L+1))
     allocate(e_kz(L+1,L+1,L+1))
     allocate(rho_k(L+1,L+1,L+1))
-    allocate(ch_ch(L+1,L+1,L+1,iterations))
+    allocate(ch_ch(L/2+1,L,L,iterations))
     allocate(fe_fe(3,3,L+1,L+1,L+1,iterations))
     allocate(struc_field(3,3,L+1,L+1,L+1))
     allocate(struc_charge(L+1,L+1,L+1))

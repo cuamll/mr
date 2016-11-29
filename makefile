@@ -13,17 +13,17 @@ else
 endif
 
 ifeq ($(UNAME), Darwin)
-	LIBS = -llapack -L/opt/local/lib
+	LIBS = -llapack -lfftw3 -L/opt/local/lib -L/usr/local/lib
 	CFLAGS = 
 	LFLAGS = $(DEBUGFLAG) $(LIBS)
 endif
 ifeq ($(UNAME), Linux)
-	LIBS = -llapack
+	LIBS = -llapack -lfftw3
 	CFLAGS =
 	LFLAGS = $(DEBUGFLAG) $(LIBS)
 endif
 
-OBJECTS = common.o io.o linear_solver.o setup.o
+OBJECTS = common.o io.o linear_solver.o setup.o fftw.o
 MODS = $(OBJECTS:.o=.mod)
 
 $(EXECNAME) : $(OBJECTS)
@@ -31,6 +31,9 @@ $(EXECNAME) : $(OBJECTS)
 
 %.o : %.f90
 	$(GF) $(DEBUGFLAG) -c $<
+
+fftw.o : fftw.f03
+	$(GF) $(DEBUGFLAG) -c -I/usr/local/include $<
 
 # add this if need be, can't be arsed to fuck around rn
 .PHONY: clean clean_obj clean_mod

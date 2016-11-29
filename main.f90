@@ -53,6 +53,9 @@ subroutine upcan()
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
   complex*16 :: imag, kdotx
+  type(C_PTR) :: plan_ch, plan_ex, plan_ey, plan_ez
+  real(C_DOUBLE), dimension(L,L,L) :: fftw_ch_in, fftw_ex_in,fftw_ey_in,fftw_ez_in
+  complex(C_DOUBLE_COMPLEX), dimension(L/2+1,L,L) :: fftw_ch_out, fftw_ex_out, fftw_ey_out, fftw_ez_out
 
   glob = 0
   totq = 0
@@ -649,28 +652,51 @@ subroutine upcan()
       do j = 1, L
         do k = 1,L
         u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
+        ! copy the charge distribution and e field into fftw inputs
+        fftw_ch_in(i,j,k) = v(i,j,k)
+        fftw_ex_in(i,j,k) = e_x(i,j,k)
+        fftw_ey_in(i,j,k) = e_y(i,j,k)
+        fftw_ez_in(i,j,k) = e_z(i,j,k)
         end do
       end do
     end do
+
+    ! fftw plans for the transforms
+    plan_ch = fftw_plan_dft_r2c_3d(L,L,L,fftw_ch_in,fftw_ch_out,FFTW_ESTIMATE)
+    plan_ex = fftw_plan_dft_r2c_3d(L,L,L,fftw_ex_in,fftw_ex_out,FFTW_ESTIMATE)
+    plan_ey = fftw_plan_dft_r2c_3d(L,L,L,fftw_ey_in,fftw_ey_out,FFTW_ESTIMATE)
+    plan_ez = fftw_plan_dft_r2c_3d(L,L,L,fftw_ez_in,fftw_ez_out,FFTW_ESTIMATE)
+
+    ! do the transforms
+    call fftw_execute_dft_r2c(plan_ch,fftw_ch_in,fftw_ch_out)
+    call fftw_execute_dft_r2c(plan_ex,fftw_ex_in,fftw_ex_out)
+    call fftw_execute_dft_r2c(plan_ey,fftw_ey_in,fftw_ey_out)
+    call fftw_execute_dft_r2c(plan_ez,fftw_ez_in,fftw_ez_out)
+
+    ! according to the fftw docs this is the right normalisation
+    fftw_ch_out = fftw_ch_out / sqrt(L**3)
+    fftw_ex_out = fftw_ex_out / sqrt(L**3)
+    fftw_ey_out = fftw_ey_out / sqrt(L**3)
+    fftw_ez_out = fftw_ez_out / sqrt(L**3)
 
     u_diff = u_tot_run - u_tot
     if (abs(u_diff).ge.0.00001) then
       write (*,*) "HARM: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
     end if
 
-  ! replace with u_tot_run maybe?
-  energy(n + 1) = u_tot
-  sq_energy(n + 1) = u_tot**2
+    ! replace with u_tot_run maybe?
+    energy(n + 1) = u_tot
+    sq_energy(n + 1) = u_tot**2
 
-  avg_e = 0.0
-  avg_e2 = 0.0
-  do m=1,n+1
-    avg_e = avg_e + energy(m)
-    avg_e2 = avg_e2 + sq_energy(m)
-  end do
+    avg_e = 0.0
+    avg_e2 = 0.0
+    do m=1,n+1
+      avg_e = avg_e + energy(m)
+      avg_e2 = avg_e2 + sq_energy(m)
+    end do
 
-  avg_e = avg_e / (n + 1)
-  avg_e2 = avg_e2 / (n + 1)
+    avg_e = avg_e / (n + 1)
+    avg_e2 = avg_e2 / (n + 1)
 
     ! Fourier transform
     do kx = -L/2, L/2
@@ -730,6 +756,9 @@ subroutine upcan()
           ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
           ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) *&
             rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+
+          ! loop indices need changing to do this; i dimension is smaller
+          ch_ch(i,j,k,n) = fftw_output(i,j,k)*conjg(fftw_output(i,j,k))
 
           ! there is probably a better way of doing this
           ! folding e_mu into one three-vector would make it easier

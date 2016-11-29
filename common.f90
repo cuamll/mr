@@ -1,4 +1,5 @@
 module common
+  use fftw
   implicit none
   real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
   real, public :: eps_0
