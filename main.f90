@@ -27,12 +27,13 @@ program mr
   end do
 
   if (tot_q.ne.0) then
+
     call linsol
+    call linalg
+
   end if
 
   write(*,*)
-
-  call linalg
 
   call write_output
 
@@ -46,16 +47,20 @@ end program mr
 subroutine upcan()
   use common
   implicit none
+  character(2) :: configs
   integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
+  integer, dimension(4) :: dims
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
   real*8 :: u_tot,u_tot_run,avg_e,avg_e2,one
   real*8 :: dot,dot_avg,ebar_inc,e_inc,u_diff
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
   complex*16 :: imag, kdotx
-  type(C_PTR) :: plan_ch, plan_ex, plan_ey, plan_ez
-  real(C_DOUBLE), dimension(L,L,L) :: fftw_ch_in, fftw_ex_in,fftw_ey_in,fftw_ez_in
-  complex(C_DOUBLE_COMPLEX), dimension(L/2+1,L,L) :: fftw_ch_out, fftw_ex_out, fftw_ey_out, fftw_ez_out
+  type(C_PTR) :: plan_ch, plan_e
+  real(C_DOUBLE), dimension(L,L,L) :: fftw_ch_in
+  real(C_DOUBLE), dimension(3,L,L,L) :: fftw_e_in
+  complex(C_DOUBLE_COMPLEX), dimension(L/2+1,L,L) :: fftw_ch_out
+  complex(C_DOUBLE_COMPLEX), dimension(L/2+1,3,L,L) :: fftw_e_out
 
   glob = 0
   totq = 0
@@ -66,6 +71,16 @@ subroutine upcan()
   acceptg=0
   one=1.0
   imag = (0.0,1.0)
+
+  ! test electric field structure factor
+  configs = "AF"
+
+  ! FFTW stuff
+  dims = (/ 3,L,L,L /)
+
+  ! fftw plans for the transforms
+  plan_ch = fftw_plan_dft_r2c_3d(L,L,L,fftw_ch_in,fftw_ch_out,FFTW_ESTIMATE)
+  plan_e = fftw_plan_dft_r2c(4,dims,fftw_e_in,fftw_e_out,FFTW_ESTIMATE)
 
   write(*,*)
   write(*,*) " --- start: charge positions ---"
@@ -651,33 +666,31 @@ subroutine upcan()
     do i = 1,L
       do j = 1, L
         do k = 1,L
-        u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
-        ! copy the charge distribution and e field into fftw inputs
-        fftw_ch_in(i,j,k) = v(i,j,k)
-        fftw_ex_in(i,j,k) = e_x(i,j,k)
-        fftw_ey_in(i,j,k) = e_y(i,j,k)
-        fftw_ez_in(i,j,k) = e_z(i,j,k)
+          u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
+          ! copy the charge distribution and e field into fftw inputs
+          fftw_ch_in(i,j,k) = v(i,j,k)
+
+          ! test field structure factor
+          if (configs.eq."NO") then
+            fftw_e_in(i,j,k,1) = e_x(i,j,k)
+            fftw_e_in(i,j,k,2) = e_y(i,j,k)
+            fftw_e_in(i,j,k,3) = e_z(i,j,k)
+          else if (configs.eq."AF") then
+            fftw_e_in(i,j,k,1) = (-1.0)**(i+j)
+            fftw_e_in(i,j,k,2) = (-1.0)**(i+j)
+            fftw_e_in(i,j,k,3) = (1.0)
+          else if (configs.eq."ST") then
+            fftw_e_in(i,j,k,1) = (-1.0)**j
+            fftw_e_in(i,j,k,2) = (-1.0)**k
+            fftw_e_in(i,j,k,3) = (-1.0)**i
+          else if (configs.eq."FE") then
+            fftw_e_in(1,i,j,k) = 1.0
+            fftw_e_in(2,i,j,k) = 1.0
+            fftw_e_in(3,i,j,k) = 1.0
+          end if
         end do
       end do
     end do
-
-    ! fftw plans for the transforms
-    plan_ch = fftw_plan_dft_r2c_3d(L,L,L,fftw_ch_in,fftw_ch_out,FFTW_ESTIMATE)
-    plan_ex = fftw_plan_dft_r2c_3d(L,L,L,fftw_ex_in,fftw_ex_out,FFTW_ESTIMATE)
-    plan_ey = fftw_plan_dft_r2c_3d(L,L,L,fftw_ey_in,fftw_ey_out,FFTW_ESTIMATE)
-    plan_ez = fftw_plan_dft_r2c_3d(L,L,L,fftw_ez_in,fftw_ez_out,FFTW_ESTIMATE)
-
-    ! do the transforms
-    call fftw_execute_dft_r2c(plan_ch,fftw_ch_in,fftw_ch_out)
-    call fftw_execute_dft_r2c(plan_ex,fftw_ex_in,fftw_ex_out)
-    call fftw_execute_dft_r2c(plan_ey,fftw_ey_in,fftw_ey_out)
-    call fftw_execute_dft_r2c(plan_ez,fftw_ez_in,fftw_ez_out)
-
-    ! according to the fftw docs this is the right normalisation
-    fftw_ch_out = fftw_ch_out / sqrt(L**3)
-    fftw_ex_out = fftw_ex_out / sqrt(L**3)
-    fftw_ey_out = fftw_ey_out / sqrt(L**3)
-    fftw_ez_out = fftw_ez_out / sqrt(L**3)
 
     u_diff = u_tot_run - u_tot
     if (abs(u_diff).ge.0.00001) then
@@ -698,92 +711,151 @@ subroutine upcan()
     avg_e = avg_e / (n + 1)
     avg_e2 = avg_e2 / (n + 1)
 
-    ! Fourier transform
-    do kx = -L/2, L/2
-      do ky = -L/2, L/2
-        do kz = -L/2, L/2
+    ! do the transforms
+    call fftw_execute_dft_r2c(plan_ch,fftw_ch_in,fftw_ch_out)
+    call fftw_execute_dft_r2c(plan_e,fftw_e_in,fftw_e_out)
 
-          ! for array indices
-          i = kx + 1 + L/2
-          j = ky + 1 + L/2
-          k = kz + 1 + L/2
+    ! according to the fftw docs this is the right normalisation
+    fftw_ch_out = fftw_ch_out / sqrt(dble(L**3))
+    fftw_e_out = fftw_e_out / sqrt(dble(L**3))
 
-          e_kx(i,j,k) = 0.0
-          e_ky(i,j,k) = 0.0
-          e_kz(i,j,k) = 0.0
+    ! testing the longer expression - didn't work
+    !do kx = -L/2, L/2
+    !  do ky = -L/2, L/2
+    !    do kz = -L/2, L/2
 
-          ! vec(q) = vec(0) term:
-          if (i.eq.0.and.j.eq.0.and.k.eq.0) then
-            write (*,*) "q=0 term; need to work this out"
-            write (*,*) "e_kx(",i,j,k,") = ",e_kx(i,j,k)
-            CYCLE
-          end if
+    !      do i=1,L
+    !        do j=1,L
+    !          do k=1,L
 
-          ! m,p,s are the real space coordinates
-          do m = 1,L
-            do p = 1,L
-              do s = 1,L
+    !            do m=1,L
+    !              do p=1,L
+    !                do s=1,L
 
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                        ((p-1)*ky/(L*lambda)) + &
-                        ((s-1)*kz/(L*lambda))))
+    !                  fe_fe(i,j,k,n) = (fftw_ex_in(i,j,k) * fftw_ex_in(m,p,s) &
+    !                  + fftw_ey_in(i,j,k) * fftw_ey_in(m,p,s) &
+    !                  + fftw_ez_in(i,j,k) * fftw_ez_in(m,p,s)) &
+    !                  * (exp((-1)*imag*(2*pi/L*lambda) * &
+    !                  (kx*(i-m) + ky*(j-p) + kz*(s-k))))
 
-                e_kx(i,j,k) = e_kx(i,j,k) + e**(kdotx)*e_x(m,p,s)
-                e_ky(i,j,k) = e_ky(i,j,k) + e**(kdotx)*e_y(m,p,s)
-                e_kz(i,j,k) = e_kz(i,j,k) + e**(kdotx)*e_z(m,p,s)
+    !                end do ! s
+    !              end do ! p
+    !            end do ! m
 
-                if (v(m,p,s).eq.1) then ! calculate <++>!
+    !          end do ! k
+    !        end do ! j
+    !      end do ! i
 
-                  ! FT of charge distribution
-                  kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                          ((p-1)*ky/(L*lambda)) + &
-                          ((s-1)*kz/(L*lambda))))
-                  rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * e**(kdotx)
+    !    end do ! kz
+    !  end do ! ky
+    !end do ! kx
 
-                end if
+    do i=1,L/2+1
+      do j=1,L
+        do k=1,L
 
-              end do
-            end do
-          end do
+          ! products, lovely
+          fe_fe(i,j,k,n) = (fftw_e_out(i,1,j,k)*conjg(fftw_e_out(i,1,j,k))&
+                           + fftw_e_out(i,2,j,k)*conjg(fftw_e_out(i,2,j,k))&
+                           + fftw_e_out(i,3,j,k)*conjg(fftw_e_out(i,3,j,k)))
 
-          ! normalise, idiot
-          e_kx(i,j,k) = e_kx(i,j,k) / sqrt(float(L**3))
-          e_ky(i,j,k) = e_ky(i,j,k) / sqrt(float(L**3))
-          e_kz(i,j,k) = e_kz(i,j,k) / sqrt(float(L**3))
-          rho_k(i,j,k) = rho_k(i,j,k) / sqrt(float(L**3))
+          ch_ch(i,j,k,n) = fftw_ch_out(i,j,k)*conjg(fftw_ch_out(i,j,k))
 
-          ! second part is weirdly addressed bc of loop structure
-          ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
-          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) *&
-            rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          !if (n.eq.1) then
+          !  write (*,*) fftw_e_out(i,1,j,k),&
+          !              fftw_e_out(i,2,j,k),fftw_e_out(i,3,j,k)
+          !end if
 
-          ! loop indices need changing to do this; i dimension is smaller
-          ch_ch(i,j,k,n) = fftw_output(i,j,k)*conjg(fftw_output(i,j,k))
+        end do ! k
+      end do ! j
+    end do ! i
 
-          ! there is probably a better way of doing this
-          ! folding e_mu into one three-vector would make it easier
-          fe_fe(1,1,i,j,k,n) = fe_fe(1,1,i,j,k,n) + (e_kx(i,j,k)&
-            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(1,2,i,j,k,n) = fe_fe(1,2,i,j,k,n) + (e_kx(i,j,k)&
-            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(1,3,i,j,k,n) = fe_fe(1,3,i,j,k,n) + (e_kx(i,j,k)&
-            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(2,1,i,j,k,n) = fe_fe(2,1,i,j,k,n) + (e_ky(i,j,k)&
-            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(2,2,i,j,k,n) = fe_fe(2,2,i,j,k,n) + (e_ky(i,j,k)&
-            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(2,3,i,j,k,n) = fe_fe(2,3,i,j,k,n) + (e_ky(i,j,k)&
-            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(3,1,i,j,k,n) = fe_fe(3,1,i,j,k,n) + (e_kz(i,j,k)&
-            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(3,2,i,j,k,n) = fe_fe(3,2,i,j,k,n) + (e_kz(i,j,k)&
-            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(3,3,i,j,k,n) = fe_fe(3,3,i,j,k,n) + (e_kz(i,j,k)&
-            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !! Fourier transform
+    !do kx = -L/2, L/2
+    !  do ky = -L/2, L/2
+    !    do kz = -L/2, L/2
 
-        end do
-      end do
-    end do
+    !      ! for array indices
+    !      i = kx + 1 + L/2
+    !      j = ky + 1 + L/2
+    !      k = kz + 1 + L/2
+
+    !      e_kx(i,j,k) = 0.0
+    !      e_ky(i,j,k) = 0.0
+    !      e_kz(i,j,k) = 0.0
+
+    !      ! vec(q) = vec(0) term:
+    !      if (i.eq.0.and.j.eq.0.and.k.eq.0) then
+    !        write (*,*) "q=0 term; need to work this out"
+    !        write (*,*) "e_kx(",i,j,k,") = ",e_kx(i,j,k)
+    !        CYCLE
+    !      end if
+
+    !      ! m,p,s are the real space coordinates
+    !      do m = 1,L
+    !        do p = 1,L
+    !          do s = 1,L
+
+    !            kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+    !                    ((p-1)*ky/(L*lambda)) + &
+    !                    ((s-1)*kz/(L*lambda))))
+
+    !            e_kx(i,j,k) = e_kx(i,j,k) + e**(kdotx)*e_x(m,p,s)
+    !            e_ky(i,j,k) = e_ky(i,j,k) + e**(kdotx)*e_y(m,p,s)
+    !            e_kz(i,j,k) = e_kz(i,j,k) + e**(kdotx)*e_z(m,p,s)
+
+    !            if (v(m,p,s).eq.1) then ! calculate <++>!
+
+    !              ! FT of charge distribution
+    !              kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+    !                      ((p-1)*ky/(L*lambda)) + &
+    !                      ((s-1)*kz/(L*lambda))))
+    !              rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * e**(kdotx)
+
+    !            end if
+
+    !          end do
+    !        end do
+    !      end do
+
+    !      ! normalise, idiot
+    !      e_kx(i,j,k) = e_kx(i,j,k) / sqrt(float(L**3))
+    !      e_ky(i,j,k) = e_ky(i,j,k) / sqrt(float(L**3))
+    !      e_kz(i,j,k) = e_kz(i,j,k) / sqrt(float(L**3))
+    !      rho_k(i,j,k) = rho_k(i,j,k) / sqrt(float(L**3))
+
+    !      ! second part is weirdly addressed bc of loop structure
+    !      ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
+    !      ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) *&
+    !        rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+
+    !      ! loop indices need changing to do this; i dimension is smaller
+    !      ch_ch(i,j,k,n) = fftw_output(i,j,k)*conjg(fftw_output(i,j,k))
+
+    !      ! there is probably a better way of doing this
+    !      ! folding e_mu into one three-vector would make it easier
+    !      fe_fe(1,1,i,j,k,n) = fe_fe(1,1,i,j,k,n) + (e_kx(i,j,k)&
+    !        * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(1,2,i,j,k,n) = fe_fe(1,2,i,j,k,n) + (e_kx(i,j,k)&
+    !        * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(1,3,i,j,k,n) = fe_fe(1,3,i,j,k,n) + (e_kx(i,j,k)&
+    !        * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(2,1,i,j,k,n) = fe_fe(2,1,i,j,k,n) + (e_ky(i,j,k)&
+    !        * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(2,2,i,j,k,n) = fe_fe(2,2,i,j,k,n) + (e_ky(i,j,k)&
+    !        * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(2,3,i,j,k,n) = fe_fe(2,3,i,j,k,n) + (e_ky(i,j,k)&
+    !        * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(3,1,i,j,k,n) = fe_fe(3,1,i,j,k,n) + (e_kz(i,j,k)&
+    !        * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(3,2,i,j,k,n) = fe_fe(3,2,i,j,k,n) + (e_kz(i,j,k)&
+    !        * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+    !      fe_fe(3,3,i,j,k,n) = fe_fe(3,3,i,j,k,n) + (e_kz(i,j,k)&
+    !        * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+
+    !    end do
+    !  end do
+    !end do
 
   end do ! end iteration loop
 

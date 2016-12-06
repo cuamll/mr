@@ -16,8 +16,8 @@ module common
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
   real*8, dimension(:,:,:,:), allocatable, public :: ch_ch
-  real*8, dimension(:,:,:,:,:,:), allocatable, public :: fe_fe
-  real*8, dimension(:,:,:,:,:), allocatable, public :: struc_field
+  real*8, dimension(:,:,:,:), allocatable, public :: fe_fe
+  real*8, dimension(:,:,:), allocatable, public :: struc_field
   complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz,rho_k
   ! probably more things need to go here
   character(len=11), public :: lattfile

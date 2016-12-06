@@ -23,17 +23,17 @@ ifeq ($(UNAME), Linux)
 	LFLAGS = $(DEBUGFLAG) $(LIBS)
 endif
 
-OBJECTS = common.o io.o linear_solver.o setup.o fftw.o
+OBJECTS = fftw.o common.o io.o linear_solver.o setup.o
 MODS = $(OBJECTS:.o=.mod)
 
 $(EXECNAME) : $(OBJECTS)
 	$(GF) $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
 
-%.o : %.f90
-	$(GF) $(DEBUGFLAG) -c $<
-
 fftw.o : fftw.f03
 	$(GF) $(DEBUGFLAG) -c -I/usr/local/include $<
+
+%.o : %.f90
+	$(GF) $(DEBUGFLAG) -c $<
 
 # add this if need be, can't be arsed to fuck around rn
 .PHONY: clean clean_obj clean_mod
