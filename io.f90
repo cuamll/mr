@@ -168,70 +168,67 @@ module io
     real*8 :: dot, dot_avg
     integer :: i, j, k, m, n, p
     complex*16 :: imag, kdotx
-    character(7) :: struc_charge_filename
-    character(9) :: struc_field_filename
+    character(16) :: charge_struc_filename
+    character(15) :: field_struc_filename
+    character(20) :: perp_field_struc_filename
     character(74) :: struc_format_string
     character(97) :: field_format_string
 
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
 
-    struc_charge_filename = "s_q.out"
-    struc_field_filename = "sab_q.out"
+    charge_struc_filename = "charge_struc.out"
+    field_struc_filename = "field_struc.out"
+    perp_field_struc_filename = "perp_field_struc.out"
 
-    do i = 1,L + 1
-      do j = 1,L + 1
-        do k = 1,L + 1
+    do i = 1,bz*(L+1)
+      do j = 1,bz*(L+1)
+        do k = 1,bz*(L+1)
           do n = 1,iterations
 
-            struc_charge(i,j,k) = struc_charge(i,j,k) + ch_ch(i,j,k,n)
+            charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
 
-            ! could have just made more do loops for this
-            struc_field(1,1,i,j,k) = struc_field(1,1,i,j,k) + fe_fe(1,1,i,j,k,n) 
-            struc_field(1,2,i,j,k) = struc_field(1,2,i,j,k) + fe_fe(1,2,i,j,k,n) 
-            struc_field(1,3,i,j,k) = struc_field(1,3,i,j,k) + fe_fe(1,3,i,j,k,n) 
-            struc_field(2,1,i,j,k) = struc_field(2,1,i,j,k) + fe_fe(2,1,i,j,k,n) 
-            struc_field(2,2,i,j,k) = struc_field(2,2,i,j,k) + fe_fe(2,2,i,j,k,n) 
-            struc_field(2,3,i,j,k) = struc_field(2,3,i,j,k) + fe_fe(2,3,i,j,k,n) 
-            struc_field(3,1,i,j,k) = struc_field(3,1,i,j,k) + fe_fe(3,1,i,j,k,n) 
-            struc_field(3,2,i,j,k) = struc_field(3,2,i,j,k) + fe_fe(3,2,i,j,k,n) 
-            struc_field(3,3,i,j,k) = struc_field(3,3,i,j,k) + fe_fe(3,3,i,j,k,n) 
+            field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n) 
+
+            field_struc_perp(i,j,k) = field_struc_perp(i,j,k)&
+                                    + fe_fe_perp(i,j,k,n) 
 
           end do
         end do
       end do
     end do
     
-    struc_charge = struc_charge / iterations
-    struc_field = struc_field / iterations
+    charge_struc = charge_struc / iterations
+    field_struc = field_struc / iterations
+    field_struc_perp = field_struc_perp / iterations
 
-    open(unit=5, file=struc_charge_filename)
-    open(unit=7, file=struc_field_filename)
+    open(unit=5, file=charge_struc_filename)
+    open(unit=7, file=field_struc_filename)
+    open(unit=8, file=perp_field_struc_filename)
 
-    do i = 1,L + 1
-      do j = 1,L + 1
-        do k = 1,L + 1
+    do k = 1,bz*(L) + 1
+      do i = 1,bz*(L) + 1
+        do j = 1,bz*(L) + 1
 
           ! output is kx, ky, kz, S(\vec{k})
           write (5, struc_format_string)&
-          2*pi*(i - 1 - L/2)/L*lambda,&
-          2*pi*(j - 1 - L/2)/L*lambda,&
-          2*pi*(k - 1 - L/2)/L*lambda,&
-          struc_charge(i,j,k)
+          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
+          charge_struc(i,j,k)
 
           write (7, field_format_string)&
-          2*pi*(i - 1 - L/2)/L*lambda,&
-          2*pi*(j - 1 - L/2)/L*lambda,&
-          2*pi*(k - 1 - L/2)/L*lambda,&
-          struc_field(1,1,i,j,k),&
-          struc_field(1,2,i,j,k),&
-          struc_field(1,3,i,j,k),&
-          struc_field(2,1,i,j,k),&
-          struc_field(2,2,i,j,k),&
-          struc_field(2,3,i,j,k),&
-          struc_field(3,1,i,j,k),&
-          struc_field(3,2,i,j,k),&
-          struc_field(3,3,i,j,k)
+          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
+          field_struc(i,j,k)
+
+          write (8, field_format_string)&
+          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
+          field_struc_perp(i,j,k)
+
 
         end do
       end do

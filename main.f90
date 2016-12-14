@@ -28,11 +28,11 @@ program mr
 
   if (tot_q.ne.0) then
     call linsol
+
+    write(*,*)
+
+    call linalg
   end if
-
-  write(*,*)
-
-  call linalg
 
   call write_output
 
@@ -46,17 +46,23 @@ end program mr
 subroutine upcan()
   use common
   implicit none
+  character(2) :: configs
   integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
   real*8 :: u_tot,u_tot_run,avg_e,avg_e2,one
   real*8 :: dot,dot_avg,ebar_inc,e_inc,u_diff
+  real*8 :: norm_k,kdote,e_perp
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
   complex*16 :: imag, kdotx
 
+  configs = "AF"
   glob = 0
   totq = 0
   u_tot_run = 0.0
+  u_tot = 0.0
+  u_diff = 0.0
+  delta_e = 0.0
   g_thr = 1 / float(L)
   accepth = 0
   acceptr=0
@@ -649,6 +655,22 @@ subroutine upcan()
       do j = 1, L
         do k = 1,L
         u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
+
+         if (configs.eq."NO") then
+           CYCLE
+          else if (configs.eq."AF") then
+            e_x(i,j,k) = (-1.0)**((i+j))
+            e_y(i,j,k) = (-1.0)**((i+j))
+            e_z(i,j,k) = (0.0)
+          else if (configs.eq."ST") then
+            e_x(i,j,k) = (-1.0)**j
+            e_y(i,j,k) = (-1.0)**i
+            e_z(i,j,k) = (0.0)
+          else if (configs.eq."FE") then
+            e_x(i,j,k) = 1.0
+            e_y(i,j,k) = 1.0
+            e_z(i,j,k) = 0.0
+          end if
         end do
       end do
     end do
@@ -673,38 +695,57 @@ subroutine upcan()
   avg_e2 = avg_e2 / (n + 1)
 
     ! Fourier transform
-    do kx = -L/2, L/2
-      do ky = -L/2, L/2
-        do kz = -L/2, L/2
+    do kx = (-1*L/2)*bz, (L/2)*bz
+      do ky = (-1*L/2)*bz, (L/2)*bz
+        do kz = (-1*L/2)*bz, (L/2)*bz
 
           ! for array indices
-          i = kx + 1 + L/2
-          j = ky + 1 + L/2
-          k = kz + 1 + L/2
+          i = kx + 1 + bz*(L/2)
+          j = ky + 1 + bz*(L/2)
+          k = kz + 1 + bz*(L/2)
+
+          norm_k = 1.0/sqrt(dble(kx**2 + ky**2 + kz**2))
 
           e_kx(i,j,k) = 0.0
           e_ky(i,j,k) = 0.0
           e_kz(i,j,k) = 0.0
-
-          ! vec(q) = vec(0) term:
-          if (i.eq.0.and.j.eq.0.and.k.eq.0) then
-            write (*,*) "q=0 term; need to work this out"
-            write (*,*) "e_kx(",i,j,k,") = ",e_kx(i,j,k)
-            CYCLE
-          end if
+          e_kx_perp(i,j,k) = 0.0
+          e_ky_perp(i,j,k) = 0.0
+          e_kz_perp(i,j,k) = 0.0
 
           ! m,p,s are the real space coordinates
           do m = 1,L
             do p = 1,L
               do s = 1,L
 
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                ! for perpendicular component
+                kdote = norm_k*(2*pi/(L*lambda))*(kx * e_x(m,p,s) +&
+                        ky * e_y(m,p,s) + kz * e_z(m,p,s))
+
+                ! different offsets for x,y,z
+                kdotx = ((-1)*imag*2*pi*(((m-(1.0/2))*kx/(L*lambda)) + &
                         ((p-1)*ky/(L*lambda)) + &
                         ((s-1)*kz/(L*lambda))))
+                e_perp = e_x(m,p,s) - kdote*norm_k*kx
 
-                e_kx(i,j,k) = e_kx(i,j,k) + e**(kdotx)*e_x(m,p,s)
-                e_ky(i,j,k) = e_ky(i,j,k) + e**(kdotx)*e_y(m,p,s)
-                e_kz(i,j,k) = e_kz(i,j,k) + e**(kdotx)*e_z(m,p,s)
+                e_kx(i,j,k) = e_kx(i,j,k) + exp(kdotx)*e_x(m,p,s)
+                e_kx_perp(i,j,k) = e_kx_perp(i,j,k) + exp(kdotx)*e_perp
+
+                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                        ((p-(1.0/2))*ky/(L*lambda)) + &
+                        ((s-1)*kz/(L*lambda))))
+                e_perp = e_y(m,p,s) - kdote*norm_k*ky
+
+                e_ky(i,j,k) = e_ky(i,j,k) + exp(kdotx)*e_y(m,p,s)
+                e_ky_perp(i,j,k) = e_ky_perp(i,j,k) + exp(kdotx)*e_perp
+
+                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                        ((p-1)*ky/(L*lambda)) + &
+                        ((s-(1.0/2))*kz/(L*lambda))))
+                e_perp = e_z(m,p,s) - kdote*norm_k*kz
+
+                e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
+                e_kz_perp(i,j,k) = e_kz_perp(i,j,k) + exp(kdotx)*e_perp
 
                 if (v(m,p,s).eq.1) then ! calculate <++>!
 
@@ -712,7 +753,7 @@ subroutine upcan()
                   kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
                           ((p-1)*ky/(L*lambda)) + &
                           ((s-1)*kz/(L*lambda))))
-                  rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * e**(kdotx)
+                  rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * exp(kdotx)
 
                 end if
 
@@ -724,33 +765,22 @@ subroutine upcan()
           e_kx(i,j,k) = e_kx(i,j,k) / sqrt(float(L**3))
           e_ky(i,j,k) = e_ky(i,j,k) / sqrt(float(L**3))
           e_kz(i,j,k) = e_kz(i,j,k) / sqrt(float(L**3))
+          e_kx_perp(i,j,k) = e_kx_perp(i,j,k) / sqrt(float(L**3))
+          e_ky_perp(i,j,k) = e_ky_perp(i,j,k) / sqrt(float(L**3))
+          e_kz_perp(i,j,k) = e_kz_perp(i,j,k) / sqrt(float(L**3))
           rho_k(i,j,k) = rho_k(i,j,k) / sqrt(float(L**3))
 
           ! second part is weirdly addressed bc of loop structure
           ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
-          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) *&
-            rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k)*conjg(rho_k(i,j,k)))
 
-          ! there is probably a better way of doing this
-          ! folding e_mu into one three-vector would make it easier
-          fe_fe(1,1,i,j,k,n) = fe_fe(1,1,i,j,k,n) + (e_kx(i,j,k)&
-            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(1,2,i,j,k,n) = fe_fe(1,2,i,j,k,n) + (e_kx(i,j,k)&
-            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(1,3,i,j,k,n) = fe_fe(1,3,i,j,k,n) + (e_kx(i,j,k)&
-            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(2,1,i,j,k,n) = fe_fe(2,1,i,j,k,n) + (e_ky(i,j,k)&
-            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(2,2,i,j,k,n) = fe_fe(2,2,i,j,k,n) + (e_ky(i,j,k)&
-            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(2,3,i,j,k,n) = fe_fe(2,3,i,j,k,n) + (e_ky(i,j,k)&
-            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(3,1,i,j,k,n) = fe_fe(3,1,i,j,k,n) + (e_kz(i,j,k)&
-            * e_kx((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(3,2,i,j,k,n) = fe_fe(3,2,i,j,k,n) + (e_kz(i,j,k)&
-            * e_ky((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
-          fe_fe(3,3,i,j,k,n) = fe_fe(3,3,i,j,k,n) + (e_kz(i,j,k)&
-            * e_kz((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
+          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
+            e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
+            e_kz(i,j,k)*conjg(e_kz(i,j,k)))
+
+          fe_fe_perp(i,j,k,n) = (e_kx_perp(i,j,k)*conjg(e_kx_perp(i,j,k)) +&
+            e_ky_perp(i,j,k)*conjg(e_ky_perp(i,j,k)) +&
+            e_kz_perp(i,j,k)*conjg(e_kz_perp(i,j,k)))
 
         end do
       end do

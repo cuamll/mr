@@ -30,14 +30,51 @@ module setup
     allocate(phi_lapack(L,L,L))
     allocate(lgf(L,L,L,L,L,L))
     allocate(v_temp(L**2,L))
-    allocate(e_kx(L+1,L+1,L+1))
-    allocate(e_ky(L+1,L+1,L+1))
-    allocate(e_kz(L+1,L+1,L+1))
-    allocate(rho_k(L+1,L+1,L+1))
-    allocate(ch_ch(L+1,L+1,L+1,iterations))
-    allocate(fe_fe(3,3,L+1,L+1,L+1,iterations))
-    allocate(struc_field(3,3,L+1,L+1,L+1))
-    allocate(struc_charge(L+1,L+1,L+1))
+    allocate(e_kx(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_ky(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_kz(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_kx_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_ky_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_kz_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(fe_fe(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(fe_fe_perp(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(rho_k(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(field_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(field_struc_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(charge_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
+
+    v = 0
+    pos = 0
+    neg = 0
+    mnphi_x = 0.0
+    mnphi_y = 0.0
+    mnphi_z = 0.0
+    e_rot_x = 0.0
+    e_rot_y = 0.0
+    e_rot_z = 0.0
+    e_x = 0.0
+    e_y = 0.0
+    e_z = 0.0
+    e_kx = 0.0
+    e_ky = 0.0
+    e_kz = 0.0
+    e_kx_perp = 0.0
+    e_ky_perp = 0.0
+    e_kz_perp = 0.0
+    rho_k = 0.0
+    ch_ch = 0.0
+    fe_fe = 0.0
+    fe_fe_perp = 0.0
+    field_struc = 0.0
+    field_struc_perp = 0.0
+    charge_struc = 0.0
+    e_x_lapack = 0.0
+    e_y_lapack = 0.0
+    e_z_lapack = 0.0
+    phi_lapack = 0.0
+    lgf = 0.0
+    v_temp = 0
 
   end subroutine allocations
 
@@ -66,8 +103,10 @@ module setup
     deallocate(rho_k)
     deallocate(ch_ch)
     deallocate(fe_fe)
-    deallocate(struc_charge)
-    deallocate(struc_field)
+    deallocate(fe_fe_perp)
+    deallocate(charge_struc)
+    deallocate(field_struc)
+    deallocate(field_struc_perp)
 
   end subroutine deallocations
 
@@ -169,19 +208,22 @@ module setup
           e_rot_y(i,j,k) = 0.0
           e_rot_z(i,j,k) = 0.0
 
-          struc_charge(i,j,k) = 0.0
-          struc_field(1,1,i,j,k) = 0.0
-          struc_field(1,2,i,j,k) = 0.0
-          struc_field(1,3,i,j,k) = 0.0
-          struc_field(2,1,i,j,k) = 0.0
-          struc_field(2,2,i,j,k) = 0.0
-          struc_field(2,3,i,j,k) = 0.0
-          struc_field(3,1,i,j,k) = 0.0
-          struc_field(3,2,i,j,k) = 0.0
-          struc_field(3,3,i,j,k) = 0.0
+          charge_struc(i,j,k) = 0.0
+          !struc_field(1,1,i,j,k) = 0.0
+          !struc_field(1,2,i,j,k) = 0.0
+          !struc_field(1,3,i,j,k) = 0.0
+          !struc_field(2,1,i,j,k) = 0.0
+          !struc_field(2,2,i,j,k) = 0.0
+          !struc_field(2,3,i,j,k) = 0.0
+          !struc_field(3,1,i,j,k) = 0.0
+          !struc_field(3,2,i,j,k) = 0.0
+          field_struc(i,j,k) = 0.0
+          field_struc_perp(i,j,k) = 0.0
 
           do n = 1,iterations
             ch_ch(i,j,k,n) = 0.0
+            fe_fe(i,j,k,n) = 0.0
+            fe_fe_perp(i,j,k,n) = 0.0
           end do
 
         end do
