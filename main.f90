@@ -20,7 +20,7 @@ program mr
     do j = 1,L
       do k = 1,L
 
-        tot_q = tot_q + abs(v(i,j,k))
+        tot_q = tot_q + abs(v(2*i - 1,2*j - 1,2*k - 1))
 
       end do
     end do
@@ -57,10 +57,10 @@ subroutine upcan()
   real :: chooser, delta
   complex*16 :: imag, kdotx
   type(C_PTR) :: plan_ch, plan_e
-  real(C_DOUBLE), dimension(L,L,L) :: fftw_ch_in
-  real(C_DOUBLE), dimension(3,L,L,L) :: fftw_e_in
-  complex(C_DOUBLE_COMPLEX), dimension(L/2+1,L,L) :: fftw_ch_out
-  complex(C_DOUBLE_COMPLEX), dimension(L/2+1,3,L,L) :: fftw_e_out
+  real(C_DOUBLE), dimension(2*L,2*L,2*L) :: fftw_ch_in
+  real(C_DOUBLE), dimension(3,2*L,2*L,2*L) :: fftw_e_in
+  complex(C_DOUBLE_COMPLEX), dimension(L+1,2*L,2*L) :: fftw_ch_out
+  complex(C_DOUBLE_COMPLEX), dimension(L+1,3,2*L,2*L) :: fftw_e_out
 
   glob = 0
   totq = 0
@@ -71,29 +71,32 @@ subroutine upcan()
   acceptg=0
   one=1.0
   imag = (0.0,1.0)
+  fftw_ch_in = 0.0
+  fftw_e_in = 0.0
 
   ! test electric field structure factor
-  configs = "AF"
+  configs = "FE"
 
   ! FFTW stuff
-  dims = (/ 3,L,L,L /)
+  dims = (/ 3,2*L,2*L,2*L /)
 
   ! fftw plans for the transforms
-  plan_ch = fftw_plan_dft_r2c_3d(L,L,L,fftw_ch_in,fftw_ch_out,FFTW_ESTIMATE)
+  plan_ch = fftw_plan_dft_r2c_3d(2*L,2*L,2*L,fftw_ch_in,fftw_ch_out,FFTW_ESTIMATE)
   plan_e = fftw_plan_dft_r2c(4,dims,fftw_e_in,fftw_e_out,FFTW_ESTIMATE)
 
   write(*,*)
+  write(*,*) "beta = ",beta
   write(*,*) " --- start: charge positions ---"
 
   do i = 1,L
     do j = 1,L
       do k = 1,L
-        u_tot_run = u_tot_run + e_x(i,j,k)**2 + &
-                    e_y(i,j,k)**2 + e_z(i,j,k)**2
+        u_tot_run = u_tot_run + e_x(2*i,2*j - 1,2*k - 1)**2 + &
+                    e_y(2*i - 1,2*j,2*k - 1)**2 + e_z(2*i - 1,2*j - 1,2*k)**2
 
-        totq = totq + abs(v(i,j,k))
-        if (v(i,j,k).ne.0) then
-          write (*,*) i, j, k, v(i,j,k)
+        totq = totq + abs(v(2*i - 1,2*j - 1,2*k - 1))
+        if (v(2*i - 1,2*j - 1,2*k - 1).ne.0) then
+          write (*,*) i, j, k, v(2*i - 1,2*j - 1,2*k - 1)
         end if
       end do
     end do
@@ -122,16 +125,16 @@ subroutine upcan()
       z = int(rand() * L) + 1
 
       ! pick a non-zero charge - canonical!
-      if (v(x,y,z).ne.0) then
+      if (v(2*x - 1,2*y - 1,2*z - 1).ne.0) then
 
-        charge = v(x,y,z)
+        charge = v(2*x - 1,2*y - 1,2*z - 1)
         ! this takes care of sign issues when hopping
         hop_inc = charge / (eps_0 * lambda**2)
         chooser = rand()
 
         if (chooser.lt.(1.0 / 3.0)) then
           ! x component
-          eo1 = e_x(x,y,z)
+          eo1 = e_x(2*x,2*y - 1,2*z - 1)
           chooser = rand()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
@@ -139,15 +142,15 @@ subroutine upcan()
             old_e = 0.5 * eps_0 * eo1**2
             new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
-            ! i think we can just set v(x,y,z) = 0
+            ! i think we can just set v(2*x - 1,2*y - 1,2*z - 1) = 0
             ! if we're enforcing |v| <= 1
-            if ((abs(v(x,y,z)).le.1).and.(v(neg(x),y,z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((abs(v(2*x - 1,2*y - 1,2*z - 1)).le.1).and.(v(neg(2*x - 1),2*y - 1,2*z - 1).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp(((-1.0)*(beta)) * delta_e).gt.rand())) then
 
                 accepth = accepth + 1
-                e_x(x,y,z) = en1
-                v(neg(x),y,z) = charge
-                v(x,y,z) = 0
+                e_x(2*x,2*y - 1,2*z - 1) = en1
+                v(neg(2*x - 1),2*y - 1,2*z - 1) = charge
+                v(2*x - 1,2*y - 1,2*z - 1) = 0
                 ebar_x = ebar_x - hop_inc
                 u_tot_run = u_tot_run + delta_e
 
@@ -161,13 +164,13 @@ subroutine upcan()
             new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
 
-            if ((abs(v(x,y,z)).le.1).and.(v(pos(x),y,z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((abs(v(2*x - 1,2*y - 1,2*z - 1)).le.1).and.(v(pos(2*x - 1),2*y - 1,2*z - 1).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp(((-1.0)*(beta)) * delta_e).gt.rand())) then
 
                 accepth = accepth + 1
-                e_x(x,y,z) = en1
-                v(pos(x),y,z) = charge
-                v(x,y,z) = 0
+                e_x(2*x,2*y - 1,2*z - 1) = en1
+                v(pos(2*x - 1),2*y - 1,2*z - 1) = charge
+                v(2*x - 1,2*y - 1,2*z - 1) = 0
                 ebar_x = ebar_x + hop_inc
                 u_tot_run = u_tot_run + delta_e
 
@@ -184,7 +187,7 @@ subroutine upcan()
 
         else if (chooser.gt.(2.0 / 3.0)) then ! y component
 
-          eo1 = e_y(x,y,z)
+          eo1 = e_y(2*x - 1,2*y,2*z - 1)
           chooser = rand()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
@@ -192,15 +195,15 @@ subroutine upcan()
             old_e = 0.5 * eps_0 * eo1**2
             new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
-            ! i think we can just set v(x,y,z) = 0
+            ! i think we can just set v(2*x - 1,2*y - 1,2*z - 1) = 0
             ! if we're enforcing |v| <= 1
-            if ((abs(v(x,y,z)).le.1).and.(v(x,neg(y),z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((abs(v(2*x - 1,2*y - 1,2*z - 1)).le.1).and.(v(2*x - 1,neg(2*y - 1),2*z - 1).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp(((-1.0)*(beta)) * delta_e).gt.rand())) then
 
                 accepth = accepth + 1
-                e_y(x,y,z) = en1
-                v(x,neg(y),z) = charge
-                v(x,y,z) = 0
+                e_y(2*x - 1,2*y,2*z - 1) = en1
+                v(2*x - 1,neg(2*y - 1),2*z - 1) = charge
+                v(2*x - 1,2*y - 1,2*z - 1) = 0
                 ebar_y = ebar_y - hop_inc
                 u_tot_run = u_tot_run + delta_e
 
@@ -215,13 +218,13 @@ subroutine upcan()
             new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
 
-            if ((abs(v(x,y,z)).le.1).and.(v(x,pos(y),z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((abs(v(2*x - 1,2*y - 1,2*z - 1)).le.1).and.(v(2*x - 1,pos(2*y - 1),2*z - 1).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp(((-1.0)*(beta)) * delta_e).gt.rand())) then
 
                 accepth = accepth + 1
-                e_y(x,y,z) = en1
-                v(x,pos(y),z) = charge
-                v(x,y,z) = 0
+                e_y(2*x - 1,2*y,2*z - 1) = en1
+                v(2*x - 1,pos(2*y - 1),2*z - 1) = charge
+                v(2*x - 1,2*y - 1,2*z - 1) = 0
                 ebar_y = ebar_y + hop_inc
                 u_tot_run = u_tot_run + delta_e
 
@@ -237,7 +240,7 @@ subroutine upcan()
 
         else ! z component
 
-          eo1 = e_z(x,y,z)
+          eo1 = e_z(2*x - 1,2*y - 1,2*z)
           chooser = rand()
 
           if (chooser.lt.0.5) then ! we try and move the fucker left
@@ -245,15 +248,15 @@ subroutine upcan()
             old_e = 0.5 * eps_0 * eo1**2
             new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
-            ! i think we can just set v(x,y,z) = 0
+            ! i think we can just set v(2*x - 1,2*y - 1,2*z - 1) = 0
             ! if we're enforcing |v| <= 1
-            if ((abs(v(x,y,z)).le.1).and.(v(x,y,neg(z)).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((abs(v(2*x - 1,2*y - 1,2*z - 1)).le.1).and.(v(2*x - 1,2*y - 1,neg(2*z - 1)).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp(((-1.0)*(beta)) * delta_e).gt.rand())) then
 
                 accepth = accepth + 1
-                e_z(x,y,z) = en1
-                v(x,y,neg(z)) = charge
-                v(x,y,z) = 0
+                e_z(2*x - 1,2*y - 1,2*z) = en1
+                v(2*x - 1,2*y - 1,neg(2*z - 1)) = charge
+                v(2*x - 1,2*y - 1,2*z - 1) = 0
                 ebar_z = ebar_z - hop_inc
                 u_tot_run = u_tot_run + delta_e
 
@@ -267,13 +270,13 @@ subroutine upcan()
             new_e = 0.5 * eps_0 * en1**2
             delta_e = new_e - old_e
 
-            if ((abs(v(x,y,z)).le.1).and.(v(x,y,pos(z)).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((abs(v(2*x - 1,2*y - 1,2*z - 1)).le.1).and.(v(2*x - 1,2*y - 1,pos(2*z - 1)).eq.0)) then
+              if ((delta_e.lt.0.0).or.(exp(((-1.0)*(beta)) * delta_e).gt.rand())) then
 
                 accepth = accepth + 1
-                e_z(x,y,z) = en1
-                v(x,y,pos(z)) = charge
-                v(x,y,z) = 0
+                e_z(2*x - 1,2*y - 1,2*z) = en1
+                v(2*x - 1,2*y - 1,pos(2*z - 1)) = charge
+                v(2*x - 1,2*y - 1,2*z - 1) = 0
                 ebar_z = ebar_z + hop_inc
                 u_tot_run = u_tot_run + delta_e
 
@@ -289,7 +292,7 @@ subroutine upcan()
 
         end if ! end of component chooser
 
-      end if ! end of v(x,y,z).ne.0 block
+      end if ! end of v(2*x - 1,2*y - 1,2*z - 1).ne.0 block
 
     end do ! end charge hop sweep
 
@@ -297,15 +300,15 @@ subroutine upcan()
     do i = 1,L
       do j = 1, L
         do k = 1,L
-        u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
+        u_tot = u_tot + 0.5 * eps_0 * (e_x(2*i,2*j - 1,2*k - 1)**2 + e_y(2*i - 1,2*j,2*k - 1)**2 + e_z(2*i - 1,2*j - 1,2*k)**2)
         end do
       end do
     end do
 
-    u_diff = u_tot_run - u_tot
-    if (abs(u_diff).ge.0.00001) then
-      write (*,*) "HOP: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    end if
+    !u_diff = u_tot_run - u_tot
+    !if (abs(u_diff).ge.0.00001) then
+    !  write (*,*) "HOP: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
+    !end if
 
     ! --- ROTATIONAL UPDATE ---
 
@@ -338,10 +341,10 @@ subroutine upcan()
       chooser=rand()
       if (chooser.lt.(1.0/3.0)) then ! xy-plane plaquette
 
-        eo1 = e_x(x,y,z)
-        eo2 = e_y(x,y,z)
-        eo3 = e_x(x,neg(y),z)
-        eo4 = e_y(neg(x),y,z)
+        eo1 = e_x(2*x,2*y - 1,2*z - 1)
+        eo2 = e_y(2*x - 1,2*y,2*z - 1)
+        eo3 = e_x(2*x,neg(2*y - 1),2*z - 1)
+        eo4 = e_y(neg(2*x - 1),2*y,2*z - 1)
         !write(*,*) x,y,z,delta,pm1
         !write(*,*) eo1,eo2,eo3,eo4
 
@@ -363,17 +366,17 @@ subroutine upcan()
         new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((delta_e.lt.0.0).or.(exp(((-1.0)*(beta))*delta_e).gt.rand())) then
 
           !write (*,*) "x-y plane rot:"
           !write (*,*) x, y, z
           !write (*,*) x, neg(y), z
           !write (*,*) neg(x), y, z
 
-          e_x(x,y,z) = en1
-          e_y(x,y,z) = en2
-          e_x(x,neg(y),z) = en3
-          e_y(neg(x),y,z) = en4
+          e_x(2*x,2*y - 1,2*z - 1) = en1
+          e_y(2*x - 1,2*y,2*z - 1) = en2
+          e_x(2*x,neg(2*y - 1),2*z - 1) = en3
+          e_y(neg(2*x - 1),2*y,2*z - 1) = en4
           acceptr = acceptr + 1
           u_tot_run = u_tot_run + delta_e
 
@@ -381,10 +384,10 @@ subroutine upcan()
 
       else if (chooser.ge.(2.0/3.0)) then ! xz-plane plaquette
 
-        eo1 = e_x(x,y,z)
-        eo2 = e_z(x,y,z)
-        eo3 = e_x(x,y,neg(z))
-        eo4 = e_z(neg(x),y,z)
+        eo1 = e_x(2*x,2*y - 1,2*z - 1)
+        eo2 = e_z(2*x - 1,2*y - 1,2*z)
+        eo3 = e_x(2*x,2*y - 1,neg(2*z - 1))
+        eo4 = e_z(neg(2*x - 1),2*y - 1,2*z)
 
         !en1 = eo1 + (delta * sign(one, eo1))
         !en2 = eo2 - (delta * sign(one, eo2))
@@ -399,17 +402,17 @@ subroutine upcan()
         new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((delta_e.lt.0.0).or.(exp((-1.0)*(beta)*delta_e).gt.rand())) then
 
           !write (*,*) "x-z plane rot:"
           !write (*,*) x, y, z
           !write (*,*) x, y, neg(z)
           !write (*,*) neg(x), y, z
 
-          e_x(x,y,z) = en1
-          e_z(x,y,z) = en2
-          e_x(x,y,neg(z)) = en3
-          e_z(neg(x),y,z) = en4
+          e_x(2*x,2*y - 1,2*z - 1) = en1
+          e_z(2*x - 1,2*y - 1,2*z) = en2
+          e_x(2*x,2*y - 1,neg(2*z - 1)) = en3
+          e_z(neg(2*x - 1),2*y - 1,2*z) = en4
           acceptr = acceptr + 1
           u_tot_run = u_tot_run + delta_e
 
@@ -417,10 +420,10 @@ subroutine upcan()
 
       else ! yz-plane plaquette
 
-        eo1 = e_y(x,y,z)
-        eo2 = e_z(x,y,z)
-        eo3 = e_y(x,y,neg(z))
-        eo4 = e_z(x,neg(y),z)
+        eo1 = e_y(2*x - 1,2*y,2*z - 1)
+        eo2 = e_z(2*x - 1,2*y - 1,2*z)
+        eo3 = e_y(2*x - 1,2*y,neg(2*z - 1))
+        eo4 = e_z(2*x - 1,neg(2*y - 1),2*z)
 
         !en1 = eo1 + (delta * sign(one, eo1))
         !en2 = eo2 - (delta * sign(one, eo2))
@@ -436,17 +439,17 @@ subroutine upcan()
         new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((delta_e.lt.0.0).or.(exp((-1.0)*(beta)*delta_e).gt.rand())) then
 
           !write (*,*) "y-z plane rot:"
           !write (*,*) x, y, z
           !write (*,*) x, y, neg(z)
           !write (*,*) x, neg(y), z
 
-          e_y(x,y,z) = en1
-          e_z(x,y,z) = en2
-          e_y(x,y,neg(z)) = en3
-          e_z(x,neg(y),z) = en4
+          e_y(2*x - 1,2*y,2*z - 1) = en1
+          e_z(2*x - 1,2*y - 1,2*z) = en2
+          e_y(2*x - 1,2*y,neg(2*z - 1)) = en3
+          e_z(2*x - 1,neg(2*y - 1),2*z) = en4
           acceptr = acceptr + 1
           u_tot_run = u_tot_run + delta_e
 
@@ -461,15 +464,15 @@ subroutine upcan()
     do i = 1,L
       do j = 1, L
         do k = 1,L
-        u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
+        u_tot = u_tot + 0.5 * eps_0 * (e_x(2*i,2*j - 1,2*k - 1)**2 + e_y(2*i - 1,2*j,2*k - 1)**2 + e_z(2*i - 1,2*j - 1,2*k)**2)
         end do
       end do
     end do
 
-    u_diff = u_tot_run - u_tot
-    if (abs(u_diff).ge.0.00001) then
-      write (*,*) "ROT: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    end if
+    !u_diff = u_tot_run - u_tot
+    !if (abs(u_diff).ge.0.00001) then
+    !  write (*,*) "ROT: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
+    !end if
 
     ! --- HARMONIC UPDATE ---
     ! e bar update
@@ -495,8 +498,8 @@ subroutine upcan()
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
+          if ((delta_e.lt.0).or.((exp((-1.0)*(beta)*delta_e).gt.rand())&
+            .and.(exp((-1.0)*(beta)*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_x = ebar_x - ebar_inc
@@ -505,7 +508,7 @@ subroutine upcan()
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) - e_inc
+                  e_x(2*j,2*k - 1,2*m - 1) = e_x(2*j,2*k - 1,2*m - 1) - e_inc
                 end do
               end do
             end do
@@ -520,8 +523,8 @@ subroutine upcan()
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_x)
 
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
+          if ((delta_e.lt.0).or.((exp((-1.0)*(beta)*delta_e).gt.rand())&
+            .and.(exp((-1.0)*(beta)*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_x = ebar_x + ebar_inc
@@ -530,7 +533,7 @@ subroutine upcan()
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) + e_inc
+                  e_x(2*j,2*k - 1,2*m - 1) = e_x(2*j,2*k - 1,2*m - 1) + e_inc
                 end do
               end do
             end do
@@ -549,8 +552,8 @@ subroutine upcan()
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_y)
 
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
+          if ((delta_e.lt.0).or.((exp((-1.0)*(beta)*delta_e).gt.rand())&
+            .and.(exp((-1.0)*(beta)*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_y = ebar_y - ebar_inc
@@ -559,7 +562,7 @@ subroutine upcan()
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) - e_inc
+                  e_y(2*j - 1,2*k,2*m - 1) = e_y(2*j - 1,2*k,2*m - 1) - e_inc
                 end do
               end do
             end do
@@ -574,8 +577,8 @@ subroutine upcan()
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_y)
 
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
+          if ((delta_e.lt.0).or.((exp((-1.0)*(beta)*delta_e).gt.rand())&
+            .and.(exp((-1.0)*(beta)*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_y = ebar_y + ebar_inc
@@ -584,7 +587,7 @@ subroutine upcan()
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) + e_inc
+                  e_y(2*j - 1,2*k,2*m - 1) = e_y(2*j - 1,2*k,2*m - 1) + e_inc
                 end do
               end do
             end do
@@ -603,8 +606,8 @@ subroutine upcan()
           delta_e = new_e - old_e
           !delta_e = (0.5 - float(L) * ebar_z)
 
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
+          if ((delta_e.lt.0).or.((exp((-1.0)*(beta)*delta_e).gt.rand())&
+            .and.(exp((-1.0)*(beta)*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_z = ebar_z - ebar_inc
@@ -613,7 +616,7 @@ subroutine upcan()
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) - e_inc
+                  e_z(2*j - 1,2*k - 1,2*m) = e_z(2*j - 1,2*k - 1,2*m) - e_inc
                 end do
               end do
             end do
@@ -629,8 +632,8 @@ subroutine upcan()
           !write (*,*) ebar_inc,ebar_z,old_e,new_e,delta_e
           !delta_e = (0.5 - float(L) * ebar_z)
 
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
+          if ((delta_e.lt.0).or.((exp((-1.0)*(beta)*delta_e).gt.rand())&
+            .and.(exp((-1.0)*(beta)*delta_e).gt.0.00000000001))) then
             ! this block is basically stolen from Michael
             ! not sure what's happening here tbh
             ebar_z = ebar_z + ebar_inc
@@ -639,7 +642,7 @@ subroutine upcan()
             do j = 1,L
               do k = 1,L
                 do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) + e_inc
+                  e_z(2*j - 1,2*k - 1,2*m) = e_z(2*j - 1,2*k - 1,2*m) + e_inc
                 end do
               end do
             end do
@@ -653,7 +656,7 @@ subroutine upcan()
           do k = 1,L
             do m = 1,L
               u_tot_run = u_tot_run + 0.5 * eps_0 *&
-                          (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
+                          (e_x(2*j,2*k - 1,2*m - 1)**2 + e_y(2*j - 1,2*k,2*m - 1)**2 + e_z(2*j - 1,2*k - 1,2*m)**2)
             end do
           end do
         end do
@@ -663,9 +666,9 @@ subroutine upcan()
     ! --- END OF UPDATE BLOCKS ---
 
     u_tot = 0.0
-    do i = 1,L
-      do j = 1, L
-        do k = 1,L
+    do i = 1,2*L
+      do j = 1,2*L
+        do k = 1,2*L
           u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
           ! copy the charge distribution and e field into fftw inputs
           fftw_ch_in(i,j,k) = v(i,j,k)
@@ -676,8 +679,8 @@ subroutine upcan()
             fftw_e_in(i,j,k,2) = e_y(i,j,k)
             fftw_e_in(i,j,k,3) = e_z(i,j,k)
           else if (configs.eq."AF") then
-            fftw_e_in(i,j,k,1) = (-1.0)**(i+j)
-            fftw_e_in(i,j,k,2) = (-1.0)**(i+j)
+            fftw_e_in(i,j,k,1) = (-1.0)**((i+j)/2)
+            fftw_e_in(i,j,k,2) = (-1.0)**((i+j)/2)
             fftw_e_in(i,j,k,3) = (1.0)
           else if (configs.eq."ST") then
             fftw_e_in(i,j,k,1) = (-1.0)**j
@@ -692,10 +695,10 @@ subroutine upcan()
       end do
     end do
 
-    u_diff = u_tot_run - u_tot
-    if (abs(u_diff).ge.0.00001) then
-      write (*,*) "HARM: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    end if
+    !u_diff = u_tot_run - u_tot
+    !if (abs(u_diff).ge.0.00001) then
+    !  write (*,*) "HARM: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
+    !end if
 
     ! replace with u_tot_run maybe?
     energy(n + 1) = u_tot
@@ -716,8 +719,8 @@ subroutine upcan()
     call fftw_execute_dft_r2c(plan_e,fftw_e_in,fftw_e_out)
 
     ! according to the fftw docs this is the right normalisation
-    fftw_ch_out = fftw_ch_out / sqrt(dble(L**3))
-    fftw_e_out = fftw_e_out / sqrt(dble(L**3))
+    fftw_ch_out = fftw_ch_out / sqrt(dble((2*L)**3))
+    fftw_e_out = fftw_e_out / sqrt(dble(3*(2*L)**3))
 
     ! testing the longer expression - didn't work
     !do kx = -L/2, L/2
@@ -750,16 +753,21 @@ subroutine upcan()
     !  end do ! ky
     !end do ! kx
 
-    do i=1,L/2+1
-      do j=1,L
-        do k=1,L
+    do i=1,L + 1
+      do j=1,2*L
+        do k=1,2*L
 
           ! products, lovely
-          fe_fe(i,j,k,n) = (fftw_e_out(i,1,j,k)*conjg(fftw_e_out(i,1,j,k))&
-                           + fftw_e_out(i,2,j,k)*conjg(fftw_e_out(i,2,j,k))&
-                           + fftw_e_out(i,3,j,k)*conjg(fftw_e_out(i,3,j,k)))
+          fe_fe(i,j,k,n) = (fftw_e_in(i,1,j,k)*fftw_e_out(i,1,j,k)*conjg(fftw_e_out(i,1,j,k))&
+                           + fftw_e_in(i,2,j,k)*fftw_e_out(i,2,j,k)*conjg(fftw_e_out(i,2,j,k))&
+                           + fftw_e_in(i,3,j,k)*fftw_e_out(i,3,j,k)*conjg(fftw_e_out(i,3,j,k)))
 
-          ch_ch(i,j,k,n) = fftw_ch_out(i,j,k)*conjg(fftw_ch_out(i,j,k))
+          ch_ch(i,j,k,n) = v(i,j,k)*fftw_ch_out(i,j,k)*conjg(fftw_ch_out(i,j,k))
+
+          if (n.eq.1) then
+            write (*,'(I2.1,I2.1,I2.1,F9.6,F9.6,F9.6)')&
+              i,j,k,fftw_e_out(i,2,j,k),fe_fe(i,j,k,n)
+          end if
 
           !if (n.eq.1) then
           !  write (*,*) fftw_e_out(i,1,j,k),&
@@ -866,9 +874,9 @@ subroutine upcan()
   do j = 1,L
     do k = 1,L
       do m = 1,L
-        totq = totq + abs(v(j,k,m))
-        if (v(j,k,m).ne.0) then
-          write (*,*) j, k, m, v(j,k,m)
+        totq = totq + abs(v(2*j - 1,2*k - 1,2*m - 1))
+        if (v(2*j - 1,2*k - 1,2*m - 1).ne.0) then
+          write (*,*) 2*j - 1, 2*k - 1, 2*m - 1, v(2*j - 1,2*k - 1,2*m - 1)
         end if
       end do
     end do

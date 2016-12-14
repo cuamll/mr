@@ -42,9 +42,9 @@ module linear_solver
           do y=1,L
             do z=1,L
 
-              if (v(x,y,z).ne.0) then ! non-zero charge at (x,y,z)
+              if (v(2*x - 1,2*y - 1,2*z - 1).ne.0) then ! non-zero charge at (x,y,z)
 
-                charge=q*v(x,y,z)
+                charge=q*v(2*x - 1,2*y - 1,2*z - 1)
                 nch=nch+1
                 sum_x=sum_x+charge*(-1)&
                       *(lgf(a,b,c,x,y,z)-lgf(a,b,c,neg(x),y,z))
@@ -53,11 +53,11 @@ module linear_solver
                 sum_z=sum_z+charge*(-1)&
                       *(lgf(a,b,c,x,y,z)-lgf(a,b,c,x,y,neg(z)))
 
-                if (v(a,b,c).ne.0) then
+                if (v(2*a - 1,2*b - 1,2*c - 1).ne.0) then
                   if (a.eq.x.and.b.eq.y.and.c.eq.z) then
                     u_self=u_self+charge**2*lgf(x,y,z,x,y,z)
                   else
-                    u_int=u_int+q*v(a,b,c)*charge*lgf(a,b,c,x,y,z)
+                    u_int=u_int+q*v(2*a - 1,2*b - 1,2*c - 1)*charge*lgf(a,b,c,x,y,z)
                   end if
                 end if
 

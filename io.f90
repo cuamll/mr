@@ -103,7 +103,8 @@ module io
       do j = 1,L
         do k = 1,L
 
-        write (4,*) i, j, k, e_x(i,j,k), e_y(i,j,k), e_z(i,j,k)
+        write (4,*) i, j, k, e_x(2*i,2*j - 1,2*k - 1),&
+              e_y(2*i - 1,2*j,2*k - 1), e_z(2*i - 1,2*j - 1,2*k)
 
         end do
       end do
@@ -179,9 +180,9 @@ module io
     struc_charge_filename = "s_q.out"
     struc_field_filename = "sab_q.out"
 
-    do i = 1,L/2+1
-      do j = 1,L
-        do k = 1,L
+    do i = 1,L+1
+      do j = 1,2*L
+        do k = 1,2*L
           do n = 1,iterations
 
             struc_charge(i,j,k) = struc_charge(i,j,k) + ch_ch(i,j,k,n)
@@ -209,71 +210,95 @@ module io
     open(unit=5, file=struc_charge_filename)
     open(unit=7, file=struc_field_filename)
 
-    do k = 1,L+1
+    do k = 1,2*L+1
 
       if (k.eq.1) then
         kz = (-1.0)*pi
-        p = L/2 + 1
+        p = L + 1
       end if
 
-      if (k.gt.1.and.k.lt.L/2+1) then
-        p = L/2 + k
-        kz = 2*pi*(p - 1)/L * lambda
+      if (k.gt.1.and.k.lt.L+1) then
+        p = L + k
+        kz = 2*pi*(p - 1)/(L * lambda)
       end if
 
-      if (k.ge.L/2+1) then
-        p = k - L/2
-        kz = 2*pi*(p - 1)/L * lambda
+      if (k.ge.L+1) then
+        p = k - L
+        kz = 2*pi*(p - 1)/(L * lambda)
       end if
 
-      do i = 1,L+1
+      do i = 1,2*L+1
 
         if (i.eq.1) then
           kx = (-1.0)*pi
-          m = L/2 + 1
+          m = L + 1
         end if
 
-        if (i.gt.1.and.i.lt.L/2+1) then
-          m = L/2 - i + 2
-          kx = (-1.0)*2*pi*(m - 1)/L * lambda
+        if (i.gt.1.and.i.lt.L+1) then
+          m = L - i + 2
+          kx = (-1.0)*2*pi*(m - 1)/(L * lambda)
         end if
 
-        if (i.ge.L/2+1) then
-          m = i - L/2
-          kx = 2*pi*(m - 1)/L * lambda
+        if (i.ge.L+1) then
+          m = i - L
+          kx = 2*pi*(m - 1)/(L * lambda)
         end if
 
-        do j = 1,L+1
+        do j = 1,2*L+1
 
           if (j.eq.1) then
             ky = (-1.0)*pi
-            n = L/2 + 1
+            n = L + 1
           end if
 
-          if (j.gt.1.and.j.lt.L/2+1) then
-            n = L/2 + j
-            ky = 2*pi*(n - 1)/L * lambda
+          if (j.gt.1.and.j.lt.L+1) then
+            n = L + j
+            ky = 2*pi*(n - 1)/(L * lambda)
           end if
 
-          if (j.ge.L/2+1) then
-            n = j - L/2
-            ky = 2*pi*(n - 1)/L * lambda
+          if (j.ge.L+1) then
+            n = j - L
+            ky = 2*pi*(n - 1)/(L * lambda)
           end if
 
           !ky = 2*pi*(j - 1)/L*lambda
           !kz = 2*pi*(k - 1)/L*lambda
 
-          if (kx.gt.pi) then
+          do while (kx.gt.pi)
             kx = kx - 2*pi
-          end if
+          end do
 
-          if (ky.gt.pi) then
+          do while (kx.lt.(-1.0)*pi)
+            kx = kx + 2*pi
+          end do
+
+          do while (ky.gt.pi)
             ky = ky - 2*pi
-          end if
+          end do
 
-          if (kz.gt.pi) then
+          do while (ky.lt.(-1.0)*pi)
+            ky = ky + 2*pi
+          end do
+
+          do while (kz.gt.pi)
             kz = kz - 2*pi
-          end if
+          end do
+
+          do while (kz.lt.(-1.0)*pi)
+            kz = kz + 2*pi
+          end do
+
+          !if (kx.gt.pi) then
+          !  kx = kx - 2*pi
+          !end if
+
+          !if (ky.gt.pi) then
+          !  ky = ky - 2*pi
+          !end if
+
+          !if (kz.gt.pi) then
+          !  kz = kz - 2*pi
+          !end if
 
           ! output is kx, ky, kz, S(\vec{k})
           write (5, struc_format_string)&

@@ -1,11 +1,13 @@
 module common
   use fftw
   implicit none
-  real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
+  real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp
+  real, public :: beta = 0.0
   real, public :: eps_0
   real, public :: rot_delt
   integer, public :: L,seed,accepth,acceptr,acceptg,iterations,add_charges
   integer, dimension(:), allocatable, public :: pos,neg
+  integer, dimension(:,:), allocatable, public :: ch_sites,ex_sites,ey_sites,ez_sites
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
   real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
@@ -33,9 +35,9 @@ module common
 
     subroutine PBCs
       integer :: i
-      do i=1,L
-        pos(i)=mod(i,L)+1
-        neg(i)=mod(i+L-2,L)+1
+      do i=1,2*L
+        pos(i)=mod(i + 1,2*L) + 1
+        neg(i)=mod(i + 2*L - 3,2*L) + 1
       end do
       return
     end subroutine PBCs

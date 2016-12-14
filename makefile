@@ -27,7 +27,7 @@ OBJECTS = fftw.o common.o io.o linear_solver.o setup.o
 MODS = $(OBJECTS:.o=.mod)
 
 $(EXECNAME) : $(OBJECTS)
-	$(GF) $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
+	$(GF) $(LFLAGS) $(DEBUGFLAG) $(OBJECTS) main.f90 -o $(EXECNAME)
 
 fftw.o : fftw.f03
 	$(GF) $(DEBUGFLAG) -c -I/usr/local/include $<
