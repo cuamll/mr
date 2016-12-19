@@ -290,10 +290,10 @@ subroutine upcan()
       end do
     end do
 
-    u_diff = u_tot_run - u_tot
-    if (abs(u_diff).ge.0.00001) then
-      write (*,*) "HOP: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    end if
+    !u_diff = u_tot_run - u_tot
+    !if (abs(u_diff).ge.0.00001) then
+    !  write (*,*) "HOP: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
+    !end if
 
     ! --- ROTATIONAL UPDATE ---
 
@@ -454,10 +454,10 @@ subroutine upcan()
       end do
     end do
 
-    u_diff = u_tot_run - u_tot
-    if (abs(u_diff).ge.0.00001) then
-      write (*,*) "ROT: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    end if
+    !u_diff = u_tot_run - u_tot
+    !if (abs(u_diff).ge.0.00001) then
+    !  write (*,*) "ROT: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
+    !end if
 
     ! --- HARMONIC UPDATE ---
     ! e bar update
@@ -659,8 +659,8 @@ subroutine upcan()
          if (configs.eq."NO") then
            CYCLE
           else if (configs.eq."AF") then
-            e_x(i,j,k) = (-1.0)**((i+j))
-            e_y(i,j,k) = (-1.0)**((i+j))
+            e_x(i,j,k) = (-1.0)**(i+j)
+            e_y(i,j,k) = (-1.0)**(i+j)
             e_z(i,j,k) = (0.0)
           else if (configs.eq."ST") then
             e_x(i,j,k) = (-1.0)**j
@@ -675,10 +675,10 @@ subroutine upcan()
       end do
     end do
 
-    u_diff = u_tot_run - u_tot
-    if (abs(u_diff).ge.0.00001) then
-      write (*,*) "HARM: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    end if
+    !u_diff = u_tot_run - u_tot
+    !if (abs(u_diff).ge.0.00001) then
+    !  write (*,*) "HARM: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
+    !end if
 
   ! replace with u_tot_run maybe?
   energy(n + 1) = u_tot
@@ -704,7 +704,15 @@ subroutine upcan()
           j = ky + 1 + bz*(L/2)
           k = kz + 1 + bz*(L/2)
 
-          norm_k = 1.0/sqrt(dble(kx**2 + ky**2 + kz**2))
+          if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
+            norm_k = 0.0
+          else
+            norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
+          end if
+
+          !if (n.eq.1) then
+          !  write (*,*) kx,ky,kz,(kx*kx + ky*ky + kz*kz)*(norm_k)
+          !end if
 
           e_kx(i,j,k) = 0.0
           e_ky(i,j,k) = 0.0
@@ -719,33 +727,55 @@ subroutine upcan()
               do s = 1,L
 
                 ! for perpendicular component
-                kdote = norm_k*(2*pi/(L*lambda))*(kx * e_x(m,p,s) +&
-                        ky * e_y(m,p,s) + kz * e_z(m,p,s))
+                !kdote = (kx * e_x(m,p,s) +&
+                !        ky * e_y(m,p,s) + kz * e_z(m,p,s))
 
                 ! different offsets for x,y,z
-                kdotx = ((-1)*imag*2*pi*(((m-(1.0/2))*kx/(L*lambda)) + &
-                        ((p-1)*ky/(L*lambda)) + &
-                        ((s-1)*kz/(L*lambda))))
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
+                        ((p-1)*ky) + ((s-1)*kz)))
+
+                kdote = (kx * e_x(m,p,s))
+                !e_perp = e_x(m,p,s) - norm_k*(kx*e_x(m,p,s)*kx + ky*e_y(m,p,s)*kx + kz*e_z(m,p,s)*kx)
                 e_perp = e_x(m,p,s) - kdote*norm_k*kx
 
                 e_kx(i,j,k) = e_kx(i,j,k) + exp(kdotx)*e_x(m,p,s)
                 e_kx_perp(i,j,k) = e_kx_perp(i,j,k) + exp(kdotx)*e_perp
 
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                        ((p-(1.0/2))*ky/(L*lambda)) + &
-                        ((s-1)*kz/(L*lambda))))
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                        ((p-(1.0/2))*ky) + ((s-1)*kz)))
+
+                kdote = (ky * e_y(m,p,s))
+                !e_perp = e_y(m,p,s) - norm_k*(kx*e_x(m,p,s)*ky + ky*e_y(m,p,s)*ky + kz*e_z(m,p,s)*ky)
                 e_perp = e_y(m,p,s) - kdote*norm_k*ky
 
                 e_ky(i,j,k) = e_ky(i,j,k) + exp(kdotx)*e_y(m,p,s)
                 e_ky_perp(i,j,k) = e_ky_perp(i,j,k) + exp(kdotx)*e_perp
 
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                        ((p-1)*ky/(L*lambda)) + &
-                        ((s-(1.0/2))*kz/(L*lambda))))
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                        ((p-1)*ky) + ((s-(1.0/2))*kz)))
+
+                kdote = (kz * e_z(m,p,s))
+                !e_perp = e_z(m,p,s) - norm_k*(kx*e_x(m,p,s)*kz + ky*e_y(m,p,s)*kz + kz*e_z(m,p,s)*kz)
                 e_perp = e_z(m,p,s) - kdote*norm_k*kz
 
                 e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
                 e_kz_perp(i,j,k) = e_kz_perp(i,j,k) + exp(kdotx)*e_perp
+
+                !if (n.eq.1.and.kx.eq.(5*L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
+                !  write (*,'(I2.1,I2.1,I2.1,F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+                !    m,p,s,(kx*e_x(m,p,s))*norm_k*kx,kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+                !    e_kx_perp(i,j,k),e_ky_perp(i,j,k)
+                !end if
+                !if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
+                !  write (*,'(I2.1,I2.1,I2.1,F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+                !    m,p,s,(kx*e_x(m,p,s))*norm_k*kx,kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+                !    e_kx_perp(i,j,k),e_ky_perp(i,j,k)
+                !end if
+                if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
+                  write (*,'(I2.1,I2.1,I2.1,F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+                    m,p,s,(kx*e_x(m,p,s))*norm_k*kx,kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+                    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+                end if
 
                 if (v(m,p,s).eq.1) then ! calculate <++>!
 
@@ -754,24 +784,57 @@ subroutine upcan()
                           ((p-1)*ky/(L*lambda)) + &
                           ((s-1)*kz/(L*lambda))))
                   rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * exp(kdotx)
-
                 end if
 
               end do
             end do
           end do
 
-          ! normalise, idiot
-          e_kx(i,j,k) = e_kx(i,j,k) / sqrt(float(L**3))
-          e_ky(i,j,k) = e_ky(i,j,k) / sqrt(float(L**3))
-          e_kz(i,j,k) = e_kz(i,j,k) / sqrt(float(L**3))
-          e_kx_perp(i,j,k) = e_kx_perp(i,j,k) / sqrt(float(L**3))
-          e_ky_perp(i,j,k) = e_ky_perp(i,j,k) / sqrt(float(L**3))
-          e_kz_perp(i,j,k) = e_kz_perp(i,j,k) / sqrt(float(L**3))
-          rho_k(i,j,k) = rho_k(i,j,k) / sqrt(float(L**3))
+          !if (n.eq.1) then
+          !  write (*,*) kx,ky,kz,e_kx_perp(i,j,k)
+          !end if
 
-          ! second part is weirdly addressed bc of loop structure
-          ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
+          ! normalise, idiot
+          rho_k(i,j,k) = rho_k(i,j,k) / float(L**3)
+          e_kx(i,j,k) = e_kx(i,j,k) / float(L**3)
+          e_ky(i,j,k) = e_ky(i,j,k) / float(L**3)
+          e_kz(i,j,k) = e_kz(i,j,k) / float(L**3)
+          e_kx_perp(i,j,k) = e_kx_perp(i,j,k) / float(L**3)
+          e_ky_perp(i,j,k) = e_ky_perp(i,j,k) / float(L**3)
+          e_kz_perp(i,j,k) = e_kz_perp(i,j,k) / float(L**3)
+
+          !if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda).and.kz.eq.0) then
+          !  write (*,*)
+          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+          !end if
+          !if (n.eq.1.and.kx.eq.(L*lambda).and.ky.eq.(L*lambda).and.kz.eq.0) then
+          !  write (*,*)
+          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+          !end if
+          !if (n.eq.1.and.kx.eq.(3*L*lambda/2).and.ky.eq.(3*L*lambda/2).and.kz.eq.0) then
+          !  write (*,*)
+          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+          !end if
+          if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
+            write (*,*)
+            write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+              kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+              e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+          end if
+          if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
+            write (*,*)
+            write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+              kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+              e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+          end if
+
+
           ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k)*conjg(rho_k(i,j,k)))
 
           fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
