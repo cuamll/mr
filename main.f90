@@ -735,6 +735,7 @@ subroutine upcan()
                         ((p-1)*ky) + ((s-1)*kz)))
 
                 kdote = (kx * e_x(m,p,s))
+                !kdote = (ky * e_y(m,p,s) + kz * e_z(m,p,s))
                 !e_perp = e_x(m,p,s) - norm_k*(kx*e_x(m,p,s)*kx + ky*e_y(m,p,s)*kx + kz*e_z(m,p,s)*kx)
                 e_perp = e_x(m,p,s) - kdote*norm_k*kx
 
@@ -761,16 +762,6 @@ subroutine upcan()
                 e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
                 e_kz_perp(i,j,k) = e_kz_perp(i,j,k) + exp(kdotx)*e_perp
 
-                !if (n.eq.1.and.kx.eq.(5*L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
-                !  write (*,'(I2.1,I2.1,I2.1,F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-                !    m,p,s,(kx*e_x(m,p,s))*norm_k*kx,kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-                !    e_kx_perp(i,j,k),e_ky_perp(i,j,k)
-                !end if
-                !if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
-                !  write (*,'(I2.1,I2.1,I2.1,F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-                !    m,p,s,(kx*e_x(m,p,s))*norm_k*kx,kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-                !    e_kx_perp(i,j,k),e_ky_perp(i,j,k)
-                !end if
                 if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
                   write (*,'(I2.1,I2.1,I2.1,F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
                     m,p,s,(kx*e_x(m,p,s))*norm_k*kx,kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
@@ -803,24 +794,6 @@ subroutine upcan()
           e_ky_perp(i,j,k) = e_ky_perp(i,j,k) / float(L**3)
           e_kz_perp(i,j,k) = e_kz_perp(i,j,k) / float(L**3)
 
-          !if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda).and.kz.eq.0) then
-          !  write (*,*)
-          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-          !end if
-          !if (n.eq.1.and.kx.eq.(L*lambda).and.ky.eq.(L*lambda).and.kz.eq.0) then
-          !  write (*,*)
-          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-          !end if
-          !if (n.eq.1.and.kx.eq.(3*L*lambda/2).and.ky.eq.(3*L*lambda/2).and.kz.eq.0) then
-          !  write (*,*)
-          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-          !end if
           if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
             write (*,*)
             write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
