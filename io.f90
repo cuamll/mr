@@ -165,11 +165,12 @@ module io
     use common
     implicit none
     !complex*16, dimension(:,:,:), allocatable :: e_kx, e_ky, e_kz
-    real*8 :: dot, dot_avg
-    integer :: i, j, k, m, n, p
+    real*8 :: dot, dot_avg, knorm
+    integer :: i, j, k, m, n, p, kx, ky, kz
     complex*16 :: imag, kdotx
     character(16) :: charge_struc_filename
     character(15) :: field_struc_filename
+    character(10) :: s_perp_filename
     character(20) :: perp_field_struc_filename
     character(74) :: struc_format_string
     character(97) :: field_format_string
@@ -180,24 +181,85 @@ module io
     charge_struc_filename = "charge_struc.out"
     field_struc_filename = "field_struc.out"
     perp_field_struc_filename = "perp_field_struc.out"
+    s_perp_filename = "s_perp.out"
 
     do i = 1,bz*(L+1)
       do j = 1,bz*(L+1)
         do k = 1,bz*(L+1)
           do n = 1,iterations
 
+
             charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
 
-            field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n) 
+            field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n)
 
             field_struc_perp(i,j,k) = field_struc_perp(i,j,k)&
-                                    + fe_fe_perp(i,j,k,n) 
+                                    + fe_fe_perp(i,j,k,n)
 
-          end do
-        end do
-      end do
-    end do
-    
+            ! s_ab averaging
+            do m = 1,3
+              do p = 1,3
+                s_ab(m,p,i,j,k) = s_ab(m,p,i,j,k) + s_ab_n(m,p,i,j,k,n)
+              end do
+            end do
+
+            !s_ab(1,1,i,j,k) = s_ab(1,1,i,j,k) + s_ab_n(1,1,i,j,k,n)
+            !s_ab(1,2,i,j,k) = s_ab(1,2,i,j,k) + s_ab_n(1,2,i,j,k,n)
+            !s_ab(1,3,i,j,k) = s_ab(1,3,i,j,k) + s_ab_n(1,3,i,j,k,n)
+            !s_ab(2,1,i,j,k) = s_ab(2,1,i,j,k) + s_ab_n(2,1,i,j,k,n)
+            !s_ab(2,2,i,j,k) = s_ab(2,2,i,j,k) + s_ab_n(2,2,i,j,k,n)
+            !s_ab(2,3,i,j,k) = s_ab(2,3,i,j,k) + s_ab_n(2,3,i,j,k,n)
+            !s_ab(3,1,i,j,k) = s_ab(3,1,i,j,k) + s_ab_n(3,1,i,j,k,n)
+            !s_ab(3,2,i,j,k) = s_ab(3,2,i,j,k) + s_ab_n(3,2,i,j,k,n)
+            !s_ab(3,3,i,j,k) = s_ab(3,3,i,j,k) + s_ab_n(3,3,i,j,k,n)
+
+            if (n.eq.iterations) then
+              ! s_ab projection for perpendicular component
+              ! for n = iterations we've just finished the sum
+              ! keep this in the loop bc we still need dummy variables
+
+              ! normalise s_ab
+              s_ab = s_ab / iterations
+
+              ! find kx, ky, kz from i,j,k and their norm
+              kx = i - 1 - bz*(L/2)
+              ky = j - 1 - bz*(L/2)
+              kz = k - 1 - bz*(L/2)
+              if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
+                knorm = 0
+              else
+                knorm = 1.0/(kx*kx + ky*ky + kz*kz)
+              end if
+
+              ! sum over alpha, beta
+              s_perp(i,j,k) = (1 - kx*kx*knorm)*s_ab(1,1,i,j,k) +&
+                              ((-1)*kx*ky*knorm)*s_ab(1,2,i,j,k)+&
+                              ((-1)*kx*kz*knorm)*s_ab(1,3,i,j,k)+&
+                              ((-1)*ky*kx*knorm)*s_ab(2,1,i,j,k)+&
+                              (1 - ky*ky*knorm)*s_ab(2,2,i,j,k) +&
+                              ((-1)*ky*kz*knorm)*s_ab(2,3,i,j,k)+&
+                              ((-1)*kz*kx*knorm)*s_ab(3,1,i,j,k)+&
+                              ((-1)*kz*ky*knorm)*s_ab(3,2,i,j,k)+&
+                              (1 - kz*kz*knorm)*s_ab(3,3,i,j,k)
+
+              !s_perp(1,1,i,j,k) = (1 - kx*kx*knorm)*s_ab(1,1,i,j,k)
+              !s_perp(1,2,i,j,k) = ((-1)*kx*ky*knorm)*s_ab(1,2,i,j,k)
+              !s_perp(1,3,i,j,k) = ((-1)*kx*kz*knorm)*s_ab(1,3,i,j,k)
+
+              !s_perp(2,1,i,j,k) = ((-1)*ky*kx*knorm)*s_ab(2,1,i,j,k)
+              !s_perp(2,2,i,j,k) = (1 - ky*ky*knorm)*s_ab(2,2,i,j,k)
+              !s_perp(2,3,i,j,k) = ((-1)*ky*kz*knorm)*s_ab(2,3,i,j,k)
+
+              !s_perp(3,1,i,j,k) = ((-1)*kz*kx*knorm)*s_ab(3,1,i,j,k)
+              !s_perp(3,1,i,j,k) = ((-1)*kz*ky*knorm)*s_ab(3,2,i,j,k)
+              !s_perp(3,3,i,j,k) = (1 - kz*kz*knorm)*s_ab(3,3,i,j,k)
+
+            end if ! if (n.eq.iterations) for s_ab and s_perp
+          end do ! n iteration loop
+        end do ! k
+      end do ! j
+    end do ! i
+
     charge_struc = charge_struc / iterations
     field_struc = field_struc / iterations
     field_struc_perp = field_struc_perp / iterations
@@ -205,6 +267,7 @@ module io
     open(unit=5, file=charge_struc_filename)
     open(unit=7, file=field_struc_filename)
     open(unit=8, file=perp_field_struc_filename)
+    open(unit=9, file=s_perp_filename)
 
     do k = 1,bz*(L) + 1
       do i = 1,bz*(L) + 1
@@ -224,17 +287,25 @@ module io
           field_struc(i,j,k)
 
           write (8, field_format_string)&
-          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
+          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
+          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
           field_struc_perp(i,j,k)
 
+          write (9, field_format_string)&
+          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
+          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
+          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
+          s_perp(i,j,k)
 
         end do
       end do
     end do
 
     close(5)
+    close(7)
+    close(8)
+    close(9)
 
     !imag = (0.0,1.0)
 

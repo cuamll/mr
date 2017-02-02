@@ -784,6 +784,11 @@ subroutine upcan()
           !if (n.eq.1) then
           !  write (*,*) kx,ky,kz,e_kx_perp(i,j,k)
           !end if
+          if (n.eq.1) then
+            if (kx.eq.1.and.ky.eq.1.and.kz.eq.0) then
+              write (*,*) e_kx(i,j,k)
+            end if
+          end if
 
           ! normalise, idiot
           rho_k(i,j,k) = rho_k(i,j,k) / float(L**3)
@@ -794,18 +799,18 @@ subroutine upcan()
           e_ky_perp(i,j,k) = e_ky_perp(i,j,k) / float(L**3)
           e_kz_perp(i,j,k) = e_kz_perp(i,j,k) / float(L**3)
 
-          if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
-            write (*,*)
-            write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-              kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-              e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-          end if
-          if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
-            write (*,*)
-            write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-              kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-              e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-          end if
+          !if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
+          !  write (*,*)
+          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+          !end if
+          !if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
+          !  write (*,*)
+          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
+          !end if
 
 
           ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k)*conjg(rho_k(i,j,k)))
@@ -817,6 +822,16 @@ subroutine upcan()
           fe_fe_perp(i,j,k,n) = (e_kx_perp(i,j,k)*conjg(e_kx_perp(i,j,k)) +&
             e_ky_perp(i,j,k)*conjg(e_ky_perp(i,j,k)) +&
             e_kz_perp(i,j,k)*conjg(e_kz_perp(i,j,k)))
+
+          s_ab_n(1,1,i,j,k,n) = e_kx(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(1,2,i,j,k,n) = e_kx(i,j,k)*conjg(e_ky(i,j,k))
+          s_ab_n(1,3,i,j,k,n) = e_kx(i,j,k)*conjg(e_kz(i,j,k))
+          s_ab_n(2,1,i,j,k,n) = e_ky(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(2,2,i,j,k,n) = e_ky(i,j,k)*conjg(e_ky(i,j,k))
+          s_ab_n(2,3,i,j,k,n) = e_ky(i,j,k)*conjg(e_kz(i,j,k))
+          s_ab_n(3,1,i,j,k,n) = e_kz(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(3,2,i,j,k,n) = e_kz(i,j,k)*conjg(e_ky(i,j,k))
+          s_ab_n(3,3,i,j,k,n) = e_kz(i,j,k)*conjg(e_kz(i,j,k))
 
         end do
       end do
