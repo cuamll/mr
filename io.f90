@@ -286,12 +286,6 @@ module io
           2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
           field_struc(i,j,k)
 
-          write (8, field_format_string)&
-          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
-          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
-          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
-          field_struc_perp(i,j,k)
-
           write (9, field_format_string)&
           2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
           2*pi*(j - 1 - bz*(l/2))/(l*lambda),&

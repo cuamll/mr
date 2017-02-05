@@ -734,39 +734,17 @@ subroutine upcan()
                 kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
                         ((p-1)*ky) + ((s-1)*kz)))
 
-                kdote = (kx * e_x(m,p,s))
-                !kdote = (ky * e_y(m,p,s) + kz * e_z(m,p,s))
-                !e_perp = e_x(m,p,s) - norm_k*(kx*e_x(m,p,s)*kx + ky*e_y(m,p,s)*kx + kz*e_z(m,p,s)*kx)
-                e_perp = e_x(m,p,s) - kdote*norm_k*kx
-
                 e_kx(i,j,k) = e_kx(i,j,k) + exp(kdotx)*e_x(m,p,s)
-                e_kx_perp(i,j,k) = e_kx_perp(i,j,k) + exp(kdotx)*e_perp
 
                 kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                         ((p-(1.0/2))*ky) + ((s-1)*kz)))
 
-                kdote = (ky * e_y(m,p,s))
-                !e_perp = e_y(m,p,s) - norm_k*(kx*e_x(m,p,s)*ky + ky*e_y(m,p,s)*ky + kz*e_z(m,p,s)*ky)
-                e_perp = e_y(m,p,s) - kdote*norm_k*ky
-
                 e_ky(i,j,k) = e_ky(i,j,k) + exp(kdotx)*e_y(m,p,s)
-                e_ky_perp(i,j,k) = e_ky_perp(i,j,k) + exp(kdotx)*e_perp
 
                 kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                         ((p-1)*ky) + ((s-(1.0/2))*kz)))
 
-                kdote = (kz * e_z(m,p,s))
-                !e_perp = e_z(m,p,s) - norm_k*(kx*e_x(m,p,s)*kz + ky*e_y(m,p,s)*kz + kz*e_z(m,p,s)*kz)
-                e_perp = e_z(m,p,s) - kdote*norm_k*kz
-
                 e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
-                e_kz_perp(i,j,k) = e_kz_perp(i,j,k) + exp(kdotx)*e_perp
-
-                if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
-                  write (*,'(I2.1,I2.1,I2.1,F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-                    m,p,s,(kx*e_x(m,p,s))*norm_k*kx,kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-                    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-                end if
 
                 if (v(m,p,s).eq.1) then ! calculate <++>!
 
@@ -782,22 +760,16 @@ subroutine upcan()
           end do
 
           !if (n.eq.1) then
-          !  write (*,*) kx,ky,kz,e_kx_perp(i,j,k)
+          !  if (kx.eq.1.and.ky.eq.1.and.kz.eq.0) then
+          !    write (*,*) e_kx(i,j,k)
+          !  end if
           !end if
-          if (n.eq.1) then
-            if (kx.eq.1.and.ky.eq.1.and.kz.eq.0) then
-              write (*,*) e_kx(i,j,k)
-            end if
-          end if
 
           ! normalise, idiot
           rho_k(i,j,k) = rho_k(i,j,k) / float(L**3)
           e_kx(i,j,k) = e_kx(i,j,k) / float(L**3)
           e_ky(i,j,k) = e_ky(i,j,k) / float(L**3)
           e_kz(i,j,k) = e_kz(i,j,k) / float(L**3)
-          e_kx_perp(i,j,k) = e_kx_perp(i,j,k) / float(L**3)
-          e_ky_perp(i,j,k) = e_ky_perp(i,j,k) / float(L**3)
-          e_kz_perp(i,j,k) = e_kz_perp(i,j,k) / float(L**3)
 
           !if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
           !  write (*,*)
@@ -818,10 +790,6 @@ subroutine upcan()
           fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
             e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
             e_kz(i,j,k)*conjg(e_kz(i,j,k)))
-
-          fe_fe_perp(i,j,k,n) = (e_kx_perp(i,j,k)*conjg(e_kx_perp(i,j,k)) +&
-            e_ky_perp(i,j,k)*conjg(e_ky_perp(i,j,k)) +&
-            e_kz_perp(i,j,k)*conjg(e_kz_perp(i,j,k)))
 
           s_ab_n(1,1,i,j,k,n) = e_kx(i,j,k)*conjg(e_kx(i,j,k))
           s_ab_n(1,2,i,j,k,n) = e_kx(i,j,k)*conjg(e_ky(i,j,k))
