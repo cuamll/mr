@@ -30,12 +30,17 @@ module setup
     allocate(phi_lapack(L,L,L))
     allocate(lgf(L,L,L,L,L,L))
     allocate(v_temp(L**2,L))
-    allocate(e_kx(L+1,L+1,L+1))
-    allocate(e_ky(L+1,L+1,L+1))
-    allocate(e_kz(L+1,L+1,L+1))
-    allocate(rho_k(L+1,L+1,L+1))
-    allocate(ch_ch(L+1,L+1,L+1,iterations))
-    allocate(struc(L+1,L+1,L+1))
+    allocate(e_kx(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_ky(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_kz(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(rho_k(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(fe_fe(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(field_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(charge_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(s_ab(3,3,bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(s_ab_n(3,3,bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(s_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
 
   end subroutine allocations
 
@@ -64,8 +69,12 @@ module setup
     deallocate(e_kz)
     deallocate(rho_k)
     deallocate(ch_ch)
-    deallocate(struc)
-    deallocate(grad_sq)
+    deallocate(fe_fe)
+    deallocate(charge_struc)
+    deallocate(field_struc)
+    deallocate(s_ab_n)
+    deallocate(s_ab)
+    deallocate(s_perp)
 
   end subroutine deallocations
 
@@ -167,10 +176,32 @@ module setup
           e_rot_y(i,j,k) = 0.0
           e_rot_z(i,j,k) = 0.0
 
-          struc(i,j,k) = 0.0
+          field_struc(i,j,k) = 0.0
+          charge_struc(i,j,k) = 0.0
+          s_perp(i,j,k) = 0.0
 
           do n = 1,iterations
             ch_ch(i,j,k,n) = 0.0
+            fe_fe(i,j,k,n) = 0.0
+            s_ab_n(1,1,i,j,k,n) = 0.0
+            s_ab_n(1,2,i,j,k,n) = 0.0
+            s_ab_n(1,3,i,j,k,n) = 0.0
+            s_ab_n(2,1,i,j,k,n) = 0.0
+            s_ab_n(2,2,i,j,k,n) = 0.0
+            s_ab_n(2,3,i,j,k,n) = 0.0
+            s_ab_n(3,1,i,j,k,n) = 0.0
+            s_ab_n(3,2,i,j,k,n) = 0.0
+            s_ab_n(3,3,i,j,k,n) = 0.0
+
+            s_ab(1,1,i,j,k) = 0.0
+            s_ab(1,2,i,j,k) = 0.0
+            s_ab(1,3,i,j,k) = 0.0
+            s_ab(2,1,i,j,k) = 0.0
+            s_ab(2,2,i,j,k) = 0.0
+            s_ab(2,3,i,j,k) = 0.0
+            s_ab(3,1,i,j,k) = 0.0
+            s_ab(3,2,i,j,k) = 0.0
+            s_ab(3,3,i,j,k) = 0.0
           end do
 
         end do

@@ -28,7 +28,7 @@ program mr
   end do
 
   if (tot_q.ne.0) then
-    call linsol
+    call linalg
   end if
 
   !do i = 1,L
@@ -65,7 +65,7 @@ subroutine upcan()
   implicit none
   integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot_run,avg_e,avg_e2,one
+  real*8 :: u_tot_run,avg_e,avg_e2,one,norm_k
   real*8 :: dot,dot_avg ! probably won't need the avg
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
@@ -348,47 +348,57 @@ subroutine upcan()
   avg_e2 = avg_e2 / (n + 1)
 
     ! Fourier transform
-    do kx = -L/2, L/2
-      do ky = -L/2, L/2
-        do kz = -L/2, L/2
+    do kx = (-1*L/2)*bz, (L/2)*bz
+      do ky = (-1*L/2)*bz, (L/2)*bz
+        do kz = (-1*L/2)*bz, (L/2)*bz
 
           ! for array indices
-          i = kx + 1 + L/2
-          j = ky + 1 + L/2
-          k = kz + 1 + L/2
+          i = kx + 1 + bz*(L/2)
+          j = ky + 1 + bz*(L/2)
+          k = kz + 1 + bz*(L/2)
+
+          if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
+            norm_k = 0.0
+          else
+            norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
+          end if
+
+          !if (n.eq.1) then
+          !  write (*,*) kx,ky,kz,(kx*kx + ky*ky + kz*kz)*(norm_k)
+          !end if
 
           e_kx(i,j,k) = 0.0
           e_ky(i,j,k) = 0.0
           e_kz(i,j,k) = 0.0
-
-          ! vec(q) = vec(0) term:
-          if (i.eq.0.and.j.eq.0.and.k.eq.0) then
-            write (*,*) "q=0 term; need to work this out"
-            write (*,*) "e_kx(",i,j,k,") = ",e_kx(i,j,k)
-            CYCLE
-          end if
 
           ! m,p,s are the real space coordinates
           do m = 1,L
             do p = 1,L
               do s = 1,L
 
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                        ((p-1)*ky/(L*lambda)) + &
-                        ((s-1)*kz/(L*lambda))))
+                ! different offsets for x,y,z
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
+                        ((p-1)*ky) + ((s-1)*kz)))
 
-                e_kx(i,j,k) = e_kx(i,j,k) + e**(kdotx)*e_x(m,p,s)
-                e_ky(i,j,k) = e_ky(i,j,k) + e**(kdotx)*e_y(m,p,s)
-                e_kz(i,j,k) = e_kz(i,j,k) + e**(kdotx)*e_z(m,p,s)
+                e_kx(i,j,k) = e_kx(i,j,k) + exp(kdotx)*e_x(m,p,s)
 
-                if (v(m,p,s).eq.1) then ! there's a charge
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                        ((p-(1.0/2))*ky) + ((s-1)*kz)))
+
+                e_ky(i,j,k) = e_ky(i,j,k) + exp(kdotx)*e_y(m,p,s)
+
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                        ((p-1)*ky) + ((s-(1.0/2))*kz)))
+
+                e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
+
+                if (v(m,p,s).eq.1) then ! calculate <++>!
 
                   ! FT of charge distribution
                   kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
                           ((p-1)*ky/(L*lambda)) + &
                           ((s-1)*kz/(L*lambda))))
-                  rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * e**(kdotx)
-
+                  rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * exp(kdotx)
                 end if
 
               end do
@@ -396,24 +406,27 @@ subroutine upcan()
           end do
 
           ! normalise, idiot
-          e_kx(i,j,k) = e_kx(i,j,k) / sqrt(float(L**3))
-          e_ky(i,j,k) = e_ky(i,j,k) / sqrt(float(L**3))
-          e_kz(i,j,k) = e_kz(i,j,k) / sqrt(float(L**3))
-          rho_k(i,j,k) = rho_k(i,j,k) / sqrt(float(L**3))
+          e_kx(i,j,k) = e_kx(i,j,k) /(float(L**3))
+          e_ky(i,j,k) = e_ky(i,j,k) /(float(L**3))
+          e_kz(i,j,k) = e_kz(i,j,k) /(float(L**3))
+          rho_k(i,j,k) = rho_k(i,j,k) /(float(L**3))
 
-          ! now we need to do a (?) thermal (?) average to get correlations
-          ! this is the dot of the fourier space field with itself at i,j,k
-          dot = (e_kx(i,j,k) * CONJG(e_kx(i,j,k))) +&
-                (e_ky(i,j,k) * CONJG(e_ky(i,j,k))) +&
-                (e_kz(i,j,k) * CONJG(e_kz(i,j,k)))
+          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k)*conjg(rho_k(i,j,k)))
 
-          !write (*,*) "E \cdot E (",2*pi*i/(L*lambda),2*pi*j/(L*lambda),2*pi*k/(L*lambda),") = ",dot
+          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
+            e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
+            e_kz(i,j,k)*conjg(e_kz(i,j,k)))
 
-          dot_avg = dot_avg + dot
+          s_ab_n(1,1,i,j,k,n) = e_kx(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(1,2,i,j,k,n) = e_kx(i,j,k)*conjg(e_ky(i,j,k))
+          s_ab_n(1,3,i,j,k,n) = e_kx(i,j,k)*conjg(e_kz(i,j,k))
+          s_ab_n(2,1,i,j,k,n) = e_ky(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(2,2,i,j,k,n) = e_ky(i,j,k)*conjg(e_ky(i,j,k))
+          s_ab_n(2,3,i,j,k,n) = e_ky(i,j,k)*conjg(e_kz(i,j,k))
+          s_ab_n(3,1,i,j,k,n) = e_kz(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(3,2,i,j,k,n) = e_kz(i,j,k)*conjg(e_ky(i,j,k))
+          s_ab_n(3,3,i,j,k,n) = e_kz(i,j,k)*conjg(e_kz(i,j,k))
 
-          ! second part is weirdly addressed bc of loop structure
-          ! ((-1) * k_mu) + 1 + L/2 --> (-\vec{k}) essentially
-          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k) * rho_k((-1)*kx + 1 + L/2, (-1)*ky + 1 + L/2, (-1)*kz + 1 + L/2))
 
         end do
       end do

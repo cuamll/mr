@@ -10,17 +10,21 @@ module common
   real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
   real*8, dimension(:,:,:), allocatable, public :: phi_lapack, e_x_lapack
   real*8, dimension(:,:,:), allocatable, public :: e_y_lapack, e_z_lapack
+  real*8, dimension(:,:,:), allocatable, public :: s_perp
   real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
-  real*8, dimension(:,:,:), allocatable, public :: struc
+  real*8, dimension(:,:,:), allocatable, public :: charge_struc,field_struc
   real*8, dimension(:,:), allocatable, public :: grad_sq
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
-  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch
+  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,fe_fe
+  real*8, dimension(:,:,:,:,:,:), allocatable, public :: s_ab_n
+  real*8, dimension(:,:,:,:,:), allocatable, public :: s_ab
   complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz,rho_k
   ! probably more things need to go here
   character(len=11), public :: lattfile
 
   integer, public :: have_lgf = 0
+  integer, public :: bz = 2
   integer, public :: have_grad_sq = 0
   real*8, public :: rot_ratio, g_ratio, hop_ratio
   real, parameter, public :: pi=3.141592653589793
