@@ -56,7 +56,7 @@ subroutine upcan()
   real :: chooser, delta
   complex*16 :: imag, kdotx
 
-  configs = "AF"
+  configs = "NO"
   glob = 0
   totq = 0
   u_tot_run = 0.0
@@ -717,9 +717,6 @@ subroutine upcan()
           e_kx(i,j,k) = 0.0
           e_ky(i,j,k) = 0.0
           e_kz(i,j,k) = 0.0
-          e_kx_perp(i,j,k) = 0.0
-          e_ky_perp(i,j,k) = 0.0
-          e_kz_perp(i,j,k) = 0.0
 
           ! m,p,s are the real space coordinates
           do m = 1,L

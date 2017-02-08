@@ -171,7 +171,6 @@ module io
     character(16) :: charge_struc_filename
     character(15) :: field_struc_filename
     character(10) :: s_perp_filename
-    character(20) :: perp_field_struc_filename
     character(74) :: struc_format_string
     character(97) :: field_format_string
 
@@ -180,7 +179,6 @@ module io
 
     charge_struc_filename = "charge_struc.out"
     field_struc_filename = "field_struc.out"
-    perp_field_struc_filename = "perp_field_struc.out"
     s_perp_filename = "s_perp.out"
 
     do i = 1,bz*(L+1)
@@ -188,13 +186,8 @@ module io
         do k = 1,bz*(L+1)
           do n = 1,iterations
 
-
             charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
-
             field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n)
-
-            field_struc_perp(i,j,k) = field_struc_perp(i,j,k)&
-                                    + fe_fe_perp(i,j,k,n)
 
             ! s_ab averaging
             do m = 1,3
@@ -202,16 +195,6 @@ module io
                 s_ab(m,p,i,j,k) = s_ab(m,p,i,j,k) + s_ab_n(m,p,i,j,k,n)
               end do
             end do
-
-            !s_ab(1,1,i,j,k) = s_ab(1,1,i,j,k) + s_ab_n(1,1,i,j,k,n)
-            !s_ab(1,2,i,j,k) = s_ab(1,2,i,j,k) + s_ab_n(1,2,i,j,k,n)
-            !s_ab(1,3,i,j,k) = s_ab(1,3,i,j,k) + s_ab_n(1,3,i,j,k,n)
-            !s_ab(2,1,i,j,k) = s_ab(2,1,i,j,k) + s_ab_n(2,1,i,j,k,n)
-            !s_ab(2,2,i,j,k) = s_ab(2,2,i,j,k) + s_ab_n(2,2,i,j,k,n)
-            !s_ab(2,3,i,j,k) = s_ab(2,3,i,j,k) + s_ab_n(2,3,i,j,k,n)
-            !s_ab(3,1,i,j,k) = s_ab(3,1,i,j,k) + s_ab_n(3,1,i,j,k,n)
-            !s_ab(3,2,i,j,k) = s_ab(3,2,i,j,k) + s_ab_n(3,2,i,j,k,n)
-            !s_ab(3,3,i,j,k) = s_ab(3,3,i,j,k) + s_ab_n(3,3,i,j,k,n)
 
             if (n.eq.iterations) then
               ! s_ab projection for perpendicular component
@@ -242,18 +225,6 @@ module io
                               ((-1)*kz*ky*knorm)*s_ab(3,2,i,j,k)+&
                               (1 - kz*kz*knorm)*s_ab(3,3,i,j,k)
 
-              !s_perp(1,1,i,j,k) = (1 - kx*kx*knorm)*s_ab(1,1,i,j,k)
-              !s_perp(1,2,i,j,k) = ((-1)*kx*ky*knorm)*s_ab(1,2,i,j,k)
-              !s_perp(1,3,i,j,k) = ((-1)*kx*kz*knorm)*s_ab(1,3,i,j,k)
-
-              !s_perp(2,1,i,j,k) = ((-1)*ky*kx*knorm)*s_ab(2,1,i,j,k)
-              !s_perp(2,2,i,j,k) = (1 - ky*ky*knorm)*s_ab(2,2,i,j,k)
-              !s_perp(2,3,i,j,k) = ((-1)*ky*kz*knorm)*s_ab(2,3,i,j,k)
-
-              !s_perp(3,1,i,j,k) = ((-1)*kz*kx*knorm)*s_ab(3,1,i,j,k)
-              !s_perp(3,1,i,j,k) = ((-1)*kz*ky*knorm)*s_ab(3,2,i,j,k)
-              !s_perp(3,3,i,j,k) = (1 - kz*kz*knorm)*s_ab(3,3,i,j,k)
-
             end if ! if (n.eq.iterations) for s_ab and s_perp
           end do ! n iteration loop
         end do ! k
@@ -262,11 +233,9 @@ module io
 
     charge_struc = charge_struc / iterations
     field_struc = field_struc / iterations
-    field_struc_perp = field_struc_perp / iterations
 
     open(unit=5, file=charge_struc_filename)
     open(unit=7, file=field_struc_filename)
-    open(unit=8, file=perp_field_struc_filename)
     open(unit=9, file=s_perp_filename)
 
     do k = 1,bz*(L) + 1
@@ -298,97 +267,7 @@ module io
 
     close(5)
     close(7)
-    close(8)
     close(9)
-
-    !imag = (0.0,1.0)
-
-    ! I think L + 1, to allow for components with k_mu = 0?
-    ! Need to be careful of K = (0,0,0) though
-
-    ! Fourier transform
-    !do i = -L/2, L/2
-    !  do j = -L/2, L/2
-    !    do k = -L/2, L/2
-
-    !      e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = 0.0
-    !      e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = 0.0
-    !      e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = 0.0
-
-    !      ! vec(q) = vec(0) term:
-    !      if (i.eq.0.and.j.eq.0.and.k.eq.0) then
-    !        write (*,*) "q=0 term; need to work this out"
-    !        write (*,*) "e_kx(",i,j,k,") = ",e_kx(i,j,k)
-    !        CYCLE
-    !      end if
-
-    !      ! m,n,p are the real space coordinates
-    !      do m = 1,L
-    !        do n = 1,L
-    !          do p = 1,L
-
-    !            kdotx = ((-1)*imag*2*pi*(((m-1)*i/(L*lambda)) + &
-    !                    ((n-1)*j/(L*lambda)) + &
-    !                    ((p-1)*k/(L*lambda))))
-
-    !            e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = &
-    !                        e_kx(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) &
-    !                        + e**(kdotx)*e_x(m,n,p)
-    !            e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = &
-    !                        e_ky(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) &
-    !                        + e**(kdotx)*e_y(m,n,p)
-    !            e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) = &
-    !                        e_kz(i + 1 + L/2,j + 1 + L/2,k + 1 + L/2) &
-    !                        + e**(kdotx)*e_z(m,n,p)
-
-    !          end do
-    !        end do
-    !      end do
-
-    !      ! now we need to do a (?) thermal (?) average to get correlations
-    !      ! this is the dot of the fourier space field with itself at i,j,k
-    !      dot = (e_kx(i + 1 + L/2, j + 1 + L/2, k + 1 + L/2)&
-    !            * CONJG(e_kx(i + 1 + L/2, j + 1 + L/2, k + 1 + L/2))) +&
-    !            (e_ky(i + 1 + L/2, j + 1 + L/2, k + 1 + L/2) *&
-    !            CONJG(e_ky(i + 1 + L/2, j + 1 + L/2, k + 1 + L/2))) +&
-    !            (e_kz(i + 1 + L/2, j + 1 + L/2, k + 1 + L/2) *&
-    !            CONJG(e_kz(i + 1 + L/2, j + 1 + L/2, k + 1 + L/2)))
-
-    !      !write (*,*) "E \cdot E (",2*pi*i/(L*lambda),2*pi*j/(L*lambda),2*pi*k/(L*lambda),") = ",dot
-
-    !      dot_avg = dot_avg + dot
-
-    !    end do
-    !  end do
-    !end do
-
-    ! need to check this is being done properly
-    ! this isn't what we actually we want to do
-    !dot_avg = dot_avg / (L + 1)**3
-    !write (*,*) "avg. E dot E over k = ",dot_avg
-
-    !open(unit=5, file=e_k_filename)
-
-    !do i = 1,L + 1
-    !  do j = 1,L + 1
-    !    do k = 1,L + 1
-
-    !      ! output is (kx, ky, kz), real(e_kx), imag(e_kx), etc.
-    !      write (5, format_string)&
-    !      2*pi*(i - 1 - L/2)/L*lambda,&
-    !      2*pi*(j - 1 - L/2)/L*lambda,&
-    !      2*pi*(k - 1 - L/2)/L*lambda,&
-    !      REAL(e_kx(i,j,k)), AIMAG(e_kx(i,j,k)), REAL(e_ky(i,j,k)),&
-    !      AIMAG(e_ky(i,j,k)), REAL(e_kz(i,j,k)), AIMAG(e_kz(i,j,k))
-
-    !    end do
-    !  end do
-    !end do
-
-    !close(5)
-    !deallocate(e_kx)
-    !deallocate(e_ky)
-    !deallocate(e_kz)
 
   end subroutine correlations
 
