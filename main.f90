@@ -27,12 +27,27 @@ program mr
   end do
 
   if (tot_q.ne.0) then
-    call linsol
-
-    write(*,*)
-
     call linalg
   end if
+
+  !do i = 1,L
+  !  do j = 1,L
+  !    do k = 1,L
+
+  !    ! does it make sense to do this?
+  !      u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
+  !      (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
+  !      (e_z(i,j,k) - mnphi_z(i,j,k))**2
+
+  !    end do
+  !  end do
+  !end do
+
+  !write (*,*) 'u_rot. = ',u_rot
+
+  write(*,*)
+
+  call linalg
 
   call write_output
 
@@ -45,24 +60,21 @@ end program mr
 ! canonical ensemble - MC / Metropolis updates
 subroutine upcan()
   use common
+  use linear_solver
   implicit none
-  character(2) :: configs
   integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot,u_tot_run,avg_e,avg_e2,one
-  real*8 :: dot,dot_avg,ebar_inc,e_inc,u_diff
-  real*8 :: norm_k,kdote,e_perp
+  real*8 :: u_tot_run,avg_e,avg_e2,one,norm_k
+  real*8 :: dot,dot_avg ! probably won't need the avg
   real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
   real :: chooser, delta
   complex*16 :: imag, kdotx
 
-  configs = "NO"
   glob = 0
   totq = 0
   u_tot_run = 0.0
-  u_tot = 0.0
-  u_diff = 0.0
-  delta_e = 0.0
+  old_e = 0.0
+  new_e = 0.0
   g_thr = 1 / float(L)
   accepth = 0
   acceptr=0
@@ -73,11 +85,11 @@ subroutine upcan()
   write(*,*)
   write(*,*) " --- start: charge positions ---"
 
+  call linalg
+  u_tot_run = lapack_energy
   do i = 1,L
     do j = 1,L
       do k = 1,L
-        u_tot_run = u_tot_run + e_x(i,j,k)**2 + &
-                    e_y(i,j,k)**2 + e_z(i,j,k)**2
 
         totq = totq + abs(v(i,j,k))
         if (v(i,j,k).ne.0) then
@@ -93,15 +105,12 @@ subroutine upcan()
   energy(1) = u_tot_run
   sq_energy(1) = u_tot_run**2
 
-
+  ! charge hop sweep
   do n = 1,iterations
 
-    u_tot_run = u_tot
+  !write (*,*) "utot at start of step ",n," = ",u_tot_run
 
-    ! --- START OF UPDATE BLOCKS ---
-
-    ! --- CHARGE HOP UPDATE ---
-
+    ! charge hop sweep
     do i = 1, int(L**3 * hop_ratio)
 
       ! pick a random site
@@ -109,581 +118,223 @@ subroutine upcan()
       y = int(rand() * L) + 1
       z = int(rand() * L) + 1
 
-      ! pick a non-zero charge - canonical!
+      ! pick a non-zero charge - we want to keep it canonical
       if (v(x,y,z).ne.0) then
 
         charge = v(x,y,z)
-        ! this takes care of sign issues when hopping
-        hop_inc = charge / (eps_0 * lambda**2)
-        chooser = rand()
 
-        if (chooser.lt.(1.0 / 3.0)) then
-          ! x component
-          eo1 = e_x(x,y,z)
-          chooser = rand()
+        !choose a direction to move the charge:
+        chooser = int(rand() * 6)
 
-          if (chooser.lt.0.5) then ! we try and move the fucker left
-            en1 = eo1 + hop_inc
-            old_e = 0.5 * eps_0 * eo1**2
-            new_e = 0.5 * eps_0 * en1**2
+        if (chooser.eq.0) then
+
+          ! positive x
+          if ((abs(v(x,y,z)).le.1).and.(v(pos(x),y,z).eq.0)) then
+
+            old_e = u_tot_run
+            v(x,y,z) = 0
+            v(pos(x),y,z) = charge
+
+            call linalg
+            ! after calling linalg, the new fields are in e_mu_lapack
+            new_e = lapack_energy
             delta_e = new_e - old_e
-            ! i think we can just set v(x,y,z) = 0
-            ! if we're enforcing |v| <= 1
-            if ((abs(v(x,y,z)).le.1).and.(v(neg(x),y,z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            !write (*,*) old_e,new_e,delta_e
 
-                accepth = accepth + 1
-                e_x(x,y,z) = en1
-                v(neg(x),y,z) = charge
-                v(x,y,z) = 0
-                ebar_x = ebar_x - hop_inc
-                u_tot_run = u_tot_run + delta_e
+            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-              end if
+              ! move accepted, set the fields/energy to lapack ones
+              accepth = accepth + 1
+              u_tot_run = lapack_energy
+              e_x = e_x_lapack
+              e_y = e_y_lapack
+              e_z = e_z_lapack
+
+            else
+
+              ! don't change the fields or energy, move the charge back
+              v(x,y,z) = charge
+              v(pos(x),y,z) = 0
+              u_tot_run = old_e
+
             end if
-
-          else ! move the fucker to the right
-
-            en1 = eo1 - hop_inc
-            old_e = 0.5 * eps_0 * eo1**2
-            new_e = 0.5 * eps_0 * en1**2
-            delta_e = new_e - old_e
-
-            if ((abs(v(x,y,z)).le.1).and.(v(pos(x),y,z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-                accepth = accepth + 1
-                e_x(x,y,z) = en1
-                v(pos(x),y,z) = charge
-                v(x,y,z) = 0
-                ebar_x = ebar_x + hop_inc
-                u_tot_run = u_tot_run + delta_e
-
-              end if
-            end if
-
-          end if ! end of left-right movement choice
-          if (ebar_x.gt.(1/float(L)).or.ebar_x.lt.((-1)/float(L))) then
-            glob = 1
-          else
-            glob = 0
           end if
 
+        else if (chooser.eq.1) then
 
-        else if (chooser.gt.(2.0 / 3.0)) then ! y component
+          ! negative x
+          if ((abs(v(x,y,z)).le.1).and.(v(neg(x),y,z).eq.0)) then
 
-          eo1 = e_y(x,y,z)
-          chooser = rand()
+            old_e = u_tot_run
+            v(x,y,z) = 0
+            v(neg(x),y,z) = charge
 
-          if (chooser.lt.0.5) then ! we try and move the fucker left
-            en1 = eo1 + hop_inc
-            old_e = 0.5 * eps_0 * eo1**2
-            new_e = 0.5 * eps_0 * en1**2
-            delta_e = new_e - old_e
-            ! i think we can just set v(x,y,z) = 0
-            ! if we're enforcing |v| <= 1
-            if ((abs(v(x,y,z)).le.1).and.(v(x,neg(y),z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-                accepth = accepth + 1
-                e_y(x,y,z) = en1
-                v(x,neg(y),z) = charge
-                v(x,y,z) = 0
-                ebar_y = ebar_y - hop_inc
-                u_tot_run = u_tot_run + delta_e
-
-              end if
-            end if
-
-          else ! move the fucker to the right
-
-            en1 = eo1 - hop_inc
-
-            old_e = 0.5 * eps_0 * eo1**2
-            new_e = 0.5 * eps_0 * en1**2
+            call linalg
+            ! after calling linalg, the new fields are in e_mu_lapack
+            new_e = lapack_energy
             delta_e = new_e - old_e
 
-            if ((abs(v(x,y,z)).le.1).and.(v(x,pos(y),z).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-                accepth = accepth + 1
-                e_y(x,y,z) = en1
-                v(x,pos(y),z) = charge
-                v(x,y,z) = 0
-                ebar_y = ebar_y + hop_inc
-                u_tot_run = u_tot_run + delta_e
+              ! move accepted, set the fields/energy to lapack ones
+              accepth = accepth + 1
+              u_tot_run = lapack_energy
+              e_x = e_x_lapack
+              e_y = e_y_lapack
+              e_z = e_z_lapack
 
-              end if
+            else
+
+              ! don't change the fields or energy, move the charge back
+              v(x,y,z) = charge
+              v(neg(x),y,z) = 0
+              u_tot_run = old_e
+
             end if
-
-          end if ! end of left-right movement choice
-          if (ebar_y.gt.(1/float(L)).or.ebar_y.lt.((-1)/float(L))) then
-            glob = 1
-          else
-            glob = 0
           end if
 
-        else ! z component
+        else if (chooser.eq.2) then
 
-          eo1 = e_z(x,y,z)
-          chooser = rand()
+          ! positive y
+          if ((abs(v(x,y,z)).le.1).and.(v(x,pos(y),z).eq.0)) then
 
-          if (chooser.lt.0.5) then ! we try and move the fucker left
-            en1 = eo1 + hop_inc
-            old_e = 0.5 * eps_0 * eo1**2
-            new_e = 0.5 * eps_0 * en1**2
-            delta_e = new_e - old_e
-            ! i think we can just set v(x,y,z) = 0
-            ! if we're enforcing |v| <= 1
-            if ((abs(v(x,y,z)).le.1).and.(v(x,y,neg(z)).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            old_e = u_tot_run
+            v(x,y,z) = 0
+            v(x,pos(y),z) = charge
 
-                accepth = accepth + 1
-                e_z(x,y,z) = en1
-                v(x,y,neg(z)) = charge
-                v(x,y,z) = 0
-                ebar_z = ebar_z - hop_inc
-                u_tot_run = u_tot_run + delta_e
-
-              end if
-            end if
-
-          else ! move the fucker to the right
-
-            en1 = eo1 - hop_inc
-            old_e = 0.5 * eps_0 * eo1**2
-            new_e = 0.5 * eps_0 * en1**2
+            call linalg
+            ! after calling linalg, the new fields are in e_mu_lapack
+            new_e = lapack_energy
             delta_e = new_e - old_e
 
-            if ((abs(v(x,y,z)).le.1).and.(v(x,y,pos(z)).eq.0)) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-                accepth = accepth + 1
-                e_z(x,y,z) = en1
-                v(x,y,pos(z)) = charge
-                v(x,y,z) = 0
-                ebar_z = ebar_z + hop_inc
-                u_tot_run = u_tot_run + delta_e
+              ! move accepted, set the fields/energy to lapack ones
+              accepth = accepth + 1
+              u_tot_run = lapack_energy
+              e_x = e_x_lapack
+              e_y = e_y_lapack
+              e_z = e_z_lapack
 
-              end if
+            else
+
+              ! don't change the fields or energy, move the charge back
+              v(x,y,z) = charge
+              v(x,pos(y),z) = 0
+              u_tot_run = old_e
+
             end if
-
-          end if ! end of left-right movement choice
-          if (ebar_z.gt.(1/float(L)).or.ebar_z.lt.((-1)/float(L))) then
-            glob = 1
-          else
-            glob = 0
           end if
 
-        end if ! end of component chooser
+        else if (chooser.eq.3) then
+
+          ! negative y
+          if ((abs(v(x,y,z)).le.1).and.(v(x,neg(y),z).eq.0)) then
+
+            old_e = u_tot_run
+            v(x,y,z) = 0
+            v(x,neg(y),z) = charge
+
+            call linalg
+            ! after calling linalg, the new fields are in e_mu_lapack
+            new_e = lapack_energy
+            delta_e = new_e - old_e
+
+            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+              ! move accepted, set the fields/energy to lapack ones
+              accepth = accepth + 1
+              u_tot_run = lapack_energy
+              e_x = e_x_lapack
+              e_y = e_y_lapack
+              e_z = e_z_lapack
+
+            else
+
+              ! don't change the fields or energy, move the charge back
+              v(x,y,z) = charge
+              v(x,neg(y),z) = 0
+              u_tot_run = old_e
+
+            end if
+          end if
+
+        else if (chooser.eq.4) then
+
+          ! positive z
+          if ((abs(v(x,y,z)).le.1).and.(v(x,y,pos(z)).eq.0)) then
+
+            old_e = u_tot_run
+            v(x,y,z) = 0
+            v(x,y,pos(z)) = charge
+
+            call linalg
+            ! after calling linalg, the new fields are in e_mu_lapack
+            new_e = lapack_energy
+            delta_e = new_e - old_e
+
+            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+              ! move accepted, set the fields/energy to lapack ones
+              accepth = accepth + 1
+              u_tot_run = lapack_energy
+              e_x = e_x_lapack
+              e_y = e_y_lapack
+              e_z = e_z_lapack
+
+            else
+
+              ! don't change the fields or energy, move the charge back
+              v(x,y,z) = charge
+              v(x,y,pos(z)) = 0
+              u_tot_run = old_e
+
+            end if
+          end if
+
+        else if (chooser.eq.5) then
+
+          ! negative z
+          if ((abs(v(x,y,z)).le.1).and.(v(x,y,neg(z)).eq.0)) then
+
+            old_e = u_tot_run
+            v(x,y,z) = 0
+            v(x,y,neg(z)) = charge
+
+            call linalg
+            ! after calling linalg, the new fields are in e_mu_lapack
+            new_e = lapack_energy
+            delta_e = new_e - old_e
+
+            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+              ! move accepted, set the fields/energy to lapack ones
+              accepth = accepth + 1
+              u_tot_run = lapack_energy
+              e_x = e_x_lapack
+              e_y = e_y_lapack
+              e_z = e_z_lapack
+
+            else
+
+              ! don't change the fields or energy, move the charge back
+              v(x,y,z) = charge
+              v(x,y,neg(z)) = 0
+              u_tot_run = old_e
+
+            end if
+          end if
+
+        end if
+
 
       end if ! end of v(x,y,z).ne.0 block
 
     end do ! end charge hop sweep
 
-    u_tot = 0.0
-    do i = 1,L
-      do j = 1, L
-        do k = 1,L
-        u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
-        end do
-      end do
-    end do
-
-    !u_diff = u_tot_run - u_tot
-    !if (abs(u_diff).ge.0.00001) then
-    !  write (*,*) "HOP: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    !end if
-
-    ! --- ROTATIONAL UPDATE ---
-
-    ! NOTE TO SELF: might need a + 1 next to that int cast
-    do i = 1,int(L**3 * rot_ratio)
-
-      eo1 = 0.0
-      eo2 = 0.0
-      eo3 = 0.0
-      eo4 = 0.0
-      en1 = 0.0
-      en2 = 0.0
-      en3 = 0.0
-      en4 = 0.0
-
-      x = int(rand() * L) + 1
-      y = int(rand() * L) + 1
-      z = int(rand() * L) + 1
-
-      ! NOTE TO SELF : next line needs changing
-      ! it's for the field increment, not an if statement
-      delta = 2 * rot_delt * (rand() - 0.5)
-
-      if (rand().gt.0.5) then
-        pm1 = 1
-      else
-        pm1 = -1
-      end if
-
-      chooser=rand()
-      if (chooser.lt.(1.0/3.0)) then ! xy-plane plaquette
-
-        eo1 = e_x(x,y,z)
-        eo2 = e_y(x,y,z)
-        eo3 = e_x(x,neg(y),z)
-        eo4 = e_y(neg(x),y,z)
-        !write(*,*) x,y,z,delta,pm1
-        !write(*,*) eo1,eo2,eo3,eo4
-
-        !en1 = eo1 + (delta * sign(one, eo1))
-        !write(*,*) (delta * sign(one, eo1))
-        !en2 = eo2 - (delta * sign(one, eo2))
-        !write(*,*) (delta * sign(one, eo2))
-        !en3 = eo3 + (delta * sign(one, eo3))
-        !write(*,*) (delta * sign(one, eo3))
-        !en4 = eo4 - (delta * sign(one, eo4))
-        !write(*,*) (delta * sign(one, eo4))
-        en1 = eo1 + delta
-        en2 = eo2 - delta
-        en3 = eo3 + delta
-        en4 = eo4 - delta
-        !write(*,*) en1,en2,en3,en4
-
-        old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-        new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
-        delta_e = new_e - old_e
-
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-          !write (*,*) "x-y plane rot:"
-          !write (*,*) x, y, z
-          !write (*,*) x, neg(y), z
-          !write (*,*) neg(x), y, z
-
-          e_x(x,y,z) = en1
-          e_y(x,y,z) = en2
-          e_x(x,neg(y),z) = en3
-          e_y(neg(x),y,z) = en4
-          acceptr = acceptr + 1
-          u_tot_run = u_tot_run + delta_e
-
-        end if ! end of Metropolis check
-
-      else if (chooser.ge.(2.0/3.0)) then ! xz-plane plaquette
-
-        eo1 = e_x(x,y,z)
-        eo2 = e_z(x,y,z)
-        eo3 = e_x(x,y,neg(z))
-        eo4 = e_z(neg(x),y,z)
-
-        !en1 = eo1 + (delta * sign(one, eo1))
-        !en2 = eo2 - (delta * sign(one, eo2))
-        !en3 = eo3 + (delta * sign(one, eo3))
-        !en4 = eo4 - (delta * sign(one, eo4))
-        en1 = eo1 + delta
-        en2 = eo2 - delta
-        en3 = eo3 + delta
-        en4 = eo4 - delta
-
-        old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-        new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
-        delta_e = new_e - old_e
-
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-          !write (*,*) "x-z plane rot:"
-          !write (*,*) x, y, z
-          !write (*,*) x, y, neg(z)
-          !write (*,*) neg(x), y, z
-
-          e_x(x,y,z) = en1
-          e_z(x,y,z) = en2
-          e_x(x,y,neg(z)) = en3
-          e_z(neg(x),y,z) = en4
-          acceptr = acceptr + 1
-          u_tot_run = u_tot_run + delta_e
-
-        end if ! end of Metropolis check
-
-      else ! yz-plane plaquette
-
-        eo1 = e_y(x,y,z)
-        eo2 = e_z(x,y,z)
-        eo3 = e_y(x,y,neg(z))
-        eo4 = e_z(x,neg(y),z)
-
-        !en1 = eo1 + (delta * sign(one, eo1))
-        !en2 = eo2 - (delta * sign(one, eo2))
-        !en3 = eo3 + (delta * sign(one, eo3))
-        !en4 = eo4 - (delta * sign(one, eo4))
-
-        en1 = eo1 + delta
-        en2 = eo2 - delta
-        en3 = eo3 + delta
-        en4 = eo4 - delta
-
-        old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-        new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
-        delta_e = new_e - old_e
-
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-          !write (*,*) "y-z plane rot:"
-          !write (*,*) x, y, z
-          !write (*,*) x, y, neg(z)
-          !write (*,*) x, neg(y), z
-
-          e_y(x,y,z) = en1
-          e_z(x,y,z) = en2
-          e_y(x,y,neg(z)) = en3
-          e_z(x,neg(y),z) = en4
-          acceptr = acceptr + 1
-          u_tot_run = u_tot_run + delta_e
-
-        end if ! end of Metropolis check
-
-      end if ! end plane choice block
-
-    end do ! end rotational
-    !write (*,*) "utot after rot. = ",u_tot_run
-
-    u_tot = 0.0
-    do i = 1,L
-      do j = 1, L
-        do k = 1,L
-        u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
-        end do
-      end do
-    end do
-
-    !u_diff = u_tot_run - u_tot
-    !if (abs(u_diff).ge.0.00001) then
-    !  write (*,*) "ROT: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    !end if
-
-    ! --- HARMONIC UPDATE ---
-    ! e bar update
-    if (glob.eq.1) then
-      !write (*,*) "step ",n," start of harmonic update: ",u_tot_run,"total moves accepted ",acceptg
-
-      ! NOTE TO SELF: again this int cast prob needs changing
-      do i = 1,int(L**3 * g_ratio)
-
-        ebar_inc = q/(L**2 * eps_0)
-        e_inc = ebar_inc / L**3
-
-        ! x-component
-        chooser = rand()
-
-        if (chooser.lt.0.5) then
-          ! NOTE TO SELF - check this little fucker
-          !old_e = (u_tot_run + ebar_x)**2
-          !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-          old_e = ebar_x**2
-          ! this is not right
-          new_e = (ebar_x - ebar_inc)**2
-          delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_x)
-
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-            ! this block is basically stolen from Michael
-            ! not sure what's happening here tbh
-            ebar_x = ebar_x - ebar_inc
-            acceptg = acceptg + 1
-
-            do j = 1,L
-              do k = 1,L
-                do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) - e_inc
-                end do
-              end do
-            end do
-          end if ! end weird Metropolis block
-
-        else
-          ! NOTE TO SELF - check this little fucker
-          !old_e = (u_tot_run + ebar_x)**2
-          !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-          old_e = ebar_x**2
-          new_e = (ebar_x + ebar_inc)**2
-          delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_x)
-
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-            ! this block is basically stolen from Michael
-            ! not sure what's happening here tbh
-            ebar_x = ebar_x + ebar_inc
-            acceptg = acceptg + 1
-
-            do j = 1,L
-              do k = 1,L
-                do m = 1,L
-                  e_x(j,k,m) = e_x(j,k,m) + e_inc
-                end do
-              end do
-            end do
-          end if ! end weird Metropolis block
-        end if
-
-        ! y-component
-        chooser = rand()
-
-        if (chooser.lt.0.5) then
-          ! NOTE TO SELF - check this little fucker
-          !old_e = (u_tot_run + ebar_y)**2
-          !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-          old_e = ebar_y**2
-          new_e = (ebar_y - ebar_inc)**2
-          delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_y)
-
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-            ! this block is basically stolen from Michael
-            ! not sure what's happening here tbh
-            ebar_y = ebar_y - ebar_inc
-            acceptg = acceptg + 1
-
-            do j = 1,L
-              do k = 1,L
-                do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) - e_inc
-                end do
-              end do
-            end do
-          end if ! end weird Metropolis block
-
-        else
-          ! NOTE TO SELF - check this little fucker
-          !old_e = (u_tot_run + ebar_y)**2
-          !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-          old_e = ebar_y**2
-          new_e = (ebar_y + ebar_inc)**2
-          delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_y)
-
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-            ! this block is basically stolen from Michael
-            ! not sure what's happening here tbh
-            ebar_y = ebar_y + ebar_inc
-            acceptg = acceptg + 1
-
-            do j = 1,L
-              do k = 1,L
-                do m = 1,L
-                  e_y(j,k,m) = e_y(j,k,m) + e_inc
-                end do
-              end do
-            end do
-          end if ! end weird Metropolis block
-        end if
-
-        ! z-component
-        chooser = rand()
-
-        if (chooser.lt.0.5) then
-          ! NOTE TO SELF - check this little fucker
-          !old_e = (u_tot_run + ebar_z)**2
-          !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-          old_e = ebar_z**2
-          new_e = (ebar_z - ebar_inc)**2
-          delta_e = new_e - old_e
-          !delta_e = (0.5 - float(L) * ebar_z)
-
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-            ! this block is basically stolen from Michael
-            ! not sure what's happening here tbh
-            ebar_z = ebar_z - ebar_inc
-            acceptg = acceptg + 1
-
-            do j = 1,L
-              do k = 1,L
-                do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) - e_inc
-                end do
-              end do
-            end do
-          end if ! end weird Metropolis block
-
-        else
-          ! NOTE TO SELF - check this little fucker
-          !old_e = (u_tot_run + ebar_z)**2
-          !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-          old_e = ebar_z**2
-          new_e = (ebar_z + ebar_inc)**2
-          delta_e = new_e - old_e
-          !write (*,*) ebar_inc,ebar_z,old_e,new_e,delta_e
-          !delta_e = (0.5 - float(L) * ebar_z)
-
-          if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-            .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-            ! this block is basically stolen from Michael
-            ! not sure what's happening here tbh
-            ebar_z = ebar_z + ebar_inc
-            acceptg = acceptg + 1
-
-            do j = 1,L
-              do k = 1,L
-                do m = 1,L
-                  e_z(j,k,m) = e_z(j,k,m) + e_inc
-                end do
-              end do
-            end do
-          end if ! end weird Metropolis block
-        end if
-
-        end do ! end global update loop
-
-        u_tot_run = 0.0
-        do j = 1,L
-          do k = 1,L
-            do m = 1,L
-              u_tot_run = u_tot_run + 0.5 * eps_0 *&
-                          (e_x(j,k,m)**2 + e_y(j,k,m)**2 + e_z(j,k,m)**2)
-            end do
-          end do
-        end do
-
-    end if ! end glob.eq.1 block
-
-    ! --- END OF UPDATE BLOCKS ---
-
-    u_tot = 0.0
-    do i = 1,L
-      do j = 1, L
-        do k = 1,L
-          u_tot = u_tot + 0.5 * eps_0 * (e_x(i,j,k)**2 + e_y(i,j,k)**2 + e_z(i,j,k)**2)
-
-          ! load ordered states to check FT code
-          if (configs.eq."NO") then
-            CYCLE
-          else if (configs.eq."AF") then
-             e_x(i,j,k) = (-1.0)**(i+j)
-             e_y(i,j,k) = (-1.0)**(i+j)
-             e_z(i,j,k) = (0.0)
-          else if (configs.eq."ST") then
-             e_x(i,j,k) = (-1.0)**j
-             e_y(i,j,k) = (-1.0)**i
-             e_z(i,j,k) = (0.0)
-          else if (configs.eq."FE") then
-             e_x(i,j,k) = 1.0
-             e_y(i,j,k) = 1.0
-             e_z(i,j,k) = 0.0
-          end if
-        end do
-      end do
-    end do
-
-    !u_diff = u_tot_run - u_tot
-    !if (abs(u_diff).ge.0.00001) then
-    !  write (*,*) "HARM: u_tot_run = ",u_tot_run," u_tot = ",u_tot," u_diff = ",u_diff
-    !end if
-
   ! replace with u_tot_run maybe?
-  energy(n + 1) = u_tot
-  sq_energy(n + 1) = u_tot**2
+  energy(n + 1) = u_tot_run
+  sq_energy(n + 1) = u_tot_run**2
 
   avg_e = 0.0
   avg_e2 = 0.0
@@ -724,10 +375,6 @@ subroutine upcan()
             do p = 1,L
               do s = 1,L
 
-                ! for perpendicular component
-                !kdote = (kx * e_x(m,p,s) +&
-                !        ky * e_y(m,p,s) + kz * e_z(m,p,s))
-
                 ! different offsets for x,y,z
                 kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
                         ((p-1)*ky) + ((s-1)*kz)))
@@ -744,7 +391,7 @@ subroutine upcan()
 
                 e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
 
-                if (v(m,p,s).ne.0) then ! calculate <++ + +->!
+                if (v(m,p,s).ne.0) then ! calculate average of <++>,<--><+->!
 
                   ! FT of charge distribution
                   kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
@@ -755,7 +402,7 @@ subroutine upcan()
                     rho_k_m(i,j,k) = rho_k_m(i,j,k) + v(m,p,s) * exp(kdotx)
                   end if
 
-                  if (v(m,p,s).eq.1) then ! take away <++>
+                  if (v(m,p,s).eq.1) then
                     rho_k_p(i,j,k) = rho_k_p(i,j,k) + v(m,p,s)*exp(kdotx)
                   end if
 
@@ -766,26 +413,14 @@ subroutine upcan()
           end do
 
           ! normalise, idiot
-          rho_k_m(i,j,k) = rho_k_m(i,j,k) / float(L**3)
-          rho_k_p(i,j,k) = rho_k_p(i,j,k) / float(L**3)
-          e_kx(i,j,k) = e_kx(i,j,k) / float(L**3)
-          e_ky(i,j,k) = e_ky(i,j,k) / float(L**3)
-          e_kz(i,j,k) = e_kz(i,j,k) / float(L**3)
-
-          !if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
-          !  write (*,*)
-          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-          !end if
-          !if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
-          !  write (*,*)
-          !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-          !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-          !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
-          !end if
+          e_kx(i,j,k) = e_kx(i,j,k) /(float(L**3))
+          e_ky(i,j,k) = e_ky(i,j,k) /(float(L**3))
+          e_kz(i,j,k) = e_kz(i,j,k) /(float(L**3))
+          rho_k_m(i,j,k) = rho_k_m(i,j,k) /(float(L**3))
+          rho_k_p(i,j,k) = rho_k_p(i,j,k) /(float(L**3))
 
           ch_ch(i,j,k,n) = (rho_k_p(i,j,k)*conjg(rho_k_p(i,j,k)))
+          !ch_ch_pp(i,j,k,n) = (rho_k_pp(i,j,k)*conjg(rho_k_pp(i,j,k)))
 
           fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
             e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
@@ -815,11 +450,7 @@ subroutine upcan()
     do k = 1,L
       do m = 1,L
         totq = totq + abs(v(j,k,m))
-        if (v(j,k,m).eq.1) then
-          write (*,*) j, k, m, v(j,k,m)
-        end if
-        write (*,*)
-        if (v(j,k,m).eq.-1) then
+        if (v(j,k,m).ne.0) then
           write (*,*) j, k, m, v(j,k,m)
         end if
       end do
@@ -831,7 +462,5 @@ subroutine upcan()
   write (*,*)
   write (*,*) '----- move stats -----'
   write (*,*) 'hop moves  = ',accepth,float(accepth) / (iterations * totq)
-  write (*,*) 'rot moves  = ',acceptr,float(acceptr) / (iterations * L**3 * rot_ratio)
-  write (*,*) 'ebar moves = ',acceptg,float(acceptg) / (iterations * L**3 * g_ratio * 3)
 
 end subroutine upcan

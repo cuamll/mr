@@ -73,7 +73,6 @@ module setup
     phi_lapack = 0.0
     lgf = 0.0
     v_temp = 0
-
   end subroutine allocations
 
   subroutine deallocations
@@ -95,13 +94,14 @@ module setup
     deallocate(e_z_lapack)
     deallocate(phi_lapack)
     deallocate(lgf)
+    deallocate(v_temp)
     deallocate(e_kx)
     deallocate(e_ky)
     deallocate(e_kz)
     deallocate(rho_k_m)
     deallocate(rho_k_p)
     deallocate(ch_ch)
-    deallocate(ch_ch_pp)
+    !deallocate(ch_ch_pp)
     deallocate(fe_fe)
     deallocate(charge_struc)
     deallocate(field_struc)
