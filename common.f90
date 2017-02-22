@@ -17,9 +17,11 @@ module common
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
   real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,fe_fe
+  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch_pp
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: s_ab_n
   real*8, dimension(:,:,:,:,:), allocatable, public :: s_ab
-  complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz,rho_k
+  complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz
+  complex*16, dimension(:,:,:), allocatable, public :: rho_k_m,rho_k_p
   ! probably more things need to go here
   character(len=11), public :: lattfile
 

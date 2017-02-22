@@ -140,7 +140,7 @@ subroutine upcan()
             ! after calling linalg, the new fields are in e_mu_lapack
             new_e = lapack_energy
             delta_e = new_e - old_e
-            write (*,*) old_e,new_e,delta_e
+            !write (*,*) old_e,new_e,delta_e
 
             if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
@@ -392,13 +392,21 @@ subroutine upcan()
 
                 e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
 
-                if (v(m,p,s).eq.1) then ! calculate <++>!
+                if (v(m,p,s).ne.0) then ! calculate average of <++>,<--><+->!
 
                   ! FT of charge distribution
                   kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
                           ((p-1)*ky/(L*lambda)) + &
                           ((s-1)*kz/(L*lambda))))
-                  rho_k(i,j,k) = rho_k(i,j,k) + v(m,p,s) * exp(kdotx)
+
+                  if (v(m,p,s).eq.-1) then
+                    rho_k_m(i,j,k) = rho_k_m(i,j,k) + v(m,p,s) * exp(kdotx)
+                  end if
+
+                  if (v(m,p,s).eq.1) then
+                    rho_k_p(i,j,k) = rho_k_p(i,j,k) + v(m,p,s)*exp(kdotx)
+                  end if
+
                 end if
 
               end do
@@ -409,9 +417,11 @@ subroutine upcan()
           e_kx(i,j,k) = e_kx(i,j,k) /(float(L**3))
           e_ky(i,j,k) = e_ky(i,j,k) /(float(L**3))
           e_kz(i,j,k) = e_kz(i,j,k) /(float(L**3))
-          rho_k(i,j,k) = rho_k(i,j,k) /(float(L**3))
+          rho_k_m(i,j,k) = rho_k_m(i,j,k) /(float(L**3))
+          rho_k_p(i,j,k) = rho_k_p(i,j,k) /(float(L**3))
 
-          ch_ch(i,j,k,n) = ch_ch(i,j,k,n) + (rho_k(i,j,k)*conjg(rho_k(i,j,k)))
+          ch_ch(i,j,k,n) = (rho_k_p(i,j,k)*conjg(rho_k_p(i,j,k)))
+          !ch_ch_pp(i,j,k,n) = (rho_k_pp(i,j,k)*conjg(rho_k_pp(i,j,k)))
 
           fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
             e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&

@@ -175,9 +175,11 @@ module io
           do n = 1,iterations
 
 
-            charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
+            !charge_struc(i,j,k) = charge_struc(i,j,k) +&
+            !                      ch_ch(i,j,k,n) - ch_ch_pp(i,j,k,n)
 
             field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n)
+            charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
 
             ! s_ab averaging
             do m = 1,3
