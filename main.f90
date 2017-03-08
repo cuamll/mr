@@ -773,8 +773,6 @@ subroutine upcan()
           e_kz(i,j,k) = e_kz(i,j,k) / float(L**3)
 
           e_kx_t(i,j,k,n) = e_kx(i,j,k)
-          e_ky_t(i,j,k,n) = e_ky(i,j,k)
-          e_kz_t(i,j,k,n) = e_kz(i,j,k)
           rho_k_m_t(i,j,k,n) = rho_k_m(i,j,k)
           rho_k_p_t(i,j,k,n) = rho_k_p(i,j,k)
 
