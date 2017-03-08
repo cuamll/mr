@@ -772,6 +772,12 @@ subroutine upcan()
           e_ky(i,j,k) = e_ky(i,j,k) / float(L**3)
           e_kz(i,j,k) = e_kz(i,j,k) / float(L**3)
 
+          e_kx_t(i,j,k,n) = e_kx(i,j,k)
+          e_ky_t(i,j,k,n) = e_ky(i,j,k)
+          e_kz_t(i,j,k,n) = e_kz(i,j,k)
+          rho_k_m_t(i,j,k,n) = rho_k_m(i,j,k)
+          rho_k_p_t(i,j,k,n) = rho_k_p(i,j,k)
+
           !if (n.eq.1.and.kx.eq.(-L*lambda/2).and.ky.eq.(5*L*lambda/2).and.kz.eq.0) then
           !  write (*,*)
           !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
@@ -785,11 +791,14 @@ subroutine upcan()
           !    e_kx_perp(i,j,k),e_ky_perp(i,j,k),e_kz_perp(i,j,k)
           !end if
 
-          ch_ch(i,j,k,n) = (rho_k_p(i,j,k)*conjg(rho_k_p(i,j,k)))
+          !ch_ch(i,j,k,n) = ((rho_k_p(i,j,k) + rho_k_m(i,j,k))&
+          !                 *conjg(rho_k_p(i,j,k) + rho_k_m(i,j,k)))
+          ch_ch(i,j,k,n) = (rho_k_p(i,j,k) * conjg(rho_k_m(i,j,k)))
 
-          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
-            e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
-            e_kz(i,j,k)*conjg(e_kz(i,j,k)))
+          !fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
+          !  e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
+          !  e_kz(i,j,k)*conjg(e_kz(i,j,k)))
+          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)))
 
           s_ab_n(1,1,i,j,k,n) = e_kx(i,j,k)*conjg(e_kx(i,j,k))
           s_ab_n(1,2,i,j,k,n) = e_kx(i,j,k)*conjg(e_ky(i,j,k))

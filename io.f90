@@ -188,8 +188,14 @@ module io
 
             !charge_struc(i,j,k) = charge_struc(i,j,k) +&
             !                      0.5 * (ch_ch(i,j,k,n) - 2 * ch_ch_pp(i,j,k,n))
-            field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n)
-            charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
+            field_struc(i,j,k) = field_struc(i,j,k) +&
+              abs(abs(fe_fe(i,j,k,n)) - abs(e_kx_t(i,j,k,n))&
+              *abs(e_kx_t(i,j,k,n)))
+            !charge_struc(i,j,k) = charge_struc(i,j,k) + abs(ch_ch(i,j,k,n))&
+            !- (abs(rho_k_m_t(i,j,k,n)) * abs(rho_k_m_t(i,j,k,n)))
+            charge_struc(i,j,k) = charge_struc(i,j,k) +&
+              abs(abs(ch_ch(i,j,k,n)) - abs(rho_k_p_t(i,j,k,n))&
+              *abs(rho_k_m_t(i,j,k,n)))
 
             ! s_ab averaging
             do m = 1,3

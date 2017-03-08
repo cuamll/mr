@@ -33,6 +33,7 @@ module setup
     allocate(e_kx(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(e_ky(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(e_kz(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_kx_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(fe_fe(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(s_ab(3,3,bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(s_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
@@ -40,6 +41,8 @@ module setup
     allocate(rho_k_m(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(rho_k_p(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(rho_k_m_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    allocate(rho_k_p_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(ch_ch_pp(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(field_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(charge_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
@@ -59,8 +62,11 @@ module setup
     e_kx = 0.0
     e_ky = 0.0
     e_kz = 0.0
+    e_kx_t = 0.0
     rho_k_m = 0.0
     rho_k_p = 0.0
+    rho_k_m_t = 0.0
+    rho_k_p_t = 0.0
     ch_ch = 0.0
     ch_ch_pp = 0.0
     fe_fe = 0.0
@@ -98,8 +104,11 @@ module setup
     deallocate(e_kx)
     deallocate(e_ky)
     deallocate(e_kz)
+    deallocate(e_kx_t)
     deallocate(rho_k_m)
     deallocate(rho_k_p)
+    deallocate(rho_k_m_t)
+    deallocate(rho_k_p_t)
     deallocate(ch_ch)
     deallocate(ch_ch_pp)
     deallocate(fe_fe)
