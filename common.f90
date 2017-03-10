@@ -12,6 +12,7 @@ module common
   real*8, dimension(:,:,:), allocatable, public :: e_y_lapack, e_z_lapack
   real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
   real*8, dimension(:,:,:), allocatable, public :: charge_struc
+  real*8, dimension(:,:), allocatable, public :: grad_sq
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
   real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,ch_ch_pp
@@ -23,6 +24,7 @@ module common
   real*8, dimension(:,:,:), allocatable, public :: field_struc_perp
   complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz
   complex*16, dimension(:,:,:), allocatable, public :: rho_k_m,rho_k_p
+  complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
   complex*16, dimension(:,:,:), allocatable, public :: e_kx_perp,e_ky_perp
   complex*16, dimension(:,:,:), allocatable, public :: e_kz_perp
 
