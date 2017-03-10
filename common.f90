@@ -25,6 +25,7 @@ module common
   complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz
   complex*16, dimension(:,:,:), allocatable, public :: rho_k_m,rho_k_p
   complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
+  complex*16, dimension(:,:,:,:), allocatable, public :: e_kx_t
   complex*16, dimension(:,:,:), allocatable, public :: e_kx_perp,e_ky_perp
   complex*16, dimension(:,:,:), allocatable, public :: e_kz_perp
 

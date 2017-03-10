@@ -418,6 +418,8 @@ subroutine upcan()
           e_kz(i,j,k) = e_kz(i,j,k) /(float(L**3))
           rho_k_m(i,j,k) = rho_k_m(i,j,k) /(float(L**3))
           rho_k_p(i,j,k) = rho_k_p(i,j,k) /(float(L**3))
+
+          e_kx_t(i,j,k,n) = e_kx(i,j,k)
           rho_k_m_t(i,j,k,n) = rho_k_m(i,j,k)
           rho_k_p_t(i,j,k,n) = rho_k_p(i,j,k)
 
@@ -426,9 +428,7 @@ subroutine upcan()
           !                 *conjg(rho_k_p(i,j,k) + rho_k_m(i,j,k)))
           !ch_ch_pp(i,j,k,n) = (rho_k_pp(i,j,k)*conjg(rho_k_pp(i,j,k)))
 
-          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
-            e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
-            e_kz(i,j,k)*conjg(e_kz(i,j,k)))
+          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)))
 
           s_ab_n(1,1,i,j,k,n) = e_kx(i,j,k)*conjg(e_kx(i,j,k))
           s_ab_n(1,2,i,j,k,n) = e_kx(i,j,k)*conjg(e_ky(i,j,k))

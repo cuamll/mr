@@ -114,18 +114,30 @@ module io
     !write (*,*) "N^2 = ",N**2
     !write (*,*) "N T = ",N * temp
 
-    avg_e = avg_e / (iterations * N)
-    avg_e2 = avg_e2 / (iterations * N**2)
-
-    ! prefactor troubles
-    prefac = 1.0 * N / (temp**2)
+    avg_e = avg_e / (iterations)
+    avg_e2 = avg_e2 / (iterations)
 
     write(*,*)
     write(*,*) " --- averages and specific heat ---"
+    write(*,*) "avg_e unnormalised = ",avg_e
+    write(*,*) "avg_e^2 unnormalised = ",avg_e2
+
+    ! prefactor troubles
+    prefac = 1.0 * N / (temp**2)
+    sp_he = prefac * ((avg_e2) - ((avg_e)**2))
+
+    write(*,*) "prefactor = ",prefac
+    write(*,*) "sp. heat (C) = ",sp_he
+    write(*,*) "C / (N) = ",sp_he / N
+    write(*,*)
+
+    avg_e = avg_e / (N)
+    avg_e2 = avg_e2 / (N**2)
+
     write(*,*) "<U> norm. = ",avg_e
-    !write(*,*) "<U>^2 norm. = ",avg_e**2
-    !write(*,*) "<U^2> norm. = ",avg_e2
-    !write(*,*) "prefactor = ",prefac
+    write(*,*) "<U>^2 norm. = ",avg_e**2
+    write(*,*) "<U^2> norm. = ",avg_e2
+    write(*,*) "prefactor = ",prefac
     write(*,*)
 
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
@@ -177,9 +189,7 @@ module io
             !charge_struc(i,j,k) = charge_struc(i,j,k) +&
             !                      0.5 * (ch_ch(i,j,k,n) - 2 * ch_ch_pp(i,j,k,n))
             field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n)
-            charge_struc(i,j,k) = charge_struc(i,j,k) +&
-              abs(abs(ch_ch(i,j,k,n)) - abs(rho_k_p_t(i,j,k,n))&
-              *abs(rho_k_m_t(i,j,k,n)))
+            charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
 
             ! s_ab averaging
             do m = 1,3
@@ -187,8 +197,6 @@ module io
                 s_ab(m,p,i,j,k) = s_ab(m,p,i,j,k) + s_ab_n(m,p,i,j,k,n)
               end do
             end do
-
-            !s_ab(1,1,i,j,k) = s_ab(1,1,i,j,k) + s_ab_n(1,1,i,j,k,n)
 
             if (n.eq.iterations) then
               ! s_ab projection for perpendicular component
