@@ -168,6 +168,8 @@ module io
     real*8 :: dot, dot_avg, knorm
     integer :: i, j, k, m, n, p, kx, ky, kz
     complex*16 :: imag, kdotx
+    complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,fe_fe_avg
+    complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,rho_p_avg,rho_m_avg
     character(16) :: charge_struc_filename
     character(15) :: field_struc_filename
     character(10) :: s_perp_filename
@@ -188,8 +190,11 @@ module io
 
             !charge_struc(i,j,k) = charge_struc(i,j,k) +&
             !                      0.5 * (ch_ch(i,j,k,n) - 2 * ch_ch_pp(i,j,k,n))
-            field_struc(i,j,k) = field_struc(i,j,k) + fe_fe(i,j,k,n)
-            charge_struc(i,j,k) = charge_struc(i,j,k) + ch_ch(i,j,k,n)
+            e_kx_avg(i,j,k) = e_kx_avg(i,j,k) + e_kx_t(i,j,k,n)
+            fe_fe_avg(i,j,k) = fe_fe_avg(i,j,k) + fe_fe(i,j,k,n)
+            ch_ch_avg(i,j,k) = ch_ch_avg(i,j,k) + ch_ch(i,j,k,n)
+            rho_p_avg(i,j,k) = rho_p_avg(i,j,k) + rho_k_p_t(i,j,k,n)
+            rho_m_avg(i,j,k) = rho_m_avg(i,j,k) + rho_k_m_t(i,j,k,n)
 
             ! s_ab averaging
             do m = 1,3
@@ -202,6 +207,21 @@ module io
               ! s_ab projection for perpendicular component
               ! for n = iterations we've just finished the sum
               ! keep this in the loop bc we still need dummy variables
+
+              ! time average
+              e_kx_avg = e_kx_avg / iterations
+              fe_fe_avg = fe_fe_avg / iterations
+              ch_ch_avg = ch_ch_avg / iterations
+              rho_p_avg = rho_p_avg / iterations
+              rho_m_avg = rho_m_avg / iterations
+
+              field_struc(i,j,k) = field_struc(i,j,k) +&
+                abs(abs(fe_fe_avg(i,j,k)) - abs(e_kx_avg(i,j,k))&
+                *abs(e_kx_avg(i,j,k)))
+
+              charge_struc(i,j,k) = charge_struc(i,j,k) +&
+                abs(abs(ch_ch_avg(i,j,k)) - abs(rho_p_avg(i,j,k))&
+                *abs(rho_m_avg(i,j,k)))
 
               ! normalise s_ab
               s_ab = s_ab / iterations
@@ -232,9 +252,6 @@ module io
         end do ! k
       end do ! j
     end do ! i
-
-    charge_struc = charge_struc / iterations
-    field_struc = field_struc / iterations
 
     open(unit=5, file=charge_struc_filename)
     open(unit=7, file=field_struc_filename)
