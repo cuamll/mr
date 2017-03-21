@@ -695,7 +695,7 @@ subroutine upcan()
   avg_e = avg_e / (n + 1)
   avg_e2 = avg_e2 / (n + 1)
 
-    ! Fourier transform
+    ! --- FOURIER TRANSFORMS ---
     do kx = (-1*L/2)*bz, (L/2)*bz
       do ky = (-1*L/2)*bz, (L/2)*bz
         do kz = (-1*L/2)*bz, (L/2)*bz
