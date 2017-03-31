@@ -216,12 +216,14 @@ module io
               rho_m_avg = rho_m_avg / iterations
 
               field_struc(i,j,k) = field_struc(i,j,k) +&
-                abs(abs(fe_fe_avg(i,j,k)) - abs(e_kx_avg(i,j,k))&
-                *abs(e_kx_avg(i,j,k)))
-
+                abs(fe_fe_avg(i,j,k) - e_kx_avg(i,j,k)&
+                *e_kx_avg(i,j,k))
+              !charge_struc(i,j,k) = charge_struc(i,j,k) +&
+              !  abs(abs(ch_ch_avg(i,j,k)) - abs(rho_p_avg(i,j,k))&
+              !  *abs(rho_m_avg(i,j,k)))
               charge_struc(i,j,k) = charge_struc(i,j,k) +&
-                abs(abs(ch_ch_avg(i,j,k)) - abs(rho_p_avg(i,j,k))&
-                *abs(rho_m_avg(i,j,k)))
+                abs(ch_ch_avg(i,j,k) - rho_p_avg(i,j,k)&
+                *rho_m_avg(i,j,k))
 
               ! normalise s_ab
               s_ab = s_ab / iterations
@@ -230,6 +232,15 @@ module io
               kx = i - 1 - bz*(L/2)
               ky = j - 1 - bz*(L/2)
               kz = k - 1 - bz*(L/2)
+
+              if (kx.eq.((L*lambda/2)).and.ky.eq.(-1*L*lambda/2).and.kz.eq.0) then
+                write (*,*)
+                write (*,*) "Final ch. struc stuff: ch_ch_avg,rho_p_avg,rho_m_avg,charge_struc"
+                write (*,'(F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+                  kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+                  ch_ch_avg(i,j,k),rho_p_avg(i,j,k),rho_m_avg(i,j,k),charge_struc(i,j,k)
+              end if
+
               if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
                 knorm = 0
               else

@@ -424,6 +424,18 @@ subroutine upcan()
           rho_k_p_t(i,j,k,n) = rho_k_p(i,j,k)
 
           ch_ch(i,j,k,n) = (rho_k_p(i,j,k)*conjg(rho_k_m(i,j,k)))
+
+          if (kx.eq.((L*lambda/2)).and.ky.eq.(-1*L*lambda/2).and.kz.eq.0) then
+            if (n.eq.1) then
+              write(*,*) "kx,ky,rho_k_m,rho_k_p,ch_ch(this step),e_kx"
+            else
+            write (*,*)
+            write (*,'(F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+              kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+              rho_k_m(i,j,k),rho_k_p(i,j,k),ch_ch(i,j,k,n),e_kx(i,j,k)
+            end if
+          end if
+
           !ch_ch(i,j,k,n) = ((rho_k_p(i,j,k) + rho_k_m(i,j,k))&
           !                 *conjg(rho_k_p(i,j,k) + rho_k_m(i,j,k)))
           !ch_ch_pp(i,j,k,n) = (rho_k_pp(i,j,k)*conjg(rho_k_pp(i,j,k)))
