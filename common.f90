@@ -15,10 +15,12 @@ module common
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
   real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,ch_ch_pp
+  real*8, dimension(:,:,:,:), allocatable, public :: dir_struc_n
   real*8, dimension(:,:,:,:), allocatable, public :: fe_fe,fe_fe_perp
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: s_ab_n
   real*8, dimension(:,:,:,:,:), allocatable, public :: s_ab
   real*8, dimension(:,:,:), allocatable, public :: field_struc
+  real*8, dimension(:,:,:), allocatable, public :: dir_struc
   real*8, dimension(:,:,:), allocatable, public :: s_perp
   real*8, dimension(:,:,:), allocatable, public :: field_struc_perp
   complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz

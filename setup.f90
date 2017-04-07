@@ -28,6 +28,8 @@ module setup
     allocate(e_y_lapack(L,L,L))
     allocate(e_z_lapack(L,L,L))
     allocate(phi_lapack(L,L,L))
+    allocate(dir_struc(L/2 + 1,L/2 + 1,L/2 + 1))
+    allocate(dir_struc_n(L/2 + 1,L/2 + 1,L/2 + 1,iterations))
     allocate(lgf(L,L,L,L,L,L))
     allocate(v_temp(L**2,L))
     allocate(e_kx(bz*(L+1),bz*(L+1),bz*(L+1)))
@@ -73,6 +75,8 @@ module setup
     field_struc = 0.0
     charge_struc = 0.0
     s_perp = 0.0
+    dir_struc = 0.0
+    dir_struc_n = 0.0
     e_x_lapack = 0.0
     e_y_lapack = 0.0
     e_z_lapack = 0.0
@@ -100,6 +104,8 @@ module setup
     deallocate(e_y_lapack)
     deallocate(e_z_lapack)
     deallocate(phi_lapack)
+    deallocate(dir_struc)
+    deallocate(dir_struc_n)
     deallocate(lgf)
     deallocate(e_kx)
     deallocate(e_ky)

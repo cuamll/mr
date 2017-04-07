@@ -7,7 +7,7 @@ UNAME = $(shell uname)
 
 DEBUG = 1
 ifeq ($(DEBUG), 1)
-	DEBUGFLAG = -g
+	DEBUGFLAG = -g -ffpe-trap=underflow,denormal
 else
 	DEBUG FLAG =
 endif
