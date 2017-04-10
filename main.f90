@@ -393,6 +393,23 @@ subroutine upcan()
 
                 if (v(m,p,s).ne.0) then ! calculate average of <++>,<--><+->!
 
+                  if (kx.le.L.and.ky.le.L.and.kz.le.L) then
+                    ! this should sort it out. kx ky kz here are then
+                    ! the "r"s, m p s are the "zeros"
+                    ! we want to do rho_+(0) rho_-(r), I think?
+                    if (v(m,p,s).gt.0) then
+                      if (v(kx,ky,kz).lt.0) then
+                        ! this should handle multi-valued charges fine
+                        x = modulo(m - kx, L)
+                        y = modulo(p - ky, L)
+                        z = modulo(s - kz, L)
+                        dir_struc_n(x,y,z,n) = dir_struc_n(x,y,z,n) +&
+                                v(m,p,s) * v(kx,ky,kz)
+                      end if ! neg charge at kx,ky,kz
+                    end if ! pos charge at m,p,s
+
+                  end if ! kx,ky,kz < L
+
                   ! FT of charge distribution
                   kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
                           ((p-1)*ky/(L*lambda)) + &

@@ -172,16 +172,20 @@ module io
     complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,rho_p_avg,rho_m_avg
     character(16) :: charge_struc_filename
     character(15) :: field_struc_filename
+    character(13) :: dir_struc_filename
     character(10) :: s_perp_filename
     character(74) :: struc_format_string
     character(97) :: field_format_string
+    character(21) :: dir_format_string
 
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
+    dir_format_string = "(I2, I2, I2, ES18.9)"
 
     charge_struc_filename = "charge_struc.out"
     field_struc_filename = "field_struc.out"
     s_perp_filename = "s_perp.out"
+    dir_struc_filename = "dir_struc.out"
 
     do i = 1,bz*(L+1)
       do j = 1,bz*(L+1)
@@ -195,6 +199,11 @@ module io
             ch_ch_avg(i,j,k) = ch_ch_avg(i,j,k) + ch_ch(i,j,k,n)
             rho_p_avg(i,j,k) = rho_p_avg(i,j,k) + rho_k_p_t(i,j,k,n)
             rho_m_avg(i,j,k) = rho_m_avg(i,j,k) + rho_k_m_t(i,j,k,n)
+
+            ! direct space one
+            if (i.le.L.and.j.le.L.and.k.le.L) then
+              dir_struc(i,j,k) = dir_struc(i,j,k) + dir_struc_n(i,j,k,n)
+            end if
 
             ! s_ab averaging
             do m = 1,3
@@ -214,6 +223,9 @@ module io
               ch_ch_avg = ch_ch_avg / iterations
               rho_p_avg = rho_p_avg / iterations
               rho_m_avg = rho_m_avg / iterations
+
+              ! direct space struc needs normalising by <n+><n->
+              dir_struc = dir_struc / (iterations * (0.5 * add_charges / L**3)**2)
 
               field_struc(i,j,k) = field_struc(i,j,k) +&
                 abs(fe_fe_avg(i,j,k) - e_kx_avg(i,j,k)&
@@ -267,6 +279,7 @@ module io
     open(unit=5, file=charge_struc_filename)
     open(unit=7, file=field_struc_filename)
     open(unit=9, file=s_perp_filename)
+    open(unit=10, file=dir_struc_filename)
 
     do k = 1,bz*(L) + 1
       do i = 1,bz*(L) + 1
@@ -278,6 +291,12 @@ module io
           2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
           2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
           charge_struc(i,j,k)
+
+          ! write direct space one
+          if (i.le.L.and.j.le.L.and.k.le.L) then
+            write (10, dir_format_string)&
+            i,j,k,dir_struc(i,j,k)
+          end if
 
           write (7, field_format_string)&
           2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
@@ -298,6 +317,7 @@ module io
     close(5)
     close(7)
     close(9)
+    close(10)
 
   end subroutine correlations
 

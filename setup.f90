@@ -46,6 +46,8 @@ module setup
     allocate(ch_ch_pp(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(field_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(charge_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(dir_struc(L,L,L))
+    allocate(dir_struc_n(L,L,L,iterations))
 
     v = 0
     pos = 0
@@ -72,6 +74,8 @@ module setup
     fe_fe = 0.0
     field_struc = 0.0
     charge_struc = 0.0
+    dir_struc = 0.0
+    dir_struc_n = 0.0
     s_perp = 0.0
     e_x_lapack = 0.0
     e_y_lapack = 0.0
@@ -114,6 +118,8 @@ module setup
     deallocate(fe_fe)
     deallocate(charge_struc)
     deallocate(field_struc)
+    deallocate(dir_struc)
+    deallocate(dir_struc_n)
     deallocate(s_ab_n)
     deallocate(s_ab)
     deallocate(s_perp)
