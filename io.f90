@@ -166,31 +166,49 @@ module io
     implicit none
     !complex*16, dimension(:,:,:), allocatable :: e_kx, e_ky, e_kz
     real*8 :: dot, dot_avg, knorm
-    integer :: i, j, k, m, n, p, kx, ky, kz
+    integer :: i, j, k, m, n, p, kx, ky, kz, dist
     complex*16 :: imag, kdotx
     complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,fe_fe_avg
     complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,rho_p_avg,rho_m_avg
+    real*8, dimension(3*(((L/2)+1))) :: dist_corr
     character(16) :: charge_struc_filename
     character(15) :: field_struc_filename
     character(13) :: dir_struc_filename
+    character(12) :: dir_dist_struc_filename
     character(10) :: s_perp_filename
     character(74) :: struc_format_string
     character(97) :: field_format_string
     character(21) :: dir_format_string
+    character(12) :: dir_dist_format_string
 
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
     dir_format_string = "(I2, I2, I2, ES18.9)"
+    dir_dist_format_string = "(I2, ES18.9)"
 
     charge_struc_filename = "charge_struc.out"
     field_struc_filename = "field_struc.out"
     s_perp_filename = "s_perp.out"
     dir_struc_filename = "dir_struc.out"
+    dir_dist_struc_filename = "dir_dist.out"
 
-    do i = 1,bz*(L+1)
-      do j = 1,bz*(L+1)
-        do k = 1,bz*(L+1)
-          do n = 1,iterations
+    dot = 0.0
+    dot_avg = 0.0
+    knorm = 0.0
+    dist = 0
+    imag = (0.0, 0.0)
+    kdotx = (0.0, 0.0)
+    e_kx_avg = (0.0, 0.0)
+    fe_fe_avg = (0.0, 0.0)
+    ch_ch_avg = (0.0, 0.0)
+    rho_p_avg = (0.0, 0.0)
+    rho_m_avg = (0.0, 0.0)
+    dist_corr = 0.0
+
+    do n = 1,iterations
+      do i = 1,bz*(L+1)
+        do j = 1,bz*(L+1)
+          do k = 1,bz*(L+1)
 
             !charge_struc(i,j,k) = charge_struc(i,j,k) +&
             !                      0.5 * (ch_ch(i,j,k,n) - 2 * ch_ch_pp(i,j,k,n))
@@ -199,10 +217,12 @@ module io
             ch_ch_avg(i,j,k) = ch_ch_avg(i,j,k) + ch_ch(i,j,k,n)
             rho_p_avg(i,j,k) = rho_p_avg(i,j,k) + rho_k_p_t(i,j,k,n)
             rho_m_avg(i,j,k) = rho_m_avg(i,j,k) + rho_k_m_t(i,j,k,n)
-
+            
             ! direct space one
-            if (i.le.L.and.j.le.L.and.k.le.L) then
+            if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
               dir_struc(i,j,k) = dir_struc(i,j,k) + dir_struc_n(i,j,k,n)
+              dist_corr(i - 1 + j - 1 + k - 1 + 1) =&
+              dist_corr(i - 1 + j - 1 + k - 1 + 1) + dir_struc_n(i,j,k,n)
             end if
 
             ! s_ab averaging
@@ -217,15 +237,32 @@ module io
               ! for n = iterations we've just finished the sum
               ! keep this in the loop bc we still need dummy variables
 
-              ! time average
-              e_kx_avg = e_kx_avg / iterations
-              fe_fe_avg = fe_fe_avg / iterations
-              ch_ch_avg = ch_ch_avg / iterations
-              rho_p_avg = rho_p_avg / iterations
-              rho_m_avg = rho_m_avg / iterations
+              if (i.eq.1.and.j.eq.1.and.k.eq.1) then
+                write(*,*)
+                write (*,*) "dir struc -- unnormalised"
+                write(*,*)
+              end if
+              if (i.le.L/2+1.and.j.le.l/2+1.and.k.le.L/2+1) then
+                write (*,*) i,j,k,dir_struc(i,j,k)
+              end if
 
-              ! direct space struc needs normalising by <n+><n->
-              dir_struc = dir_struc / (iterations * (0.5 * add_charges / L**3)**2)
+              ! time average
+              if (i.eq.1.and.j.eq.1.and.k.eq.1) then
+                ! we only want to do this once!
+                e_kx_avg = e_kx_avg / iterations
+                fe_fe_avg = fe_fe_avg / iterations
+                ch_ch_avg = ch_ch_avg / iterations
+                rho_p_avg = rho_p_avg / iterations
+                rho_m_avg = rho_m_avg / iterations
+                s_ab = s_ab / iterations
+
+                ! direct space struc needs normalising by <n+><n->
+                dir_struc = dir_struc / (iterations * (0.5 * add_charges / L**3)**2)
+              end if
+
+              !if (i.le.L/2+1.and.j.le.l/2+1.and.k.le.L/2+1) then
+              !  write (*,*) i,j,k,dir_struc(i,j,k)
+              !end if
 
               field_struc(i,j,k) = field_struc(i,j,k) +&
                 abs(fe_fe_avg(i,j,k) - e_kx_avg(i,j,k)&
@@ -236,9 +273,6 @@ module io
               charge_struc(i,j,k) = charge_struc(i,j,k) +&
                 abs(ch_ch_avg(i,j,k) - rho_p_avg(i,j,k)&
                 *rho_m_avg(i,j,k))
-
-              ! normalise s_ab
-              s_ab = s_ab / iterations
 
               ! find kx, ky, kz from i,j,k and their norm
               kx = i - 1 - bz*(L/2)
@@ -271,15 +305,24 @@ module io
                               (1 - kz*kz*knorm)*s_ab(3,3,i,j,k)
 
             end if ! if (n.eq.iterations) for s_ab and s_perp
-          end do ! n iteration loop
-        end do ! k
-      end do ! j
-    end do ! i
+          end do ! k
+        end do ! j
+      end do ! i
+    end do ! n iteration loop
+
+    dist_corr = dist_corr / (iterations * (0.5 * add_charges / L**3)**2) 
+    do i = 1,3*((L/2)+1)
+      dist_corr(i) = 2 * dist_corr(i) / (i * (i + 1))
+      write (*,*) i - 1,dist_corr(i)
+    end do
+
+    
 
     open(unit=5, file=charge_struc_filename)
     open(unit=7, file=field_struc_filename)
     open(unit=9, file=s_perp_filename)
     open(unit=10, file=dir_struc_filename)
+    open(unit=11, file=dir_dist_struc_filename)
 
     do k = 1,bz*(L) + 1
       do i = 1,bz*(L) + 1
@@ -293,9 +336,14 @@ module io
           charge_struc(i,j,k)
 
           ! write direct space one
-          if (i.le.L.and.j.le.L.and.k.le.L) then
+          if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
             write (10, dir_format_string)&
-            i,j,k,dir_struc(i,j,k)
+            i - 1,j - 1,k - 1,dir_struc(i,j,k)
+          end if
+
+          if (i.le.3*(L/2 + 1).and.k.eq.1.and.j.eq.1) then
+            write (11, dir_dist_format_string)&
+            i - 1, abs(dist_corr(i))
           end if
 
           write (7, field_format_string)&
@@ -318,6 +366,7 @@ module io
     close(7)
     close(9)
     close(10)
+    close(11)
 
   end subroutine correlations
 

@@ -393,18 +393,51 @@ subroutine upcan()
 
                 if (v(m,p,s).ne.0) then ! calculate average of <++>,<--><+->!
 
-                  if (kx.le.L.and.ky.le.L.and.kz.le.L) then
+                  if (kx.gt.0.and.kx.le.L&
+                    .and.ky.gt.0.and.ky.le.L&
+                    .and.kz.gt.0.and.kz.le.L) then
                     ! this should sort it out. kx ky kz here are then
                     ! the "r"s, m p s are the "zeros"
                     ! we want to do rho_+(0) rho_-(r), I think?
-                    if (v(m,p,s).gt.0) then
-                      if (v(kx,ky,kz).lt.0) then
+                    if (v(m,p,s).eq.1) then
+                      if (v(kx,ky,kz).eq.-1) then
                         ! this should handle multi-valued charges fine
-                        x = modulo(m - kx, L)
-                        y = modulo(p - ky, L)
-                        z = modulo(s - kz, L)
+                        x = abs(m - kx)
+                        y = abs(p - ky)
+                        z = abs(s - kz)
+                        if (x.gt.L/2) then
+                          x = L - x
+                        end if
+                        if (y.gt.L/2) then
+                          y = L - y
+                        end if
+                        if (z.gt.L/2) then
+                          z = L - z
+                        end if
+                        x = x + 1
+                        y = y + 1
+                        z = z + 1
+                        !x = modulo(m - kx, L/2 + 1) + 1
+                        !y = modulo(p - ky, L/2 + 1) + 1
+                        !z = modulo(s - kz, L/2 + 1) + 1
+                        !if (m.ge.kx) then
+                        !  x = modulo(m - kx, L/2 + 1) + 1
+                        !else
+                        !  x = modulo(kx - m, L/2 + 1) + 1
+                        !end if
+                        !if (p.ge.ky) then
+                        !  y = modulo(p - ky, L/2 + 1) + 1
+                        !else
+                        !  y = modulo(ky - p, L/2 + 1) + 1
+                        !end if
+                        !if (s.ge.kz) then
+                        !  z = modulo(s - kz, L/2 + 1) + 1
+                        !else
+                        !  z = modulo(kz - s, L/2 + 1) + 1
+                        !end if
                         dir_struc_n(x,y,z,n) = dir_struc_n(x,y,z,n) +&
                                 v(m,p,s) * v(kx,ky,kz)
+                        !write (*,*) m,p,s,v(m,p,s),kx,ky,kz,v(kx,ky,kz),x,y,z,n,dir_struc_n(x,y,z,n)
                       end if ! neg charge at kx,ky,kz
                     end if ! pos charge at m,p,s
 

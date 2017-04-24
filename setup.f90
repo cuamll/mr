@@ -46,8 +46,8 @@ module setup
     allocate(ch_ch_pp(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(field_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(charge_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
-    allocate(dir_struc(L,L,L))
-    allocate(dir_struc_n(L,L,L,iterations))
+    allocate(dir_struc(L/2 + 1,L/2 + 1,L/2 + 1))
+    allocate(dir_struc_n(L/2 + 1,L/2 + 1,L/2 + 1,iterations))
 
     v = 0
     pos = 0
