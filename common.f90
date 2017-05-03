@@ -1,9 +1,8 @@
 module common
   implicit none
-  real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
-  real, public :: eps_0
-  real, public :: rot_delt
   integer, public :: L,seed,accepth,acceptr,acceptg,iterations,add_charges
+  real*8, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
+  real*8, public :: eps_0, bin_size, rot_delt
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
@@ -31,11 +30,12 @@ module common
   complex*16, dimension(:,:,:), allocatable, public :: e_kz_perp
 
     ! probably more things need to go here
-  character(len=99), public :: lattfile_long
-  character(len=99), public :: arg_long, ch_st_l, fi_st_l
+  character(len=99), public :: lattfile_long, en_long, sq_en_long
+  character(len=99), public :: e_field_long, arg_long, ch_st_l, fi_st_l
   character(len=99), public :: s_p_l, dir_st_l, dir_d_s_l
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file
   character(:), allocatable :: s_perp_file, dir_st_file, dir_dist_file
+  character(:), allocatable :: energy_file, sq_energy_file, e_field_file
 
   integer, public :: have_lgf = 0
   integer, public, parameter :: bz=2

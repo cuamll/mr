@@ -31,7 +31,8 @@ program mr
 
     write(*,*)
 
-    call linalg
+    ! only want this to check against LAPACK; it's fine
+    !call linalg
   end if
 
   call write_output
@@ -732,7 +733,9 @@ subroutine upcan()
                 kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
                         ((p-1)*ky) + ((s-1)*kz)))
 
-                e_kx(i,j,k) = e_kx(i,j,k) + exp(kdotx)*e_x(m,p,s)
+                ! we want this for every step so we can
+                ! average at the end to get field-field struc
+                e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n) + exp(kdotx)*e_x(m,p,s)
 
                 kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                         ((p-(1.0/2))*ky) + ((s-1)*kz)))
@@ -807,11 +810,11 @@ subroutine upcan()
                           ((s-1)*kz/(L*lambda))))
 
                   if (v(m,p,s).eq.-1) then
-                    rho_k_m(i,j,k) = rho_k_m(i,j,k) + v(m,p,s) * exp(kdotx)
+                    rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n) + v(m,p,s) * exp(kdotx)
                   end if
 
                   if (v(m,p,s).eq.1) then ! take away <++>
-                    rho_k_p(i,j,k) = rho_k_p(i,j,k) + v(m,p,s)*exp(kdotx)
+                    rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n) + v(m,p,s)*exp(kdotx)
                   end if
 
                 end if
@@ -821,15 +824,15 @@ subroutine upcan()
           end do ! end m loop
 
           ! normalise, idiot
-          rho_k_m(i,j,k) = rho_k_m(i,j,k) / float(L**3)
-          rho_k_p(i,j,k) = rho_k_p(i,j,k) / float(L**3)
-          e_kx(i,j,k) = e_kx(i,j,k) / float(L**3)
+          rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n) / float(L**3)
+          rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n) / float(L**3)
+          e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n) / float(L**3)
           e_ky(i,j,k) = e_ky(i,j,k) / float(L**3)
           e_kz(i,j,k) = e_kz(i,j,k) / float(L**3)
 
-          e_kx_t(i,j,k,n) = e_kx(i,j,k)
-          rho_k_m_t(i,j,k,n) = rho_k_m(i,j,k)
-          rho_k_p_t(i,j,k,n) = rho_k_p(i,j,k)
+          !e_kx_t(i,j,k,n) = e_kx(i,j,k)
+          !rho_k_m_t(i,j,k,n) = rho_k_m(i,j,k)
+          !rho_k_p_t(i,j,k,n) = rho_k_p(i,j,k)
           !if (n.eq.1.and.kx.eq.(L*lambda/2).and.ky.eq.(L*lambda/2).and.kz.eq.0) then
           !  write (*,*)
           !  write (*,'(F6.3,F6.3,F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
@@ -839,7 +842,7 @@ subroutine upcan()
 
           !ch_ch(i,j,k,n) = ((rho_k_p(i,j,k) + rho_k_m(i,j,k))&
           !                 *conjg(rho_k_p(i,j,k) + rho_k_m(i,j,k)))
-          ch_ch(i,j,k,n) = (rho_k_p(i,j,k) * conjg(rho_k_m(i,j,k)))
+          ch_ch(i,j,k,n) = (rho_k_p_t(i,j,k,n) * conjg(rho_k_m_t(i,j,k,n)))
 
           !if (kx.eq.((L*lambda/2)).and.ky.eq.(-1*L*lambda/2).and.kz.eq.0) then
           !  if (n.eq.1) then
@@ -855,15 +858,15 @@ subroutine upcan()
           !fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)) +&
           !  e_ky(i,j,k)*conjg(e_ky(i,j,k)) +&
           !  e_kz(i,j,k)*conjg(e_kz(i,j,k)))
-          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)))
+          fe_fe(i,j,k,n) = (e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n)))
 
-          s_ab_n(1,1,i,j,k,n) = e_kx(i,j,k)*conjg(e_kx(i,j,k))
-          s_ab_n(1,2,i,j,k,n) = e_kx(i,j,k)*conjg(e_ky(i,j,k))
-          s_ab_n(1,3,i,j,k,n) = e_kx(i,j,k)*conjg(e_kz(i,j,k))
-          s_ab_n(2,1,i,j,k,n) = e_ky(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(1,1,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n))
+          s_ab_n(1,2,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_ky(i,j,k))
+          s_ab_n(1,3,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kz(i,j,k))
+          s_ab_n(2,1,i,j,k,n) = e_ky(i,j,k)*conjg(e_kx_t(i,j,k,n))
           s_ab_n(2,2,i,j,k,n) = e_ky(i,j,k)*conjg(e_ky(i,j,k))
           s_ab_n(2,3,i,j,k,n) = e_ky(i,j,k)*conjg(e_kz(i,j,k))
-          s_ab_n(3,1,i,j,k,n) = e_kz(i,j,k)*conjg(e_kx(i,j,k))
+          s_ab_n(3,1,i,j,k,n) = e_kz(i,j,k)*conjg(e_kx_t(i,j,k,n))
           s_ab_n(3,2,i,j,k,n) = e_kz(i,j,k)*conjg(e_ky(i,j,k))
           s_ab_n(3,3,i,j,k,n) = e_kz(i,j,k)*conjg(e_kz(i,j,k))
 

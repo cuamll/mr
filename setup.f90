@@ -6,7 +6,6 @@ module setup
   implicit none
   integer, private :: i, j, k, n, row, col, tot_q
   real, public :: u_rot
-  integer, dimension(:,:), allocatable, private :: v_temp
 
   contains
 
@@ -18,21 +17,17 @@ module setup
     allocate(mnphi_x(L,L,L))
     allocate(mnphi_y(L,L,L))
     allocate(mnphi_z(L,L,L))
-    allocate(e_rot_x(L,L,L))
-    allocate(e_rot_y(L,L,L))
-    allocate(e_rot_z(L,L,L))
     allocate(e_x(L,L,L))
     allocate(e_y(L,L,L))
     allocate(e_z(L,L,L))
-    allocate(e_x_lapack(L,L,L))
-    allocate(e_y_lapack(L,L,L))
-    allocate(e_z_lapack(L,L,L))
-    allocate(phi_lapack(L,L,L))
+    !allocate(e_x_lapack(L,L,L))
+    !allocate(e_y_lapack(L,L,L))
+    !allocate(e_z_lapack(L,L,L))
+    !allocate(phi_lapack(L,L,L))
     allocate(dir_struc(L/2 + 1,L/2 + 1,L/2 + 1))
     allocate(dir_struc_n(L/2 + 1,L/2 + 1,L/2 + 1,iterations))
     allocate(lgf(L,L,L,L,L,L))
-    allocate(v_temp(L**2,L))
-    allocate(e_kx(bz*(L+1),bz*(L+1),bz*(L+1)))
+    !allocate(e_kx(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(e_ky(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(e_kz(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(e_kx_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
@@ -40,12 +35,12 @@ module setup
     allocate(s_ab(3,3,bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(s_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(s_ab_n(3,3,bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    allocate(rho_k_m(bz*(L+1),bz*(L+1),bz*(L+1)))
-    allocate(rho_k_p(bz*(L+1),bz*(L+1),bz*(L+1)))
+    !allocate(rho_k_m(bz*(L+1),bz*(L+1),bz*(L+1)))
+    !allocate(rho_k_p(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(rho_k_m_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(rho_k_p_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    allocate(ch_ch_pp(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
+    !allocate(ch_ch_pp(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
     allocate(field_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(charge_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
 
@@ -55,35 +50,30 @@ module setup
     mnphi_x = 0.0
     mnphi_y = 0.0
     mnphi_z = 0.0
-    e_rot_x = 0.0
-    e_rot_y = 0.0
-    e_rot_z = 0.0
     e_x = 0.0
     e_y = 0.0
     e_z = 0.0
-    e_kx = 0.0
+    !e_kx = 0.0
     e_ky = 0.0
     e_kz = 0.0
     e_kx_t = 0.0
-    rho_k_m = 0.0
-    rho_k_p = 0.0
+    !rho_k_m = 0.0
+    !rho_k_p = 0.0
     rho_k_m_t = 0.0
     rho_k_p_t = 0.0
     ch_ch = 0.0
-    ch_ch_pp = 0.0
+    !ch_ch_pp = 0.0
     fe_fe = 0.0
     field_struc = 0.0
     charge_struc = 0.0
     s_perp = 0.0
     dir_struc = 0.0
     dir_struc_n = 0.0
-    e_x_lapack = 0.0
-    e_y_lapack = 0.0
-    e_z_lapack = 0.0
-    phi_lapack = 0.0
+    !e_x_lapack = 0.0
+    !e_y_lapack = 0.0
+    !e_z_lapack = 0.0
+    !phi_lapack = 0.0
     lgf = 0.0
-    v_temp = 0
-
   end subroutine allocations
 
   subroutine deallocations
@@ -94,29 +84,26 @@ module setup
     deallocate(mnphi_x)
     deallocate(mnphi_y)
     deallocate(mnphi_z)
-    deallocate(e_rot_x)
-    deallocate(e_rot_y)
-    deallocate(e_rot_z)
     deallocate(e_x)
     deallocate(e_y)
     deallocate(e_z)
-    deallocate(e_x_lapack)
-    deallocate(e_y_lapack)
-    deallocate(e_z_lapack)
-    deallocate(phi_lapack)
+    !deallocate(e_x_lapack)
+    !deallocate(e_y_lapack)
+    !deallocate(e_z_lapack)
+    !deallocate(phi_lapack)
     deallocate(dir_struc)
     deallocate(dir_struc_n)
     deallocate(lgf)
-    deallocate(e_kx)
+    !deallocate(e_kx)
     deallocate(e_ky)
     deallocate(e_kz)
     deallocate(e_kx_t)
-    deallocate(rho_k_m)
-    deallocate(rho_k_p)
+    !deallocate(rho_k_m)
+    !deallocate(rho_k_p)
     deallocate(rho_k_m_t)
     deallocate(rho_k_p_t)
     deallocate(ch_ch)
-    deallocate(ch_ch_pp)
+    !deallocate(ch_ch_pp)
     deallocate(fe_fe)
     deallocate(charge_struc)
     deallocate(field_struc)
@@ -127,22 +114,13 @@ module setup
   end subroutine deallocations
 
   subroutine latt_init
+    integer, dimension(:,:), allocatable :: v_temp
 
     tot_q = 0
 
     if (add_charges.ne.0) then
 
-      ! zero out the lattice first
-      do i = 1,L
-        do j = 1,L
-          do k = 1,L
-
-            v(i,j,k) = 0
-
-          end do
-        end do
-      end do
-
+      ! lattice is already initalised to zero above
       ! then we place add_charges in our lattice, randomly
       do while (tot_q.lt.add_charges)
         i = int(rand() * L) + 1
@@ -164,6 +142,8 @@ module setup
       end do
 
     else ! add_charges = 0; read in lattice file
+
+      allocate(v_temp(L**2,L))
 
       open(unit = 2, file = lattfile)
       read(2,*)((v_temp(row,col),col = 1,L),row = 1,L**2)
@@ -194,21 +174,6 @@ module setup
 
     if (tot_q.ne.0) then
       call linsol
-    else
-      do i = 1,L
-        do j = 1,L
-          do k = 1,L
-
-            mnphi_x(i,j,k) = 0.0
-            mnphi_y(i,j,k) = 0.0
-            mnphi_z(i,j,k) = 0.0
-            e_x(i,j,k) = 0.0
-            e_y(i,j,k) = 0.0
-            e_z(i,j,k) = 0.0
-
-          end do
-        end do
-      end do
     end if
 
     ! set e_x to irrotational - temporary solution
@@ -219,38 +184,6 @@ module setup
           e_x(i,j,k) = mnphi_x(i,j,k)
           e_y(i,j,k) = mnphi_y(i,j,k)
           e_z(i,j,k) = mnphi_z(i,j,k)
-
-          e_rot_x(i,j,k) = 0.0
-          e_rot_y(i,j,k) = 0.0
-          e_rot_z(i,j,k) = 0.0
-
-          charge_struc(i,j,k) = 0.0
-          field_struc(i,j,k) = 0.0
-          s_perp(i,j,k) = 0.0
-
-          do n = 1,iterations
-            ch_ch(i,j,k,n) = 0.0
-            fe_fe(i,j,k,n) = 0.0
-            s_ab_n(1,1,i,j,k,n) = 0.0
-            s_ab_n(1,2,i,j,k,n) = 0.0
-            s_ab_n(1,3,i,j,k,n) = 0.0
-            s_ab_n(2,1,i,j,k,n) = 0.0
-            s_ab_n(2,2,i,j,k,n) = 0.0
-            s_ab_n(2,3,i,j,k,n) = 0.0
-            s_ab_n(3,1,i,j,k,n) = 0.0
-            s_ab_n(3,2,i,j,k,n) = 0.0
-            s_ab_n(3,3,i,j,k,n) = 0.0
-
-            s_ab(1,1,i,j,k) = 0.0
-            s_ab(1,2,i,j,k) = 0.0
-            s_ab(1,3,i,j,k) = 0.0
-            s_ab(2,1,i,j,k) = 0.0
-            s_ab(2,2,i,j,k) = 0.0
-            s_ab(2,3,i,j,k) = 0.0
-            s_ab(3,1,i,j,k) = 0.0
-            s_ab(3,2,i,j,k) = 0.0
-            s_ab(3,3,i,j,k) = 0.0
-          end do
 
         end do
       end do

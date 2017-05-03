@@ -1,5 +1,5 @@
 10
-100000
+10
 1.00
 1.0
 1.0
@@ -10,6 +10,9 @@
 1.0
 1.0
 /Users/cgray/code/mr/in/lattice.dat
+/Users/cgray/code/mr/out/energy.dat
+/Users/cgray/code/mr/out/sq_energy.dat
+/Users/cgray/code/mr/out/e_field.dat
 /Users/cgray/code/mr/out/charge_struc.dat
 /Users/cgray/code/mr/out/field_struc.dat
 /Users/cgray/code/mr/out/dir_struc.dat

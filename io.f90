@@ -27,7 +27,11 @@ module io
       read(1,*) hop_ratio
       read(1,*) rot_ratio
       read(1,*) g_ratio
+      read(1,*) bin_size
       read(1,'(a)') lattfile_long
+      read(1,'(a)') en_long
+      read(1,'(a)') sq_en_long
+      read(1,'(a)') e_field_long
       read(1,'(a)') ch_st_l
       read(1,'(a)') fi_st_l
       read(1,'(a)') dir_st_l
@@ -54,6 +58,11 @@ module io
       allocate(energy_run(iterations + 1))
       allocate(sq_energy(iterations + 1))
       lattfile = trim(lattfile_long)
+      energy_file = trim(en_long)
+      sq_energy_file = trim(sq_en_long)
+      e_field_file = trim(e_field_long)
+      charge_st_file = trim(ch_st_l)
+      field_st_file = trim(fi_st_l)
       charge_st_file = trim(ch_st_l)
       field_st_file = trim(fi_st_l)
       dir_st_file = trim(dir_st_l)
@@ -73,7 +82,11 @@ module io
       write (*,*) 'ratio of charge hop updates = ',hop_ratio
       write (*,*) 'ratio of rotational updates = ',rot_ratio
       write (*,*) 'ratio of harmonic mode updates = ',g_ratio
+      write (*,*) 'bin size for radial correlation function = ',bin_size
       write (*,*) 'lattice file to read in (if necessary): ',lattfile
+      write (*,*) 'energy file: ',energy_file
+      write (*,*) 'squared energy file: ',sq_energy_file
+      write (*,*) 'E-field file: ',e_field_file
       write (*,*) 'charge struc file: ',charge_st_file
       write (*,*) 'field struc file: ',field_st_file
       write (*,*) 'direct space charge struc file: ',dir_st_file
@@ -94,9 +107,6 @@ module io
     ! guess what this one does
     use common
     implicit none
-    character(10) :: energy_filename
-    character(11) :: efield_filename
-    character(13) :: sq_energy_filename
     integer*8 :: i, j, k, N
     real*8 :: avg_e, avg_e2, prefac, sp_he
 
@@ -105,13 +115,9 @@ module io
     sp_he = 0.0
     N = L**3
 
-    energy_filename = "energy.out"
-    sq_energy_filename = "sq_energy.out"
-    efield_filename = "e_field.out"
-
-    open(unit=2, file=energy_filename)
-    open(unit=3, file=sq_energy_filename)
-    open(unit=4, file=efield_filename)
+    open(unit=2, file=energy_file)
+    open(unit=3, file=sq_energy_file)
+    open(unit=4, file=e_field_file)
 
     ! write out the parameters in the energy file
     write (2,*) "L",L
@@ -194,37 +200,28 @@ module io
     use common
     implicit none
     !complex*16, dimension(:,:,:), allocatable :: e_kx, e_ky, e_kz
-    real*8 :: dot, dot_avg, knorm
-    integer :: i, j, k, m, n, p, kx, ky, kz, dist
+    real*8 :: dot, dot_avg, knorm, dist
+    integer :: i, j, k, m, n, p, kx, ky, kz, dist_bin
     complex*16 :: imag, kdotx
     complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,fe_fe_avg
     complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,rho_p_avg,rho_m_avg
-    real*8, dimension(3*(((L/2)+1))) :: dist_corr
-    character(16) :: charge_struc_filename
-    character(15) :: field_struc_filename
-    character(13) :: dir_struc_filename
-    character(12) :: dir_dist_struc_filename
-    character(10) :: s_perp_filename
+    real*8, dimension(ceiling(3*(((L/2)**2))*(1 / bin_size))) :: dist_r
+    real*8, dimension(ceiling(3*(((L/2)**2))*(1 / bin_size))) :: bin_count
     character(74) :: struc_format_string
     character(97) :: field_format_string
     character(21) :: dir_format_string
-    character(12) :: dir_dist_format_string
+    character(22) :: dir_dist_format_string
 
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
     dir_format_string = "(I2, I2, I2, ES18.9)"
-    dir_dist_format_string = "(I2, ES18.9)"
-
-    charge_struc_filename = "charge_struc.out"
-    field_struc_filename = "field_struc.out"
-    s_perp_filename = "s_perp.out"
-    dir_struc_filename = "dir_struc.out"
-    dir_dist_struc_filename = "dir_dist.out"
+    dir_dist_format_string = "(ES18.9, I8.1, ES18.9)"
 
     dot = 0.0
     dot_avg = 0.0
     knorm = 0.0
-    dist = 0
+    dist_bin = 0
+    dist = 0.0
     imag = (0.0, 0.0)
     kdotx = (0.0, 0.0)
     e_kx_avg = (0.0, 0.0)
@@ -232,7 +229,8 @@ module io
     ch_ch_avg = (0.0, 0.0)
     rho_p_avg = (0.0, 0.0)
     rho_m_avg = (0.0, 0.0)
-    dist_corr = 0.0
+    dist_r = 0.0
+    bin_count = 0.0
 
     do n = 1,iterations
       do i = 1,bz*(L+1)
@@ -249,9 +247,13 @@ module io
             
             ! direct space one
             if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
+
               dir_struc(i,j,k) = dir_struc(i,j,k) + dir_struc_n(i,j,k,n)
-              dist_corr(i - 1 + j - 1 + k - 1 + 1) =&
-              dist_corr(i - 1 + j - 1 + k - 1 + 1) + dir_struc_n(i,j,k,n)
+
+              dist = sqrt(dble((i - 1)**2 + (j - 1)**2 + (k - 1)**2))
+              dist_bin = floor(dist / bin_size) + 1
+              dist_r(dist_bin) = dist_r(dist_bin) + dir_struc_n(i,j,k,n)
+              bin_count(dist_bin) = bin_count(dist_bin) + 1
             end if
 
             ! s_ab averaging
@@ -339,19 +341,25 @@ module io
       end do ! i
     end do ! n iteration loop
 
-    dist_corr = dist_corr / (iterations * (0.5 * add_charges / L**3)**2) 
-    do i = 1,3*((L/2)+1)
-      dist_corr(i) = 2 * dist_corr(i) / (i * (i + 1))
-      write (*,*) i - 1,dist_corr(i)
-    end do
+    !dist_r = dist_r / (iterations * (0.5 * add_charges / L**3)**2) 
+    dist_r = dist_r / (iterations) 
+    !do i = 1,3*((L/2)+1)
+    !  dist_r(i) = 2 * dist_corr(i) / (i * (i + 1))
+    !  write (*,*) i - 1,dist_corr(i)
+    !end do
 
     
 
-    open(unit=5, file=charge_struc_filename)
-    open(unit=7, file=field_struc_filename)
-    open(unit=9, file=s_perp_filename)
-    open(unit=10, file=dir_struc_filename)
-    open(unit=11, file=dir_dist_struc_filename)
+    open(unit=5, file=charge_st_file)
+    open(unit=7, file=field_st_file)
+    open(unit=9, file=s_perp_file)
+    open(unit=10, file=dir_st_file)
+    open(unit=11, file=dir_dist_file)
+
+    do i = 1,ceiling( (3*((L/2)**2)) * (1 / bin_size) )
+        write (11, dir_dist_format_string)&
+        i * bin_size, bin_count(i), abs(dist_r(i))
+    end do
 
     do k = 1,bz*(L) + 1
       do i = 1,bz*(L) + 1
@@ -368,11 +376,6 @@ module io
           if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
             write (10, dir_format_string)&
             i - 1,j - 1,k - 1,dir_struc(i,j,k)
-          end if
-
-          if (i.le.3*(L/2 + 1).and.k.eq.1.and.j.eq.1) then
-            write (11, dir_dist_format_string)&
-            i - 1, abs(dist_corr(i))
           end if
 
           write (7, field_format_string)&
