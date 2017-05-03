@@ -31,7 +31,11 @@ module common
   complex*16, dimension(:,:,:), allocatable, public :: e_kz_perp
 
     ! probably more things need to go here
-  character(len=11), public :: lattfile
+  character(len=99), public :: lattfile_long
+  character(len=99), public :: arg_long, ch_st_l, fi_st_l
+  character(len=99), public :: s_p_l, dir_st_l, dir_d_s_l
+  character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file
+  character(:), allocatable :: s_perp_file, dir_st_file, dir_dist_file
 
   integer, public :: have_lgf = 0
   integer, public, parameter :: bz=2

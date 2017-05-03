@@ -7,22 +7,32 @@ module io
   contains
 
   subroutine read_input
-    in_file='start.in'
-    inquire(file=in_file,exist=start_file_there)
+
+    call getarg(1, arg_long)
+    arg = trim(arg_long)
+
+    ! in_file='start.in'
+
+    inquire(file=arg,exist=start_file_there)
     if (start_file_there) then
-      open(unit=1, file=in_file)
+      open(unit=1, file=arg)
       read(1,*) L
       read(1,*) iterations
       read(1,*) temp
       read(1,*) lambda
       read(1,*) q
       read(1,*) rot_delt
-      read(1,*) lattfile
       read(1,*) add_charges
       read(1,*) seed
       read(1,*) hop_ratio
       read(1,*) rot_ratio
       read(1,*) g_ratio
+      read(1,'(a)') lattfile_long
+      read(1,'(a)') ch_st_l
+      read(1,'(a)') fi_st_l
+      read(1,'(a)') dir_st_l
+      read(1,'(a)') dir_d_s_l
+      read(1,'(a)') s_p_l
 
       ! Check L is even
       if (modulo(L,2)==1) then
@@ -43,13 +53,32 @@ module io
       allocate(energy(iterations + 1))
       allocate(energy_run(iterations + 1))
       allocate(sq_energy(iterations + 1))
+      lattfile = trim(lattfile_long)
+      charge_st_file = trim(ch_st_l)
+      field_st_file = trim(fi_st_l)
+      dir_st_file = trim(dir_st_l)
+      dir_dist_file = trim(dir_d_s_l)
+      s_perp_file = trim(s_p_l)
 
       write (*,*)
       write (*,*) " --- input parameters ---"
       write (*,*) 'L = ',L
-      write (*,*) 'T = ',temp
       write (*,*) 'iter = ',iterations
-      write (*,*) 'rot. ratio = ',rot_ratio
+      write (*,*) 'T = ',temp
+      write (*,*) 'lattice spacing = ',lambda
+      write (*,*) 'charge value = ',q
+      write (*,*) '\Delta_{max} for rotational update = ',rot_delt
+      write (*,*) 'number of charges (0 reads in lattice file) = ',add_charges
+      write (*,*) 'RNG seed = ',seed
+      write (*,*) 'ratio of charge hop updates = ',hop_ratio
+      write (*,*) 'ratio of rotational updates = ',rot_ratio
+      write (*,*) 'ratio of harmonic mode updates = ',g_ratio
+      write (*,*) 'lattice file to read in (if necessary): ',lattfile
+      write (*,*) 'charge struc file: ',charge_st_file
+      write (*,*) 'field struc file: ',field_st_file
+      write (*,*) 'direct space charge struc file: ',dir_st_file
+      write (*,*) 'direct space corr. by distance: ',dir_dist_file
+      write (*,*) 'S_perp file: ',s_perp_file
 
     else
       write (*,*) "can't find input file"
