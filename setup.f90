@@ -20,29 +20,17 @@ module setup
     allocate(e_x(L,L,L))
     allocate(e_y(L,L,L))
     allocate(e_z(L,L,L))
-    !allocate(e_x_lapack(L,L,L))
-    !allocate(e_y_lapack(L,L,L))
-    !allocate(e_z_lapack(L,L,L))
-    !allocate(phi_lapack(L,L,L))
-    allocate(dir_struc(L/2 + 1,L/2 + 1,L/2 + 1))
-    allocate(dir_struc_n(L/2 + 1,L/2 + 1,L/2 + 1,iterations))
+    allocate(dir_struc_n(L/2 + 1,L/2 + 1,L/2 + 1,no_measurements))
     allocate(lgf(L,L,L,L,L,L))
-    !allocate(e_kx(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(e_ky(bz*(L+1),bz*(L+1),bz*(L+1)))
     allocate(e_kz(bz*(L+1),bz*(L+1),bz*(L+1)))
-    allocate(e_kx_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    allocate(fe_fe(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    allocate(s_ab(3,3,bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(e_kx_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
+    allocate(fe_fe(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
     allocate(s_perp(bz*(L+1),bz*(L+1),bz*(L+1)))
-    allocate(s_ab_n(3,3,bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    !allocate(rho_k_m(bz*(L+1),bz*(L+1),bz*(L+1)))
-    !allocate(rho_k_p(bz*(L+1),bz*(L+1),bz*(L+1)))
-    allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    allocate(rho_k_m_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    allocate(rho_k_p_t(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    !allocate(ch_ch_pp(bz*(L+1),bz*(L+1),bz*(L+1),iterations))
-    allocate(field_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
-    allocate(charge_struc(bz*(L+1),bz*(L+1),bz*(L+1)))
+    allocate(s_ab_n(3,3,bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
+    allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
+    allocate(rho_k_m_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
+    allocate(rho_k_p_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
 
     v = 0
     pos = 0
@@ -53,26 +41,15 @@ module setup
     e_x = 0.0
     e_y = 0.0
     e_z = 0.0
-    !e_kx = 0.0
     e_ky = 0.0
     e_kz = 0.0
     e_kx_t = 0.0
-    !rho_k_m = 0.0
-    !rho_k_p = 0.0
     rho_k_m_t = 0.0
     rho_k_p_t = 0.0
     ch_ch = 0.0
-    !ch_ch_pp = 0.0
     fe_fe = 0.0
-    field_struc = 0.0
-    charge_struc = 0.0
     s_perp = 0.0
-    dir_struc = 0.0
     dir_struc_n = 0.0
-    !e_x_lapack = 0.0
-    !e_y_lapack = 0.0
-    !e_z_lapack = 0.0
-    !phi_lapack = 0.0
     lgf = 0.0
   end subroutine allocations
 
@@ -87,28 +64,16 @@ module setup
     deallocate(e_x)
     deallocate(e_y)
     deallocate(e_z)
-    !deallocate(e_x_lapack)
-    !deallocate(e_y_lapack)
-    !deallocate(e_z_lapack)
-    !deallocate(phi_lapack)
-    deallocate(dir_struc)
     deallocate(dir_struc_n)
     deallocate(lgf)
-    !deallocate(e_kx)
     deallocate(e_ky)
     deallocate(e_kz)
     deallocate(e_kx_t)
-    !deallocate(rho_k_m)
-    !deallocate(rho_k_p)
     deallocate(rho_k_m_t)
     deallocate(rho_k_p_t)
     deallocate(ch_ch)
-    !deallocate(ch_ch_pp)
     deallocate(fe_fe)
-    deallocate(charge_struc)
-    deallocate(field_struc)
     deallocate(s_ab_n)
-    deallocate(s_ab)
     deallocate(s_perp)
 
   end subroutine deallocations
@@ -119,6 +84,9 @@ module setup
     tot_q = 0
 
     if (add_charges.ne.0) then
+
+      write (*,*)
+      write (*,*) "Adding ",add_charges," charges. Charge positions:"
 
       ! lattice is already initalised to zero above
       ! then we place add_charges in our lattice, randomly
@@ -138,7 +106,7 @@ module setup
         end if
         ! increment, idiot, otherwise we do this forever
         tot_q = tot_q + 1
-        write (*,*) "charge ",tot_q,": ",i,j,k,v(i,j,k)
+        write (*,*) tot_q,": ",i,j,k,v(i,j,k)
       end do
 
     else ! add_charges = 0; read in lattice file
@@ -196,7 +164,7 @@ module setup
 
   end subroutine arrays_init
 
-  subroutine do_setup
+  subroutine setup_wrapper
 
     ! wrapper for convenience in main
     call read_input
@@ -206,6 +174,6 @@ module setup
     call PBCs
     call arrays_init
 
-  end subroutine do_setup
+  end subroutine setup_wrapper
 
 end module setup

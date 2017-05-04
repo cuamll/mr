@@ -1,25 +1,19 @@
 module common
   implicit none
-  integer, public :: L,seed,accepth,acceptr,acceptg,iterations,add_charges
+  integer, public :: L,seed,accepth,acceptr,acceptg,add_charges,no_measurements
+  integer, public :: therm_sweeps,measurement_sweeps,sample_interval
   real*8, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
   real*8, public :: eps_0, bin_size, rot_delt
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
   real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
-  real*8, dimension(:,:,:), allocatable, public :: phi_lapack, e_x_lapack
-  real*8, dimension(:,:,:), allocatable, public :: e_y_lapack, e_z_lapack
-  real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
-  real*8, dimension(:,:,:), allocatable, public :: charge_struc
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
   real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,ch_ch_pp
   real*8, dimension(:,:,:,:), allocatable, public :: dir_struc_n
   real*8, dimension(:,:,:,:), allocatable, public :: fe_fe,fe_fe_perp
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: s_ab_n
-  real*8, dimension(:,:,:,:,:), allocatable, public :: s_ab
-  real*8, dimension(:,:,:), allocatable, public :: field_struc
-  real*8, dimension(:,:,:), allocatable, public :: dir_struc
   real*8, dimension(:,:,:), allocatable, public :: s_perp
   real*8, dimension(:,:,:), allocatable, public :: field_struc_perp
   complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz

@@ -17,7 +17,9 @@ module io
     if (start_file_there) then
       open(unit=1, file=arg)
       read(1,*) L
-      read(1,*) iterations
+      read(1,*) therm_sweeps
+      read(1,*) measurement_sweeps
+      read(1,*) sample_interval
       read(1,*) temp
       read(1,*) lambda
       read(1,*) q
@@ -50,13 +52,14 @@ module io
 
       ! set up other variables, allocations etc.
       volume = lambda**3
+      no_measurements = measurement_sweeps / sample_interval
       ! beta has dimensions of [e_0 * length]
       ! need to figure out how that works exactly
       eps_0 = 1.0 / L
       beta = 1.0 / temp
-      allocate(energy(iterations + 1))
-      allocate(energy_run(iterations + 1))
-      allocate(sq_energy(iterations + 1))
+      allocate(energy(no_measurements + 1))
+      allocate(energy_run(no_measurements + 1))
+      allocate(sq_energy(no_measurements + 1))
       lattfile = trim(lattfile_long)
       energy_file = trim(en_long)
       sq_energy_file = trim(sq_en_long)
@@ -72,7 +75,11 @@ module io
       write (*,*)
       write (*,*) " --- input parameters ---"
       write (*,*) 'L = ',L
-      write (*,*) 'iter = ',iterations
+      write (*,*) 'thermalisation sweeps = ',therm_sweeps
+      write (*,*) 'measurement sweeps = ',measurement_sweeps
+      write (*,*) 'sample interval = ',sample_interval
+      write (*,*) "no. of measurements = measurement sweeps"&
+      &"/ sample interval = ",no_measurements
       write (*,*) 'T = ',temp
       write (*,*) 'lattice spacing = ',lambda
       write (*,*) 'charge value = ',q
@@ -122,11 +129,11 @@ module io
     ! write out the parameters in the energy file
     write (2,*) "L",L
     write (2,*) "T",temp
-    write (2,*) "iter",iterations
+    write (2,*) "iter",no_measurements
     write (2,*) "rot. ratio",rot_ratio
     write (2,*) "ebar ratio",g_ratio
 
-    do i = 1,iterations + 1
+    do i = 1,no_measurements + 1
       write(2,*) i - 1, energy(i)
       write(3,*) i - 1, sq_energy(i)
 
@@ -144,13 +151,13 @@ module io
       end do
     end do
 
-    !write (*,*) "<U> = ", avg_e / iterations
-    !write (*,*) "sum U^2 / iter = ",avg_e2 / iterations
+    !write (*,*) "<U> = ", avg_e / no_measurements
+    !write (*,*) "sum U^2 / iter = ",avg_e2 / no_measurements
     !write (*,*) "N^2 = ",N**2
     !write (*,*) "N T = ",N * temp
 
-    avg_e = avg_e / (iterations)
-    avg_e2 = avg_e2 / (iterations)
+    avg_e = avg_e / (no_measurements)
+    avg_e2 = avg_e2 / (no_measurements)
 
     write(*,*)
     write(*,*) " --- averages and specific heat ---"
@@ -203,19 +210,17 @@ module io
     real*8 :: dot, dot_avg, knorm, dist
     integer :: i, j, k, m, n, p, kx, ky, kz, dist_bin
     complex*16 :: imag, kdotx
-    complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,fe_fe_avg
-    complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,rho_p_avg,rho_m_avg
-    real*8, dimension(ceiling(3*(((L/2)**2))*(1 / bin_size))) :: dist_r
-    real*8, dimension(ceiling(3*(((L/2)**2))*(1 / bin_size))) :: bin_count
+    complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,rho_p_avg,rho_m_avg
+    real*8, dimension(3,3,bz*(L+1),bz*(L+1),bz*(L+1)) :: s_ab_avg
+    real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,fe_fe_avg
+    real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: charge_struc_avg,field_struc_avg
+    real*8, dimension(L/2 + 1, L/2 + 1, L/2 + 1) :: dir_struc_avg
+    real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
+    integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
     character(74) :: struc_format_string
     character(97) :: field_format_string
     character(21) :: dir_format_string
     character(22) :: dir_dist_format_string
-
-    field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
-    struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
-    dir_format_string = "(I2, I2, I2, ES18.9)"
-    dir_dist_format_string = "(ES18.9, I8.1, ES18.9)"
 
     dot = 0.0
     dot_avg = 0.0
@@ -225,14 +230,23 @@ module io
     imag = (0.0, 0.0)
     kdotx = (0.0, 0.0)
     e_kx_avg = (0.0, 0.0)
-    fe_fe_avg = (0.0, 0.0)
-    ch_ch_avg = (0.0, 0.0)
     rho_p_avg = (0.0, 0.0)
     rho_m_avg = (0.0, 0.0)
+    s_ab_avg = 0.0
+    fe_fe_avg = 0.0
+    ch_ch_avg = 0.0
+    charge_struc_avg = 0.0
+    field_struc_avg = 0.0
+    dir_struc_avg = 0.0
     dist_r = 0.0
     bin_count = 0.0
 
-    do n = 1,iterations
+    field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
+    struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
+    dir_format_string = "(I2, I2, I2, ES18.9)"
+    dir_dist_format_string = "(ES18.9, I8.1, ES18.9)"
+
+    do n = 1,no_measurements
       do i = 1,bz*(L+1)
         do j = 1,bz*(L+1)
           do k = 1,bz*(L+1)
@@ -244,11 +258,11 @@ module io
             ch_ch_avg(i,j,k) = ch_ch_avg(i,j,k) + ch_ch(i,j,k,n)
             rho_p_avg(i,j,k) = rho_p_avg(i,j,k) + rho_k_p_t(i,j,k,n)
             rho_m_avg(i,j,k) = rho_m_avg(i,j,k) + rho_k_m_t(i,j,k,n)
-            
+
             ! direct space one
             if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
 
-              dir_struc(i,j,k) = dir_struc(i,j,k) + dir_struc_n(i,j,k,n)
+              dir_struc_avg(i,j,k) = dir_struc_avg(i,j,k) + dir_struc_n(i,j,k,n)
 
               dist = sqrt(dble((i - 1)**2 + (j - 1)**2 + (k - 1)**2))
               dist_bin = floor(dist / bin_size) + 1
@@ -259,13 +273,13 @@ module io
             ! s_ab averaging
             do m = 1,3
               do p = 1,3
-                s_ab(m,p,i,j,k) = s_ab(m,p,i,j,k) + s_ab_n(m,p,i,j,k,n)
+                s_ab_avg(m,p,i,j,k) = s_ab_avg(m,p,i,j,k) + s_ab_n(m,p,i,j,k,n)
               end do
             end do
 
-            if (n.eq.iterations) then
+            if (n.eq.no_measurements) then
               ! s_ab projection for perpendicular component
-              ! for n = iterations we've just finished the sum
+              ! for n = no_measurements we've just finished the sum
               ! keep this in the loop bc we still need dummy variables
 
               if (i.eq.1.and.j.eq.1.and.k.eq.1) then
@@ -274,34 +288,30 @@ module io
                 write(*,*)
               end if
               if (i.le.L/2+1.and.j.le.l/2+1.and.k.le.L/2+1) then
-                write (*,*) i,j,k,dir_struc(i,j,k)
+                write (*,*) i,j,k,dir_struc_avg(i,j,k)
               end if
 
               ! time average
               if (i.eq.1.and.j.eq.1.and.k.eq.1) then
                 ! we only want to do this once!
-                e_kx_avg = e_kx_avg / iterations
-                fe_fe_avg = fe_fe_avg / iterations
-                ch_ch_avg = ch_ch_avg / iterations
-                rho_p_avg = rho_p_avg / iterations
-                rho_m_avg = rho_m_avg / iterations
-                s_ab = s_ab / iterations
+                e_kx_avg = e_kx_avg / no_measurements
+                fe_fe_avg = fe_fe_avg / no_measurements
+                ch_ch_avg = ch_ch_avg / no_measurements
+                rho_p_avg = rho_p_avg / no_measurements
+                rho_m_avg = rho_m_avg / no_measurements
+                s_ab_avg = s_ab_avg / no_measurements
 
                 ! direct space struc needs normalising by <n+><n->
-                dir_struc = dir_struc / (iterations * (0.5 * add_charges / L**3)**2)
+                dir_struc_avg = dir_struc_avg / (no_measurements * (0.5 * add_charges / L**3)**2)
               end if
 
-              !if (i.le.L/2+1.and.j.le.l/2+1.and.k.le.L/2+1) then
-              !  write (*,*) i,j,k,dir_struc(i,j,k)
-              !end if
-
-              field_struc(i,j,k) = field_struc(i,j,k) +&
+              field_struc_avg(i,j,k) = field_struc_avg(i,j,k) +&
                 abs(fe_fe_avg(i,j,k) - e_kx_avg(i,j,k)&
                 *e_kx_avg(i,j,k))
               !charge_struc(i,j,k) = charge_struc(i,j,k) +&
               !  abs(abs(ch_ch_avg(i,j,k)) - abs(rho_p_avg(i,j,k))&
               !  *abs(rho_m_avg(i,j,k)))
-              charge_struc(i,j,k) = charge_struc(i,j,k) +&
+              charge_struc_avg(i,j,k) = charge_struc_avg(i,j,k) +&
                 abs(ch_ch_avg(i,j,k) - rho_p_avg(i,j,k)&
                 *rho_m_avg(i,j,k))
 
@@ -315,40 +325,38 @@ module io
                 write (*,*) "Final ch. struc stuff: ch_ch_avg,rho_p_avg,rho_m_avg,charge_struc"
                 write (*,'(F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
                   kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-                  ch_ch_avg(i,j,k),rho_p_avg(i,j,k),rho_m_avg(i,j,k),charge_struc(i,j,k)
+                  ch_ch_avg(i,j,k),rho_p_avg(i,j,k),rho_m_avg(i,j,k),charge_struc_avg(i,j,k)
               end if
 
               if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
-                knorm = 0
+                knorm = 0.0
               else
                 knorm = 1.0/(kx*kx + ky*ky + kz*kz)
               end if
 
               ! sum over alpha, beta
-              s_perp(i,j,k) = (1 - kx*kx*knorm)*s_ab(1,1,i,j,k) +&
-                              ((-1)*kx*ky*knorm)*s_ab(1,2,i,j,k)+&
-                              ((-1)*kx*kz*knorm)*s_ab(1,3,i,j,k)+&
-                              ((-1)*ky*kx*knorm)*s_ab(2,1,i,j,k)+&
-                              (1 - ky*ky*knorm)*s_ab(2,2,i,j,k) +&
-                              ((-1)*ky*kz*knorm)*s_ab(2,3,i,j,k)+&
-                              ((-1)*kz*kx*knorm)*s_ab(3,1,i,j,k)+&
-                              ((-1)*kz*ky*knorm)*s_ab(3,2,i,j,k)+&
-                              (1 - kz*kz*knorm)*s_ab(3,3,i,j,k)
+              s_perp(i,j,k) = (1 - kx*kx*knorm) * s_ab_avg(1,1,i,j,k) +&
+                              ((-1)*kx*ky*knorm) * s_ab_avg(1,2,i,j,k)+&
+                              ((-1)*kx*kz*knorm) * s_ab_avg(1,3,i,j,k)+&
+                              ((-1)*ky*kx*knorm) * s_ab_avg(2,1,i,j,k)+&
+                              (1 - ky*ky*knorm) * s_ab_avg(2,2,i,j,k) +&
+                              ((-1)*ky*kz*knorm) * s_ab_avg(2,3,i,j,k)+&
+                              ((-1)*kz*kx*knorm) * s_ab_avg(3,1,i,j,k)+&
+                              ((-1)*kz*ky*knorm) * s_ab_avg(3,2,i,j,k)+&
+                              (1 - kz*kz*knorm) * s_ab_avg(3,3,i,j,k)
 
-            end if ! if (n.eq.iterations) for s_ab and s_perp
+            end if ! if (n.eq.no_measurements) for s_ab and s_perp
           end do ! k
         end do ! j
       end do ! i
     end do ! n iteration loop
 
-    !dist_r = dist_r / (iterations * (0.5 * add_charges / L**3)**2) 
-    dist_r = dist_r / (iterations) 
+    !dist_r = dist_r / (no_measurements * (0.5 * add_charges / L**3)**2)
+    dist_r = dist_r / (no_measurements)
     !do i = 1,3*((L/2)+1)
     !  dist_r(i) = 2 * dist_corr(i) / (i * (i + 1))
     !  write (*,*) i - 1,dist_corr(i)
     !end do
-
-    
 
     open(unit=5, file=charge_st_file)
     open(unit=7, file=field_st_file)
@@ -356,11 +364,15 @@ module io
     open(unit=10, file=dir_st_file)
     open(unit=11, file=dir_dist_file)
 
-    do i = 1,ceiling( (3*((L/2)**2)) * (1 / bin_size) )
+    write (*,*) "Writing out to files..."
+
+    write (*,*) "Direct space correlation function by distance file..."
+    do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
         write (11, dir_dist_format_string)&
         i * bin_size, bin_count(i), abs(dist_r(i))
     end do
 
+    write (*,*) "Structure factor files..."
     do k = 1,bz*(L) + 1
       do i = 1,bz*(L) + 1
         do j = 1,bz*(L) + 1
@@ -370,19 +382,19 @@ module io
           2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
           2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
           2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-          charge_struc(i,j,k)
+          charge_struc_avg(i,j,k)
 
           ! write direct space one
           if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
             write (10, dir_format_string)&
-            i - 1,j - 1,k - 1,dir_struc(i,j,k)
+            i - 1,j - 1,k - 1,abs(dir_struc_avg(i,j,k))
           end if
 
           write (7, field_format_string)&
           2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
           2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
           2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-          field_struc(i,j,k)
+          field_struc_avg(i,j,k)
 
           write (9, field_format_string)&
           2*pi*(i - 1 - bz*(l/2))/(l*lambda),&

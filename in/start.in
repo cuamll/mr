@@ -1,5 +1,7 @@
+6
+1000
+5000
 10
-100000
 1.00
 1.0
 1.0
@@ -9,7 +11,7 @@
 1.0
 1.0
 1.0
-0.5
+1.0
 /Users/cgray/code/mr/in/lattice.dat
 /Users/cgray/code/mr/out/energy.dat
 /Users/cgray/code/mr/out/sq_energy.dat
