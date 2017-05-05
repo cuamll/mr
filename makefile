@@ -4,10 +4,12 @@ EXECNAME = mr_test
 
 # libraries in different directories on Mac
 UNAME = $(shell uname)
+REV = $(shell git rev-parse --short HEAD)
+
 
 DEBUG = 1
 ifeq ($(DEBUG), 1)
-	DEBUGFLAG = -g -ffpe-trap=underflow,denormal,overflow
+	DEBUGFLAG = -g -p -ffpe-trap=underflow,denormal,overflow
 else
 	DEBUG FLAG =
 endif
@@ -27,6 +29,7 @@ OBJECTS = common.o io.o linear_solver.o setup.o
 MODS = $(OBJECTS:.o=.mod)
 
 $(EXECNAME) : $(OBJECTS)
+	echo "character(len=7), parameter :: revision = '$(REV)'" > revision.inc
 	$(GF) $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
 
 %.o : %.f90
@@ -36,7 +39,7 @@ $(EXECNAME) : $(OBJECTS)
 .PHONY: clean clean_obj clean_mod
 
 clean:
-	\rm -f $(OBJECTS) $(MODS) $(EXECNAME)
+	\rm -f $(OBJECTS) $(MODS) $(EXECNAME) revision.inc
 
 clean_obj:
 	\rm -f $(OBJECTS)

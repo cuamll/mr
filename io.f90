@@ -2,7 +2,6 @@ module io
   use common
   implicit none
   logical, private :: start_file_there
-  character(len=8) :: in_file
 
   contains
 
@@ -11,25 +10,23 @@ module io
     call getarg(1, arg_long)
     arg = trim(arg_long)
 
-    ! in_file='start.in'
-
     inquire(file=arg,exist=start_file_there)
     if (start_file_there) then
       open(unit=1, file=arg)
-      read(1,*) L
-      read(1,*) therm_sweeps
-      read(1,*) measurement_sweeps
-      read(1,*) sample_interval
-      read(1,*) temp
-      read(1,*) lambda
-      read(1,*) q
-      read(1,*) rot_delt
-      read(1,*) add_charges
-      read(1,*) seed
-      read(1,*) hop_ratio
-      read(1,*) rot_ratio
-      read(1,*) g_ratio
-      read(1,*) bin_size
+      read(1,'(I10.1)') L
+      read(1,'(I10.1)') therm_sweeps
+      read(1,'(I10.1)') measurement_sweeps
+      read(1,'(I10.1)') sample_interval
+      read(1,'(F10.1)') temp
+      read(1,'(F10.1)') lambda
+      read(1,'(F10.1)') q
+      read(1,'(F10.1)') rot_delt
+      read(1,'(I10.1)') add_charges
+      read(1,'(I10.1)') seed
+      read(1,'(F10.1)') hop_ratio
+      read(1,'(F10.1)') rot_ratio
+      read(1,'(F10.1)') g_ratio
+      read(1,'(F10.1)') bin_size
       read(1,'(a)') lattfile_long
       read(1,'(a)') en_long
       read(1,'(a)') sq_en_long
@@ -40,26 +37,84 @@ module io
       read(1,'(a)') dir_d_s_l
       read(1,'(a)') s_p_l
 
-      ! Check L is even
+      ! Check parameters are physically reasonable
       if (modulo(L,2)==1) then
-        write(*,*) "L is odd - try again"
+        write(*,*) "L must be even. Edit input file and try again."
+        STOP
+      end if
+      if (L.le.0) then
+        write(*,*) "L must be > 0. Edit input file and try again."
+        STOP
+      end if
+      if (therm_sweeps < 0) then
+        write(*,*) "Number of thermalisation sweeps must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (measurement_sweeps < 0) then
+        write(*,*) "Number of measurement sweeps must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (sample_interval < 1) then
+        write(*,*) "Sample interval must be ≥ 1.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (temp.le.0.0) then
+        write(*,*) "Temperature must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (lambda.le.0.0) then
+        write(*,*) "Lattice spacing must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (q.le.0.0) then
+        write(*,*) "Charge magnitude must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (rot_delt.le.0.0) then
+        write(*,*) "Delta_max for rotational update must be > 0.&
+          & Edit input file and try again."
         STOP
       end if
       if (modulo(add_charges,2)==1) then
-        write(*,*) "can't add an odd number of charges - try again"
+        write(*,*) "Can't add an odd number of charges; &
+          &system must be neutral. Edit input file and try again."
+        STOP
+      end if
+      if (hop_ratio.le.0.0) then
+        write(*,*) "Ratio of charge hop updates must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (rot_ratio.le.0.0) then
+        write(*,*) "Ratio of rotational updates must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (g_ratio.le.0.0) then
+        write(*,*) "Ratio of harmonic updates must be > 0.&
+          & Edit input file and try again."
+        STOP
+      end if
+      if (bin_size.le.0.0) then
+        write(*,*) "Bin size for correlation function must be > 0.&
+          & Edit input file and try again."
         STOP
       end if
 
       ! set up other variables, allocations etc.
       volume = lambda**3
       no_measurements = measurement_sweeps / sample_interval
-      ! beta has dimensions of [e_0 * length]
-      ! need to figure out how that works exactly
+      ! --- NOTE TO SELF ---
+      ! is the dimensional analysis sorted out?
       eps_0 = 1.0 / L
       beta = 1.0 / temp
-      allocate(energy(no_measurements + 1))
-      allocate(energy_run(no_measurements + 1))
-      allocate(sq_energy(no_measurements + 1))
+
       lattfile = trim(lattfile_long)
       energy_file = trim(en_long)
       sq_energy_file = trim(sq_en_long)
@@ -73,7 +128,7 @@ module io
       s_perp_file = trim(s_p_l)
 
       write (*,*)
-      write (*,*) " --- input parameters ---"
+      write (*,*) "--- INPUT PARAMETERS: ---"
       write (*,*) 'L = ',L
       write (*,*) 'thermalisation sweeps = ',therm_sweeps
       write (*,*) 'measurement sweeps = ',measurement_sweeps
@@ -101,7 +156,8 @@ module io
       write (*,*) 'S_perp file: ',s_perp_file
 
     else
-      write (*,*) "can't find input file"
+      write (*,'(a)',advance='no') "Can't find an input file at ",arg
+      write (*,*) " . Check path and try again."
       stop
     end if
 
@@ -129,7 +185,7 @@ module io
     ! write out the parameters in the energy file
     write (2,*) "L",L
     write (2,*) "T",temp
-    write (2,*) "iter",no_measurements
+    write (2,*) "number of measurements",no_measurements
     write (2,*) "rot. ratio",rot_ratio
     write (2,*) "ebar ratio",g_ratio
 
@@ -212,7 +268,7 @@ module io
     complex*16 :: imag, kdotx
     complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,rho_p_avg,rho_m_avg
     real*8, dimension(3,3,bz*(L+1),bz*(L+1),bz*(L+1)) :: s_ab_avg
-    real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,fe_fe_avg
+    real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,fe_fe_avg,s_perp
     real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: charge_struc_avg,field_struc_avg
     real*8, dimension(L/2 + 1, L/2 + 1, L/2 + 1) :: dir_struc_avg
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
@@ -235,6 +291,7 @@ module io
     s_ab_avg = 0.0
     fe_fe_avg = 0.0
     ch_ch_avg = 0.0
+    s_perp = 0.0
     charge_struc_avg = 0.0
     field_struc_avg = 0.0
     dir_struc_avg = 0.0
@@ -251,8 +308,6 @@ module io
         do j = 1,bz*(L+1)
           do k = 1,bz*(L+1)
 
-            !charge_struc(i,j,k) = charge_struc(i,j,k) +&
-            !                      0.5 * (ch_ch(i,j,k,n) - 2 * ch_ch_pp(i,j,k,n))
             e_kx_avg(i,j,k) = e_kx_avg(i,j,k) + e_kx_t(i,j,k,n)
             fe_fe_avg(i,j,k) = fe_fe_avg(i,j,k) + fe_fe(i,j,k,n)
             ch_ch_avg(i,j,k) = ch_ch_avg(i,j,k) + ch_ch(i,j,k,n)
@@ -282,14 +337,14 @@ module io
               ! for n = no_measurements we've just finished the sum
               ! keep this in the loop bc we still need dummy variables
 
-              if (i.eq.1.and.j.eq.1.and.k.eq.1) then
-                write(*,*)
-                write (*,*) "dir struc -- unnormalised"
-                write(*,*)
-              end if
-              if (i.le.L/2+1.and.j.le.l/2+1.and.k.le.L/2+1) then
-                write (*,*) i,j,k,dir_struc_avg(i,j,k)
-              end if
+              !if (i.eq.1.and.j.eq.1.and.k.eq.1) then
+              !  write(*,*)
+              !  write (*,*) "dir struc -- unnormalised"
+              !  write(*,*)
+              !end if
+              !if (i.le.L/2+1.and.j.le.l/2+1.and.k.le.L/2+1) then
+              !  write (*,*) i,j,k,dir_struc_avg(i,j,k)
+              !end if
 
               ! time average
               if (i.eq.1.and.j.eq.1.and.k.eq.1) then
@@ -320,13 +375,13 @@ module io
               ky = j - 1 - bz*(L/2)
               kz = k - 1 - bz*(L/2)
 
-              if (kx.eq.((L*lambda/2)).and.ky.eq.(-1*L*lambda/2).and.kz.eq.0) then
-                write (*,*)
-                write (*,*) "Final ch. struc stuff: ch_ch_avg,rho_p_avg,rho_m_avg,charge_struc"
-                write (*,'(F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-                  kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-                  ch_ch_avg(i,j,k),rho_p_avg(i,j,k),rho_m_avg(i,j,k),charge_struc_avg(i,j,k)
-              end if
+              !if (kx.eq.((L*lambda/2)).and.ky.eq.(-1*L*lambda/2).and.kz.eq.0) then
+              !  write (*,*)
+              !  write (*,*) "Final ch. struc stuff: ch_ch_avg,rho_p_avg,rho_m_avg,charge_struc"
+              !  write (*,'(F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
+              !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
+              !    ch_ch_avg(i,j,k),rho_p_avg(i,j,k),rho_m_avg(i,j,k),charge_struc_avg(i,j,k)
+              !end if
 
               if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
                 knorm = 0.0
@@ -366,13 +421,11 @@ module io
 
     write (*,*) "Writing out to files..."
 
-    write (*,*) "Direct space correlation function by distance file..."
     do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
         write (11, dir_dist_format_string)&
         i * bin_size, bin_count(i), abs(dist_r(i))
     end do
 
-    write (*,*) "Structure factor files..."
     do k = 1,bz*(L) + 1
       do i = 1,bz*(L) + 1
         do j = 1,bz*(L) + 1

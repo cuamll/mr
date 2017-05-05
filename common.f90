@@ -9,19 +9,12 @@ module common
   real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
   real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
-  real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
-  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,ch_ch_pp
+  real*8, dimension(:), allocatable, public :: energy, sq_energy
+  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,fe_fe
   real*8, dimension(:,:,:,:), allocatable, public :: dir_struc_n
-  real*8, dimension(:,:,:,:), allocatable, public :: fe_fe,fe_fe_perp
   real*8, dimension(:,:,:,:,:,:), allocatable, public :: s_ab_n
-  real*8, dimension(:,:,:), allocatable, public :: s_perp
-  real*8, dimension(:,:,:), allocatable, public :: field_struc_perp
-  complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz
   complex*16, dimension(:,:,:,:), allocatable, public :: e_kx_t
-  complex*16, dimension(:,:,:), allocatable, public :: rho_k_m,rho_k_p
   complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
-  complex*16, dimension(:,:,:), allocatable, public :: e_kx_perp,e_ky_perp
-  complex*16, dimension(:,:,:), allocatable, public :: e_kz_perp
 
     ! probably more things need to go here
   character(len=99), public :: lattfile_long, en_long, sq_en_long

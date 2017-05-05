@@ -85,11 +85,12 @@ module linear_solver
   nch=nch/L**3 ! bc we count nch once for each abc
 
   write(*,*)
-  write(*,*) " --- linear solver results ---"
-  write (*,*) 'irrot E_ij^2 =',u_tot
-  write(*,*) "self_e from lgf(0) * n charges = ",u_self
-  write(*,*) 'u_int calculated in loop = ',u_int
-  write (*,*) 'V*Ebar^2 = ',L**3*ebar_x**2+ebar_y**2+ebar_z**2
+  write(*,*) "--- LINEAR SOLVER RESULTS: ---"
+  write (*,*) 'sum of irrotational E_ij^2 =',u_tot
+  write(*,*) "self-energy from lgf(0,0) * n charges = ",u_self
+  write(*,*) 'interaction energy = ',u_int
+  write (*,*) 'harmonic term in units of 1/L**3 (V*Ebar^2) = '&
+    &,L**3*ebar_x**2+ebar_y**2+ebar_z**2
 
   deallocate(cosine)
 

@@ -8,7 +8,27 @@ program mr
   use io
   use setup
   implicit none
+  include 'revision.inc'
   integer :: i, j, k, n, tot_q
+  real*8 :: start_time, end_time
+  real*8, dimension(4) :: timings
+  character(8) :: date
+  character(10) :: time
+  character(5) :: zone
+  integer, dimension(8) :: values
+
+  call cpu_time(start_time)
+
+  write (*,*) "Maggs-Rossetto algorithm on the simple cubic lattice."
+  write (*,*) "Callum Gray, University College London, 2017."
+  write (*,*) "Git revision ",revision
+  write (*,*) "Repo at http://github.com/callumgray/mr"
+
+  call date_and_time(date,time,zone,values)
+
+  write (*,'(a24,I2.1,a1,I2.1,a1,I4.2,a1,I2.1,a1,I2.1,a1,I2.1)')&
+    &" Current date and time: ",values(3),"/",values(2),"/"&
+    &,values(1)," ",values(5),":",values(6),":",values(7)
 
   call setup_wrapper
 
@@ -16,7 +36,9 @@ program mr
   acceptr = 0
   acceptg = 0
 
-  write (*,'(A10,I8.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
+  write (*,'(A10,I5.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
+
+  call cpu_time(timings(1))
 
   do i = 1,therm_sweeps
     call mc_sweep
@@ -25,12 +47,17 @@ program mr
     end if
   end do
 
+  call cpu_time(timings(2))
+
   write (*,'(a)') "]"
-  write (*,*) therm_sweeps," thermalisation sweeps completed."
+  write (*,'(I5.1,a)') therm_sweeps," thermalisation sweeps completed."
+  write (*,'(a,f8.3,a)') "Time taken: ",timings(2)-timings(1)," seconds."
   write (*,*)
-  write (*,*) "Beginning ",measurement_sweeps,&
+  write (*,'(a,I7.1,a,I4.1,a)') "Beginning ",measurement_sweeps,&
     &" measurement sweeps with sampling every ",&
     &sample_interval," MC steps..."
+
+  call cpu_time(timings(3))
 
   do i = 1,measurement_sweeps
     call mc_sweep
@@ -40,32 +67,23 @@ program mr
     end if
 
     if (mod(i, 1000).eq.0) then
-      write (*,*) i," steps completed..."
+      write (*,'(I7.4,a)') i," steps completed..."
     end if
 
   end do
 
+  call cpu_time(timings(4))
+
   write (*,*)
-  write (*,*) measurement_sweeps," measurement sweeps completed."
+  write (*,'(I7.1,a)') measurement_sweeps," measurement sweeps completed."
+  write (*,'(a,f8.3,a)') "Time taken: ",timings(4)-timings(3)," seconds."
 
-  tot_q = 0
-
-  do i = 1,L
-    do j = 1,L
-      do k = 1,L
-
-        tot_q = tot_q + abs(v(i,j,k))
-
-      end do
-    end do
-  end do
-
-  if (tot_q.ne.0) then
+  if (sum(v,mask=v.gt.0).ne.0) then
     call linsol
   end if
 
   write(*,*)
-  write(*,*) " --- end: charge positions ---"
+  write(*,*) "--- END: CHARGE POSITIONS ---"
 
   tot_q = 0
   do i = 1,L
@@ -75,25 +93,31 @@ program mr
         tot_q = tot_q + abs(v(i,j,k))
 
         if (v(i,j,k).eq.1) then
-          write (*,*) i, j, k, v(i,j,k)
+          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,k,v(i,j,k)
         end if
 
         if (v(i,j,k).eq.-1) then
-          write (*,*) i, j, k, v(i,j,k)
+          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,k,v(i,j,k)
         end if
 
       end do
     end do
   end do
 
-  write (*,*) "total charges: ",tot_q
+  write (*,*) "Total charges: ",tot_q
   write(*,*)
 
   write (*,*)
-  write (*,*) '----- move stats -----'
-  write (*,*) 'hop moves  = ',accepth,float(accepth) / ((therm_sweeps + measurement_sweeps) * tot_q)
-  write (*,*) 'rot moves  = ',acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps) * L**3 * rot_ratio)
-  write (*,*) 'ebar moves = ',acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps) * L**3 * g_ratio * 3)
+  write (*,*) '--- MOVE STATS: ---'
+  write (*,*) 'hops: moves, acceptance ratio: ',&
+    &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
+    &* tot_q * hop_ratio)
+  write (*,*) 'rotational updates: moves, acceptance ratio: ',&
+    &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
+    &* 3*L**3 * rot_ratio)
+  write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
+    &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
+    &* L**3 * g_ratio * 3)
   write(*,*)
 
 
@@ -102,7 +126,16 @@ program mr
 
   call deallocations
 
-  Write (*,*) "Done."
+  write (*,*) "Done."
+  write (*,*)
+
+  call cpu_time(end_time)
+  write (*,'(a,f8.3,a)') "Total time taken: ",end_time-start_time," seconds."
+  write (*,'(a,f8.5,a)') "Time per thermalisation sweep: "&
+    &,(timings(2) - timings(1)) / therm_sweeps," seconds."
+  write (*,'(a,f8.5,a)') "Time per measurement sweep (including&
+    & measurements): ",(timings(4) - timings(3)) / measurement_sweeps," seconds."
+  write (*,*)
 
   stop
 
@@ -650,10 +683,9 @@ subroutine measure(step_number)
   integer :: x,y,z,i,j,k,m,p,s,kx,ky,kz,n
   real*8 :: norm_k,u_tot_run
   complex*16 :: imag, kdotx
+  complex*16 :: e_ky, e_kz
 
   imag = (0.0,1.0)
-  kdotx = (0.0,0.0)
-  norm_k = 0.0
   u_tot_run = 0.0
 
   ! array indexing: we don't sample at each step
@@ -672,9 +704,14 @@ subroutine measure(step_number)
   sq_energy(n + 1) = u_tot_run**2
 
   ! --- FOURIER TRANSFORMS ---
-  do kx = (-1*L/2)*bz, (L/2)*bz
+  do kz = (-1*L/2)*bz, (L/2)*bz
     do ky = (-1*L/2)*bz, (L/2)*bz
-      do kz = (-1*L/2)*bz, (L/2)*bz
+      do kx = (-1*L/2)*bz, (L/2)*bz
+
+        e_ky = (0.0,0.0)
+        e_kz = (0.0,0.0)
+        kdotx = (0.0,0.0)
+        norm_k = 0.0
 
         ! for array indices
         i = kx + 1 + bz*(L/2)
@@ -687,14 +724,12 @@ subroutine measure(step_number)
           norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
         end if
 
-        e_kx_t(i,j,k,n) = 0.0
-        e_ky(i,j,k) = 0.0
-        e_kz(i,j,k) = 0.0
+        e_kx_t(i,j,k,n) = (0.0,0.0)
 
         ! m,p,s are the real space coordinates
-        do m = 1,L
+        do s = 1,L
           do p = 1,L
-            do s = 1,L
+            do m = 1,L
 
               ! different offsets for x,y,z
               kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
@@ -707,50 +742,14 @@ subroutine measure(step_number)
               kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                       ((p-(1.0/2))*ky) + ((s-1)*kz)))
 
-              e_ky(i,j,k) = e_ky(i,j,k) + exp(kdotx)*e_y(m,p,s)
+              e_ky = e_ky + exp(kdotx)*e_y(m,p,s)
 
               kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                       ((p-1)*ky) + ((s-(1.0/2))*kz)))
 
-              e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
+              e_kz = e_kz + exp(kdotx)*e_z(m,p,s)
 
               if (v(m,p,s).ne.0) then ! calculate <++ + +->!
-
-                ! --- real space correlation function ---
-                ! need to be clever here, we can use the kx loop
-                ! to do the real space one as well, but need to be
-                ! careful about indexing. kx ky kz go to L + 1
-
-                if (kx.gt.0.and.kx.le.L&
-                  .and.ky.gt.0.and.ky.le.L&
-                  .and.kz.gt.0.and.kz.le.L) then
-                  ! this should sort it out. kx ky kz here are then
-                  ! the "r"s, m p s are the "zeros"
-                  ! we want to do rho_+(0) rho_-(r), I think?
-                  if (v(m,p,s).eq.1) then
-                    if (v(kx,ky,kz).eq.-1) then
-                      ! this should handle multi-valued charges fine
-                      x = abs(m - kx)
-                      y = abs(p - ky)
-                      z = abs(s - kz)
-                      if (x.gt.L/2) then
-                        x = L - x
-                      end if
-                      if (y.gt.L/2) then
-                        y = L - y
-                      end if
-                      if (z.gt.L/2) then
-                        z = L - z
-                      end if
-                      x = x + 1
-                      y = y + 1
-                      z = z + 1
-                      dir_struc_n(x,y,z,n) = dir_struc_n(x,y,z,n) +&
-                              v(m,p,s) * v(kx,ky,kz)
-                    end if ! neg charge at kx,ky,kz
-                  end if ! pos charge at m,p,s
-
-                end if ! kx,ky,kz < L
 
                 ! FT of charge distribution
                 kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
@@ -765,7 +764,44 @@ subroutine measure(step_number)
                   rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n) + v(m,p,s)*exp(kdotx)
                 end if
 
-              end if
+                ! --- real space correlation function ---
+
+                if (kx.gt.0.and.kx.le.L&
+                  .and.ky.gt.0.and.ky.le.L&
+                  .and.kz.gt.0.and.kz.le.L) then
+
+                  ! this should sort it out. kx ky kz here are
+                  ! the "r"s, m p s are the "zeros"
+                  ! we want to do rho_+(0) rho_-(r)
+                  if (v(m,p,s).eq.1) then
+                    if (v(kx,ky,kz).eq.-1) then
+
+                      x = abs(m - kx)
+                      y = abs(p - ky)
+                      z = abs(s - kz)
+
+                      if (x.gt.L/2) then
+                        x = L - x
+                      end if
+                      if (y.gt.L/2) then
+                        y = L - y
+                      end if
+                      if (z.gt.L/2) then
+                        z = L - z
+                      end if
+
+                      x = x + 1
+                      y = y + 1
+                      z = z + 1
+
+                      dir_struc_n(x,y,z,n) = dir_struc_n(x,y,z,n) +&
+                              v(m,p,s) * v(kx,ky,kz)
+                    end if ! neg charge at kx,ky,kz
+                  end if ! pos charge at m,p,s
+
+                end if ! kx,ky,kz < L
+
+              end if ! end v != 0 check
 
             end do ! end s loop
           end do ! end p loop
@@ -775,22 +811,22 @@ subroutine measure(step_number)
         rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n) / float(L**3)
         rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n) / float(L**3)
         e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n) / float(L**3)
-        e_ky(i,j,k) = e_ky(i,j,k) / float(L**3)
-        e_kz(i,j,k) = e_kz(i,j,k) / float(L**3)
+        e_ky = e_ky / float(L**3)
+        e_kz = e_kz / float(L**3)
 
         ch_ch(i,j,k,n) = (rho_k_p_t(i,j,k,n) * conjg(rho_k_m_t(i,j,k,n)))
 
         fe_fe(i,j,k,n) = (e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n)))
 
         s_ab_n(1,1,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n))
-        s_ab_n(1,2,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_ky(i,j,k))
-        s_ab_n(1,3,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kz(i,j,k))
-        s_ab_n(2,1,i,j,k,n) = e_ky(i,j,k)*conjg(e_kx_t(i,j,k,n))
-        s_ab_n(2,2,i,j,k,n) = e_ky(i,j,k)*conjg(e_ky(i,j,k))
-        s_ab_n(2,3,i,j,k,n) = e_ky(i,j,k)*conjg(e_kz(i,j,k))
-        s_ab_n(3,1,i,j,k,n) = e_kz(i,j,k)*conjg(e_kx_t(i,j,k,n))
-        s_ab_n(3,2,i,j,k,n) = e_kz(i,j,k)*conjg(e_ky(i,j,k))
-        s_ab_n(3,3,i,j,k,n) = e_kz(i,j,k)*conjg(e_kz(i,j,k))
+        s_ab_n(1,2,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_ky)
+        s_ab_n(1,3,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kz)
+        s_ab_n(2,1,i,j,k,n) = e_ky*conjg(e_kx_t(i,j,k,n))
+        s_ab_n(2,2,i,j,k,n) = e_ky*conjg(e_ky)
+        s_ab_n(2,3,i,j,k,n) = e_ky*conjg(e_kz)
+        s_ab_n(3,1,i,j,k,n) = e_kz*conjg(e_kx_t(i,j,k,n))
+        s_ab_n(3,2,i,j,k,n) = e_kz*conjg(e_ky)
+        s_ab_n(3,3,i,j,k,n) = e_kz*conjg(e_kz)
 
         ! end kz,ky,kx loops
       end do
