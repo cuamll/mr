@@ -131,6 +131,7 @@ module setup
     ! if there are zero charges, we don't need to find the LGF
     ! should be neutral, so sum(v) is zero; hence mask
     if (sum(v,mask=v.gt.0).ne.0) then
+      write (*,*) "Calling Poisson solver..."
       call linsol
     end if
 

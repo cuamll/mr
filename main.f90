@@ -9,12 +9,9 @@ program mr
   use setup
   implicit none
   include 'revision.inc'
-  integer :: i, j, k, n, tot_q
+  integer :: i, j, k, tot_q
   real*8 :: start_time, end_time
   real*8, dimension(4) :: timings
-  character(8) :: date
-  character(10) :: time
-  character(5) :: zone
   integer, dimension(8) :: values
 
   call cpu_time(start_time)
@@ -24,7 +21,7 @@ program mr
   write (*,*) "Git revision ",revision
   write (*,*) "Repo at http://github.com/callumgray/mr"
 
-  call date_and_time(date,time,zone,values)
+  call date_and_time(VALUES=values)
 
   write (*,'(a24,I2.1,a1,I2.1,a1,I4.2,a1,I2.1,a1,I2.1,a1,I2.1)')&
     &" Current date and time: ",values(3),"/",values(2),"/"&
@@ -36,6 +33,7 @@ program mr
   acceptr = 0
   acceptg = 0
 
+  write (*,*)
   write (*,'(A10,I5.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
 
   call cpu_time(timings(1))
@@ -49,13 +47,12 @@ program mr
 
   call cpu_time(timings(2))
 
-  write (*,'(a)') "]"
-  write (*,'(I5.1,a)') therm_sweeps," thermalisation sweeps completed."
+  write (*,'(a)') "]. Completed."
   write (*,'(a,f8.3,a)') "Time taken: ",timings(2)-timings(1)," seconds."
   write (*,*)
-  write (*,'(a,I7.1,a,I4.1,a)') "Beginning ",measurement_sweeps,&
+  write (*,'(a,I7.1,a,I4.1,a)',advance='no') "Beginning ",measurement_sweeps,&
     &" measurement sweeps with sampling every ",&
-    &sample_interval," MC steps..."
+    &sample_interval," MC steps... ["
 
   call cpu_time(timings(3))
 
@@ -66,11 +63,15 @@ program mr
       call measure(i)
     end if
 
-    if (mod(i, 1000).eq.0) then
-      write (*,'(I7.4,a)') i," steps completed..."
+    if (measurement_sweeps.gt.100) then
+      if (mod(i,measurement_sweeps / 100).eq.0) then
+        write (*,'(a)',advance='no') "*"
+      end if
     end if
 
   end do
+
+  write (*,'(a)') "]"
 
   call cpu_time(timings(4))
 
@@ -86,9 +87,9 @@ program mr
   write(*,*) "--- END: CHARGE POSITIONS ---"
 
   tot_q = 0
-  do i = 1,L
+  do k = 1,L
     do j = 1,L
-      do k = 1,L
+      do i = 1,L
 
         tot_q = tot_q + abs(v(i,j,k))
 
