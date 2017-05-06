@@ -210,7 +210,7 @@ subroutine mc_sweep
             site(mu1) = pos(site(mu1))
             v(site(1),site(2),site(3)) = 0
             e_field(mu1,site(1),site(2),site(3)) = en1
-            ebar(mu1) = ebar(mu1) - increment
+            ebar(mu1) = ebar(mu1) + increment
 
             accepth = accepth + 1
             u_tot_run = u_tot_run + delta_e
@@ -252,6 +252,8 @@ subroutine mc_sweep
 
   if (ebar(mu1).gt.(g_thr).or.ebar(mu1).lt.((-1)*g_thr)) then
     glob = 1
+  else
+    glob = 0
   end if
 
   mu1 = 0; increment = 0.0; 
@@ -284,17 +286,17 @@ subroutine mc_sweep
     ! field links (1,i,j,k),(2,i,j,k),(1,neg(i),j,k),(2,i,neg(j),k)
     ! so the first two are easy:
     eo1 = e_field(mu1,site(1),site(2),site(3))
-    eo1 = e_field(mu2,site(1),site(2),site(3))
+    eo2 = e_field(mu2,site(1),site(2),site(3))
 
     ! if e.g. we picked xy, the next line does x -> neg(x)
     site(mu1) = neg(site(mu1))
-    eo3 = e_field(mu1,site(1),site(2),site(3))
+    eo4 = e_field(mu1,site(1),site(2),site(3))
     ! and now we need to put it back
     site(mu1) = pos(site(mu1))
 
     ! this does y -> neg(y)
     site(mu2) = neg(site(mu2))
-    eo4 = e_field(mu2,site(1),site(2),site(3))
+    eo3 = e_field(mu2,site(1),site(2),site(3))
     ! and put it back
     site(mu2) = pos(site(mu2))
     ! so now we have (x,y,z) again
@@ -314,11 +316,11 @@ subroutine mc_sweep
       e_field(mu2,site(1),site(2),site(3)) = en2
 
       site(mu1) = neg(site(mu1))
-      e_field(mu1,site(1),site(2),site(3)) = en3
+      e_field(mu1,site(1),site(2),site(3)) = en4
       site(mu1) = pos(site(mu1))
 
       site(mu2) = neg(site(mu2))
-      e_field(mu2,site(1),site(2),site(3)) = en4
+      e_field(mu2,site(1),site(2),site(3)) = en3
       site(mu2) = pos(site(mu2))
 
       acceptr = acceptr + 1
@@ -358,7 +360,8 @@ subroutine mc_sweep
         delta_e = new_e - old_e
         !delta_e = (0.5 - float(L) * ebar_x)
 
-        if ((delta_e.lt.0).or.(exp(-beta*delta_e).gt.rand())) then
+        if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
+          .and.(exp(-beta*delta_e).gt.0.00000000001))) then
           ! this block is basically stolen from Michael
           ! not sure what's happening here tbh
           !write (*,*) ebar(1),ebar(2),ebar(3)
