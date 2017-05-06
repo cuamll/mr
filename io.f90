@@ -197,11 +197,12 @@ module io
       avg_e2 = avg_e2 + sq_energy(i)
     end do
 
-    do i = 1,L
+    do k = 1,L
       do j = 1,L
-        do k = 1,L
+        do i = 1,L
 
-        write (4,*) i, j, k, e_x(i,j,k), e_y(i,j,k), e_z(i,j,k)
+        write (4,*) i, j, k, e_field(1,i,j,k),&
+                  & e_field(2,i,j,k), e_field(3,i,j,k)
 
         end do
       end do
@@ -304,9 +305,9 @@ module io
     dir_dist_format_string = "(ES18.9, I8.1, ES18.9)"
 
     do n = 1,no_measurements
-      do i = 1,bz*(L+1)
+      do k = 1,bz*(L+1)
         do j = 1,bz*(L+1)
-          do k = 1,bz*(L+1)
+          do i = 1,bz*(L+1)
 
             e_kx_avg(i,j,k) = e_kx_avg(i,j,k) + e_kx_t(i,j,k,n)
             fe_fe_avg(i,j,k) = fe_fe_avg(i,j,k) + fe_fe(i,j,k,n)
@@ -326,8 +327,8 @@ module io
             end if
 
             ! s_ab averaging
-            do m = 1,3
-              do p = 1,3
+            do p = 1,3
+              do m = 1,3
                 s_ab_avg(m,p,i,j,k) = s_ab_avg(m,p,i,j,k) + s_ab_n(m,p,i,j,k,n)
               end do
             end do

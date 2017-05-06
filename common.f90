@@ -2,17 +2,15 @@ module common
   implicit none
   integer, public :: L,seed,accepth,acceptr,acceptg,add_charges,no_measurements
   integer, public :: therm_sweeps,measurement_sweeps,sample_interval
-  real*8, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
+  real*8, public :: q, lambda, volume, temp, beta
   real*8, public :: eps_0, bin_size, rot_delt
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
-  real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
-  real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
-  real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
-  real*8, dimension(:), allocatable, public :: energy, sq_energy
+  real*8, dimension(:), allocatable, public :: ebar, energy, sq_energy
+  real*8, dimension(:,:,:,:), allocatable, public :: e_field, mnphi
   real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,fe_fe
   real*8, dimension(:,:,:,:), allocatable, public :: dir_struc_n
-  real*8, dimension(:,:,:,:,:,:), allocatable, public :: s_ab_n
+  real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf, s_ab_n
   complex*16, dimension(:,:,:,:), allocatable, public :: e_kx_t
   complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
 
