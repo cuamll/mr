@@ -365,7 +365,7 @@ subroutine mc_sweep
 
   ! --- ROTATIONAL UPDATE ---
 
-  do i = 1,int(L**3 * rot_ratio)
+  do i = 1,int(3*L**3 * rot_ratio)
 
     eo1 = 0.0
     eo2 = 0.0
