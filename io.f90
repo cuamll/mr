@@ -35,6 +35,7 @@ module io
       read(1,'(a)') fi_st_l
       read(1,'(a)') dir_st_l
       read(1,'(a)') dir_d_s_l
+      read(1,'(a)') s_ab_l
       read(1,'(a)') s_p_l
 
       ! Check parameters are physically reasonable
@@ -125,6 +126,7 @@ module io
       field_st_file = trim(fi_st_l)
       dir_st_file = trim(dir_st_l)
       dir_dist_file = trim(dir_d_s_l)
+      s_ab_file = trim(s_ab_l)
       s_perp_file = trim(s_p_l)
 
       write (*,*)
@@ -153,6 +155,7 @@ module io
       write (*,*) 'field struc file: ',field_st_file
       write (*,*) 'direct space charge struc file: ',dir_st_file
       write (*,*) 'direct space corr. by distance: ',dir_dist_file
+      write (*,*) 'S^{alpha beta} file: ',s_ab_file
       write (*,*) 'S_perp file: ',s_perp_file
 
     else
@@ -419,6 +422,7 @@ module io
     open(unit=9, file=s_perp_file)
     open(unit=10, file=dir_st_file)
     open(unit=11, file=dir_dist_file)
+    open(unit=12, file=s_ab_file)
 
     write (*,*) "Writing out to files..."
 
@@ -456,6 +460,20 @@ module io
           2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
           s_perp(i,j,k)
 
+          write (12, field_format_string)&
+          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
+          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
+          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
+          s_ab_avg(1,1,i,j,k),&
+          s_ab_avg(1,2,i,j,k),&
+          s_ab_avg(1,3,i,j,k),&
+          s_ab_avg(2,1,i,j,k),&
+          s_ab_avg(2,2,i,j,k),&
+          s_ab_avg(2,3,i,j,k),&
+          s_ab_avg(3,1,i,j,k),&
+          s_ab_avg(3,2,i,j,k),&
+          s_ab_avg(3,3,i,j,k)
+
         end do
       end do
     end do
@@ -465,6 +483,7 @@ module io
     close(9)
     close(10)
     close(11)
+    close(12)
 
   end subroutine correlations
 
