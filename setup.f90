@@ -13,32 +13,26 @@ module setup
     allocate(v(L,L,L))
     allocate(pos(L))
     allocate(neg(L))
-    allocate(e_x(L,L,L))
-    allocate(e_y(L,L,L))
-    allocate(e_z(L,L,L))
-    allocate(mnphi_x(L,L,L))
-    allocate(mnphi_y(L,L,L))
-    allocate(mnphi_z(L,L,L))
+    allocate(ebar(3))
+    allocate(e_field(3,L,L,L))
+    allocate(mnphi(3,L,L,L))
     allocate(lgf(L,L,L,L,L,L))
-    allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(rho_k_m_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(rho_k_p_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
+    allocate(ch_ch((bz*L)+1,(bz*L)+1,(bz*L)+1,no_measurements))
+    allocate(rho_k_m_t((bz*L)+1,(bz*L)+1,(bz*L)+1,no_measurements))
+    allocate(rho_k_p_t((bz*L)+1,(bz*L)+1,(bz*L)+1,no_measurements))
     allocate(dir_struc_n(L/2 + 1,L/2 + 1,L/2 + 1,no_measurements))
-    allocate(e_kx_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(fe_fe(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(s_ab_n(3,3,bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
+    allocate(e_kx_t((bz*L)+1,(bz*L)+1,(bz*L)+1,no_measurements))
+    allocate(fe_fe((bz*L)+1,(bz*L)+1,(bz*L)+1,no_measurements))
+    allocate(s_ab_n(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1,no_measurements))
     allocate(energy(no_measurements + 1))
     allocate(sq_energy(no_measurements + 1))
 
     v = 0
     pos = 0
     neg = 0
-    e_x = 0.0
-    e_y = 0.0
-    e_z = 0.0
-    mnphi_x = 0.0
-    mnphi_y = 0.0
-    mnphi_z = 0.0
+    ebar = 0.0
+    e_field = 0.0
+    mnphi = 0.0
     lgf = 0.0
     ch_ch = 0.0
     rho_k_m_t = 0.0
@@ -57,12 +51,9 @@ module setup
     deallocate(v)
     deallocate(pos)
     deallocate(neg)
-    deallocate(e_x)
-    deallocate(e_y)
-    deallocate(e_z)
-    deallocate(mnphi_x)
-    deallocate(mnphi_y)
-    deallocate(mnphi_z)
+    deallocate(ebar)
+    deallocate(e_field)
+    deallocate(mnphi)
     deallocate(lgf)
     deallocate(ch_ch)
     deallocate(rho_k_m_t)
@@ -135,18 +126,8 @@ module setup
       call linsol
     end if
 
-    ! set e_x to irrotational - temporary solution
-    do i = 1,L
-      do j = 1,L
-        do k = 1,L
-
-          e_x(i,j,k) = mnphi_x(i,j,k)
-          e_y(i,j,k) = mnphi_y(i,j,k)
-          e_z(i,j,k) = mnphi_z(i,j,k)
-
-        end do
-      end do
-    end do
+    ! set e_field to irrotational - temporary solution
+    e_field = mnphi
 
   end subroutine arrays_init
 

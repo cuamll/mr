@@ -145,366 +145,218 @@ end program mr
 subroutine mc_sweep
   use common
   implicit none
-  integer :: i,x,y,z,charge,glob,totq
+  integer :: i,j,k,m,charge,glob,totq,mu1,mu2,pm1
+  integer, dimension(3) :: site
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot,u_tot_run,ebar_inc,e_inc
-  real*8 :: hop_inc, old_e, new_e, delta_e, g_thr
-  real :: chooser, delta
+  real*8 :: u_tot,u_tot_run,increment
+  real*8 :: old_e, new_e, delta_e, g_thr
 
-  charge = 0
-  glob = 0
-  totq = 0
-  eo1 = 0.0
-  eo2 = 0.0
-  eo3 = 0.0
-  eo4 = 0.0
-  en1 = 0.0
-  en2 = 0.0
-  en3 = 0.0
-  en4 = 0.0
-  u_tot = 0.0
-  u_tot_run = 0.0
-  ebar_inc = 0.0
-  e_inc = 0.0
-  hop_inc = 0.0
-  old_e = 0.0
-  new_e = 0.0
-  delta_e = 0.0
-  g_thr = 1 / float(L)
+  charge = 0; totq = 0; mu1 = 0; mu2 = 0; pm1 = 0
+  site =(/ 0, 0, 0 /)
+  eo1 = 0.0; eo2 = 0.0; eo3 = 0.0; eo4 = 0.0
+  en1 = 0.0; en2 = 0.0; en3 = 0.0; en4 = 0.0
+  u_tot = 0.0; u_tot_run = 0.0; increment = 0.0
+  old_e = 0.0; new_e = 0.0; delta_e = 0.0; g_thr = 1 / float(L)
+
   ! --- START OF UPDATE BLOCKS ---
 
   ! --- CHARGE HOP UPDATE ---
 
   do i = 1, int(L**3 * hop_ratio)
 
+    ! NOTE TO SELF: this whole procedure assumes
+    ! single-valued charges only.
+
     ! pick a random site
-    x = int(rand() * L) + 1
-    y = int(rand() * L) + 1
-    z = int(rand() * L) + 1
+    site = (/ int(rand() * L) + 1,&
+               &int(rand() * L) + 1,&
+               &int(rand() * L) + 1 /)
+
+    mu1 = floor(3*rand())+1
+
+    ! check we're not doing anything weird with mu1ltiple charges
+    if (abs(v(site(1),site(2),site(3))).gt.1) then
+      write (*,*) "Charge at ",site(1),site(2),site(3),&
+        " = ",v(site(1),site(2),site(3)),". Exiting."
+      write (*,*)
+      stop
+    end if
 
     ! pick a non-zero charge - canonical!
-    if (v(x,y,z).ne.0) then
+    if (v(site(1),site(2),site(3)).ne.0) then
 
-      charge = v(x,y,z)
+      charge = v(site(1),site(2),site(3))
+      eo1 = e_field(mu1,site(1),site(2),site(3))
+
       ! this takes care of sign issues when hopping
-      hop_inc = charge / (eps_0 * lambda**2)
-      chooser = rand()
+      increment = charge / (eps_0 * lambda**2)
 
-      if (chooser.lt.(1.0 / 3.0)) then
-        ! x component
-        eo1 = e_x(x,y,z)
-        chooser = rand()
+      if (rand().lt.0.5) then ! move it "negative"
 
-        if (chooser.lt.0.5) then ! we try and move the fucker left
-          en1 = eo1 + hop_inc
-          old_e = 0.5 * eps_0 * eo1**2
-          new_e = 0.5 * eps_0 * en1**2
-          delta_e = new_e - old_e
-          ! i think we can just set v(x,y,z) = 0
-          ! if we're enforcing |v| <= 1
-          if ((abs(v(x,y,z)).le.1).and.(v(neg(x),y,z).eq.0)) then
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+        en1 = eo1 + increment
+        old_e = 0.5 * eps_0 * eo1**2
+        new_e = 0.5 * eps_0 * en1**2
+        delta_e = new_e - old_e
 
-              accepth = accepth + 1
-              e_x(x,y,z) = en1
-              v(neg(x),y,z) = charge
-              v(x,y,z) = 0
-              ebar_x = ebar_x - hop_inc
-              u_tot_run = u_tot_run + delta_e
+        ! get negative in the mu1 direction
+        site(mu1) = neg(site(mu1))
 
-            end if
-          end if
+        if (v(site(1),site(2),site(3)).eq.0) then
+          if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-        else ! move the fucker to the right
+            v(site(1),site(2),site(3)) = charge
 
-          en1 = eo1 - hop_inc
-          old_e = 0.5 * eps_0 * eo1**2
-          new_e = 0.5 * eps_0 * en1**2
-          delta_e = new_e - old_e
+            ! go back to the original site and set the charge to 0
+            site(mu1) = pos(site(mu1))
+            v(site(1),site(2),site(3)) = 0
+            e_field(mu1,site(1),site(2),site(3)) = en1
+            ebar(mu1) = ebar(mu1) + increment
 
-          if ((abs(v(x,y,z)).le.1).and.(v(pos(x),y,z).eq.0)) then
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              accepth = accepth + 1
-              e_x(x,y,z) = en1
-              v(pos(x),y,z) = charge
-              v(x,y,z) = 0
-              ebar_x = ebar_x + hop_inc
-              u_tot_run = u_tot_run + delta_e
+            accepth = accepth + 1
+            u_tot_run = u_tot_run + delta_e
 
             end if
           end if
 
-        end if ! end of left-right movement choice
-        if (ebar_x.gt.(1/float(L)).or.ebar_x.lt.((-1)/float(L))) then
-          glob = 1
-        else
-          glob = 0
+      else ! move it "positive"
+
+        en1 = eo1 - increment
+        old_e = 0.5 * eps_0 * eo1**2
+        new_e = 0.5 * eps_0 * en1**2
+        delta_e = new_e - old_e
+
+        ! get pos in the mu1 direction
+        site(mu1) = pos(site(mu1))
+
+        if (v(site(1),site(2),site(3)).eq.0) then
+          if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+            v(site(1),site(2),site(3)) = charge
+
+            ! go back to the original site and set the charge to 0
+            site(mu1) = neg(site(mu1))
+            v(site(1),site(2),site(3)) = 0
+            e_field(mu1,site(1),site(2),site(3)) = en1
+            ebar(mu1) = ebar(mu1) - increment
+
+            accepth = accepth + 1
+            u_tot_run = u_tot_run + delta_e
+
+          end if
         end if
 
-
-      else if (chooser.gt.(2.0 / 3.0)) then ! y component
-
-        eo1 = e_y(x,y,z)
-        chooser = rand()
-
-        if (chooser.lt.0.5) then ! we try and move the fucker left
-          en1 = eo1 + hop_inc
-          old_e = 0.5 * eps_0 * eo1**2
-          new_e = 0.5 * eps_0 * en1**2
-          delta_e = new_e - old_e
-          ! i think we can just set v(x,y,z) = 0
-          ! if we're enforcing |v| <= 1
-          if ((abs(v(x,y,z)).le.1).and.(v(x,neg(y),z).eq.0)) then
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              accepth = accepth + 1
-              e_y(x,y,z) = en1
-              v(x,neg(y),z) = charge
-              v(x,y,z) = 0
-              ebar_y = ebar_y - hop_inc
-              u_tot_run = u_tot_run + delta_e
-
-            end if
-          end if
-
-        else ! move the fucker to the right
-
-          en1 = eo1 - hop_inc
-
-          old_e = 0.5 * eps_0 * eo1**2
-          new_e = 0.5 * eps_0 * en1**2
-          delta_e = new_e - old_e
-
-          if ((abs(v(x,y,z)).le.1).and.(v(x,pos(y),z).eq.0)) then
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              accepth = accepth + 1
-              e_y(x,y,z) = en1
-              v(x,pos(y),z) = charge
-              v(x,y,z) = 0
-              ebar_y = ebar_y + hop_inc
-              u_tot_run = u_tot_run + delta_e
-
-            end if
-          end if
-
-        end if ! end of left-right movement choice
-        if (ebar_y.gt.(1/float(L)).or.ebar_y.lt.((-1)/float(L))) then
-          glob = 1
-        else
-          glob = 0
-        end if
-
-      else ! z component
-
-        eo1 = e_z(x,y,z)
-        chooser = rand()
-
-        if (chooser.lt.0.5) then ! we try and move the fucker left
-          en1 = eo1 + hop_inc
-          old_e = 0.5 * eps_0 * eo1**2
-          new_e = 0.5 * eps_0 * en1**2
-          delta_e = new_e - old_e
-          ! i think we can just set v(x,y,z) = 0
-          ! if we're enforcing |v| <= 1
-          if ((abs(v(x,y,z)).le.1).and.(v(x,y,neg(z)).eq.0)) then
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              accepth = accepth + 1
-              e_z(x,y,z) = en1
-              v(x,y,neg(z)) = charge
-              v(x,y,z) = 0
-              ebar_z = ebar_z - hop_inc
-              u_tot_run = u_tot_run + delta_e
-
-            end if
-          end if
-
-        else ! move the fucker to the right
-
-          en1 = eo1 - hop_inc
-          old_e = 0.5 * eps_0 * eo1**2
-          new_e = 0.5 * eps_0 * en1**2
-          delta_e = new_e - old_e
-
-          if ((abs(v(x,y,z)).le.1).and.(v(x,y,pos(z)).eq.0)) then
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              accepth = accepth + 1
-              e_z(x,y,z) = en1
-              v(x,y,pos(z)) = charge
-              v(x,y,z) = 0
-              ebar_z = ebar_z + hop_inc
-              u_tot_run = u_tot_run + delta_e
-
-            end if
-          end if
-
-        end if ! end of left-right movement choice
-        if (ebar_z.gt.(1/float(L)).or.ebar_z.lt.((-1)/float(L))) then
-          glob = 1
-        else
-          glob = 0
-        end if
-
-      end if ! end of component chooser
-
-    end if ! end of v(x,y,z).ne.0 block
+      end if ! end "positive" / "negative" choice
+    end if ! end charge.ne.0 block
 
   end do ! end charge hop sweep
 
+  if (ebar(mu1).gt.(g_thr).or.ebar(mu1).lt.((-1)*g_thr)) then
+    glob = 1
+  else
+    glob = 0
+  end if
+
+  mu1 = 0; increment = 0.0; 
   u_tot = 0.0
-  do x = 1,L
-    do y = 1, L
-      do z = 1,L
-      u_tot = u_tot + 0.5 * eps_0 * (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
-      end do
-    end do
-  end do
+  u_tot = 0.5 * eps_0 * sum(e_field * e_field)
 
   ! --- ROTATIONAL UPDATE ---
 
-  do i = 1,int(3*L**3 * rot_ratio)
+  do i = 1,int(3 * L**3 * rot_ratio)
 
-    eo1 = 0.0
-    eo2 = 0.0
-    eo3 = 0.0
-    eo4 = 0.0
-    en1 = 0.0
-    en2 = 0.0
-    en3 = 0.0
-    en4 = 0.0
+    eo1 = 0.0; eo2 = 0.0; eo3 = 0.0; eo4 = 0.0
+    en1 = 0.0; en2 = 0.0; en3 = 0.0; en4 = 0.0
+    site = (/ 0, 0, 0/)
 
-    x = int(rand() * L) + 1
-    y = int(rand() * L) + 1
-    z = int(rand() * L) + 1
+    ! pick at random from interval [-Delta_max, +Delta_max]
+    increment = 2 * rot_delt * (rand() - 0.5)
 
-    ! NOTE TO SELF : next line needs changing
-    ! it's for the field increment, not an if statement
-    delta = 2 * rot_delt * (rand() - 0.5)
+    ! pick xy (1,2), yz (2,3), or zx (3,1) plaquette
+    mu1 = floor(3*rand())+1
+    mu2 = mod(mu1,3) + 1
 
-    chooser=rand()
-    if (chooser.lt.(1.0/3.0)) then ! xy-plane plaquette
+    ! give us a coordinate (i,j,k)
+    site = (/ int(rand() * L) + 1,&
+               &int(rand() * L) + 1,&
+               &int(rand() * L) + 1 /)
+    ! site(mu1) is the coordinate in the first direction
+    ! site(mu2) is the coordinate in the second
 
-      eo1 = e_x(x,y,z)
-      eo2 = e_y(x,y,z)
-      eo3 = e_x(x,neg(y),z)
-      eo4 = e_y(neg(x),y,z)
+    ! my convention is that an xy (1,2) plaquette is defined by
+    ! field links (1,i,j,k),(2,i,j,k),(1,neg(i),j,k),(2,i,neg(j),k)
+    ! so the first two are easy:
+    eo1 = e_field(mu1,site(1),site(2),site(3))
+    eo2 = e_field(mu2,site(1),site(2),site(3))
 
-      en1 = eo1 + delta
-      en2 = eo2 - delta
-      en3 = eo3 + delta
-      en4 = eo4 - delta
+    ! if e.g. we picked xy, the next line does x -> neg(x)
+    site(mu1) = neg(site(mu1))
+    eo4 = e_field(mu1,site(1),site(2),site(3))
+    ! and now we need to put it back
+    site(mu1) = pos(site(mu1))
 
-      old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-      new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
-      delta_e = new_e - old_e
+    ! this does y -> neg(y)
+    site(mu2) = neg(site(mu2))
+    eo3 = e_field(mu2,site(1),site(2),site(3))
+    ! and put it back
+    site(mu2) = pos(site(mu2))
+    ! so now we have (x,y,z) again
 
-      if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+    en1 = eo1 + increment
+    en2 = eo2 - increment
+    en3 = eo3 + increment
+    en4 = eo4 - increment
 
-        e_x(x,y,z) = en1
-        e_y(x,y,z) = en2
-        e_x(x,neg(y),z) = en3
-        e_y(neg(x),y,z) = en4
-        acceptr = acceptr + 1
-        u_tot_run = u_tot_run + delta_e
+    old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
+    new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
+    delta_e = new_e - old_e
 
-      end if ! end of Metropolis check
+    if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-    else if (chooser.ge.(2.0/3.0)) then ! xz-plane plaquette
+      e_field(mu1,site(1),site(2),site(3)) = en1
+      e_field(mu2,site(1),site(2),site(3)) = en2
 
-      eo1 = e_x(x,y,z)
-      eo2 = e_z(x,y,z)
-      eo3 = e_x(x,y,neg(z))
-      eo4 = e_z(neg(x),y,z)
+      site(mu1) = neg(site(mu1))
+      e_field(mu1,site(1),site(2),site(3)) = en4
+      site(mu1) = pos(site(mu1))
 
-      en1 = eo1 + delta
-      en2 = eo2 - delta
-      en3 = eo3 + delta
-      en4 = eo4 - delta
+      site(mu2) = neg(site(mu2))
+      e_field(mu2,site(1),site(2),site(3)) = en3
+      site(mu2) = pos(site(mu2))
 
-      old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-      new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
-      delta_e = new_e - old_e
+      acceptr = acceptr + 1
+      u_tot_run = u_tot_run + delta_e
 
-      if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-        e_x(x,y,z) = en1
-        e_z(x,y,z) = en2
-        e_x(x,y,neg(z)) = en3
-        e_z(neg(x),y,z) = en4
-        acceptr = acceptr + 1
-        u_tot_run = u_tot_run + delta_e
-
-      end if ! end of Metropolis check
-
-    else ! yz-plane plaquette
-
-      eo1 = e_y(x,y,z)
-      eo2 = e_z(x,y,z)
-      eo3 = e_y(x,y,neg(z))
-      eo4 = e_z(x,neg(y),z)
-
-      en1 = eo1 + delta
-      en2 = eo2 - delta
-      en3 = eo3 + delta
-      en4 = eo4 - delta
-
-      old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-      new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
-      delta_e = new_e - old_e
-
-      if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-        !write (*,*) "y-z plane rot:"
-        !write (*,*) x, y, z
-        !write (*,*) x, y, neg(z)
-        !write (*,*) x, neg(y), z
-
-        e_y(x,y,z) = en1
-        e_z(x,y,z) = en2
-        e_y(x,y,neg(z)) = en3
-        e_z(x,neg(y),z) = en4
-        acceptr = acceptr + 1
-        u_tot_run = u_tot_run + delta_e
-
-      end if ! end of Metropolis check
-
-    end if ! end plane choice block
+    end if ! end of Metropolis check
 
   end do ! end rotational
-  !write (*,*) "utot after rot. = ",u_tot_run
 
+  increment = 0.0
   u_tot = 0.0
-  do x = 1,L
-    do y = 1, L
-      do z = 1,L
-      u_tot = u_tot + 0.5 * eps_0 * (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
-      end do
-    end do
-  end do
+  u_tot = 0.5 * eps_0 * sum(e_field * e_field)
 
   ! --- HARMONIC UPDATE ---
   ! e bar update
   if (glob.eq.1) then
 
-    ! NOTE TO SELF: again this int cast prob needs changing
+    ! NOTE TO SELF: again this int cast might need changing
     do i = 1,int(L**3 * g_ratio)
 
-      ebar_inc = q/(L**2 * eps_0)
-      e_inc = ebar_inc / L**3
+      increment = q/(L**2 * eps_0)
 
-      ! x-component
-      chooser = rand()
+      do mu1 = 1,3
 
-      if (chooser.lt.0.5) then
+        if (rand() - 0.5.le.0) then
+          pm1 = -1
+        else
+          pm1 = +1
+        end if
+
         ! NOTE TO SELF - check this little fucker
         !old_e = (u_tot_run + ebar_x)**2
         !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-        old_e = ebar_x**2
+        old_e = ebar(mu1)**2
         ! this is not right
-        new_e = (ebar_x - ebar_inc)**2
+        new_e = (ebar(mu1) + pm1 * increment)**2
         delta_e = new_e - old_e
         !delta_e = (0.5 - float(L) * ebar_x)
 
@@ -512,166 +364,30 @@ subroutine mc_sweep
           .and.(exp(-beta*delta_e).gt.0.00000000001))) then
           ! this block is basically stolen from Michael
           ! not sure what's happening here tbh
-          ebar_x = ebar_x - ebar_inc
+          !write (*,*) ebar(1),ebar(2),ebar(3)
+          ebar(mu1) = ebar(mu1) + pm1 * increment
+          !write (*,*) ebar(1),ebar(2),ebar(3)
+          !do m = 1,L
+          !  do k = 1,L
+          !    do j = 1,L
+          !      e_field(mu1,j,k,m) = e_field(mu1,j,k,m) + pm1 * (increment / L**3)
+                e_field(mu1,:,:,:) = e_field(mu1,:,:,:) + pm1 * (increment / L**3)
+          !    end do
+          !  end do
+          !end do
+
           acceptg = acceptg + 1
 
-          do x = 1,L
-            do y = 1,L
-              do z = 1,L
-                e_x(x,y,z) = e_x(x,y,z) - e_inc
-              end do
-            end do
-          end do
         end if ! end weird Metropolis block
 
-      else
-        ! NOTE TO SELF - check this little fucker
-        !old_e = (u_tot_run + ebar_x)**2
-        !new_e = (u_tot_run + ebar_x - g_thr * float(L))**2
-        old_e = ebar_x**2
-        new_e = (ebar_x + ebar_inc)**2
-        delta_e = new_e - old_e
-        !delta_e = (0.5 - float(L) * ebar_x)
+      end do ! end mu1 loop
 
-        if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-          .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-          ! this block is basically stolen from Michael
-          ! not sure what's happening here tbh
-          ebar_x = ebar_x + ebar_inc
-          acceptg = acceptg + 1
+    end do ! end i loop
 
-          do x = 1,L
-            do y = 1,L
-              do z = 1,L
-                e_x(x,y,z) = e_x(x,y,z) + e_inc
-              end do
-            end do
-          end do
-        end if ! end weird Metropolis block
-      end if
+  end if ! glob.eq.1
 
-      ! y-component
-      chooser = rand()
-
-      if (chooser.lt.0.5) then
-        ! NOTE TO SELF - check this little fucker
-        !old_e = (u_tot_run + ebar_y)**2
-        !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-        old_e = ebar_y**2
-        new_e = (ebar_y - ebar_inc)**2
-        delta_e = new_e - old_e
-        !delta_e = (0.5 - float(L) * ebar_y)
-
-        if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-          .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-          ! this block is basically stolen from Michael
-          ! not sure what's happening here tbh
-          ebar_y = ebar_y - ebar_inc
-          acceptg = acceptg + 1
-
-          do x = 1,L
-            do y = 1,L
-              do z = 1,L
-                e_y(x,y,z) = e_y(x,y,z) - e_inc
-              end do
-            end do
-          end do
-        end if ! end weird Metropolis block
-
-      else
-        ! NOTE TO SELF - check this little fucker
-        !old_e = (u_tot_run + ebar_y)**2
-        !new_e = (u_tot_run + ebar_y - g_thr * float(L))**2
-        old_e = ebar_y**2
-        new_e = (ebar_y + ebar_inc)**2
-        delta_e = new_e - old_e
-        !delta_e = (0.5 - float(L) * ebar_y)
-
-        if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-          .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-          ! this block is basically stolen from Michael
-          ! not sure what's happening here tbh
-          ebar_y = ebar_y + ebar_inc
-          acceptg = acceptg + 1
-
-          do x = 1,L
-            do y = 1,L
-              do z = 1,L
-                e_y(x,y,z) = e_y(x,y,z) + e_inc
-              end do
-            end do
-          end do
-        end if ! end weird Metropolis block
-      end if
-
-      ! z-component
-      chooser = rand()
-
-      if (chooser.lt.0.5) then
-        ! NOTE TO SELF - check this little fucker
-        !old_e = (u_tot_run + ebar_z)**2
-        !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-        old_e = ebar_z**2
-        new_e = (ebar_z - ebar_inc)**2
-        delta_e = new_e - old_e
-        !delta_e = (0.5 - float(L) * ebar_z)
-
-        if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-          .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-          ! this block is basically stolen from Michael
-          ! not sure what's happening here tbh
-          ebar_z = ebar_z - ebar_inc
-          acceptg = acceptg + 1
-
-          do x = 1,L
-            do y = 1,L
-              do z = 1,L
-                e_z(x,y,z) = e_z(x,y,z) - e_inc
-              end do
-            end do
-          end do
-        end if ! end weird Metropolis block
-
-      else
-        ! NOTE TO SELF - check this little fucker
-        !old_e = (u_tot_run + ebar_z)**2
-        !new_e = (u_tot_run + ebar_z - g_thr * float(L))**2
-        old_e = ebar_z**2
-        new_e = (ebar_z + ebar_inc)**2
-        delta_e = new_e - old_e
-        !write (*,*) ebar_inc,ebar_z,old_e,new_e,delta_e
-        !delta_e = (0.5 - float(L) * ebar_z)
-
-        if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
-          .and.(exp(-beta*delta_e).gt.0.00000000001))) then
-          ! this block is basically stolen from Michael
-          ! not sure what's happening here tbh
-          ebar_z = ebar_z + ebar_inc
-          acceptg = acceptg + 1
-
-          do x = 1,L
-            do y = 1,L
-              do z = 1,L
-                e_z(x,y,z) = e_z(x,y,z) + e_inc
-              end do
-            end do
-          end do
-        end if ! end weird Metropolis block
-      end if
-
-      end do ! end global update loop
-
-      u_tot_run = 0.0
-      do x = 1,L
-        do y = 1,L
-          do z = 1,L
-            u_tot_run = u_tot_run + 0.5 * eps_0 *&
-                        (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
-          end do
-        end do
-      end do
-
-  end if ! end glob.eq.1 block
+  u_tot = 0.0
+  u_tot = 0.5 * eps_0 * sum(e_field * e_field)
 
   ! --- END OF UPDATE BLOCKS ---
 
@@ -692,14 +408,17 @@ subroutine measure(step_number)
   ! array indexing: we don't sample at each step
   n = step_number / sample_interval
 
-  do x = 1,L
-    do y = 1,L
-      do z = 1,L
-        u_tot_run = u_tot_run + 0.5 * eps_0 *&
-                    (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
-      end do
-    end do
-  end do
+  u_tot_run = 0.0
+  u_tot_run = 0.5 * eps_0 * sum(e_field * e_field)
+
+  !do z = 1,L
+  !  do y = 1,L
+  !    do x = 1,L
+  !      u_tot_run = u_tot_run + 0.5 * eps_0 *&
+  !                  (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
+  !    end do
+  !  end do
+  !end do
 
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
@@ -738,17 +457,18 @@ subroutine measure(step_number)
 
               ! we want this for every step so we can
               ! average at the end to get field-field struc
-              e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n) + exp(kdotx)*e_x(m,p,s)
+              e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n)&
+                              & + exp(kdotx)*e_field(1,m,p,s)
 
               kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                       ((p-(1.0/2))*ky) + ((s-1)*kz)))
 
-              e_ky = e_ky + exp(kdotx)*e_y(m,p,s)
+              e_ky = e_ky + exp(kdotx)*e_field(2,m,p,s)
 
               kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                       ((p-1)*ky) + ((s-(1.0/2))*kz)))
 
-              e_kz = e_kz + exp(kdotx)*e_z(m,p,s)
+              e_kz = e_kz + exp(kdotx)*e_field(3,m,p,s)
 
               if (v(m,p,s).ne.0) then ! calculate <++ + +->!
 
@@ -758,11 +478,13 @@ subroutine measure(step_number)
                         ((s-1)*kz/(L*lambda))))
 
                 if (v(m,p,s).eq.-1) then
-                  rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n) + v(m,p,s) * exp(kdotx)
+                  rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n)&
+                                     & + v(m,p,s) * exp(kdotx)
                 end if
 
                 if (v(m,p,s).eq.1) then ! take away <++>
-                  rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n) + v(m,p,s)*exp(kdotx)
+                  rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n)&
+                                     & + v(m,p,s)*exp(kdotx)
                 end if
 
                 ! --- real space correlation function ---
