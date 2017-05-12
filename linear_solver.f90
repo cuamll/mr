@@ -67,16 +67,16 @@ module linear_solver
           end do ! y do loop
         end do ! x do loop
 
-        mnphi_x(a,b,c)=sum_x
-        mnphi_y(a,b,c)=sum_y
-        mnphi_z(a,b,c)=sum_z
+        mnphi(1,a,b,c)=sum_x
+        mnphi(2,a,b,c)=sum_y
+        mnphi(3,a,b,c)=sum_z
 
-        ebar_x=ebar_x+mnphi_x(a,b,c)
-        ebar_y=ebar_y+mnphi_x(a,b,c)
-        ebar_z=ebar_z+mnphi_x(a,b,c)
+        ebar(1) = ebar(1) + mnphi(1,a,b,c)
+        ebar(2) = ebar(2) + mnphi(2,a,b,c)
+        ebar(3) = ebar(3) + mnphi(3,a,b,c)
 
-        u_tot=u_tot+0.5*(mnphi_x(a,b,c)**2&
-              +mnphi_y(a,b,c)**2+mnphi_z(a,b,c)**2)
+        u_tot=u_tot+0.5*(mnphi(1,a,b,c)**2&
+              +mnphi(2,a,b,c)**2+mnphi(3,a,b,c)**2)
 
       end do ! c do loop
     end do ! b do loop
@@ -89,7 +89,7 @@ module linear_solver
   write (*,*) 'irrot E_ij^2 =',u_tot
   write(*,*) "self_e from lgf(0) * n charges = ",u_self
   write(*,*) 'u_int calculated in loop = ',u_int
-  write (*,*) 'V*Ebar^2 = ',L**3*ebar_x**2+ebar_y**2+ebar_z**2
+  write (*,*) 'V*Ebar^2 = ',L**3*ebar**2
 
   deallocate(cosine)
 
@@ -233,14 +233,12 @@ module linear_solver
       call grad_sq_calc
     end if
 
+    e_field_lapack = 0.0; phi_lapack = 0.0
+
     ! initialise field, potential to 0 just in case
-    do i = 1,L
+    do k = 1,L
       do j = 1,L
-        do k = 1,L
-          e_x_lapack(i,j,k) = 0.0
-          e_y_lapack(i,j,k) = 0.0
-          e_z_lapack(i,j,k) = 0.0
-          phi_lapack(i,j,k) = 0.0
+        do i = 1,L
 
           coord = (/ i, j, k /)
           x = three_to_one(coord)
@@ -272,18 +270,20 @@ module linear_solver
     !write(*,*) " --- LAPACK - E fields ---"
     ! take grad to get fields
     lapack_energy = 0.0
-    do i = 1,L
+    do k = 1,L
       do j = 1,L
-        do k = 1,L
-          e_x_lapack(i,j,k) = (phi_lapack(pos(i),j,k) &
+        do i = 1,L
+          e_field_lapack(1,i,j,k) = (phi_lapack(pos(i),j,k) &
                               - phi_lapack(i,j,k))/lambda
-          e_y_lapack(i,j,k) = (phi_lapack(i,pos(j),k) &
+          e_field_lapack(2,i,j,k) = (phi_lapack(i,pos(j),k) &
                               - phi_lapack(i,j,k))/lambda
-          e_z_lapack(i,j,k) = (phi_lapack(i,j,pos(k)) &
+          e_field_lapack(3,i,j,k) = (phi_lapack(i,j,pos(k)) &
                               - phi_lapack(i,j,k))/lambda
 
-          lapack_energy = lapack_energy + 0.5 * eps_0 * (e_x_lapack(i,j,k)**2 &
-                        + e_y_lapack(i,j,k)**2 + e_z_lapack(i,j,k)**2)
+          lapack_energy = lapack_energy + 0.5 * eps_0 *&
+                        ( e_field_lapack(1,i,j,k)**2&
+                        + e_field_lapack(2,i,j,k)**2&
+                        + e_field_lapack(3,i,j,k)**2)
 
         end do
       end do

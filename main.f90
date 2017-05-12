@@ -8,525 +8,438 @@ program mr
   use io
   use setup
   implicit none
-  integer :: i, j, k, n, row, col, tot_q
+  include 'revision.inc'
+  integer :: i, j, k, tot_q
+  real*8 :: start_time, end_time
+  real*8, dimension(4) :: timings
+  integer, dimension(8) :: values
 
-  call do_setup
+  call cpu_time(start_time)
 
-  call upcan()
+  write (*,*) "Maggs-Rossetto algorithm on the simple cubic lattice."
+  write (*,*) "Callum Gray, University College London, 2017."
+  write (*,*) "Git revision ",revision
+  write (*,*) "Repo at http://github.com/callumgray/mr"
+
+  call date_and_time(VALUES=values)
+
+  write (*,'(a24,I2.1,a1,I2.1,a1,I4.2,a1,I2.1,a1,I2.1,a1,I2.1)')&
+    &" Current date and time: ",values(3),"/",values(2),"/"&
+    &,values(1)," ",values(5),":",values(6),":",values(7)
+
+  call setup_wrapper
+
+  accepth = 0
+  acceptr = 0
+  acceptg = 0
+
+  write (*,*)
+  write (*,'(A10,I5.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
+
+  call cpu_time(timings(1))
+
+  do i = 1,therm_sweeps
+    call mc_sweep
+    if (mod(i,therm_sweeps/10).eq.0) then
+      write (*,'(a)',advance='no') "*"
+    end if
+  end do
+
+  call cpu_time(timings(2))
+
+  write (*,'(a)') "]. Completed."
+  write (*,'(a,f8.3,a)') "Time taken: ",timings(2)-timings(1)," seconds."
+  write (*,*)
+  write (*,'(a,I7.1,a,I4.1,a)',advance='no') "Beginning ",measurement_sweeps,&
+    &" measurement sweeps with sampling every ",&
+    &sample_interval," MC steps... ["
+
+  call cpu_time(timings(3))
+
+  do i = 1,measurement_sweeps
+    call mc_sweep
+
+    if (mod(i, sample_interval).eq.0) then
+      call measure(i)
+    end if
+
+    if (measurement_sweeps.gt.100) then
+      if (mod(i,measurement_sweeps / 100).eq.0) then
+        write (*,'(a)',advance='no') "*"
+      end if
+    end if
+
+  end do
+
+  write (*,'(a)') "]"
+
+  call cpu_time(timings(4))
+
+  write (*,*)
+  write (*,'(I7.1,a)') measurement_sweeps," measurement sweeps completed."
+  write (*,'(a,f8.3,a)') "Time taken: ",timings(4)-timings(3)," seconds."
+
+  if (sum(v,mask=v.gt.0).ne.0) then
+    call linsol
+  end if
+
+  write(*,*)
+  write(*,*) "--- END: CHARGE POSITIONS ---"
 
   tot_q = 0
-
-  do i = 1,L
+  do k = 1,L
     do j = 1,L
-      do k = 1,L
+      do i = 1,L
 
         tot_q = tot_q + abs(v(i,j,k))
+
+        if (v(i,j,k).eq.1) then
+          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,k,v(i,j,k)
+        end if
+
+        if (v(i,j,k).eq.-1) then
+          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,k,v(i,j,k)
+        end if
 
       end do
     end do
   end do
 
-  if (tot_q.ne.0) then
-    call linalg
-  end if
-
-  !do i = 1,L
-  !  do j = 1,L
-  !    do k = 1,L
-
-  !    ! does it make sense to do this?
-  !      u_rot = u_rot + 0.5 * (e_x(i,j,k) - mnphi_x(i,j,k))**2 +&
-  !      (e_y(i,j,k) - mnphi_y(i,j,k))**2 +&
-  !      (e_z(i,j,k) - mnphi_z(i,j,k))**2
-
-  !    end do
-  !  end do
-  !end do
-
-  !write (*,*) 'u_rot. = ',u_rot
-
+  write (*,*) "Total charges: ",tot_q
   write(*,*)
 
-  call linalg
+  write (*,*)
+  write (*,*) '--- MOVE STATS: ---'
+  write (*,*) 'hops: moves, acceptance ratio: ',&
+    &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
+    &* tot_q * hop_ratio)
+  write (*,*) 'rotational updates: moves, acceptance ratio: ',&
+    &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
+    &* 3*L**3 * rot_ratio)
+  write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
+    &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
+    &* L**3 * g_ratio * 3)
+  write(*,*)
 
+
+  write (*,*) "Writing output for ",no_measurements," measurements..."
   call write_output
 
   call deallocations
+
+  write (*,*) "Done."
+  write (*,*)
+
+  call cpu_time(end_time)
+  write (*,'(a,f8.3,a)') "Total time taken: ",end_time-start_time," seconds."
+  write (*,'(a,f8.5,a)') "Time per thermalisation sweep: "&
+    &,(timings(2) - timings(1)) / therm_sweeps," seconds."
+  write (*,'(a,f8.5,a)') "Time per measurement sweep (including&
+    & measurements): ",(timings(4) - timings(3)) / measurement_sweeps," seconds."
+  write (*,*)
 
   stop
 
 end program mr
 
-! canonical ensemble - MC / Metropolis updates
-subroutine upcan()
+subroutine mc_sweep
   use common
   use linear_solver
   implicit none
-  integer :: x,y,z,n,charge,glob,i,j,k,m,p,s,pm1,kx,ky,kz
+  integer :: i,j,k,m,charge,glob,totq,mu1,mu2,pm1
+  integer, dimension(3) :: site
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot_run,avg_e,avg_e2,one,norm_k
-  real*8 :: dot,dot_avg ! probably won't need the avg
-  real*8 :: hop_inc, old_e, new_e, delta_e, totq, g_thr
-  real :: chooser, delta
+  real*8 :: u_tot_run,increment
+  real*8 :: old_e, new_e, delta_e, g_thr
+
+  charge = 0; totq = 0; mu1 = 0; mu2 = 0; pm1 = 0
+  site =(/ 0, 0, 0 /)
+  eo1 = 0.0; eo2 = 0.0; eo3 = 0.0; eo4 = 0.0
+  en1 = 0.0; en2 = 0.0; en3 = 0.0; en4 = 0.0
+  u_tot = 0.0; u_tot_run = 0.0; increment = 0.0
+  old_e = 0.0; new_e = 0.0; delta_e = 0.0; g_thr = 1 / float(L)
+
+  ! --- START OF UPDATE BLOCKS ---
+
+  ! --- CHARGE HOP UPDATE ---
+
+  do i = 1, int(L**3 * hop_ratio)
+
+    ! NOTE TO SELF: this whole procedure assumes
+    ! single-valued charges only.
+
+    u_tot = 0.5 * eps_0 * sum(e_field * e_field)
+
+    ! pick a random site
+    site = (/ int(rand() * L) + 1,&
+               &int(rand() * L) + 1,&
+               &int(rand() * L) + 1 /)
+
+    mu1 = floor(3*rand())+1
+
+    ! check we're not doing anything weird with mu1ltiple charges
+    if (abs(v(site(1),site(2),site(3))).gt.1) then
+      write (*,*) "Charge at ",site(1),site(2),site(3),&
+        " = ",v(site(1),site(2),site(3)),". Exiting."
+      write (*,*)
+      stop
+    end if
+
+    ! pick a non-zero charge - canonical!
+    if (v(site(1),site(2),site(3)).ne.0) then
+
+      charge = v(site(1),site(2),site(3))
+
+      if (rand().lt.0.5) then ! move it "negative"
+
+        old_e = u_tot_run
+
+        ! get negative in the mu1 direction
+        site(mu1) = neg(site(mu1))
+
+        if (v(site(1),site(2),site(3)).eq.0) then
+
+          v(site(1),site(2),site(3)) = charge
+
+          ! put it back
+          site(mu1) = pos(site(mu1))
+          v(site(1),site(2),site(3)) = 0
+
+          call linalg
+          ! after calling linalg, the new fields are in e_mu_lapack
+          new_e = lapack_energy
+          delta_e = new_e - old_e
+          !write (*,*) old_e,new_e,delta_e
+
+          if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+            ! move accepted, set the fields/energy to lapack ones
+            accepth = accepth + 1
+            u_tot_run = lapack_energy
+            e_field = e_field_lapack
+
+          else
+
+            ! don't change the fields or energy, move the charge back
+            v(site(1),site(2),site(3)) = charge
+            site(mu1) = neg(site(mu1))
+            v(site(1),site(2),site(3)) = 0
+
+          end if
+        end if
+
+      else ! move it "positive"
+
+        old_e = u_tot_run
+
+        ! get negative in the mu1 direction
+        site(mu1) = pos(site(mu1))
+
+        if (v(site(1),site(2),site(3)).eq.0) then
+
+          v(site(1),site(2),site(3)) = charge
+
+          site(mu1) = neg(site(mu1))
+          v(site(1),site(2),site(3)) = 0
+
+          call linalg
+          ! after calling linalg, the new fields are in e_mu_lapack
+          new_e = lapack_energy
+          delta_e = new_e - old_e
+          !write (*,*) old_e,new_e,delta_e
+
+          if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+            ! move accepted, set the fields/energy to lapack ones
+            accepth = accepth + 1
+            u_tot_run = lapack_energy
+            e_field = e_field_lapack
+
+          else
+
+            ! don't change the fields or energy, move the charge back
+            v(site(1),site(2),site(3)) = charge
+            site(mu1) = pos(site(mu1))
+            v(site(1),site(2),site(3)) = 0
+
+          end if
+        end if
+
+      end if ! end "positive" / "negative" choice
+    end if ! end charge.ne.0 block
+
+  end do ! end charge hop sweep
+
+  mu1 = 0; increment = 0.0; 
+  u_tot = 0.0
+  u_tot = 0.5 * eps_0 * sum(e_field * e_field)
+
+
+  ! --- END OF UPDATE BLOCKS ---
+
+end subroutine mc_sweep
+
+subroutine measure(step_number)
+  use common
+  implicit none
+  integer,intent(in) :: step_number
+  integer :: x,y,z,i,j,k,m,p,s,kx,ky,kz,n
+  real*8 :: norm_k,u_tot_run
   complex*16 :: imag, kdotx
+  complex*16 :: e_ky, e_kz
 
-  glob = 0
-  totq = 0
-  u_tot_run = 0.0
-  old_e = 0.0
-  new_e = 0.0
-  g_thr = 1 / float(L)
-  accepth = 0
-  acceptr=0
-  acceptg=0
-  one=1.0
   imag = (0.0,1.0)
+  u_tot_run = 0.0
+
+  ! array indexing: we don't sample at each step
+  n = step_number / sample_interval
+
+  u_tot_run = 0.0
+  u_tot_run = 0.5 * eps_0 * sum(e_field * e_field)
+
+  !do z = 1,L
+  !  do y = 1,L
+  !    do x = 1,L
+  !      u_tot_run = u_tot_run + 0.5 * eps_0 *&
+  !                  (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
+  !    end do
+  !  end do
+  !end do
 
-  write(*,*)
-  write(*,*) " --- start: charge positions ---"
-
-  call linalg
-  u_tot_run = lapack_energy
-  do i = 1,L
-    do j = 1,L
-      do k = 1,L
-
-        totq = totq + abs(v(i,j,k))
-        if (v(i,j,k).ne.0) then
-          write (*,*) i, j, k, v(i,j,k)
-        end if
-      end do
-    end do
-  end do
-
-  write (*,*) "total charges: ",totq
-  write(*,*)
-
-  energy(1) = u_tot_run
-  sq_energy(1) = u_tot_run**2
-
-  ! charge hop sweep
-  do n = 1,iterations
-
-  !write (*,*) "utot at start of step ",n," = ",u_tot_run
-
-    ! charge hop sweep
-    do i = 1, int(L**3 * hop_ratio)
-
-      ! pick a random site
-      x = int(rand() * L) + 1
-      y = int(rand() * L) + 1
-      z = int(rand() * L) + 1
-
-      ! pick a non-zero charge - we want to keep it canonical
-      if (v(x,y,z).ne.0) then
-
-        charge = v(x,y,z)
-
-        !choose a direction to move the charge:
-        chooser = int(rand() * 6)
-
-        if (chooser.eq.0) then
-
-          ! positive x
-          if ((abs(v(x,y,z)).le.1).and.(v(pos(x),y,z).eq.0)) then
-
-            old_e = u_tot_run
-            v(x,y,z) = 0
-            v(pos(x),y,z) = charge
-
-            call linalg
-            ! after calling linalg, the new fields are in e_mu_lapack
-            new_e = lapack_energy
-            delta_e = new_e - old_e
-            !write (*,*) old_e,new_e,delta_e
-
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              ! move accepted, set the fields/energy to lapack ones
-              accepth = accepth + 1
-              u_tot_run = lapack_energy
-              e_x = e_x_lapack
-              e_y = e_y_lapack
-              e_z = e_z_lapack
-
-            else
-
-              ! don't change the fields or energy, move the charge back
-              v(x,y,z) = charge
-              v(pos(x),y,z) = 0
-              u_tot_run = old_e
-
-            end if
-          end if
-
-        else if (chooser.eq.1) then
-
-          ! negative x
-          if ((abs(v(x,y,z)).le.1).and.(v(neg(x),y,z).eq.0)) then
-
-            old_e = u_tot_run
-            v(x,y,z) = 0
-            v(neg(x),y,z) = charge
-
-            call linalg
-            ! after calling linalg, the new fields are in e_mu_lapack
-            new_e = lapack_energy
-            delta_e = new_e - old_e
-
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              ! move accepted, set the fields/energy to lapack ones
-              accepth = accepth + 1
-              u_tot_run = lapack_energy
-              e_x = e_x_lapack
-              e_y = e_y_lapack
-              e_z = e_z_lapack
-
-            else
-
-              ! don't change the fields or energy, move the charge back
-              v(x,y,z) = charge
-              v(neg(x),y,z) = 0
-              u_tot_run = old_e
-
-            end if
-          end if
-
-        else if (chooser.eq.2) then
-
-          ! positive y
-          if ((abs(v(x,y,z)).le.1).and.(v(x,pos(y),z).eq.0)) then
-
-            old_e = u_tot_run
-            v(x,y,z) = 0
-            v(x,pos(y),z) = charge
-
-            call linalg
-            ! after calling linalg, the new fields are in e_mu_lapack
-            new_e = lapack_energy
-            delta_e = new_e - old_e
-
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              ! move accepted, set the fields/energy to lapack ones
-              accepth = accepth + 1
-              u_tot_run = lapack_energy
-              e_x = e_x_lapack
-              e_y = e_y_lapack
-              e_z = e_z_lapack
-
-            else
-
-              ! don't change the fields or energy, move the charge back
-              v(x,y,z) = charge
-              v(x,pos(y),z) = 0
-              u_tot_run = old_e
-
-            end if
-          end if
-
-        else if (chooser.eq.3) then
-
-          ! negative y
-          if ((abs(v(x,y,z)).le.1).and.(v(x,neg(y),z).eq.0)) then
-
-            old_e = u_tot_run
-            v(x,y,z) = 0
-            v(x,neg(y),z) = charge
-
-            call linalg
-            ! after calling linalg, the new fields are in e_mu_lapack
-            new_e = lapack_energy
-            delta_e = new_e - old_e
-
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              ! move accepted, set the fields/energy to lapack ones
-              accepth = accepth + 1
-              u_tot_run = lapack_energy
-              e_x = e_x_lapack
-              e_y = e_y_lapack
-              e_z = e_z_lapack
-
-            else
-
-              ! don't change the fields or energy, move the charge back
-              v(x,y,z) = charge
-              v(x,neg(y),z) = 0
-              u_tot_run = old_e
-
-            end if
-          end if
-
-        else if (chooser.eq.4) then
-
-          ! positive z
-          if ((abs(v(x,y,z)).le.1).and.(v(x,y,pos(z)).eq.0)) then
-
-            old_e = u_tot_run
-            v(x,y,z) = 0
-            v(x,y,pos(z)) = charge
-
-            call linalg
-            ! after calling linalg, the new fields are in e_mu_lapack
-            new_e = lapack_energy
-            delta_e = new_e - old_e
-
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              ! move accepted, set the fields/energy to lapack ones
-              accepth = accepth + 1
-              u_tot_run = lapack_energy
-              e_x = e_x_lapack
-              e_y = e_y_lapack
-              e_z = e_z_lapack
-
-            else
-
-              ! don't change the fields or energy, move the charge back
-              v(x,y,z) = charge
-              v(x,y,pos(z)) = 0
-              u_tot_run = old_e
-
-            end if
-          end if
-
-        else if (chooser.eq.5) then
-
-          ! negative z
-          if ((abs(v(x,y,z)).le.1).and.(v(x,y,neg(z)).eq.0)) then
-
-            old_e = u_tot_run
-            v(x,y,z) = 0
-            v(x,y,neg(z)) = charge
-
-            call linalg
-            ! after calling linalg, the new fields are in e_mu_lapack
-            new_e = lapack_energy
-            delta_e = new_e - old_e
-
-            if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-              ! move accepted, set the fields/energy to lapack ones
-              accepth = accepth + 1
-              u_tot_run = lapack_energy
-              e_x = e_x_lapack
-              e_y = e_y_lapack
-              e_z = e_z_lapack
-
-            else
-
-              ! don't change the fields or energy, move the charge back
-              v(x,y,z) = charge
-              v(x,y,neg(z)) = 0
-              u_tot_run = old_e
-
-            end if
-          end if
-
-        end if
-
-
-      end if ! end of v(x,y,z).ne.0 block
-
-    end do ! end charge hop sweep
-
-  ! replace with u_tot_run maybe?
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
 
-  avg_e = 0.0
-  avg_e2 = 0.0
-  do m=1,n+1
-    avg_e = avg_e + energy(m)
-    avg_e2 = avg_e2 + sq_energy(m)
-  end do
+  ! --- FOURIER TRANSFORMS ---
+  do kz = (-1*L/2)*bz, (L/2)*bz
+    do ky = (-1*L/2)*bz, (L/2)*bz
+      do kx = (-1*L/2)*bz, (L/2)*bz
 
-  avg_e = avg_e / (n + 1)
-  avg_e2 = avg_e2 / (n + 1)
+        e_ky = (0.0,0.0)
+        e_kz = (0.0,0.0)
+        kdotx = (0.0,0.0)
+        norm_k = 0.0
 
-    ! --- FOURIER TRANSFORMS ---
-    do kx = (-1*L/2)*bz, (L/2)*bz
-      do ky = (-1*L/2)*bz, (L/2)*bz
-        do kz = (-1*L/2)*bz, (L/2)*bz
+        ! for array indices
+        i = kx + 1 + bz*(L/2)
+        j = ky + 1 + bz*(L/2)
+        k = kz + 1 + bz*(L/2)
 
-          ! for array indices
-          i = kx + 1 + bz*(L/2)
-          j = ky + 1 + bz*(L/2)
-          k = kz + 1 + bz*(L/2)
+        if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
+          norm_k = 0.0
+        else
+          norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
+        end if
 
-          if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
-            norm_k = 0.0
-          else
-            norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
-          end if
+        e_kx_t(i,j,k,n) = (0.0,0.0)
 
-          !if (n.eq.1) then
-          !  write (*,*) kx,ky,kz,(kx*kx + ky*ky + kz*kz)*(norm_k)
-          !end if
+        ! m,p,s are the real space coordinates
+        do s = 1,L
+          do p = 1,L
+            do m = 1,L
 
-          e_kx(i,j,k) = 0.0
-          e_ky(i,j,k) = 0.0
-          e_kz(i,j,k) = 0.0
+              ! different offsets for x,y,z
+              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
+                      ((p-1)*ky) + ((s-1)*kz)))
 
-          ! m,p,s are the real space coordinates
-          do m = 1,L
-            do p = 1,L
-              do s = 1,L
+              ! we want this for every step so we can
+              ! average at the end to get field-field struc
+              e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n)&
+                              & + exp(kdotx)*e_field(1,m,p,s)
 
-                ! different offsets for x,y,z
-                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
-                        ((p-1)*ky) + ((s-1)*kz)))
+              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                      ((p-(1.0/2))*ky) + ((s-1)*kz)))
 
-                e_kx(i,j,k) = e_kx(i,j,k) + exp(kdotx)*e_x(m,p,s)
+              e_ky = e_ky + exp(kdotx)*e_field(2,m,p,s)
 
-                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                        ((p-(1.0/2))*ky) + ((s-1)*kz)))
+              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                      ((p-1)*ky) + ((s-(1.0/2))*kz)))
 
-                e_ky(i,j,k) = e_ky(i,j,k) + exp(kdotx)*e_y(m,p,s)
+              e_kz = e_kz + exp(kdotx)*e_field(3,m,p,s)
 
-                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                        ((p-1)*ky) + ((s-(1.0/2))*kz)))
+              if (v(m,p,s).ne.0) then ! calculate <++ + +->!
 
-                e_kz(i,j,k) = e_kz(i,j,k) + exp(kdotx)*e_z(m,p,s)
+                ! FT of charge distribution
+                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                        ((p-1)*ky/(L*lambda)) + &
+                        ((s-1)*kz/(L*lambda))))
 
-                if (v(m,p,s).ne.0) then ! calculate average of <++>,<--><+->!
-
-                  if (kx.gt.0.and.kx.le.L&
-                    .and.ky.gt.0.and.ky.le.L&
-                    .and.kz.gt.0.and.kz.le.L) then
-                    ! this should sort it out. kx ky kz here are then
-                    ! the "r"s, m p s are the "zeros"
-                    ! we want to do rho_+(0) rho_-(r), I think?
-                    if (v(m,p,s).eq.1) then
-                      if (v(kx,ky,kz).eq.-1) then
-                        ! this should handle multi-valued charges fine
-                        x = abs(m - kx)
-                        y = abs(p - ky)
-                        z = abs(s - kz)
-                        if (x.gt.L/2) then
-                          x = L - x
-                        end if
-                        if (y.gt.L/2) then
-                          y = L - y
-                        end if
-                        if (z.gt.L/2) then
-                          z = L - z
-                        end if
-                        x = x + 1
-                        y = y + 1
-                        z = z + 1
-                        !x = modulo(m - kx, L/2 + 1) + 1
-                        !y = modulo(p - ky, L/2 + 1) + 1
-                        !z = modulo(s - kz, L/2 + 1) + 1
-                        !if (m.ge.kx) then
-                        !  x = modulo(m - kx, L/2 + 1) + 1
-                        !else
-                        !  x = modulo(kx - m, L/2 + 1) + 1
-                        !end if
-                        !if (p.ge.ky) then
-                        !  y = modulo(p - ky, L/2 + 1) + 1
-                        !else
-                        !  y = modulo(ky - p, L/2 + 1) + 1
-                        !end if
-                        !if (s.ge.kz) then
-                        !  z = modulo(s - kz, L/2 + 1) + 1
-                        !else
-                        !  z = modulo(kz - s, L/2 + 1) + 1
-                        !end if
-                        dir_struc_n(x,y,z,n) = dir_struc_n(x,y,z,n) +&
-                                v(m,p,s) * v(kx,ky,kz)
-                        !write (*,*) m,p,s,v(m,p,s),kx,ky,kz,v(kx,ky,kz),x,y,z,n,dir_struc_n(x,y,z,n)
-                      end if ! neg charge at kx,ky,kz
-                    end if ! pos charge at m,p,s
-
-                  end if ! kx,ky,kz < L
-
-                  ! FT of charge distribution
-                  kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                          ((p-1)*ky/(L*lambda)) + &
-                          ((s-1)*kz/(L*lambda))))
-
-                  if (v(m,p,s).eq.-1) then
-                    rho_k_m(i,j,k) = rho_k_m(i,j,k) + v(m,p,s) * exp(kdotx)
-                  end if
-
-                  if (v(m,p,s).eq.1) then
-                    rho_k_p(i,j,k) = rho_k_p(i,j,k) + v(m,p,s)*exp(kdotx)
-                  end if
-
+                if (v(m,p,s).eq.-1) then
+                  rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n)&
+                                     & + v(m,p,s) * exp(kdotx)
                 end if
 
-              end do
-            end do
-          end do
+                if (v(m,p,s).eq.1) then ! take away <++>
+                  rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n)&
+                                     & + v(m,p,s)*exp(kdotx)
+                end if
 
-          ! normalise, idiot
-          e_kx(i,j,k) = e_kx(i,j,k) /(float(L**3))
-          e_ky(i,j,k) = e_ky(i,j,k) /(float(L**3))
-          e_kz(i,j,k) = e_kz(i,j,k) /(float(L**3))
-          rho_k_m(i,j,k) = rho_k_m(i,j,k) /(float(L**3))
-          rho_k_p(i,j,k) = rho_k_p(i,j,k) /(float(L**3))
+                ! --- real space correlation function ---
 
-          e_kx_t(i,j,k,n) = e_kx(i,j,k)
-          rho_k_m_t(i,j,k,n) = rho_k_m(i,j,k)
-          rho_k_p_t(i,j,k,n) = rho_k_p(i,j,k)
+                if (kx.gt.0.and.kx.le.L&
+                  .and.ky.gt.0.and.ky.le.L&
+                  .and.kz.gt.0.and.kz.le.L) then
 
-          ch_ch(i,j,k,n) = (rho_k_p(i,j,k)*conjg(rho_k_m(i,j,k)))
+                  ! this should sort it out. kx ky kz here are
+                  ! the "r"s, m p s are the "zeros"
+                  ! we want to do rho_+(0) rho_-(r)
+                  if (v(m,p,s).eq.1) then
+                    if (v(kx,ky,kz).eq.-1) then
 
-          if (kx.eq.((L*lambda/2)).and.ky.eq.(-1*L*lambda/2).and.kz.eq.0) then
-            if (n.eq.1) then
-              write(*,*) "kx,ky,rho_k_m,rho_k_p,ch_ch(this step),e_kx"
-            else
-            write (*,*)
-            write (*,'(F6.3,F6.3,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7,F12.7)')&
-              kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
-              rho_k_m(i,j,k),rho_k_p(i,j,k),ch_ch(i,j,k,n),e_kx(i,j,k)
-            end if
-          end if
+                      x = abs(m - kx)
+                      y = abs(p - ky)
+                      z = abs(s - kz)
 
-          !ch_ch(i,j,k,n) = ((rho_k_p(i,j,k) + rho_k_m(i,j,k))&
-          !                 *conjg(rho_k_p(i,j,k) + rho_k_m(i,j,k)))
-          !ch_ch_pp(i,j,k,n) = (rho_k_pp(i,j,k)*conjg(rho_k_pp(i,j,k)))
+                      if (x.gt.L/2) then
+                        x = L - x
+                      end if
+                      if (y.gt.L/2) then
+                        y = L - y
+                      end if
+                      if (z.gt.L/2) then
+                        z = L - z
+                      end if
 
-          fe_fe(i,j,k,n) = (e_kx(i,j,k)*conjg(e_kx(i,j,k)))
+                      x = x + 1
+                      y = y + 1
+                      z = z + 1
 
-          s_ab_n(1,1,i,j,k,n) = e_kx(i,j,k)*conjg(e_kx(i,j,k))
-          s_ab_n(1,2,i,j,k,n) = e_kx(i,j,k)*conjg(e_ky(i,j,k))
-          s_ab_n(1,3,i,j,k,n) = e_kx(i,j,k)*conjg(e_kz(i,j,k))
-          s_ab_n(2,1,i,j,k,n) = e_ky(i,j,k)*conjg(e_kx(i,j,k))
-          s_ab_n(2,2,i,j,k,n) = e_ky(i,j,k)*conjg(e_ky(i,j,k))
-          s_ab_n(2,3,i,j,k,n) = e_ky(i,j,k)*conjg(e_kz(i,j,k))
-          s_ab_n(3,1,i,j,k,n) = e_kz(i,j,k)*conjg(e_kx(i,j,k))
-          s_ab_n(3,2,i,j,k,n) = e_kz(i,j,k)*conjg(e_ky(i,j,k))
-          s_ab_n(3,3,i,j,k,n) = e_kz(i,j,k)*conjg(e_kz(i,j,k))
+                      dir_struc_n(x,y,z,n) = dir_struc_n(x,y,z,n) +&
+                              v(m,p,s) * v(kx,ky,kz)
+                    end if ! neg charge at kx,ky,kz
+                  end if ! pos charge at m,p,s
 
-        end do
-      end do
-    end do
+                end if ! kx,ky,kz < L
 
-  end do ! end iteration loop
+              end if ! end v != 0 check
 
-  write(*,*)
-  write(*,*) " --- end: charge positions ---"
+            end do ! end s loop
+          end do ! end p loop
+        end do ! end m loop
 
-  totq = 0
-  do j = 1,L
-    do k = 1,L
-      do m = 1,L
-        totq = totq + abs(v(j,k,m))
-        if (v(j,k,m).ne.0) then
-          write (*,*) j, k, m, v(j,k,m)
-        end if
+        ! normalise, idiot
+        rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n) / float(L**3)
+        rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n) / float(L**3)
+        e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n) / float(L**3)
+        e_ky = e_ky / float(L**3)
+        e_kz = e_kz / float(L**3)
+
+        ch_ch(i,j,k,n) = (rho_k_p_t(i,j,k,n) * conjg(rho_k_m_t(i,j,k,n)))
+
+        fe_fe(i,j,k,n) = (e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n)))
+
+        s_ab_n(1,1,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n))
+        s_ab_n(1,2,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_ky)
+        s_ab_n(1,3,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kz)
+        s_ab_n(2,1,i,j,k,n) = e_ky*conjg(e_kx_t(i,j,k,n))
+        s_ab_n(2,2,i,j,k,n) = e_ky*conjg(e_ky)
+        s_ab_n(2,3,i,j,k,n) = e_ky*conjg(e_kz)
+        s_ab_n(3,1,i,j,k,n) = e_kz*conjg(e_kx_t(i,j,k,n))
+        s_ab_n(3,2,i,j,k,n) = e_kz*conjg(e_ky)
+        s_ab_n(3,3,i,j,k,n) = e_kz*conjg(e_kz)
+
+        ! end kz,ky,kx loops
       end do
     end do
   end do
-  write (*,*) "total charges: ",totq
-  write(*,*)
 
-  write (*,*)
-  write (*,*) '----- move stats -----'
-  write (*,*) 'hop moves  = ',accepth,float(accepth) / (iterations * totq)
-
-end subroutine upcan
+end subroutine measure

@@ -1,42 +1,33 @@
 module common
   implicit none
-  real, public :: q, lambda, volume, ebar_x, ebar_y, ebar_z, temp, beta
-  real*8, public :: eps_0, lapack_energy
-  real, public :: rot_delt
-  integer, public :: L,seed,accepth,acceptr,acceptg,iterations,add_charges
+  integer, public :: L,seed,accepth,acceptr,acceptg,add_charges,no_measurements
+  integer, public :: therm_sweeps,measurement_sweeps,sample_interval,have_grad_sq
+  real*8, public :: q, lambda, volume, temp, beta
+  real*8, public :: eps_0, lapack_energy, bin_size, rot_delt
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:,:), allocatable, public :: v
-  real*8, dimension(:,:,:), allocatable, public :: mnphi_x, mnphi_y, mnphi_z
-  real*8, dimension(:,:,:), allocatable, public :: e_x, e_y, e_z
-  real*8, dimension(:,:,:), allocatable, public :: phi_lapack, e_x_lapack
-  real*8, dimension(:,:,:), allocatable, public :: e_y_lapack, e_z_lapack
-  real*8, dimension(:,:,:), allocatable, public :: e_rot_x, e_rot_y, e_rot_z
-  real*8, dimension(:,:,:), allocatable, public :: charge_struc
-  real*8, dimension(:,:,:), allocatable, public :: dir_struc
+  real*8, dimension(:), allocatable, public :: ebar, energy, sq_energy
   real*8, dimension(:,:), allocatable, public :: grad_sq
-  real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf
-  real*8, dimension(:), allocatable, public :: energy, sq_energy, energy_run
-  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,ch_ch_pp
+  real*8, dimension(:,:,:), allocatable, public :: phi_lapack
+  real*8, dimension(:,:,:,:), allocatable, public :: e_field, mnphi
+  real*8, dimension(:,:,:,:), allocatable, public :: e_field_lapack
+  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,fe_fe
   real*8, dimension(:,:,:,:), allocatable, public :: dir_struc_n
-  real*8, dimension(:,:,:,:), allocatable, public :: fe_fe,fe_fe_perp
-  real*8, dimension(:,:,:,:,:,:), allocatable, public :: s_ab_n
-  real*8, dimension(:,:,:,:,:), allocatable, public :: s_ab
-  real*8, dimension(:,:,:), allocatable, public :: field_struc
-  real*8, dimension(:,:,:), allocatable, public :: s_perp
-  real*8, dimension(:,:,:), allocatable, public :: field_struc_perp
-  complex*16, dimension(:,:,:), allocatable, public :: e_kx,e_ky,e_kz
-  complex*16, dimension(:,:,:), allocatable, public :: rho_k_m,rho_k_p
-  complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
+  real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf, s_ab_n
   complex*16, dimension(:,:,:,:), allocatable, public :: e_kx_t
-  complex*16, dimension(:,:,:), allocatable, public :: e_kx_perp,e_ky_perp
-  complex*16, dimension(:,:,:), allocatable, public :: e_kz_perp
+  complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
 
     ! probably more things need to go here
-  character(len=11), public :: lattfile
+  character(len=99), public :: lattfile_long, en_long, sq_en_long
+  character(len=99), public :: e_field_long, arg_long, ch_st_l, fi_st_l
+  character(len=99), public :: s_ab_l, s_p_l, dir_st_l, dir_d_s_l
+  character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file
+  character(:), allocatable :: dir_st_file, dir_dist_file
+  character(:), allocatable :: s_ab_file, s_perp_file
+  character(:), allocatable :: energy_file, sq_energy_file, e_field_file
 
   integer, public :: have_lgf = 0
   integer, public, parameter :: bz=2
-  integer, public :: have_grad_sq = 0
   real*8, public :: rot_ratio, g_ratio, hop_ratio
   real, parameter, public :: pi=3.141592653589793
   real, parameter, public :: twopi=6.283185307179586
