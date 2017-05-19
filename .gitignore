@@ -50,6 +50,7 @@ mr_*
 lattice.dat
 latts*
 revision*
+*.png
 
 
 # LaTeX extras
