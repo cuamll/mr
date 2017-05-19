@@ -270,9 +270,9 @@ module io
     real*8 :: dot, dot_avg, knorm, dist
     integer :: i, j, k, m, n, p, kx, ky, kz, dist_bin
     complex*16 :: imag, kdotx
-    complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,rho_p_avg,rho_m_avg
+    complex*16, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: e_kx_avg,rho_p_avg,rho_m_avg,ch_ch_avg,fe_fe_avg
     real*8, dimension(3,3,bz*(L+1),bz*(L+1),bz*(L+1)) :: s_ab_avg
-    real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: ch_ch_avg,fe_fe_avg,s_perp
+    real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: s_perp
     real*8, dimension(bz*(L+1),bz*(L+1),bz*(L+1)) :: charge_struc_avg,field_struc_avg
     real*8, dimension(L/2 + 1, L/2 + 1, L/2 + 1) :: dir_struc_avg
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
@@ -293,8 +293,8 @@ module io
     rho_p_avg = (0.0, 0.0)
     rho_m_avg = (0.0, 0.0)
     s_ab_avg = 0.0
-    fe_fe_avg = 0.0
-    ch_ch_avg = 0.0
+    fe_fe_avg = (0.0, 0.0)
+    ch_ch_avg = (0.0, 0.0)
     s_perp = 0.0
     charge_struc_avg = 0.0
     field_struc_avg = 0.0
@@ -307,10 +307,41 @@ module io
     dir_format_string = "(I2, I2, I2, ES18.9)"
     dir_dist_format_string = "(ES18.9, I8.1, ES18.9)"
 
+    !ch_ch_avg = sum(ch_ch,4)
+    !write (*,*) "ch_ch unnormalised",ch_ch_avg(L,L + 1,L + 1),ch_ch_avg(L + 1,L + 1,L + 1)
+    ch_ch_avg = (0.0,0.0)
+
+    !e_kx_avg = (sum(e_kx_t,4)) / no_measurements
+    !fe_fe_avg = (sum(fe_fe,4)) / no_measurements
+    !ch_ch_avg = (sum(ch_ch,4)) / no_measurements
+    !rho_p_avg = (sum(rho_k_p_t,4)) / no_measurements
+    !rho_m_avg = (sum(rho_k_m_t,4)) / no_measurements
+    !s_ab_avg = (sum(s_ab_n,6)) / no_measurements
+    !write (*,*) "ch_ch normalised with intrinsic sum",ch_ch_avg(L+1,L+1,L+1)
+
+    write (*,*) "s_ab normalised w/intrinsic at (-pi, 0, 0):",s_ab_avg(:,:,L-2,L+1,L+1)
+    !s_ab_avg = 0.0
+
+    !field_struc_avg = abs(fe_fe_avg - (e_kx_avg * e_kx_avg))
+    !charge_struc_avg = abs(ch_ch_avg - (rho_p_avg * rho_m_avg))
+    !write (*,*) "charge_struc at&
+    !  0,0,0 from intrinsics",ch_ch_avg(L+1,L+1,L+1),rho_p_avg(L+1,L+1,L+1),&
+    !  rho_m_avg(L+1,L+1,L+1),&
+    !  abs(ch_ch_avg(L+1,L+1,L+1))
+    !-(rho_p_avg(L+1,L+1,L+1)*rho_m_avg(L+1,L+1,L+1))
+
+    !e_kx_avg = (0.0,0.0)
+    !fe_fe_avg = (0.0,0.0)
+    !ch_ch_avg = (0.0,0.0)
+    !rho_p_avg = (0.0,0.0)
+    !rho_m_avg = (0.0,0.0)
+    !field_struc_avg = 0.0
+    !charge_struc_avg = 0.0
+
     do n = 1,no_measurements
-      do k = 1,bz*(L+1)
-        do j = 1,bz*(L+1)
-          do i = 1,bz*(L+1)
+      do k = 1,(bz * L) + 1
+        do j = 1,(bz * L) + 1
+          do i = 1,(bz * L) + 1
 
             e_kx_avg(i,j,k) = e_kx_avg(i,j,k) + e_kx_t(i,j,k,n)
             fe_fe_avg(i,j,k) = fe_fe_avg(i,j,k) + fe_fe(i,j,k,n)
@@ -359,20 +390,31 @@ module io
                 rho_p_avg = rho_p_avg / no_measurements
                 rho_m_avg = rho_m_avg / no_measurements
                 s_ab_avg = s_ab_avg / no_measurements
+                !write (*,*) "ch_ch normalised",ch_ch_avg(L,L + 1,L + 1),ch_ch_avg(L + 1,L + 1,L + 1)
 
                 ! direct space struc needs normalising by <n+><n->
                 dir_struc_avg = dir_struc_avg / (no_measurements * (0.5 * add_charges / L**3)**2)
+                !field_struc_avg = abs(fe_fe_avg - (e_kx_avg * e_kx_avg))
+                !charge_struc_avg = abs(ch_ch_avg - (rho_p_avg * rho_m_avg))
               end if
 
               field_struc_avg(i,j,k) = field_struc_avg(i,j,k) +&
                 abs(fe_fe_avg(i,j,k) - e_kx_avg(i,j,k)&
                 *e_kx_avg(i,j,k))
-              !charge_struc(i,j,k) = charge_struc(i,j,k) +&
-              !  abs(abs(ch_ch_avg(i,j,k)) - abs(rho_p_avg(i,j,k))&
-              !  *abs(rho_m_avg(i,j,k)))
+
+              !!if (i.eq.(L+1).and.j.eq.(L+1).and.k.eq.(L+1)) then
+              !!  write (*,*) "ch_ch normalised at 0.0.0",ch_ch_avg(L + 1,L + 1,L + 1)
+              !!  write (*,*)
+              !!end if
               charge_struc_avg(i,j,k) = charge_struc_avg(i,j,k) +&
                 abs(ch_ch_avg(i,j,k) - rho_p_avg(i,j,k)&
                 *rho_m_avg(i,j,k))
+
+              !if (k.eq.(L+1).and.j.eq.(L+1).and.i.eq.(L+1)) then
+                !write (*,*) "charge_struc calculating at 0,0,0",ch_ch_avg(i,j,k),rho_p_avg(i,j,k),rho_m_avg(i,j,k),ch_ch_avg(i,j,k)&
+                !  -rho_p_avg(i,j,k) * rho_m_avg(i,j,k),charge_struc_avg(i,j,k)
+              !end if
+              !write (*,*) charge_struc_avg(L,L,L),charge_struc_avg(L + 1,L + 1,L + 1)
 
               ! find kx, ky, kz from i,j,k and their norm
               kx = i - 1 - bz*(L/2)
@@ -386,6 +428,10 @@ module io
               !    kx*2*pi/(L*lambda),ky*2*pi/(L*lambda),&
               !    ch_ch_avg(i,j,k),rho_p_avg(i,j,k),rho_m_avg(i,j,k),charge_struc_avg(i,j,k)
               !end if
+
+              if (i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
+                write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,s_ab_avg(:,:,i,j,k)
+              end if
 
               if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
                 knorm = 0.0
@@ -409,6 +455,8 @@ module io
         end do ! j
       end do ! i
     end do ! n iteration loop
+    write (*,*) "rho_k_pm normalised at 0,0,0",rho_p_avg(L + 1,L + 1,L + 1),rho_m_avg(L + 1,L + 1,L + 1)
+    write (*,*) "charge_struc from normalised ch_ch",charge_struc_avg(L,L + 1,L + 1),charge_struc_avg(L + 1,L + 1,L + 1)
 
     !dist_r = dist_r / (no_measurements * (0.5 * add_charges / L**3)**2)
     dist_r = dist_r / (no_measurements)
