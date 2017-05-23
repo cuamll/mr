@@ -29,11 +29,11 @@ my $plottitle = "L = $length, $meas measurements from " .
                 "$steps MC steps, $chg charges";
 
 # construct the input and output files to pass to gnuplot
-# we're in $MR_DIR/scripts, so updir() gives the base directory
+# call this script from $MR_DIR! so curdir() gives the base directory
 my @filenames = ($fileprefix . 'charge_struc',
                  $fileprefix . 'field_struc',
                  $fileprefix . 's_perp');
-my $basedir = File::Spec->updir();
+my $basedir = File::Spec->curdir();
 my $inpath = "$basedir/out/";
 my $insuffix = '.dat';
 my $tempsuffix = '.temp';
