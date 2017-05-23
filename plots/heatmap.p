@@ -13,4 +13,4 @@ set lmargin at screen 0.15
 set rmargin at screen 0.85
 set title PLOTTITLE
 set palette defined (0 "black", 0.06 "navy", 0.12 "red", 0.18 "white")
-splot "<awk '{ if (NR>1014 && NR<1184) print $1,$2,$4 }' " . FILE w image title LINETITLE
+splot FILE w image title LINETITLE
