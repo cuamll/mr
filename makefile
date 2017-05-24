@@ -1,45 +1,65 @@
 # maggs-rossetto makefile
 GF = gfortran
 EXECNAME = mr_test
+MOD_DIR = mod
+OBJ_DIR = obj
+CFLAGS = -J$(MOD_DIR)
+
+$(shell mkdir -p $(MOD_DIR))
+$(shell mkdir -p $(OBJ_DIR))
+VPATH = $(OBJ_DIR)
+VPATH = $(MOD_DIR)
 
 # libraries in different directories on Mac
 UNAME = $(shell uname)
 REV = $(shell git rev-parse --short HEAD)
 
-
 DEBUG = 1
 ifeq ($(DEBUG), 1)
-	DEBUGFLAG = -g -p -ffpe-trap=underflow,denormal,overflow
+	DEBUGFLAGS = -g -pg -ffpe-trap=underflow,denormal,overflow
 else
-	DEBUG FLAG =
+	DEBUGFLAGS =
 endif
 
 ifeq ($(UNAME), Darwin)
 	LIBS = -llapack -L/opt/local/lib
-	CFLAGS = 
 	LFLAGS = $(DEBUGFLAG) $(LIBS)
 endif
 ifeq ($(UNAME), Linux)
 	LIBS = -llapack
-	CFLAGS =
 	LFLAGS = $(DEBUGFLAG) $(LIBS)
 endif
 
-OBJECTS = common.o io.o linear_solver.o setup.o
-MODS = $(OBJECTS:.o=.mod)
+SOURCES = common.f90\
+	  io.f90\
+	  linear_solver.f90\
+	  setup.f90
+
+OBJ_T1 = $(patsubst %.f90, %.o,$(SOURCES))
+OBJ_T2 = $(notdir $(OBJ_T1))
+OBJECTS = $(patsubst %.o, $(OBJ_DIR)/%.o,$(OBJ_T2))
+MOD_T1 = $(patsubst %.f90, %.mod,$(SOURCES))
+MOD_T2 = $(notdir $(MOD_T1))
+MODS = $(patsubst %.o, $(MOD_DIR)/%.o,$(MOD_T2))
 
 $(EXECNAME) : $(OBJECTS)
 	echo "character(len=7), parameter :: revision = '$(REV)'" > revision.inc
-	$(GF) $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
+	$(GF) $(CFLAGS)  $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
 
-%.o : %.f90
-	$(GF) $(DEBUGFLAG) -c $<
+$(OBJ_DIR)/%.o : %.f90
+	$(GF) $(CFLAGS) $(DEBUGFLAGS) -o $@ -c $<
 
 # add this if need be, can't be arsed to fuck around rn
-.PHONY: clean clean_obj clean_mod
+.PHONY: clean cleaner all remake clean_obj clean_mod
 
 clean:
-	\rm -f $(OBJECTS) $(MODS) $(EXECNAME) revision.inc
+	\rm -f $(EXECNAME) revision.inc
+
+cleaner:
+	\rm -rf $(OBJ_DIR) $(MOD_DIR) $(EXECNAME) revision.inc
+
+remake:
+	cleaner
 
 clean_obj:
 	\rm -f $(OBJECTS)
