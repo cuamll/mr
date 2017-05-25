@@ -105,6 +105,9 @@ module io
           case ('s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
             write (*,*) 'S_(⊥) file name: ',s_p_l
+          case ('field_charge_file')
+            read(buffer, '(a)', iostat=ios) fe_ch_l
+            write (*,*) 'Charge distribution file name: ',fe_ch_l
           case default
             write (*,*) 'Skipping invalid label at line ',line
           end select
@@ -201,6 +204,7 @@ module io
       dir_dist_file = trim(dir_d_s_l)
       s_ab_file = trim(s_ab_l)
       s_perp_file = trim(s_p_l)
+      field_charge_file = trim(fe_ch_l)
 
       !write (*,*) 'measurement sweeps = ',measurement_sweeps
       !write (*,*) 'sample interval = ',sample_interval

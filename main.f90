@@ -420,6 +420,16 @@ subroutine measure(step_number)
   !  end do
   !end do
 
+  ! need to make sure this appends to the file
+  open(unit=15, file=field_charge_file)
+
+  ! any way to do i, j, k, v(i,j,k), e_field(:,i,j,k)
+  ! without 3 massive unnecessary for loops?
+  ! or maybe just unformatted, then read in separately???
+  write (*,*) e_field, v
+
+  close (15)
+
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
 
