@@ -8,11 +8,13 @@ module common
   integer, dimension(:,:,:), allocatable, public :: v
   real*8, dimension(:), allocatable, public :: ebar, energy, sq_energy
   real*8, dimension(:,:,:,:), allocatable, public :: e_field, mnphi
-  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,fe_fe
-  real*8, dimension(:,:,:,:), allocatable, public :: dir_struc_n
-  real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf, s_ab_n
-  complex*16, dimension(:,:,:,:), allocatable, public :: e_kx_t
-  complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
+  complex*16, dimension(:,:,:), allocatable, public :: ch_ch,fe_fe
+  real(kind=16), dimension(:,:,:), allocatable, public :: charge_struc, field_struc
+  real(kind=16), dimension(:,:,:), allocatable, public :: dir_struc
+  real(kind=16), dimension(:,:,:,:,:,:), allocatable, public :: lgf
+  real(kind=16), dimension(:,:,:,:,:), allocatable, public :: s_ab
+  complex*16, dimension(:,:,:), allocatable, public :: e_kx
+  complex*16, dimension(:,:,:), allocatable, public :: rho_k_m,rho_k_p
 
     ! probably more things need to go here
   character(len=99), public :: lattfile_long, en_long, sq_en_long

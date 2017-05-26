@@ -400,12 +400,12 @@ subroutine measure(step_number)
   integer :: x,y,z,i,j,k,m,p,s,kx,ky,kz,n
   real*8 :: norm_k,u_tot_run
   complex*16 :: imag, kdotx
-  complex*16 :: e_ky, e_kz
+  complex*16 :: rho_k_p_temp, rho_k_m_temp, e_kx_temp, e_ky, e_kz
 
   imag = (0.0,1.0)
   u_tot_run = 0.0
 
-  ! array indexing: we don't sample at each step
+  ! if we want to write out quantities at every step
   n = step_number / sample_interval
 
   u_tot_run = 0.0
@@ -428,6 +428,9 @@ subroutine measure(step_number)
     do ky = (-1*L/2)*bz, (L/2)*bz
       do kx = (-1*L/2)*bz, (L/2)*bz
 
+        rho_k_p_temp = (0.0,0.0)
+        rho_k_m_temp = (0.0,0.0)
+        e_kx_temp = (0.0,0.0)
         e_ky = (0.0,0.0)
         e_kz = (0.0,0.0)
         kdotx = (0.0,0.0)
@@ -444,7 +447,7 @@ subroutine measure(step_number)
           norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
         end if
 
-        e_kx_t(i,j,k,n) = (0.0,0.0)
+        !e_kx_t(i,j,k,n) = (0.0,0.0)
 
         ! m,p,s are the real space coordinates
         do s = 1,L
@@ -457,8 +460,7 @@ subroutine measure(step_number)
 
               ! we want this for every step so we can
               ! average at the end to get field-field struc
-              e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n)&
-                              & + exp(kdotx)*e_field(1,m,p,s)
+              e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p,s)
 
               kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
                       ((p-(1.0/2))*ky) + ((s-1)*kz)))
@@ -478,20 +480,18 @@ subroutine measure(step_number)
                         ((s-1)*kz/(L*lambda))))
 
                 if (v(m,p,s).eq.-1) then
-                  rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n)&
-                                     & + v(m,p,s) * exp(kdotx)
+                  rho_k_m_temp = rho_k_m_temp + v(m,p,s) * exp(kdotx)
                 end if
 
                 if (v(m,p,s).eq.1) then ! take away <++>
-                  rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n)&
-                                     & + v(m,p,s)*exp(kdotx)
+                  rho_k_p_temp = rho_k_p_temp + v(m,p,s) * exp(kdotx)
                 end if
 
                 ! --- real space correlation function ---
 
-                if (kx.gt.0.and.kx.le.L&
-                  .and.ky.gt.0.and.ky.le.L&
-                  .and.kz.gt.0.and.kz.le.L) then
+                if (kx.gt.0.and.kx.le.L.and.&
+                    ky.gt.0.and.ky.le.L.and.&
+                    kz.gt.0.and.kz.le.L) then
 
                   ! this should sort it out. kx ky kz here are
                   ! the "r"s, m p s are the "zeros"
@@ -517,12 +517,11 @@ subroutine measure(step_number)
                       y = y + 1
                       z = z + 1
 
-                      dir_struc_n(x,y,z,n) = dir_struc_n(x,y,z,n) +&
+                      dir_struc(x,y,z) = dir_struc(x,y,z) +&
                               v(m,p,s) * v(kx,ky,kz)
                     end if ! neg charge at kx,ky,kz
                   end if ! pos charge at m,p,s
-
-                end if ! kx,ky,kz < L
+                end if ! kx, ky, kz < L
 
               end if ! end v != 0 check
 
@@ -530,26 +529,58 @@ subroutine measure(step_number)
           end do ! end p loop
         end do ! end m loop
 
-        ! normalise, idiot
-        rho_k_m_t(i,j,k,n) = rho_k_m_t(i,j,k,n) / float(L**3)
-        rho_k_p_t(i,j,k,n) = rho_k_p_t(i,j,k,n) / float(L**3)
-        e_kx_t(i,j,k,n) = e_kx_t(i,j,k,n) / float(L**3)
+        ! normalise by L**3 here, or at the end?
+        rho_k_m_temp = rho_k_m_temp / float(L**3)
+        rho_k_p_temp = rho_k_p_temp / float(L**3)
+        e_kx_temp = e_kx_temp / float(L**3)
         e_ky = e_ky / float(L**3)
         e_kz = e_kz / float(L**3)
 
-        ch_ch(i,j,k,n) = (rho_k_p_t(i,j,k,n) * conjg(rho_k_m_t(i,j,k,n)))
+        ch_ch(i,j,k) = ch_ch(i,j,k) +&
+        (rho_k_p_temp * conjg(rho_k_m_temp))
+        !if (n.eq.100.and.i.eq.(L+1).and.j.eq.(L+1).and.k.eq.(L+1)) then
+        !  write (*,*) kx,ky,kz,n,ch_ch(i,j,k),rho_k_p_temp,rho_k_m_temp
+        !end if
+        !if (mod(n,10).eq.0) then
+        !  write (*,*) i,j,k,n,(rho_k_p_temp * conjg(rho_k_m_temp))
+        !end if
 
-        fe_fe(i,j,k,n) = (e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n)))
 
-        s_ab_n(1,1,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kx_t(i,j,k,n))
-        s_ab_n(1,2,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_ky)
-        s_ab_n(1,3,i,j,k,n) = e_kx_t(i,j,k,n)*conjg(e_kz)
-        s_ab_n(2,1,i,j,k,n) = e_ky*conjg(e_kx_t(i,j,k,n))
-        s_ab_n(2,2,i,j,k,n) = e_ky*conjg(e_ky)
-        s_ab_n(2,3,i,j,k,n) = e_ky*conjg(e_kz)
-        s_ab_n(3,1,i,j,k,n) = e_kz*conjg(e_kx_t(i,j,k,n))
-        s_ab_n(3,2,i,j,k,n) = e_kz*conjg(e_ky)
-        s_ab_n(3,3,i,j,k,n) = e_kz*conjg(e_kz)
+        charge_struc(i,j,k) = charge_struc(i,j,k) +&
+        abs(ch_ch(i,j,k) - rho_k_p_temp*rho_k_m_temp)
+
+        fe_fe(i,j,k) = fe_fe(i,j,k) +&
+        (e_kx_temp*conjg(e_kx_temp))
+
+        field_struc(i,j,k) = field_struc(i,j,k) +&
+        abs(fe_fe(i,j,k) - e_kx_temp*e_kx_temp)
+
+        if (n.eq.100.and.i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
+          write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,e_kx_temp,e_ky,e_kz
+        end if
+
+        s_ab(1,1,i,j,k) = s_ab(1,1,i,j,k) +&
+        e_kx_temp*conjg(e_kx_temp)
+        s_ab(1,2,i,j,k) = s_ab(1,2,i,j,k) +&
+        e_kx_temp*conjg(e_ky)
+        s_ab(1,3,i,j,k) = s_ab(1,3,i,j,k) +&
+        e_kx_temp*conjg(e_kz)
+        s_ab(2,1,i,j,k) = s_ab(2,1,i,j,k) +&
+        e_ky*conjg(e_kx_temp)
+        s_ab(2,2,i,j,k) = s_ab(2,2,i,j,k) +&
+        e_ky*conjg(e_ky)
+        s_ab(2,3,i,j,k) = s_ab(2,3,i,j,k) +&
+        e_ky*conjg(e_kz)
+        s_ab(3,1,i,j,k) = s_ab(3,1,i,j,k) +&
+        e_kz*conjg(e_kx_temp)
+        s_ab(3,2,i,j,k) = s_ab(3,2,i,j,k) +&
+        e_kz*conjg(e_ky)
+        s_ab(3,3,i,j,k) = s_ab(3,3,i,j,k) +&
+        e_kz*conjg(e_kz)
+
+        rho_k_m(i,j,k) = rho_k_m(i,j,k) + rho_k_m_temp
+        rho_k_p(i,j,k) = rho_k_p(i,j,k) + rho_k_p_temp
+        e_kx(i,j,k) = e_kx(i,j,k) + e_kx_temp
 
         ! end kz,ky,kx loops
       end do

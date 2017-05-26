@@ -17,13 +17,15 @@ module setup
     allocate(e_field(3,L,L,L))
     allocate(mnphi(3,L,L,L))
     allocate(lgf(L,L,L,L,L,L))
-    allocate(ch_ch(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(rho_k_m_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(rho_k_p_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(dir_struc_n(L/2 + 1,L/2 + 1,L/2 + 1,no_measurements))
-    allocate(e_kx_t(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(fe_fe(bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
-    allocate(s_ab_n(3,3,bz*(L+1),bz*(L+1),bz*(L+1),no_measurements))
+    allocate(ch_ch((bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(rho_k_m((bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(rho_k_p((bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(dir_struc(L/2 + 1,L/2 + 1,L/2 + 1))
+    allocate(e_kx((bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(fe_fe((bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(charge_struc((bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(field_struc((bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(s_ab(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
     allocate(energy(no_measurements + 1))
     allocate(sq_energy(no_measurements + 1))
 
@@ -34,13 +36,13 @@ module setup
     e_field = 0.0
     mnphi = 0.0
     lgf = 0.0
-    ch_ch = 0.0
-    rho_k_m_t = 0.0
-    rho_k_p_t = 0.0
-    dir_struc_n = 0.0
-    e_kx_t = 0.0
-    fe_fe = 0.0
-    s_ab_n = 0.0
+    ch_ch = (0.0,0.0)
+    rho_k_m = (0.0,0.0)
+    rho_k_p = (0.0,0.0)
+    dir_struc = 0.0
+    e_kx = (0.0,0.0)
+    fe_fe = (0.0,0.0)
+    s_ab = 0.0
     energy = 0.0
     sq_energy= 0.0
 
@@ -56,12 +58,12 @@ module setup
     deallocate(mnphi)
     deallocate(lgf)
     deallocate(ch_ch)
-    deallocate(rho_k_m_t)
-    deallocate(rho_k_p_t)
-    deallocate(dir_struc_n)
-    deallocate(e_kx_t)
+    deallocate(rho_k_m)
+    deallocate(rho_k_p)
+    deallocate(dir_struc)
+    deallocate(e_kx)
     deallocate(fe_fe)
-    deallocate(s_ab_n)
+    deallocate(s_ab)
 
   end subroutine deallocations
 
