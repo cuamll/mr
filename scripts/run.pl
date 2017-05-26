@@ -1,4 +1,4 @@
-#!/bin/perl
+#!/opt/local/bin/perl
 # perl script to run maggs-rossetto code
 # then do some bookkeeping with the output
 use strict;

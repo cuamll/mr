@@ -395,17 +395,20 @@ end subroutine mc_sweep
 
 subroutine measure(step_number)
   use common
+  use linear_solver
   implicit none
   logical :: field_ch_exist
-  character(55) :: f_ch_format
+  character(100) :: f_ch_format
   integer,intent(in) :: step_number
   integer :: x,y,z,i,j,k,m,p,s,kx,ky,kz,n
   real*8 :: norm_k,u_tot_run
+  real*8, dimension(3) :: e_rot_temp
   complex*16 :: imag, kdotx
   complex*16 :: rho_k_p_temp, rho_k_m_temp, e_kx_temp, e_ky, e_kz
 
   imag = (0.0,1.0)
-  f_ch_format = '(I5.1, I3.1, I3.1, I3.1, ES18.9, ES18.9, ES18.9, I3.1)'
+  f_ch_format = '(I5.1, I3.1, I3.1, I3.1, I3.1, &
+  ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)'
 
   ! if we want to write out quantities at every step
   n = step_number / sample_interval
@@ -427,6 +430,9 @@ subroutine measure(step_number)
 
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
+
+  ! get irrotational part of field
+  call linsol
 
   ! --- FOURIER TRANSFORMS ---
   do kz = (-1*L/2)*bz, (L/2)*bz
@@ -454,10 +460,13 @@ subroutine measure(step_number)
 
         if (i.le.L.and.j.le.L.and.k.le.L) then
 
+          ! write out charge dist., irrotational field, total field
+
           ! could do this unformatted if we're just
           ! gonna read it back into fortran anyway
-          write (15,f_ch_format) n, i, j, k, e_field(1,i,j,k),&
-                   e_field(2,i,j,k), e_field(3,i,j,k), v(i,j,k)
+          write (15,f_ch_format) n, i, j, k, v(i,j,k),&
+          mnphi(1,i,j,k), mnphi(2,i,j,k), mnphi(3,i,j,k),&
+          e_field(1,i,j,k), e_field(2,i,j,k), e_field(3,i,j,k)
 
         end if
 
