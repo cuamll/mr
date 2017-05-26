@@ -2,6 +2,10 @@ module io
   use common
   implicit none
   logical, private :: start_file_there
+  character(len = 100) :: label, buffer
+  integer :: posit
+  integer :: ios = 0
+  integer :: line = 0
 
   contains
 
@@ -12,31 +16,103 @@ module io
 
     inquire(file=arg,exist=start_file_there)
     if (start_file_there) then
-      open(unit=1, file=arg)
-      read(1,'(I10.1)') L
-      read(1,'(I10.1)') therm_sweeps
-      read(1,'(I10.1)') measurement_sweeps
-      read(1,'(I10.1)') sample_interval
-      read(1,'(F10.1)') temp
-      read(1,'(F10.1)') lambda
-      read(1,'(F10.1)') q
-      read(1,'(F10.1)') rot_delt
-      read(1,'(I10.1)') add_charges
-      read(1,'(I10.1)') seed
-      read(1,'(F10.1)') hop_ratio
-      read(1,'(F10.1)') rot_ratio
-      read(1,'(F10.1)') g_ratio
-      read(1,'(F10.1)') bin_size
-      read(1,'(a)') lattfile_long
-      read(1,'(a)') en_long
-      read(1,'(a)') sq_en_long
-      read(1,'(a)') e_field_long
-      read(1,'(a)') ch_st_l
-      read(1,'(a)') fi_st_l
-      read(1,'(a)') dir_st_l
-      read(1,'(a)') dir_d_s_l
-      read(1,'(a)') s_ab_l
-      read(1,'(a)') s_p_l
+      write (*,*)
+      write (*,*) "--- INPUT PARAMETERS: ---"
+      write (*,*) "Input file: ",arg
+
+      open(unit=10, file=arg)
+
+      do while (ios == 0)
+        read(10, '(A)', iostat=ios) buffer
+        if (ios == 0) then
+          line = line + 1
+
+          ! Split at whitespace
+          posit = scan(buffer, ' ')
+          label = buffer(1:posit)
+          buffer = buffer(posit + 1:)
+
+          select case (label)
+          case ('L')
+            read(buffer, '(I10.1)', iostat=ios) L
+            write (*,*) 'System size: ',L
+          case ('thermalisation_sweeps')
+            read(buffer, '(I10.1)', iostat=ios) therm_sweeps
+            write (*,*) 'Thermalisation sweeps: ',therm_sweeps
+          case ('measurement_sweeps')
+            read(buffer, '(I10.1)', iostat=ios) measurement_sweeps
+            write (*,*) 'Measurement sweeps: ',measurement_sweeps
+          case ('sample_interval')
+            read(buffer, '(I10.1)', iostat=ios) sample_interval
+            write (*,*) 'Sample interval: ',sample_interval
+          case ('temperature')
+            read(buffer, '(F10.1)', iostat=ios) temp
+            write (*,*) 'Temperature: ',temp
+          case ('lattice_spacing')
+            read(buffer, '(F10.1)', iostat=ios) lambda
+            write (*,*) 'Lattice spacing: ',lambda
+          case ('charge_value')
+            read(buffer, '(F10.1)', iostat=ios) q
+            write (*,*) 'Charge value: ',q
+          case ('delta_max')
+            read(buffer, '(F10.1)', iostat=ios) rot_delt
+            write (*,*) 'Δ_max for rot. update: ',rot_delt
+          case ('charges')
+            read(buffer, '(I10.1)', iostat=ios) add_charges
+            write (*,*) 'Charges: ',add_charges
+          case ('rng_seed')
+            read(buffer, '(I10.1)', iostat=ios) seed
+            write (*,*) 'RNG seed: ',seed
+          case ('hop_ratio')
+            read(buffer, '(F10.1)', iostat=ios) hop_ratio
+            write (*,*) 'Ratio of hop updates: ',hop_ratio
+          case ('rot_ratio')
+            read(buffer, '(F10.1)', iostat=ios) rot_ratio
+            write (*,*) 'Ratio of rotational updates: ',rot_ratio
+          case ('harmonic_ratio')
+            read(buffer, '(F10.1)', iostat=ios) g_ratio
+            write (*,*) 'Ratio of harmonic updates: ',g_ratio
+          case ('bin_size')
+            read(buffer, '(F10.1)', iostat=ios) bin_size
+            write (*,*) 'Bin size for real space corr.: ',bin_size
+          case ('lattice_file')
+            read(buffer, '(a)', iostat=ios) lattfile_long
+            write (*,*) 'Lattice file name: ',lattfile_long
+          case ('energy_file')
+            read(buffer, '(a)', iostat=ios) en_long
+            write (*,*) 'Energy file name: ',en_long
+          case ('squared_energy_file')
+            read(buffer, '(a)', iostat=ios) sq_en_long
+            write (*,*) 'Squared energy file name: ',sq_en_long
+          case ('electric_field_file')
+            read(buffer, '(a)', iostat=ios) e_field_long
+            write (*,*) 'Electric field file name: ',e_field_long
+          case ('charge_structure_factor_file')
+            read(buffer, '(a)', iostat=ios) ch_st_l
+            write (*,*) 'Charge-charge structure factor file name: ',ch_st_l
+          case ('field_structure_factor_file')
+            read(buffer, '(a)', iostat=ios) fi_st_l
+            write (*,*) 'Field-field structure factor file name: ',fi_st_l
+          case ('direct_space_structure_factor_file')
+            read(buffer, '(a)', iostat=ios) dir_st_l
+            write (*,*) 'Direct space structure factor file name: ',dir_st_l
+          case ('direct_space_g(r)_file')
+            read(buffer, '(a)', iostat=ios) dir_d_s_l
+            write (*,*) 'Direct space g(r) file name: ',dir_d_s_l
+          case ('s^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) s_ab_l
+            write (*,*) 'S^(α β) file name: ',s_ab_l
+          case ('s_(perp)_file')
+            read(buffer, '(a)', iostat=ios) s_p_l
+            write (*,*) 'S_(⊥) file name: ',s_p_l
+          case ('field_charge_file')
+            read(buffer, '(a)', iostat=ios) fe_ch_l
+            write (*,*) 'Charge distribution file name: ',fe_ch_l
+          case default
+            write (*,*) 'Skipping invalid label at line ',line
+          end select
+        end if
+      end do
 
       ! Check parameters are physically reasonable
       if (modulo(L,2)==1) then
@@ -128,35 +204,7 @@ module io
       dir_dist_file = trim(dir_d_s_l)
       s_ab_file = trim(s_ab_l)
       s_perp_file = trim(s_p_l)
-
-      write (*,*)
-      write (*,*) "--- INPUT PARAMETERS: ---"
-      write (*,*) 'L = ',L
-      write (*,*) 'thermalisation sweeps = ',therm_sweeps
-      write (*,*) 'measurement sweeps = ',measurement_sweeps
-      write (*,*) 'sample interval = ',sample_interval
-      write (*,*) "no. of measurements = measurement sweeps"&
-      &"/ sample interval = ",no_measurements
-      write (*,*) 'T = ',temp
-      write (*,*) 'lattice spacing = ',lambda
-      write (*,*) 'charge value = ',q
-      write (*,*) '\Delta_{max} for rotational update = ',rot_delt
-      write (*,*) 'number of charges (0 reads in lattice file) = ',add_charges
-      write (*,*) 'RNG seed = ',seed
-      write (*,*) 'ratio of charge hop updates = ',hop_ratio
-      write (*,*) 'ratio of rotational updates = ',rot_ratio
-      write (*,*) 'ratio of harmonic mode updates = ',g_ratio
-      write (*,*) 'bin size for radial correlation function = ',bin_size
-      write (*,*) 'lattice file to read in (if necessary): ',lattfile
-      write (*,*) 'energy file: ',energy_file
-      write (*,*) 'squared energy file: ',sq_energy_file
-      write (*,*) 'E-field file: ',e_field_file
-      write (*,*) 'charge struc file: ',charge_st_file
-      write (*,*) 'field struc file: ',field_st_file
-      write (*,*) 'direct space charge struc file: ',dir_st_file
-      write (*,*) 'direct space corr. by distance: ',dir_dist_file
-      write (*,*) 'S^{alpha beta} file: ',s_ab_file
-      write (*,*) 'S_perp file: ',s_perp_file
+      field_charge_file = trim(fe_ch_l)
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg

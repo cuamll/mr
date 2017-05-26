@@ -256,7 +256,7 @@ subroutine mc_sweep
     glob = 0
   end if
 
-  mu1 = 0; increment = 0.0; 
+  mu1 = 0; increment = 0.0;
   u_tot = 0.0
   u_tot = 0.5 * eps_0 * sum(e_field * e_field)
 
@@ -396,6 +396,8 @@ end subroutine mc_sweep
 subroutine measure(step_number)
   use common
   implicit none
+  logical :: field_ch_exist
+  character(55) :: f_ch_format
   integer,intent(in) :: step_number
   integer :: x,y,z,i,j,k,m,p,s,kx,ky,kz,n
   real*8 :: norm_k,u_tot_run
@@ -403,7 +405,7 @@ subroutine measure(step_number)
   complex*16 :: rho_k_p_temp, rho_k_m_temp, e_kx_temp, e_ky, e_kz
 
   imag = (0.0,1.0)
-  u_tot_run = 0.0
+  f_ch_format = '(I5.1, I3.1, I3.1, I3.1, ES18.9, ES18.9, ES18.9, I3.1)'
 
   ! if we want to write out quantities at every step
   n = step_number / sample_interval
@@ -411,14 +413,17 @@ subroutine measure(step_number)
   u_tot_run = 0.0
   u_tot_run = 0.5 * eps_0 * sum(e_field * e_field)
 
-  !do z = 1,L
-  !  do y = 1,L
-  !    do x = 1,L
-  !      u_tot_run = u_tot_run + 0.5 * eps_0 *&
-  !                  (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
-  !    end do
-  !  end do
-  !end do
+  ! if this is the first step, start a new file;
+  ! otherwise append to the file that's there
+  inquire(file=field_charge_file, exist=field_ch_exist)
+  if (n.eq.1) then
+    open(15, file=field_charge_file)
+  else if (field_ch_exist) then
+    open(15, file=field_charge_file, position="append", action="write")
+  else
+    write (*,*) "Fields/charges file does not exist? Current step is ",n
+    open(15, file=field_charge_file)
+  end if
 
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
@@ -447,7 +452,14 @@ subroutine measure(step_number)
           norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
         end if
 
-        !e_kx_t(i,j,k,n) = (0.0,0.0)
+        if (i.le.L.and.j.le.L.and.k.le.L) then
+
+          ! could do this unformatted if we're just
+          ! gonna read it back into fortran anyway
+          write (15,f_ch_format) n, i, j, k, e_field(1,i,j,k),&
+                   e_field(2,i,j,k), e_field(3,i,j,k), v(i,j,k)
+
+        end if
 
         ! m,p,s are the real space coordinates
         do s = 1,L
@@ -555,9 +567,9 @@ subroutine measure(step_number)
         field_struc(i,j,k) = field_struc(i,j,k) +&
         abs(fe_fe(i,j,k) - e_kx_temp*e_kx_temp)
 
-        if (n.eq.100.and.i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
-          write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,e_kx_temp,e_ky,e_kz
-        end if
+        !if (n.eq.100.and.i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
+        !  write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,e_kx_temp,e_ky,e_kz
+        !end if
 
         s_ab(1,1,i,j,k) = s_ab(1,1,i,j,k) +&
         e_kx_temp*conjg(e_kx_temp)
@@ -586,5 +598,7 @@ subroutine measure(step_number)
       end do
     end do
   end do
+
+  close(15)
 
 end subroutine measure

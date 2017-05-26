@@ -19,10 +19,10 @@ module common
     ! probably more things need to go here
   character(len=99), public :: lattfile_long, en_long, sq_en_long
   character(len=99), public :: e_field_long, arg_long, ch_st_l, fi_st_l
-  character(len=99), public :: s_ab_l, s_p_l, dir_st_l, dir_d_s_l
+  character(len=99), public :: s_ab_l, s_p_l, dir_st_l, dir_d_s_l, fe_ch_l
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file
   character(:), allocatable :: dir_st_file, dir_dist_file
-  character(:), allocatable :: s_ab_file, s_perp_file
+  character(:), allocatable :: s_ab_file, s_perp_file, field_charge_file
   character(:), allocatable :: energy_file, sq_energy_file, e_field_file
 
   integer, public :: have_lgf = 0
