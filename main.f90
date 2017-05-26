@@ -396,6 +396,8 @@ end subroutine mc_sweep
 subroutine measure(step_number)
   use common
   implicit none
+  logical :: field_ch_exist
+  character(55) :: f_ch_format
   integer,intent(in) :: step_number
   integer :: x,y,z,i,j,k,m,p,s,kx,ky,kz,n
   real*8 :: norm_k,u_tot_run
@@ -404,6 +406,7 @@ subroutine measure(step_number)
 
   imag = (0.0,1.0)
   u_tot_run = 0.0
+  f_ch_format = '(I5.1, I3.1, I3.1, I3.1, ES18.9, ES18.9, ES18.9, I3.1)'
 
   ! array indexing: we don't sample at each step
   n = step_number / sample_interval
@@ -411,24 +414,17 @@ subroutine measure(step_number)
   u_tot_run = 0.0
   u_tot_run = 0.5 * eps_0 * sum(e_field * e_field)
 
-  !do z = 1,L
-  !  do y = 1,L
-  !    do x = 1,L
-  !      u_tot_run = u_tot_run + 0.5 * eps_0 *&
-  !                  (e_x(x,y,z)**2 + e_y(x,y,z)**2 + e_z(x,y,z)**2)
-  !    end do
-  !  end do
-  !end do
-
-  ! need to make sure this appends to the file
-  open(unit=15, file=field_charge_file)
-
-  ! any way to do i, j, k, v(i,j,k), e_field(:,i,j,k)
-  ! without 3 massive unnecessary for loops?
-  ! or maybe just unformatted, then read in separately???
-  write (*,*) e_field, v
-
-  close (15)
+  ! if this is the first step, start a new file;
+  ! otherwise append to the file that's there
+  inquire(file=field_charge_file, exist=field_ch_exist)
+  if (n.eq.1) then
+    open(15, file=field_charge_file)
+  else if (field_ch_exist) then
+    open(15, file=field_charge_file, position="append", action="write")
+  else
+    write (*,*) "Fields/charges file does not exist? Current step is ",n
+    open(15, file=field_charge_file)
+  end if
 
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
@@ -447,6 +443,15 @@ subroutine measure(step_number)
         i = kx + 1 + bz*(L/2)
         j = ky + 1 + bz*(L/2)
         k = kz + 1 + bz*(L/2)
+
+        if (i.le.L.and.j.le.L.and.k.le.L) then
+
+          ! could do this unformatted if we're just
+          ! gonna read it back into fortran anyway
+          write (15,f_ch_format) n, i, j, k, e_field(1,i,j,k),&
+                   e_field(2,i,j,k), e_field(3,i,j,k), v(i,j,k)
+
+        end if
 
         if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
           norm_k = 0.0
@@ -565,5 +570,7 @@ subroutine measure(step_number)
       end do
     end do
   end do
+
+  close(15)
 
 end subroutine measure
