@@ -20,10 +20,10 @@ module io
       write (*,*) "--- INPUT PARAMETERS: ---"
       write (*,*) "Input file: ",arg
 
-      open(unit=1, file=arg)
+      open(unit=10, file=arg)
 
       do while (ios == 0)
-        read(1, '(A)', iostat=ios) buffer
+        read(10, '(A)', iostat=ios) buffer
         if (ios == 0) then
           line = line + 1
 
@@ -237,7 +237,7 @@ module io
       stop
     end if
 
-    close(1)
+    close(10)
 
   end subroutine read_input
 

@@ -405,7 +405,6 @@ subroutine measure(step_number)
   complex*16 :: e_ky, e_kz
 
   imag = (0.0,1.0)
-  u_tot_run = 0.0
   f_ch_format = '(I5.1, I3.1, I3.1, I3.1, ES18.9, ES18.9, ES18.9, I3.1)'
 
   ! array indexing: we don't sample at each step
