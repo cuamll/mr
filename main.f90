@@ -389,9 +389,11 @@ subroutine mc_sweep
   u_tot = 0.0
   u_tot = 0.5 * eps_0 * sum(e_field * e_field)
 
-  ! --- END OF UPDATE BLOCKS ---
+  ! --- END OF UPDATE BLOCKS --- !
 
 end subroutine mc_sweep
+
+! --- MEASURE RELEVANT QUANTITIES --- !
 
 subroutine measure(step_number)
   use common
@@ -420,12 +422,12 @@ subroutine measure(step_number)
   ! otherwise append to the file that's there
   inquire(file=field_charge_file, exist=field_ch_exist)
   if (n.eq.1) then
-    open(15, file=field_charge_file)
+    open(15, file=field_charge_file, status="replace", action="write",access="stream",form="unformatted")
   else if (field_ch_exist) then
-    open(15, file=field_charge_file, position="append", action="write")
+    open(15, file=field_charge_file, status="old", position="append", action="write", access="stream", form="unformatted")
   else
     write (*,*) "Fields/charges file does not exist? Current step is ",n
-    open(15, file=field_charge_file)
+    open(15, file=field_charge_file, status="new", action="write",access="stream",form="unformatted")
   end if
 
   energy(n + 1) = u_tot_run
@@ -433,6 +435,21 @@ subroutine measure(step_number)
 
   ! get irrotational part of field
   call linsol
+
+  write(15) e_field
+  write(15) mnphi
+  write(15) v
+
+  !write (*,*) "charge dist. during simulation:"
+  !write (*,*) n
+
+  !do k = 1,L
+  !  do j = 1,L
+  !    do i = 1,L
+  !      write(*,*) i, j, k, v(i,j,k)
+  !    end do
+  !  end do
+  !end do
 
   ! --- FOURIER TRANSFORMS ---
   do kz = (-1*L/2)*bz, (L/2)*bz
@@ -464,9 +481,9 @@ subroutine measure(step_number)
 
           ! could do this unformatted if we're just
           ! gonna read it back into fortran anyway
-          write (15,f_ch_format) n, i, j, k, v(i,j,k),&
-          mnphi(1,i,j,k), mnphi(2,i,j,k), mnphi(3,i,j,k),&
-          e_field(1,i,j,k), e_field(2,i,j,k), e_field(3,i,j,k)
+          !write (15,f_ch_format) n, i, j, k, v(i,j,k),&
+          !mnphi(1,i,j,k), mnphi(2,i,j,k), mnphi(3,i,j,k),&
+          !e_field(1,i,j,k), e_field(2,i,j,k), e_field(3,i,j,k)
 
         end if
 
@@ -565,7 +582,6 @@ subroutine measure(step_number)
         !if (mod(n,10).eq.0) then
         !  write (*,*) i,j,k,n,(rho_k_p_temp * conjg(rho_k_m_temp))
         !end if
-
 
         charge_struc(i,j,k) = charge_struc(i,j,k) +&
         abs(ch_ch(i,j,k) - rho_k_p_temp*rho_k_m_temp)

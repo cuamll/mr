@@ -1,4 +1,4 @@
-#!/bin/perl
+#!/opt/local/bin/perl
 # PRELIMINARY!
 # i'm probably gonna expand the scripting to automate more stuff.
 # currently this just plots heatmaps of correlation functions
@@ -14,6 +14,7 @@ my $steps;
 my $chg;
 my $kz;
 my $fileprefix;
+my $outputpath;
 my @inputfiles;
 my @outputfiles;
 my @tempfiles;
@@ -24,15 +25,21 @@ $input = GetOptions ("l=i"=> \$length,
                      "s=s"=> \$steps,
                      "c=i"=> \$chg,
                      "k=i"=> \$kz,
-                     "fp=s"=> \$fileprefix);
+                     "fp=s"=> \$fileprefix,
+                     "o=s"=> \$outputpath);
 my $plottitle = "L = $length, $meas measurements from " .
                 "$steps MC steps, $chg charges";
 
 # construct the input and output files to pass to gnuplot
 # call this script from $MR_DIR! so curdir() gives the base directory
-my @filenames = ($fileprefix . 'charge_struc',
-                 $fileprefix . 'field_struc',
-                 $fileprefix . 's_perp');
+my @filenames = ('charge_struc',
+                 'alt_charge_struc',
+                 'field_struc',
+                 'alt_field_struc',
+                 'irrot_field_struc',
+                 's_perp',
+                 'alt_s_perp_total');
+
 my $basedir = File::Spec->curdir();
 my $inpath = "$basedir/out/";
 my $insuffix = '.dat';
@@ -50,7 +57,7 @@ for my $i (0..$#filenames) {
   my $awkcall;
   push @inputfiles, $inpath . $filenames[$i] . $insuffix;
   push @tempfiles, $inpath . $filenames[$i] . $tempsuffix;
-  push @outputfiles, $plotpath . $filenames[$i] . $plotsuffix;
+  push @outputfiles, $outputpath . $filenames[$i] . $plotsuffix;
 
   $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
   system($awkcall);
@@ -58,8 +65,12 @@ for my $i (0..$#filenames) {
 }
 
 my @linetitles = ("Charge-charge structure factor at k_z = $kz",
+                  "Charge-charge structure factor (read from unformatted file) at k_z = $kz",
                   "Field-field structure factor at k_z = $kz",
-                  "S_{⟂} at k_z = $kz");
+                  "Field-field structure factor (read from unformatted file) at k_z = $kz",
+                  "Field-field structure factor - irrotational - at k_z = $kz",
+                  "S_{⟂} at k_z = $kz",
+                  "S_{⟂} (read from unformatted file) at k_z = $kz");
 
 warn "Different number of titles and files!\n" unless @linetitles == @filenames;
 
