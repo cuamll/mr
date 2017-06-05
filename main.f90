@@ -395,6 +395,7 @@ end subroutine mc_sweep
 
 subroutine measure(step_number)
   use common
+  use linear_solver
   implicit none
   logical :: field_ch_exist
   character(55) :: f_ch_format
@@ -417,13 +418,21 @@ subroutine measure(step_number)
   ! otherwise append to the file that's there
   inquire(file=field_charge_file, exist=field_ch_exist)
   if (n.eq.1) then
-    open(15, file=field_charge_file)
+    open(15, file=field_charge_file, status="replace", action="write",access="stream",form="unformatted")
   else if (field_ch_exist) then
-    open(15, file=field_charge_file, position="append", action="write")
+    open(15, file=field_charge_file, status="old", position="append", action="write", access="stream", form="unformatted")
   else
     write (*,*) "Fields/charges file does not exist? Current step is ",n
-    open(15, file=field_charge_file)
+    open(15, file=field_charge_file, status="new", action="write",access="stream",form="unformatted")
   end if
+
+
+  ! get irrotational part of field
+  call linsol
+
+  write(15) e_field
+  write(15) mnphi
+  write(15) v
 
   energy(n + 1) = u_tot_run
   sq_energy(n + 1) = u_tot_run**2
@@ -443,14 +452,14 @@ subroutine measure(step_number)
         j = ky + 1 + bz*(L/2)
         k = kz + 1 + bz*(L/2)
 
-        if (i.le.L.and.j.le.L.and.k.le.L) then
+        !if (i.le.L.and.j.le.L.and.k.le.L) then
 
           ! could do this unformatted if we're just
           ! gonna read it back into fortran anyway
-          write (15,f_ch_format) n, i, j, k, e_field(1,i,j,k),&
-                   e_field(2,i,j,k), e_field(3,i,j,k), v(i,j,k)
+          !write (15,f_ch_format) n, i, j, k, e_field(1,i,j,k),&
+          !         e_field(2,i,j,k), e_field(3,i,j,k), v(i,j,k)
 
-        end if
+        !end if
 
         if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
           norm_k = 0.0

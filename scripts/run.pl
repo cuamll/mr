@@ -1,4 +1,4 @@
-#!/bin/perl
+#!/opt/local/bin/perl
 # perl script to run maggs-rossetto code
 # then do some bookkeeping with the output
 use strict;
@@ -43,7 +43,7 @@ my $outdir = "$basedir/out";
 my $logdir = "$outdir/logs";
 my $timedir = "$outdir/$timestamp";
 print "Creating directories $logdir and $timedir .\n";
-make_path($logdir,$timedir);
+make_path($logdir,$timedir,"$timedir/plots");
 
 my $logfile = "$logdir/$timestamp.log";
 
@@ -110,3 +110,8 @@ close($dh);
 
 # then probably averaging stuff on the raw output, e_fields and charge dist.
 # then gnuplot
+my $plotfile = "$basedir/scripts/plot.pl";
+my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
+my $kz = 0;
+my $plotcmd = qq[./$plotfile -l=$parameters{L} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$timestamp" -o="$timedir/plots/"];
+system($plotcmd);
