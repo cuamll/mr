@@ -754,9 +754,9 @@ module io
     s_ab_irrot = s_ab_irrot / no_measurements
 
     ! not sure if this is okay
-    charge_struc = ch_ch - (rho_k_p*conjg(rho_k_m))
-    field_struc = fe_fe - (e_kx*conjg(e_kx))
-    field_struc_irrot = fe_fe_irrot - (mnphi_kx*conjg(mnphi_kx))
+    !charge_struc = ch_ch - (rho_k_p*conjg(rho_k_m))
+    !field_struc = fe_fe - (e_kx*conjg(e_kx))
+    !field_struc_irrot = fe_fe_irrot - (mnphi_kx*conjg(mnphi_kx))
     !charge_struc = ch_ch
     !field_struc = fe_fe
     !field_struc_irrot = fe_fe_irrot
@@ -853,9 +853,9 @@ module io
 
           if (k.le.(bz*L + 1).and.j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
 
-            charge_struc = ch_ch - (rho_k_p*conjg(rho_k_m))
-            field_struc = fe_fe - (e_kx*conjg(e_kx))
-            field_struc_irrot = fe_fe_irrot - (mnphi_kx*conjg(mnphi_kx))
+            charge_struc(i,j,k) = abs(ch_ch(i,j,k) - (rho_k_p(i,j,k)*conjg(rho_k_m(i,j,k))))
+            field_struc(i,j,k) = abs(fe_fe(i,j,k) - (e_kx(i,j,k)*conjg(e_kx(i,j,k))))
+            field_struc_irrot(i,j,k) = abs(fe_fe_irrot(i,j,k) - (mnphi_kx(i,j,k)*conjg(mnphi_kx(i,j,k))))
             write (11, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
