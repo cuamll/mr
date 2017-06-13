@@ -11,7 +11,7 @@ program mr
   include 'revision.inc'
   integer :: i, j, k, tot_q
   real*8 :: start_time, end_time
-  real*8, dimension(4) :: timings
+  real*8, dimension(6) :: timings
   integer, dimension(8) :: values
 
   call cpu_time(start_time)
@@ -123,6 +123,9 @@ program mr
 
 
   write (*,*) "Writing output for ",no_measurements," measurements..."
+
+  call cpu_time(timings(5))
+
   call write_output
 
   call deallocations
@@ -130,12 +133,16 @@ program mr
   write (*,*) "Done."
   write (*,*)
 
+  call cpu_time(timings(6))
+
   call cpu_time(end_time)
   write (*,'(a,f8.3,a)') "Total time taken: ",end_time-start_time," seconds."
   write (*,'(a,f8.5,a)') "Time per thermalisation sweep: "&
     &,(timings(2) - timings(1)) / therm_sweeps," seconds."
   write (*,'(a,f8.5,a)') "Time per measurement sweep (including&
     & measurements): ",(timings(4) - timings(3)) / measurement_sweeps," seconds."
+  write (*,'(a,f8.5,a)') "Time to read in data and calculate correlations&
+    &(per step): ",(timings(6) - timings(5)) / measurement_sweeps," seconds."
   write (*,*)
 
   stop
@@ -452,177 +459,177 @@ subroutine measure(step_number)
   !end do
 
   ! --- FOURIER TRANSFORMS ---
-  do kz = (-1*L/2)*bz, (L/2)*bz
-    do ky = (-1*L/2)*bz, (L/2)*bz
-      do kx = (-1*L/2)*bz, (L/2)*bz
+  !do kz = (-1*L/2)*bz, (L/2)*bz
+  !  do ky = (-1*L/2)*bz, (L/2)*bz
+  !    do kx = (-1*L/2)*bz, (L/2)*bz
 
-        rho_k_p_temp = (0.0,0.0)
-        rho_k_m_temp = (0.0,0.0)
-        e_kx_temp = (0.0,0.0)
-        e_ky = (0.0,0.0)
-        e_kz = (0.0,0.0)
-        kdotx = (0.0,0.0)
-        norm_k = 0.0
+  !      rho_k_p_temp = (0.0,0.0)
+  !      rho_k_m_temp = (0.0,0.0)
+  !      e_kx_temp = (0.0,0.0)
+  !      e_ky = (0.0,0.0)
+  !      e_kz = (0.0,0.0)
+  !      kdotx = (0.0,0.0)
+  !      norm_k = 0.0
 
-        ! for array indices
-        i = kx + 1 + bz*(L/2)
-        j = ky + 1 + bz*(L/2)
-        k = kz + 1 + bz*(L/2)
+  !      ! for array indices
+  !      i = kx + 1 + bz*(L/2)
+  !      j = ky + 1 + bz*(L/2)
+  !      k = kz + 1 + bz*(L/2)
 
-        if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
-          norm_k = 0.0
-        else
-          norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
-        end if
+  !      if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
+  !        norm_k = 0.0
+  !      else
+  !        norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2 + kz**2))
+  !      end if
 
-        if (i.le.L.and.j.le.L.and.k.le.L) then
+  !      if (i.le.L.and.j.le.L.and.k.le.L) then
 
-          ! write out charge dist., irrotational field, total field
+  !        ! write out charge dist., irrotational field, total field
 
-          ! could do this unformatted if we're just
-          ! gonna read it back into fortran anyway
-          !write (15,f_ch_format) n, i, j, k, v(i,j,k),&
-          !mnphi(1,i,j,k), mnphi(2,i,j,k), mnphi(3,i,j,k),&
-          !e_field(1,i,j,k), e_field(2,i,j,k), e_field(3,i,j,k)
+  !        ! could do this unformatted if we're just
+  !        ! gonna read it back into fortran anyway
+  !        !write (15,f_ch_format) n, i, j, k, v(i,j,k),&
+  !        !mnphi(1,i,j,k), mnphi(2,i,j,k), mnphi(3,i,j,k),&
+  !        !e_field(1,i,j,k), e_field(2,i,j,k), e_field(3,i,j,k)
 
-        end if
+  !      end if
 
-        ! m,p,s are the real space coordinates
-        do s = 1,L
-          do p = 1,L
-            do m = 1,L
+  !      ! m,p,s are the real space coordinates
+  !      do s = 1,L
+  !        do p = 1,L
+  !          do m = 1,L
 
-              ! different offsets for x,y,z
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
-                      ((p-1)*ky) + ((s-1)*kz)))
+  !            ! different offsets for x,y,z
+  !            kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
+  !                    ((p-1)*ky) + ((s-1)*kz)))
 
-              ! we want this for every step so we can
-              ! average at the end to get field-field struc
-              e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p,s)
+  !            ! we want this for every step so we can
+  !            ! average at the end to get field-field struc
+  !            e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p,s)
 
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                      ((p-(1.0/2))*ky) + ((s-1)*kz)))
+  !            kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+  !                    ((p-(1.0/2))*ky) + ((s-1)*kz)))
 
-              e_ky = e_ky + exp(kdotx)*e_field(2,m,p,s)
+  !            e_ky = e_ky + exp(kdotx)*e_field(2,m,p,s)
 
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                      ((p-1)*ky) + ((s-(1.0/2))*kz)))
+  !            kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+  !                    ((p-1)*ky) + ((s-(1.0/2))*kz)))
 
-              e_kz = e_kz + exp(kdotx)*e_field(3,m,p,s)
+  !            e_kz = e_kz + exp(kdotx)*e_field(3,m,p,s)
 
-              if (v(m,p,s).ne.0) then ! calculate <++ + +->!
+  !            if (v(m,p,s).ne.0) then ! calculate <++ + +->!
 
-                ! FT of charge distribution
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                        ((p-1)*ky/(L*lambda)) + &
-                        ((s-1)*kz/(L*lambda))))
+  !              ! FT of charge distribution
+  !              kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+  !                      ((p-1)*ky/(L*lambda)) + &
+  !                      ((s-1)*kz/(L*lambda))))
 
-                if (v(m,p,s).eq.-1) then
-                  rho_k_m_temp = rho_k_m_temp + v(m,p,s) * exp(kdotx)
-                end if
+  !              if (v(m,p,s).eq.-1) then
+  !                rho_k_m_temp = rho_k_m_temp + v(m,p,s) * exp(kdotx)
+  !              end if
 
-                if (v(m,p,s).eq.1) then ! take away <++>
-                  rho_k_p_temp = rho_k_p_temp + v(m,p,s) * exp(kdotx)
-                end if
+  !              if (v(m,p,s).eq.1) then ! take away <++>
+  !                rho_k_p_temp = rho_k_p_temp + v(m,p,s) * exp(kdotx)
+  !              end if
 
-                ! --- real space correlation function ---
+  !              ! --- real space correlation function ---
 
-                if (kx.gt.0.and.kx.le.L.and.&
-                    ky.gt.0.and.ky.le.L.and.&
-                    kz.gt.0.and.kz.le.L) then
+  !              if (kx.gt.0.and.kx.le.L.and.&
+  !                  ky.gt.0.and.ky.le.L.and.&
+  !                  kz.gt.0.and.kz.le.L) then
 
-                  ! this should sort it out. kx ky kz here are
-                  ! the "r"s, m p s are the "zeros"
-                  ! we want to do rho_+(0) rho_-(r)
-                  if (v(m,p,s).eq.1) then
-                    if (v(kx,ky,kz).eq.-1) then
+  !                ! this should sort it out. kx ky kz here are
+  !                ! the "r"s, m p s are the "zeros"
+  !                ! we want to do rho_+(0) rho_-(r)
+  !                if (v(m,p,s).eq.1) then
+  !                  if (v(kx,ky,kz).eq.-1) then
 
-                      x = abs(m - kx)
-                      y = abs(p - ky)
-                      z = abs(s - kz)
+  !                    x = abs(m - kx)
+  !                    y = abs(p - ky)
+  !                    z = abs(s - kz)
 
-                      if (x.gt.L/2) then
-                        x = L - x
-                      end if
-                      if (y.gt.L/2) then
-                        y = L - y
-                      end if
-                      if (z.gt.L/2) then
-                        z = L - z
-                      end if
+  !                    if (x.gt.L/2) then
+  !                      x = L - x
+  !                    end if
+  !                    if (y.gt.L/2) then
+  !                      y = L - y
+  !                    end if
+  !                    if (z.gt.L/2) then
+  !                      z = L - z
+  !                    end if
 
-                      x = x + 1
-                      y = y + 1
-                      z = z + 1
+  !                    x = x + 1
+  !                    y = y + 1
+  !                    z = z + 1
 
-                      dir_struc(x,y,z) = dir_struc(x,y,z) +&
-                              v(m,p,s) * v(kx,ky,kz)
-                    end if ! neg charge at kx,ky,kz
-                  end if ! pos charge at m,p,s
-                end if ! kx, ky, kz < L
+  !                    dir_struc(x,y,z) = dir_struc(x,y,z) +&
+  !                            v(m,p,s) * v(kx,ky,kz)
+  !                  end if ! neg charge at kx,ky,kz
+  !                end if ! pos charge at m,p,s
+  !              end if ! kx, ky, kz < L
 
-              end if ! end v != 0 check
+  !            end if ! end v != 0 check
 
-            end do ! end s loop
-          end do ! end p loop
-        end do ! end m loop
+  !          end do ! end s loop
+  !        end do ! end p loop
+  !      end do ! end m loop
 
-        ! normalise by L**3 here, or at the end?
-        rho_k_m_temp = rho_k_m_temp / float(L**3)
-        rho_k_p_temp = rho_k_p_temp / float(L**3)
-        e_kx_temp = e_kx_temp / float(L**3)
-        e_ky = e_ky / float(L**3)
-        e_kz = e_kz / float(L**3)
+  !      ! normalise by L**3 here, or at the end?
+  !      rho_k_m_temp = rho_k_m_temp / float(L**3)
+  !      rho_k_p_temp = rho_k_p_temp / float(L**3)
+  !      e_kx_temp = e_kx_temp / float(L**3)
+  !      e_ky = e_ky / float(L**3)
+  !      e_kz = e_kz / float(L**3)
 
-        ch_ch(i,j,k) = ch_ch(i,j,k) +&
-        (rho_k_p_temp * conjg(rho_k_m_temp))
-        !if (n.eq.100.and.i.eq.(L+1).and.j.eq.(L+1).and.k.eq.(L+1)) then
-        !  write (*,*) kx,ky,kz,n,ch_ch(i,j,k),rho_k_p_temp,rho_k_m_temp
-        !end if
-        !if (mod(n,10).eq.0) then
-        !  write (*,*) i,j,k,n,(rho_k_p_temp * conjg(rho_k_m_temp))
-        !end if
+  !      ch_ch(i,j,k) = ch_ch(i,j,k) +&
+  !      (rho_k_p_temp * conjg(rho_k_m_temp))
+  !      !if (n.eq.100.and.i.eq.(L+1).and.j.eq.(L+1).and.k.eq.(L+1)) then
+  !      !  write (*,*) kx,ky,kz,n,ch_ch(i,j,k),rho_k_p_temp,rho_k_m_temp
+  !      !end if
+  !      !if (mod(n,10).eq.0) then
+  !      !  write (*,*) i,j,k,n,(rho_k_p_temp * conjg(rho_k_m_temp))
+  !      !end if
 
-        charge_struc(i,j,k) = charge_struc(i,j,k) +&
-        abs(ch_ch(i,j,k) - rho_k_p_temp*rho_k_m_temp)
+  !      charge_struc(i,j,k) = charge_struc(i,j,k) +&
+  !      abs(ch_ch(i,j,k) - rho_k_p_temp*rho_k_m_temp)
 
-        fe_fe(i,j,k) = fe_fe(i,j,k) +&
-        (e_kx_temp*conjg(e_kx_temp))
+  !      fe_fe(i,j,k) = fe_fe(i,j,k) +&
+  !      (e_kx_temp*conjg(e_kx_temp))
 
-        field_struc(i,j,k) = field_struc(i,j,k) +&
-        abs(fe_fe(i,j,k) - e_kx_temp*e_kx_temp)
+  !      field_struc(i,j,k) = field_struc(i,j,k) +&
+  !      abs(fe_fe(i,j,k) - e_kx_temp*e_kx_temp)
 
-        !if (n.eq.100.and.i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
-        !  write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,e_kx_temp,e_ky,e_kz
-        !end if
+  !      !if (n.eq.100.and.i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
+  !      !  write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,e_kx_temp,e_ky,e_kz
+  !      !end if
 
-        s_ab(1,1,i,j,k) = s_ab(1,1,i,j,k) +&
-        e_kx_temp*conjg(e_kx_temp)
-        s_ab(1,2,i,j,k) = s_ab(1,2,i,j,k) +&
-        e_kx_temp*conjg(e_ky)
-        s_ab(1,3,i,j,k) = s_ab(1,3,i,j,k) +&
-        e_kx_temp*conjg(e_kz)
-        s_ab(2,1,i,j,k) = s_ab(2,1,i,j,k) +&
-        e_ky*conjg(e_kx_temp)
-        s_ab(2,2,i,j,k) = s_ab(2,2,i,j,k) +&
-        e_ky*conjg(e_ky)
-        s_ab(2,3,i,j,k) = s_ab(2,3,i,j,k) +&
-        e_ky*conjg(e_kz)
-        s_ab(3,1,i,j,k) = s_ab(3,1,i,j,k) +&
-        e_kz*conjg(e_kx_temp)
-        s_ab(3,2,i,j,k) = s_ab(3,2,i,j,k) +&
-        e_kz*conjg(e_ky)
-        s_ab(3,3,i,j,k) = s_ab(3,3,i,j,k) +&
-        e_kz*conjg(e_kz)
+  !      s_ab(1,1,i,j,k) = s_ab(1,1,i,j,k) +&
+  !      e_kx_temp*conjg(e_kx_temp)
+  !      s_ab(1,2,i,j,k) = s_ab(1,2,i,j,k) +&
+  !      e_kx_temp*conjg(e_ky)
+  !      s_ab(1,3,i,j,k) = s_ab(1,3,i,j,k) +&
+  !      e_kx_temp*conjg(e_kz)
+  !      s_ab(2,1,i,j,k) = s_ab(2,1,i,j,k) +&
+  !      e_ky*conjg(e_kx_temp)
+  !      s_ab(2,2,i,j,k) = s_ab(2,2,i,j,k) +&
+  !      e_ky*conjg(e_ky)
+  !      s_ab(2,3,i,j,k) = s_ab(2,3,i,j,k) +&
+  !      e_ky*conjg(e_kz)
+  !      s_ab(3,1,i,j,k) = s_ab(3,1,i,j,k) +&
+  !      e_kz*conjg(e_kx_temp)
+  !      s_ab(3,2,i,j,k) = s_ab(3,2,i,j,k) +&
+  !      e_kz*conjg(e_ky)
+  !      s_ab(3,3,i,j,k) = s_ab(3,3,i,j,k) +&
+  !      e_kz*conjg(e_kz)
 
-        rho_k_m(i,j,k) = rho_k_m(i,j,k) + rho_k_m_temp
-        rho_k_p(i,j,k) = rho_k_p(i,j,k) + rho_k_p_temp
-        e_kx(i,j,k) = e_kx(i,j,k) + e_kx_temp
+  !      rho_k_m(i,j,k) = rho_k_m(i,j,k) + rho_k_m_temp
+  !      rho_k_p(i,j,k) = rho_k_p(i,j,k) + rho_k_p_temp
+  !      e_kx(i,j,k) = e_kx(i,j,k) + e_kx_temp
 
-        ! end kz,ky,kx loops
-      end do
-    end do
-  end do
+  !      ! end kz,ky,kx loops
+  !    end do
+  !  end do
+  !end do
 
   close(15)
 

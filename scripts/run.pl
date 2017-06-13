@@ -3,6 +3,7 @@
 # then do some bookkeeping with the output
 use strict;
 use warnings;
+use Getopt::Long;
 use File::Path qw(make_path);
 use File::Spec;
 use File::Copy;
@@ -20,6 +21,11 @@ my $weekday;
 my $yearday;
 my $dst;
 my $row;
+my $input;
+my $inputfile;
+my $doplots;
+$input = GetOptions ("i=s"=> \$inputfile,
+                     "p=i"=> \$doplots);
 
 ($sec, $min, $hour, $day, $monthoffset, $yearoffset, $weekday, $yearday, $dst) = localtime();
 my $year = 1900 + $yearoffset;
@@ -52,9 +58,6 @@ my $progvar = "EXEC";
 my $progname = qx[awk '/^$progvar*/ { print \$3 }' makefile];
 print "Name of executable: $progname";
 chomp($progname);
-
-# this could be given as an argument, I guess?
-my $inputfile = "$basedir/in/start.in";
 
 # get parameters from input file; add them to JSON file
 open my $fh, '<:encoding(UTF-8)', "$inputfile"
@@ -110,8 +113,10 @@ close($dh);
 
 # then probably averaging stuff on the raw output, e_fields and charge dist.
 # then gnuplot
-my $plotfile = "$basedir/scripts/plot.pl";
-my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
-my $kz = 0;
-my $plotcmd = qq[./$plotfile -l=$parameters{L} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$timestamp" -o="$timedir/plots/"];
-system($plotcmd);
+if ($doplots) {
+  my $plotfile = "$basedir/scripts/plot.pl";
+  my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
+  my $kz = 0;
+  my $plotcmd = qq[./$plotfile -l=$parameters{L} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$timestamp" -o="$timedir/plots/"];
+  system($plotcmd);
+}

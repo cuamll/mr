@@ -33,12 +33,20 @@ my $plottitle = "L = $length, $meas measurements from " .
 # construct the input and output files to pass to gnuplot
 # call this script from $MR_DIR! so curdir() gives the base directory
 my @filenames = ('charge_struc',
-                 'alt_charge_struc',
                  'field_struc',
-                 'alt_field_struc',
                  'irrot_field_struc',
+                 'rot_field_struc',
                  's_perp',
-                 'alt_s_perp_total');
+                 'rot_s_perp',
+                 'irrot_s_perp');
+
+my @linetitles = ("Charge-charge structure factor at k_z = $kz",
+                  "Field-field structure factor at k_z = $kz",
+                  "Field-field structure factor - rotational - at k_z = $kz",
+                  "Field-field structure factor - irrotational - at k_z = $kz",
+                  "S_{⟂} at k_z = $kz",
+                  "S_{⟂} - rotational - at k_z = $kz",
+                  "S_{⟂} - irrotational - at k_z = $kz");
 
 my $basedir = File::Spec->curdir();
 my $inpath = "$basedir/out/";
@@ -49,8 +57,12 @@ my $plotsuffix = ".png";
 my $gnuplotscript = "$plotpath" . "heatmap.p";
 
 # get the relevant lines of the plot files based on kz
-my $lowerbound = (((2 * $length) + 1)**2) * ($kz + $length);
-my $upperbound = $lowerbound + 1 + ((2 * $length) + 1)**2;
+my $bz = 2;
+my $sperp_size = 5;
+my $lowerbound = ((($bz * $length) + 1)**2) * ($kz + $length);
+my $upperbound = $lowerbound + 1 + (($bz * $length) + 1)**2;
+my $splb = ((($sperp_size * $length) + 1)**2) * ($kz + $length);
+my $spub = $lowerbound + 1 + (($sperp_size * $length) + 1)**2;
 
 for my $i (0..$#filenames) {
   # run awk to create temp files
@@ -59,18 +71,14 @@ for my $i (0..$#filenames) {
   push @tempfiles, $inpath . $filenames[$i] . $tempsuffix;
   push @outputfiles, $outputpath . $filenames[$i] . $plotsuffix;
 
-  $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
+  if (index($inputfiles[$i],'s_perp') != -1) {
+    $awkcall = qq[awk '{ if (NR>$splb && NR<$spub) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
+  } else {
+    $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
+  }
   system($awkcall);
 
 }
-
-my @linetitles = ("Charge-charge structure factor at k_z = $kz",
-                  "Charge-charge structure factor (read from unformatted file) at k_z = $kz",
-                  "Field-field structure factor at k_z = $kz",
-                  "Field-field structure factor (read from unformatted file) at k_z = $kz",
-                  "Field-field structure factor - irrotational - at k_z = $kz",
-                  "S_{⟂} at k_z = $kz",
-                  "S_{⟂} (read from unformatted file) at k_z = $kz");
 
 warn "Different number of titles and files!\n" unless @linetitles == @filenames;
 
