@@ -42,8 +42,8 @@ my @filenames = ('charge_struc',
 
 my @linetitles = ("Charge-charge structure factor at k_z = $kz",
                   "Field-field structure factor at k_z = $kz",
-                  "Field-field structure factor - rotational - at k_z = $kz",
                   "Field-field structure factor - irrotational - at k_z = $kz",
+                  "Field-field structure factor - rotational - at k_z = $kz",
                   "S_{⟂} at k_z = $kz",
                   "S_{⟂} - rotational - at k_z = $kz",
                   "S_{⟂} - irrotational - at k_z = $kz");
@@ -59,10 +59,10 @@ my $gnuplotscript = "$plotpath" . "heatmap.p";
 # get the relevant lines of the plot files based on kz
 my $bz = 2;
 my $sperp_size = 5;
-my $lowerbound = ((($bz * $length) + 1)**2) * ($kz + $length);
+my $lowerbound = ((($bz * $length) + 1)**2) * ($kz + ($bz * ($length / 2)));
 my $upperbound = $lowerbound + 1 + (($bz * $length) + 1)**2;
-my $splb = ((($sperp_size * $length) + 1)**2) * ($kz + $length);
-my $spub = $lowerbound + 1 + (($sperp_size * $length) + 1)**2;
+my $splb = ((($sperp_size * $length) + 1)**2) * ($kz + ($sperp_size * ($length / 2)));
+my $spub = $splb + 1 + (($sperp_size * $length) + 1)**2;
 
 for my $i (0..$#filenames) {
   # run awk to create temp files

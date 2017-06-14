@@ -533,51 +533,40 @@ module io
     complex*16 :: imag, kdotx
     character(100) :: struc_format_string, field_format_string
     character(100) :: dir_format_string, dir_dist_format_string
-    !character(100) :: alt_ch_file, alt_sperp_file
-    !character(100) :: alt_fe_file, alt_sab_file
-    !character(100) :: irrot_field_file, rot_field_file
-    !character(100) :: irrot_sab_file, rot_sab_file
-    !character(100) :: irrot_sperp_file, rot_sperp_file
-
     ! CALL THIS AFTER CORRELATIONS SUBROUTINE
 
-    write (*,*) "Reading in fields and charge distributions, &
-      and calculating correlations..."
+    write (*,'(A10,I5.1,A27)',advance='no') "Reading in fields and charge distributions, &
+      and calculating correlations... ["
 
-    ! hardcoded for now, don't judge me
-    !alt_ch_file = "/Users/cgray/code/mr/testing/out/charge_struc.dat"
-    !alt_fe_file = "/Users/cgray/code/mr/testing/out/field_struc.dat"
-    !alt_sab_file = "/Users/cgray/code/mr/testing/out/s_ab.dat"
-    !alt_sperp_file = "/Users/cgray/code/mr/testing/out/s_perp.dat"
-    !irrot_field_file = "/Users/cgray/code/mr/testing/out/irrot_field_struc.dat"
-    !irrot_sab_file = "/Users/cgray/code/mr/testing/out/irrot_s_ab.dat"
-    !irrot_sperp_file = "/Users/cgray/code/mr/testing/out/irrot_s_perp.dat"
-    !rot_field_file = "/Users/cgray/code/mr/testing/out/rot_field_struc.dat"
-    !rot_sab_file = "/Users/cgray/code/mr/testing/out/rot_s_ab.dat"
-    !rot_sperp_file = "/Users/cgray/code/mr/testing/out/rot_s_perp.dat"
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
     dir_format_string = "(I2, I2, I2, ES18.9)"
     dir_dist_format_string = "(ES18.9, I8, ES18.9)"
 
     ! size of e_field and mnphi is (L**3 * 3) * 8 bytes
-    ! v is 4-byte integers so 4 L**3
+    ! charge distribution is 4-byte integers so 4 L**3
     field_size = 24 * L**3
     ch_size = 4 * L**3
+
     imag = (0.0, 1.0)
     dist_bin = 0; dist = 0.0;
     dist_r = 0.0; bin_count = 0;
-    e_kx = (0.0, 0.0)
-    mnphi_kx = (0.0, 0.0)
-    e_rot_kx = (0.0, 0.0)
-    rho_k_p = (0.0, 0.0)
-    rho_k_m = (0.0, 0.0)
-    ch_ch = 0.0
-    fe_fe = 0.0
-    s_ab = 0.0
+    e_kx = (0.0, 0.0); mnphi_kx = (0.0, 0.0); e_rot_kx = (0.0, 0.0)
+    rho_k_p = (0.0, 0.0); rho_k_m = (0.0, 0.0)
+    ch_ch = 0.0; fe_fe = 0.0; s_ab = 0.0
+    e_rot = 0.0; fe_fe_rot = 0.0; field_struc_rot = 0.0; s_ab_rot = 0.0;
+    fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
+    s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
+
     open(15, file=field_charge_file, status="old", action="read", access="stream", form="unformatted")
 
     do n = 1, no_measurements
+
+    if (no_measurements.gt.100) then
+      if (mod(n,no_measurements / 100).eq.0) then
+        write (*,'(a)',advance='no') "*"
+      end if
+    end if
 
       e_field = 0.0
       mnphi = 0.0
@@ -1070,6 +1059,8 @@ module io
     close(19)
     close(20)
     close(21)
+
+    write (*,'(a)') "]. Completed."
 
   end subroutine calc_correlations
 
