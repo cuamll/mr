@@ -5,16 +5,16 @@ module common
   real*8, public :: q, lambda, volume, temp, beta
   real*8, public :: eps_0, bin_size, rot_delt
   integer, dimension(:), allocatable, public :: pos,neg
-  integer, dimension(:,:,:), allocatable, public :: v
+  integer, dimension(:,:), allocatable, public :: v
   real*8, dimension(:), allocatable, public :: ebar, energy, sq_energy
-  real*8, dimension(:,:,:,:), allocatable, public :: e_field, mnphi
-  complex*16, dimension(:,:,:), allocatable, public :: ch_ch,fe_fe
-  real(kind=16), dimension(:,:,:), allocatable, public :: charge_struc, field_struc
-  real(kind=16), dimension(:,:,:), allocatable, public :: dir_struc
-  real(kind=16), dimension(:,:,:,:,:,:), allocatable, public :: lgf
-  real(kind=16), dimension(:,:,:,:,:), allocatable, public :: s_ab
-  complex*16, dimension(:,:,:), allocatable, public :: e_kx
-  complex*16, dimension(:,:,:), allocatable, public :: rho_k_m,rho_k_p
+  real*8, dimension(:,:,:), allocatable, public :: e_field, mnphi
+  complex*16, dimension(:,:), allocatable, public :: ch_ch,fe_fe
+  real(kind=16), dimension(:,:), allocatable, public :: charge_struc, field_struc
+  real(kind=16), dimension(:,:), allocatable, public :: dir_struc
+  real(kind=16), dimension(:,:,:,:), allocatable, public :: lgf
+  real(kind=16), dimension(:,:,:,:), allocatable, public :: s_ab
+  complex*16, dimension(:,:), allocatable, public :: e_kx
+  complex*16, dimension(:,:), allocatable, public :: rho_k_m,rho_k_p
 
     ! probably more things need to go here
   character(len=200), public :: lattfile_long, en_long, sq_en_long

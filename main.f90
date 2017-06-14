@@ -87,23 +87,21 @@ program mr
   write(*,*) "--- END: CHARGE POSITIONS ---"
 
   tot_q = 0
-  do k = 1,L
     do j = 1,L
       do i = 1,L
 
-        tot_q = tot_q + abs(v(i,j,k))
+        tot_q = tot_q + abs(v(i,j))
 
-        if (v(i,j,k).eq.1) then
-          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,k,v(i,j,k)
+        if (v(i,j).eq.1) then
+          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
         end if
 
-        if (v(i,j,k).eq.-1) then
-          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,k,v(i,j,k)
+        if (v(i,j).eq.-1) then
+          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
         end if
 
       end do
     end do
-  end do
 
   write (*,*) "Total charges: ",tot_q
   write(*,*)
@@ -153,13 +151,13 @@ subroutine mc_sweep
   use common
   implicit none
   integer :: i,j,k,m,charge,glob,totq,mu1,mu2,pm1
-  integer, dimension(3) :: site
+  integer, dimension(2) :: site
   real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
   real*8 :: u_tot,u_tot_run,increment
   real*8 :: old_e, new_e, delta_e, g_thr
 
   charge = 0; totq = 0; mu1 = 0; mu2 = 0; pm1 = 0
-  site =(/ 0, 0, 0 /)
+  site = (/ 0, 0 /)
   eo1 = 0.0; eo2 = 0.0; eo3 = 0.0; eo4 = 0.0
   en1 = 0.0; en2 = 0.0; en3 = 0.0; en4 = 0.0
   u_tot = 0.0; u_tot_run = 0.0; increment = 0.0
@@ -176,24 +174,23 @@ subroutine mc_sweep
 
     ! pick a random site
     site = (/ int(rand() * L) + 1,&
-               &int(rand() * L) + 1,&
-               &int(rand() * L) + 1 /)
+              &int(rand() * L) + 1 /)
 
-    mu1 = floor(3*rand())+1
+    mu1 = floor(2*rand())+1
 
     ! check we're not doing anything weird with mu1ltiple charges
-    if (abs(v(site(1),site(2),site(3))).gt.1) then
-      write (*,*) "Charge at ",site(1),site(2),site(3),&
-        " = ",v(site(1),site(2),site(3)),". Exiting."
+    if (abs(v(site(1),site(2))).gt.1) then
+      write (*,*) "Charge at ",site(1),site(2),&
+        " = ",v(site(1),site(2)),". Exiting."
       write (*,*)
       stop
     end if
 
     ! pick a non-zero charge - canonical!
-    if (v(site(1),site(2),site(3)).ne.0) then
+    if (v(site(1),site(2)).ne.0) then
 
-      charge = v(site(1),site(2),site(3))
-      eo1 = e_field(mu1,site(1),site(2),site(3))
+      charge = v(site(1),site(2))
+      eo1 = e_field(mu1,site(1),site(2))
 
       ! this takes care of sign issues when hopping
       increment = charge / (eps_0 * lambda**2)
@@ -208,15 +205,15 @@ subroutine mc_sweep
         ! get negative in the mu1 direction
         site(mu1) = neg(site(mu1))
 
-        if (v(site(1),site(2),site(3)).eq.0) then
+        if (v(site(1),site(2)).eq.0) then
           if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-            v(site(1),site(2),site(3)) = charge
+            v(site(1),site(2)) = charge
 
             ! go back to the original site and set the charge to 0
             site(mu1) = pos(site(mu1))
-            v(site(1),site(2),site(3)) = 0
-            e_field(mu1,site(1),site(2),site(3)) = en1
+            v(site(1),site(2)) = 0
+            e_field(mu1,site(1),site(2)) = en1
             ebar(mu1) = ebar(mu1) + increment
 
             accepth = accepth + 1
@@ -235,15 +232,15 @@ subroutine mc_sweep
         ! get pos in the mu1 direction
         site(mu1) = pos(site(mu1))
 
-        if (v(site(1),site(2),site(3)).eq.0) then
+        if (v(site(1),site(2)).eq.0) then
           if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-            v(site(1),site(2),site(3)) = charge
+            v(site(1),site(2)) = charge
 
             ! go back to the original site and set the charge to 0
             site(mu1) = neg(site(mu1))
-            v(site(1),site(2),site(3)) = 0
-            e_field(mu1,site(1),site(2),site(3)) = en1
+            v(site(1),site(2)) = 0
+            e_field(mu1,site(1),site(2)) = en1
             ebar(mu1) = ebar(mu1) - increment
 
             accepth = accepth + 1
@@ -269,41 +266,40 @@ subroutine mc_sweep
 
   ! --- ROTATIONAL UPDATE ---
 
-  do i = 1,int(3 * L**3 * rot_ratio)
+  do i = 1,int(L**3 * rot_ratio)
 
     eo1 = 0.0; eo2 = 0.0; eo3 = 0.0; eo4 = 0.0
     en1 = 0.0; en2 = 0.0; en3 = 0.0; en4 = 0.0
-    site = (/ 0, 0, 0/)
+    site = (/ 0, 0 /)
 
     ! pick at random from interval [-Delta_max, +Delta_max]
     increment = 2 * rot_delt * (rand() - 0.5)
 
     ! pick xy (1,2), yz (2,3), or zx (3,1) plaquette
-    mu1 = floor(3*rand())+1
-    mu2 = mod(mu1,3) + 1
+    mu1 = floor(2*rand())+1
+    mu2 = mod(mu1,2) + 1
 
     ! give us a coordinate (i,j,k)
     site = (/ int(rand() * L) + 1,&
-               &int(rand() * L) + 1,&
-               &int(rand() * L) + 1 /)
+             &int(rand() * L) + 1 /)
     ! site(mu1) is the coordinate in the first direction
     ! site(mu2) is the coordinate in the second
 
     ! my convention is that an xy (1,2) plaquette is defined by
     ! field links (1,i,j,k),(2,i,j,k),(1,neg(i),j,k),(2,i,neg(j),k)
     ! so the first two are easy:
-    eo1 = e_field(mu1,site(1),site(2),site(3))
-    eo2 = e_field(mu2,site(1),site(2),site(3))
+    eo1 = e_field(mu1,site(1),site(2))
+    eo2 = e_field(mu2,site(1),site(2))
 
     ! if e.g. we picked xy, the next line does x -> neg(x)
     site(mu1) = neg(site(mu1))
-    eo4 = e_field(mu1,site(1),site(2),site(3))
+    eo4 = e_field(mu1,site(1),site(2))
     ! and now we need to put it back
     site(mu1) = pos(site(mu1))
 
     ! this does y -> neg(y)
     site(mu2) = neg(site(mu2))
-    eo3 = e_field(mu2,site(1),site(2),site(3))
+    eo3 = e_field(mu2,site(1),site(2))
     ! and put it back
     site(mu2) = pos(site(mu2))
     ! so now we have (x,y,z) again
@@ -319,15 +315,15 @@ subroutine mc_sweep
 
     if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-      e_field(mu1,site(1),site(2),site(3)) = en1
-      e_field(mu2,site(1),site(2),site(3)) = en2
+      e_field(mu1,site(1),site(2)) = en1
+      e_field(mu2,site(1),site(2)) = en2
 
       site(mu1) = neg(site(mu1))
-      e_field(mu1,site(1),site(2),site(3)) = en4
+      e_field(mu1,site(1),site(2)) = en4
       site(mu1) = pos(site(mu1))
 
       site(mu2) = neg(site(mu2))
-      e_field(mu2,site(1),site(2),site(3)) = en3
+      e_field(mu2,site(1),site(2)) = en3
       site(mu2) = pos(site(mu2))
 
       acceptr = acceptr + 1
@@ -350,7 +346,7 @@ subroutine mc_sweep
 
       increment = q/(L**2 * eps_0)
 
-      do mu1 = 1,3
+      do mu1 = 1,2
 
         if (rand() - 0.5.le.0) then
           pm1 = -1
@@ -378,7 +374,7 @@ subroutine mc_sweep
           !  do k = 1,L
           !    do j = 1,L
           !      e_field(mu1,j,k,m) = e_field(mu1,j,k,m) + pm1 * (increment / L**3)
-                e_field(mu1,:,:,:) = e_field(mu1,:,:,:) + pm1 * (increment / L**3)
+                e_field(mu1,:,:) = e_field(mu1,:,:) + pm1 * (increment / L**3)
           !    end do
           !  end do
           !end do
@@ -411,7 +407,7 @@ subroutine measure(step_number)
   integer,intent(in) :: step_number
   integer :: x,y,z,i,j,k,m,p,s,kx,ky,kz,n
   real*8 :: norm_k,u_tot_run
-  real*8, dimension(3) :: e_rot_temp
+  real*8, dimension(2) :: e_rot_temp
   complex*16 :: imag, kdotx
   complex*16 :: rho_k_p_temp, rho_k_m_temp, e_kx_temp, e_ky, e_kz
 

@@ -10,22 +10,22 @@ module setup
 
   subroutine allocations
 
-    allocate(v(L,L,L))
+    allocate(v(L,L))
     allocate(pos(L))
     allocate(neg(L))
-    allocate(ebar(3))
-    allocate(e_field(3,L,L,L))
-    allocate(mnphi(3,L,L,L))
-    allocate(lgf(L,L,L,L,L,L))
-    allocate(ch_ch((bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(rho_k_m((bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(rho_k_p((bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(dir_struc(L/2 + 1,L/2 + 1,L/2 + 1))
-    allocate(e_kx((bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(fe_fe((bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(charge_struc((bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(field_struc((bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(s_ab(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(ebar(2))
+    allocate(e_field(2,L,L))
+    allocate(mnphi(2,L,L))
+    allocate(lgf(L,L,L,L))
+    allocate(ch_ch((bz*L)+1,(bz*L)+1))
+    allocate(rho_k_m((bz*L)+1,(bz*L)+1))
+    allocate(rho_k_p((bz*L)+1,(bz*L)+1))
+    allocate(dir_struc(L/2 + 1,L/2 + 1))
+    allocate(e_kx((bz*L)+1,(bz*L)+1))
+    allocate(fe_fe((bz*L)+1,(bz*L)+1))
+    allocate(charge_struc((bz*L)+1,(bz*L)+1))
+    allocate(field_struc((bz*L)+1,(bz*L)+1))
+    allocate(s_ab(3,3,(bz*L)+1,(bz*L)+1))
     allocate(energy(no_measurements + 1))
     allocate(sq_energy(no_measurements + 1))
 
@@ -83,34 +83,33 @@ module setup
         ! if so, pick again; if not, alternate pos/neg
         i = int(rand() * L) + 1
         j = int(rand() * L) + 1
-        k = int(rand() * L) + 1
 
-        if (v(i,j,k).ne.0) then
+        if (v(i,j).ne.0) then
           CYCLE
         end if
 
         if (modulo(n,2)==0) then
-          v(i,j,k) = 1
+          v(i,j) = 1
         else
-          v(i,j,k) = -1
+          v(i,j) = -1
         end if
 
         n = n + 1
 
-        write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,k,v(i,j,k)
+        write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,v(i,j)
 
       end do
 
     else ! add_charges = 0; read in lattice file
 
-      allocate(v_temp(L**2,L))
+      allocate(v_temp(L,L))
 
       open(unit = 2, file = lattfile)
-      read(2,*)((v_temp(i,j),j = 1,L),i = 1,L**2)
+      read(2,*)((v_temp(i,j),j=1,L),i = 1,L)
 
       ! 2,3,1 makes x,y,z correspond with what you expect from the file
       ! doesn't actually make any difference so long as you're consistent
-      v  =  reshape(v_temp, (/ L,L,L /), ORDER  =  (/ 2,3,1 /))
+      v  =  v_temp
 
       deallocate(v_temp)
       close(2)

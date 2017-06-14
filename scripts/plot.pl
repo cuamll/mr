@@ -37,16 +37,16 @@ my @filenames = ('charge_struc',
                  'irrot_field_struc',
                  'rot_field_struc',
                  's_perp',
-                 'rot_s_perp',
-                 'irrot_s_perp');
+                 'irrot_s_perp',
+                 'rot_s_perp');
 
-my @linetitles = ("Charge-charge structure factor at k_z = $kz",
-                  "Field-field structure factor at k_z = $kz",
-                  "Field-field structure factor - irrotational - at k_z = $kz",
-                  "Field-field structure factor - rotational - at k_z = $kz",
-                  "S_{⟂} at k_z = $kz",
-                  "S_{⟂} - rotational - at k_z = $kz",
-                  "S_{⟂} - irrotational - at k_z = $kz");
+my @linetitles = ("Charge-charge structure factor",
+                  "Field-field structure factor",
+                  "Field-field structure factor - irrotational",
+                  "Field-field structure factor - rotational",
+                  "S_{⟂}",
+                  "S_{⟂} - irrotational",
+                  "S_{⟂} - rotational");
 
 my $basedir = File::Spec->curdir();
 my $inpath = "$basedir/out/";
@@ -66,25 +66,25 @@ my $spub = $splb + 1 + (($sperp_size * $length) + 1)**2;
 
 for my $i (0..$#filenames) {
   # run awk to create temp files
+  # not necessary in 2D, so we just won't bother
   my $awkcall;
   push @inputfiles, $inpath . $filenames[$i] . $insuffix;
   push @tempfiles, $inpath . $filenames[$i] . $tempsuffix;
   push @outputfiles, $outputpath . $filenames[$i] . $plotsuffix;
 
-  if (index($inputfiles[$i],'s_perp') != -1) {
-    $awkcall = qq[awk '{ if (NR>$splb && NR<$spub) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
-  } else {
-    $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
-  }
-  system($awkcall);
-
+  #if (index($inputfiles[$i],'s_perp') != -1) {
+  #  $awkcall = qq[awk '{ if (NR>$splb && NR<$spub) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
+  #} else {
+  #  $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
+  #}
+  #system($awkcall);
 }
 
 warn "Different number of titles and files!\n" unless @linetitles == @filenames;
 
 for my $i (0..$#filenames) {
   my $syscall;
-  push @gnuplotargs, qq(FILE='$tempfiles[$i]'; KZ = '$kz'; LSIZE = '$length'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$linetitles[$i]');
+  push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$linetitles[$i]');
 
   $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
   system($syscall);
