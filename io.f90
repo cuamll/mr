@@ -521,11 +521,10 @@ module io
     complex*16 :: mnphi_kx_temp, mnphi_ky, mnphi_kz
     complex*16 :: e_rot_kx_temp, e_rot_ky, e_rot_kz
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
-    real*8, dimension(2,(bz*L)+1,(bz*L)+1) :: e_rot
-    real*8, dimension((bz*L)+1,(bz*L)+1) :: s_perp
+    real*8, dimension(2,L,L) :: e_rot
+    real*8, dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
     real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
     real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_rot, field_struc_rot
-    real*8, dimension((bz*L)+1,(bz*L)+1) :: s_perp_irrot, s_perp_rot
     real*8, dimension(2,2,(bz*L)+1,(bz*L)+1) :: s_ab_irrot, s_ab_rot
     complex*16, dimension((bz*L)+1,(bz*L)+1) :: mnphi_kx, e_rot_kx
     complex*16 :: imag, kdotx
@@ -554,7 +553,6 @@ module io
     ch_ch = 0.0; fe_fe = 0.0; s_ab = 0.0
     e_rot = 0.0; fe_fe_rot = 0.0; field_struc_rot = 0.0; s_ab_rot = 0.0;
     fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
-    s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
 
     open(15, file=field_charge_file, status="old", action="read", access="stream", form="unformatted")
 
@@ -568,6 +566,7 @@ module io
 
       e_field = 0.0
       mnphi = 0.0
+      e_rot = 0.0
       v = 0
 
       ! POS = 1 is the start of the file so we need to add 1
@@ -782,6 +781,10 @@ module io
 
     ! we can calculate s_perp up to wherever
     sp = 6
+    allocate(s_perp((sp*L)+1,(sp*L)+1))
+    allocate(s_perp_irrot((sp*L)+1,(sp*L)+1))
+    allocate(s_perp_rot((sp*L)+1,(sp*L)+1))
+    s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
 
       do p = (-L/2)*sp,(L/2)*sp
         do m = (-L/2)*sp,(L/2)*sp
@@ -800,7 +803,7 @@ module io
           !qx = mod(kx_float, 2 * pi)
           !qy = mod(ky_float, 2 * pi)
 
-          if (kx.eq.0.and.ky.eq.0) then
+          if (kx_float.eq.0.and.ky_float.eq.0) then
             norm_k = 0.0
           else
             norm_k = 1.0/(kx_float**2 + ky_float**2)
@@ -847,6 +850,12 @@ module io
         end do
       end do
 
+      !do i = 1,10
+      !  do j = 30,(sp*L) + 1
+      !    write (*,*) i,j, s_perp_irrot(i,j)
+      !  end do
+      !end do
+
     open(unit=10, file=dir_st_file)
     open(unit=11, file=dir_dist_file)
     open(unit=12, file=charge_st_file)
@@ -880,10 +889,15 @@ module io
 
           if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
 
-            charge_struc(i,j) = abs(ch_ch(i,j))! - (rho_k_p(i,j)*conjg(rho_k_m(i,j))))
-            field_struc(i,j) = abs(fe_fe(i,j))! - (e_kx(i,j)*conjg(e_kx(i,j))))
-            field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j))! - (mnphi_kx(i,j)*conjg(mnphi_kx(i,j))))
-            field_struc_rot(i,j) = abs(fe_fe_rot(i,j))! - (e_rot_kx(i,j)*conjg(e_rot_kx(i,j))))
+            charge_struc(i,j) = abs(ch_ch(i,j))
+            field_struc(i,j) = abs(fe_fe(i,j))
+            field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j))
+            field_struc_rot(i,j) = abs(fe_fe_rot(i,j))
+
+            !charge_struc(i,j) = abs(ch_ch(i,j) - (rho_k_p(i,j)*conjg(rho_k_m(i,j))))
+            !field_struc(i,j) = abs(fe_fe(i,j) - (e_kx(i,j)*conjg(e_kx(i,j))))
+            !field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j) - (mnphi_kx(i,j)*conjg(mnphi_kx(i,j))))
+            !field_struc_rot(i,j) = abs(fe_fe_rot(i,j) - (e_rot_kx(i,j)*conjg(e_rot_kx(i,j))))
 
             write (12, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
@@ -937,13 +951,13 @@ module io
             s_perp(i,j)
 
             write (18, field_format_string)&
-            2*pi*(i - 1 - sp*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - sp*(l/2))/(L*lambda),&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
             s_perp_irrot(i,j)
 
             write (21, field_format_string)&
-            2*pi*(i - 1 - sp*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - sp*(l/2))/(L*lambda),&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
             s_perp_rot(i,j)
 
         end do
@@ -960,6 +974,8 @@ module io
     close(19)
     close(20)
     close(21)
+
+    deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
 
     write (*,'(a)') "]. Completed."
 

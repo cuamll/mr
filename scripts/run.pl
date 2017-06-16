@@ -73,7 +73,7 @@ my $parameters_json = encode_json [%parameters];
 # one line in each timestamped folder with parameters
 open $fh, '>:encoding(UTF-8)', "$timedir/parameters.json"
   or die "Unable to open JSON file:$!\n";
-print $fh "Adding JSON parameter data to " .
+print "Adding JSON parameter data to " .
           "$timedir/parameters.json:\n$parameters_json\n";
 close $fh;
 
@@ -100,7 +100,7 @@ opendir(my $dh, $outdir) or die "Can't open output directory: $!";
 foreach (keys %parameters) {
   if ($_ =~ /_file/) {
     my $value = %parameters{$_};
-    print "$parameters{$_}\n";
+    # print "$parameters{$_}\n";
     my $file;
     my $dir;
     my $ext;

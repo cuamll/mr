@@ -16,18 +16,18 @@ REV = $(shell git rev-parse --short HEAD)
 
 DEBUG = 1
 ifeq ($(DEBUG), 1)
-	DEBUGFLAGS = -g -pg -ffpe-trap=underflow,denormal,overflow
+	DEBUGFLAGS = -g -pg -fbacktrace -ffpe-trap=invalid,zero,underflow,denormal,overflow
 else
 	DEBUGFLAGS =
 endif
 
 ifeq ($(UNAME), Darwin)
 	LIBS = -llapack -L/opt/local/lib
-	LFLAGS = $(DEBUGFLAG) $(LIBS)
+	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 ifeq ($(UNAME), Linux)
 	LIBS = -llapack
-	LFLAGS = $(DEBUGFLAG) $(LIBS)
+	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 
 SOURCES = common.f90\

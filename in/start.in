@@ -1,12 +1,12 @@
-L 12
-thermalisation_sweeps 20000
-measurement_sweeps 40000
-sample_interval 20
+L 16
+thermalisation_sweeps 10000
+measurement_sweeps 75000
+sample_interval 25
 temperature 0.50
 lattice_spacing 1.0
 charge_value 1.0
 delta_max 0.8
-charges 36
+charges 64
 rng_seed 0
 hop_ratio 1.0
 rot_ratio 1.0
