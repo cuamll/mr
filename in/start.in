@@ -1,8 +1,8 @@
 L 12
 thermalisation_sweeps 20000
-measurement_sweeps 50000
-sample_interval 20
-temperature 1.00
+measurement_sweeps 75000
+sample_interval 25
+temperature 0.50
 lattice_spacing 1.0
 charge_value 1.0
 delta_max 0.8

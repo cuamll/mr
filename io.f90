@@ -523,7 +523,7 @@ module io
     complex*16 :: mnphi_kx_temp, mnphi_ky, mnphi_kz
     complex*16 :: e_rot_kx_temp, e_rot_ky, e_rot_kz
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
-    real*8, dimension(3,(bz*L)+1,(bz*L)+1,(bz*L)+1) :: e_rot
+    real*8, dimension(3,L,L,L) :: e_rot
     real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: s_perp
     real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
     real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: fe_fe_rot, field_struc_rot
@@ -569,6 +569,7 @@ module io
     end if
 
       e_field = 0.0
+      e_rot = 0.0
       mnphi = 0.0
       v = 0
 
@@ -821,10 +822,10 @@ module io
     ch_ch = ch_ch / no_measurements
     fe_fe = fe_fe / no_measurements
     fe_fe_irrot = fe_fe_irrot / no_measurements
-    fe_fe_rot = fe_fe_irrot / no_measurements
+    fe_fe_rot = fe_fe_rot / no_measurements
     s_ab = s_ab / no_measurements
     s_ab_irrot = s_ab_irrot / no_measurements
-    s_ab_rot = s_ab_irrot / no_measurements
+    s_ab_rot = s_ab_rot / no_measurements
 
     ! not sure if this is okay
     !charge_struc = ch_ch - (rho_k_p*conjg(rho_k_m))
@@ -953,10 +954,15 @@ module io
 
           if (k.le.(bz*L + 1).and.j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
 
-            charge_struc(i,j,k) = abs(ch_ch(i,j,k) - (rho_k_p(i,j,k)*conjg(rho_k_m(i,j,k))))
-            field_struc(i,j,k) = abs(fe_fe(i,j,k) - (e_kx(i,j,k)*conjg(e_kx(i,j,k))))
-            field_struc_irrot(i,j,k) = abs(fe_fe_irrot(i,j,k) - (mnphi_kx(i,j,k)*conjg(mnphi_kx(i,j,k))))
-            field_struc_rot(i,j,k) = abs(fe_fe_rot(i,j,k) - (e_rot_kx(i,j,k)*conjg(e_rot_kx(i,j,k))))
+            charge_struc(i,j,k) = abs(ch_ch(i,j,k))
+            field_struc(i,j,k) = abs(fe_fe(i,j,k))
+            field_struc_irrot(i,j,k) = abs(fe_fe_irrot(i,j,k))
+            field_struc_rot(i,j,k) = abs(fe_fe_rot(i,j,k))
+
+            !charge_struc(i,j,k) = abs(ch_ch(i,j,k) - (rho_k_p(i,j,k)*conjg(rho_k_m(i,j,k))))
+            !field_struc(i,j,k) = abs(fe_fe(i,j,k) - (e_kx(i,j,k)*conjg(e_kx(i,j,k))))
+            !field_struc_irrot(i,j,k) = abs(fe_fe_irrot(i,j,k) - (mnphi_kx(i,j,k)*conjg(mnphi_kx(i,j,k))))
+            !field_struc_rot(i,j,k) = abs(fe_fe_rot(i,j,k) - (e_rot_kx(i,j,k)*conjg(e_rot_kx(i,j,k))))
 
             write (12, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
