@@ -22,10 +22,13 @@ charge_structure_factor_file          /Users/cgray/code/mr/2d/out/charge_struc.d
 total_field_structure_factor_file     /Users/cgray/code/mr/2d/out/field_struc.dat
 total_s^(alpha_beta)_file             /Users/cgray/code/mr/2d/out/s_ab.dat
 total_s_(perp)_file                   /Users/cgray/code/mr/2d/out/s_perp.dat
+total_s_(par)_file                    /Users/cgray/code/mr/2d/out/s_par.dat
 irrot_field_structure_factor_file     /Users/cgray/code/mr/2d/out/irrot_field_struc.dat
 irrot_s^(alpha_beta)_file             /Users/cgray/code/mr/2d/out/irrot_s_ab.dat
 irrot_s_(perp)_file                   /Users/cgray/code/mr/2d/out/irrot_s_perp.dat
+irrot_s_(par)_file                    /Users/cgray/code/mr/2d/out/irrot_s_par.dat
 rot_field_structure_factor_file       /Users/cgray/code/mr/2d/out/rot_field_struc.dat
 rot_s^(alpha_beta)_file               /Users/cgray/code/mr/2d/out/rot_s_ab.dat
 rot_s_(perp)_file                     /Users/cgray/code/mr/2d/out/rot_s_perp.dat
+rot_s_(par)_file                      /Users/cgray/code/mr/2d/out/rot_s_par.dat
 field_charge_file                     /Users/cgray/code/mr/2d/out/fields_charges.dat

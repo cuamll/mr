@@ -24,8 +24,10 @@ my $row;
 my $input;
 my $inputfile;
 my $doplots;
+my $dorun;
 $input = GetOptions ("i=s"=> \$inputfile,
-                     "p=i"=> \$doplots);
+                     "p=i"=> \$doplots,
+                     "r=i"=> \$dorun);
 
 ($sec, $min, $hour, $day, $monthoffset, $yearoffset, $weekday, $yearday, $dst) = localtime();
 my $year = 1900 + $yearoffset;
@@ -71,26 +73,27 @@ my $parameters_json = encode_json [%parameters];
 # uncomment this block when done testing
 
 # one line in each timestamped folder with parameters
-open $fh, '>:encoding(UTF-8)', "$timedir/parameters.json"
-  or die "Unable to open JSON file:$!\n";
-print "Adding JSON parameter data to " .
-          "$timedir/parameters.json:\n$parameters_json\n";
-close $fh;
+if ($dorun) {
+  open $fh, '>:encoding(UTF-8)', "$timedir/parameters.json"
+    or die "Unable to open JSON file:$!\n";
+  print "Adding JSON parameter data to " .
+            "$timedir/parameters.json:\n$parameters_json\n";
+  close $fh;
 
-# keep a list of every run and its parameters
-my $jsondb = "$logdir/db.json";
-open $fh, '>>:encoding(UTF-8)', "$jsondb"
-  or die "Unable to open JSON file:$!\n";
-# this might not work idk the syntax
-print $fh "$parameters_json\n";
-close $fh;
-# ----------
+  # keep a list of every run and its parameters
+  my $jsondb = "$logdir/db.json";
+  open $fh, '>>:encoding(UTF-8)', "$jsondb"
+    or die "Unable to open JSON file:$!\n";
+  # this might not work idk the syntax
+  print $fh "$parameters_json\n";
+  close $fh;
+  # ----------
 
-# run program
-my $runcmd = qq(./$progname $inputfile 2>&1 | tee $logfile);
-print "Running $progname with command $runcmd\n";
-
-system($runcmd);
+  # run program
+  my $runcmd = qq(./$progname $inputfile 2>&1 | tee $logfile);
+  print "Running $progname with command $runcmd\n";
+  system($runcmd);
+}
 
 # program should have terminated now
 # we want to copy the out directory into the timestamped one.

@@ -105,6 +105,9 @@ module io
           case ('total_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
             write (*,*) 'Total S_(⊥) file name: ',s_p_l
+          case ('total_s_(par)_file')
+            read(buffer, '(a)', iostat=ios) spa_l
+            write (*,*) 'Total S_(//) file name: ',spa_l
           case ('irrot_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) ir_fe_l
             write (*,*) 'Irrotational field-field structure factor file name: ',ir_fe_l
@@ -114,6 +117,9 @@ module io
           case ('irrot_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) ir_sp_l
             write (*,*) 'Irrotational S_(⊥) file name: ',ir_sp_l
+          case ('irrot_s_(par)_file')
+            read(buffer, '(a)', iostat=ios) ir_spa_l
+            write (*,*) 'Irrotational S_(//) file name: ',ir_spa_l
           case ('rot_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) r_fe_l
             write (*,*) 'Rotational field-field structure factor file name: ',r_fe_l
@@ -123,6 +129,9 @@ module io
           case ('rot_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) r_sp_l
             write (*,*) 'Rotational S_(⊥) file name: ',r_sp_l
+          case ('rot_s_(par)_file')
+            read(buffer, '(a)', iostat=ios) r_sp_l
+            write (*,*) 'Rotational S_(//) file name: ',r_spa_l
           case ('field_charge_file')
             read(buffer, '(a)', iostat=ios) fe_ch_l
             write (*,*) 'Raw file name for fields/charges: ',fe_ch_l
@@ -220,12 +229,15 @@ module io
       field_st_file = trim(adjustl(fi_st_l))
       s_ab_file = trim(adjustl(s_ab_l))
       s_perp_file = trim(adjustl(s_p_l))
+      spar_file = trim(adjustl(spa_l))
       irrot_field_file = trim(adjustl(ir_fe_l))
       irrot_sab_file = trim(adjustl(ir_sab_l))
       irrot_sperp_file = trim(adjustl(ir_sp_l))
+      irrot_spar_file = trim(adjustl(ir_spa_l))
       rot_field_file = trim(adjustl(r_fe_l))
       rot_sab_file = trim(adjustl(r_sab_l))
       rot_sperp_file = trim(adjustl(r_sp_l))
+      rot_spar_file = trim(adjustl(r_spa_l))
       field_charge_file = trim(adjustl(fe_ch_l))
 
     else
@@ -323,7 +335,7 @@ module io
 
     !call correlations
 
-    call calc_correlations
+    call calc_correlations(field_charge_file)
 
   end subroutine write_output
 
@@ -509,9 +521,10 @@ module io
 !
 !  end subroutine correlations
 
-  subroutine calc_correlations
+  subroutine calc_correlations(filename)
     use common
     implicit none
+    character(len = *), intent=in :: filename
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin
     integer :: start_point,field_size,ch_size,sp
     integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
@@ -523,6 +536,7 @@ module io
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
     real*8, dimension(2,L,L) :: e_rot
     real*8, dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
+    real*8, dimension(:,:), allocatable :: s_par, s_par_irrot, s_par_rot
     real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
     real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_rot, field_struc_rot
     real*8, dimension(2,2,(bz*L)+1,(bz*L)+1) :: s_ab_irrot, s_ab_rot
@@ -554,7 +568,7 @@ module io
     e_rot = 0.0; fe_fe_rot = 0.0; field_struc_rot = 0.0; s_ab_rot = 0.0;
     fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
 
-    open(15, file=field_charge_file, status="old", action="read", access="stream", form="unformatted")
+    open(15, file=filename, status="old", action="read", access="stream", form="unformatted")
 
     do n = 1, no_measurements
 
@@ -575,184 +589,169 @@ module io
       read(15, POS=start_point + field_size) mnphi
       read(15, POS=start_point + 2 * field_size) v
 
-      ! put the rotational part of the field in e_field
-      ! not yet - can use e_field to check numbers
+      ! this way we can get decomposed parts along with total
       e_rot = e_field - mnphi
 
-      ! --- test code ---
-      ! add a corresponding one in main and compare to
-      ! confirm what we read in is what's in the file
-      !write (*,*) n
+      do ky = (-1*L/2)*bz, (L/2)*bz
+        do kx = (-1*L/2)*bz, (L/2)*bz
 
-      !do k = 1,L
-      !  do j = 1,L
-      !    do i = 1,L
-      !      write(*,*) i, j, k, v(i,j,k)
-      !    end do
-      !  end do
-      !end do
-      ! ---
+          rho_k_p_temp = (0.0,0.0)
+          rho_k_m_temp = (0.0,0.0)
+          e_kx_temp = (0.0,0.0)
+          mnphi_kx_temp = (0.0,0.0)
+          e_rot_kx_temp = (0.0,0.0)
+          e_ky = (0.0,0.0)
+          mnphi_ky = (0.0,0.0)
+          e_rot_ky = (0.0,0.0)
+          e_kz = (0.0,0.0)
+          mnphi_kz = (0.0,0.0)
+          e_rot_kz = (0.0,0.0)
+          kdotx = (0.0,0.0)
+          norm_k = 0.0
 
-        do ky = (-1*L/2)*bz, (L/2)*bz
-          do kx = (-1*L/2)*bz, (L/2)*bz
+          ! for array indices
+          i = kx + 1 + bz*(L/2)
+          j = ky + 1 + bz*(L/2)
 
-            rho_k_p_temp = (0.0,0.0)
-            rho_k_m_temp = (0.0,0.0)
-            e_kx_temp = (0.0,0.0)
-            mnphi_kx_temp = (0.0,0.0)
-            e_rot_kx_temp = (0.0,0.0)
-            e_ky = (0.0,0.0)
-            mnphi_ky = (0.0,0.0)
-            e_rot_ky = (0.0,0.0)
-            e_kz = (0.0,0.0)
-            mnphi_kz = (0.0,0.0)
-            e_rot_kz = (0.0,0.0)
-            kdotx = (0.0,0.0)
+          if (kx.eq.0.and.ky.eq.0) then
             norm_k = 0.0
+          else
+            norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
+          end if
 
-            ! for array indices
-            i = kx + 1 + bz*(L/2)
-            j = ky + 1 + bz*(L/2)
+          ! m,p,s are the real space coordinates
+            do p = 1,L
+              do m = 1,L
 
-            if (kx.eq.0.and.ky.eq.0) then
-              norm_k = 0.0
-            else
-              norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
-            end if
+                ! different offsets for x,y,z
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
+                        ((p-1)*ky)))
 
-            ! m,p,s are the real space coordinates
-              do p = 1,L
-                do m = 1,L
+                ! we want this for every step so we can
+                ! average at the end to get field-field struc
+                e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
+                mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
+                e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
-                  ! different offsets for x,y,z
-                  kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
-                          ((p-1)*ky)))
+                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                        ((p-(1.0/2))*ky)))
 
-                  ! we want this for every step so we can
-                  ! average at the end to get field-field struc
-                  e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
-                  mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
-                  e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
+                e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
+                mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
+                e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
 
-                  kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                          ((p-(1.0/2))*ky)))
+                if (v(m,p).ne.0) then ! calculate <++ + +->!
 
-                  e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
-                  mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
-                  e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
+                  ! FT of charge distribution
+                  kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                          ((p-1)*ky/(L*lambda))))
 
-                  if (v(m,p).ne.0) then ! calculate <++ + +->!
+                  if (v(m,p).eq.-1) then
+                    rho_k_m_temp = rho_k_m_temp + v(m,p) * exp(kdotx)
+                  end if
 
-                    ! FT of charge distribution
-                    kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                            ((p-1)*ky/(L*lambda))))
+                  if (v(m,p).eq.1) then ! take away <++>
+                    rho_k_p_temp = rho_k_p_temp + v(m,p) * exp(kdotx)
+                  end if
 
-                    if (v(m,p).eq.-1) then
-                      rho_k_m_temp = rho_k_m_temp + v(m,p) * exp(kdotx)
-                    end if
+                  ! --- real space correlation function ---
 
-                    if (v(m,p).eq.1) then ! take away <++>
-                      rho_k_p_temp = rho_k_p_temp + v(m,p) * exp(kdotx)
-                    end if
+                  if (kx.gt.0.and.kx.le.L.and.&
+                      ky.gt.0.and.ky.le.L) then
 
-                    ! --- real space correlation function ---
+                    ! this should sort it out. kx ky kz here are
+                    ! the "r"s, m p s are the "zeros"
+                    ! we want to do rho_+(0) rho_-(r)
+                    if (v(m,p).eq.1) then
+                      if (v(kx,ky).eq.-1) then
 
-                    if (kx.gt.0.and.kx.le.L.and.&
-                        ky.gt.0.and.ky.le.L) then
+                        x = abs(m - kx)
+                        y = abs(p - ky)
 
-                      ! this should sort it out. kx ky kz here are
-                      ! the "r"s, m p s are the "zeros"
-                      ! we want to do rho_+(0) rho_-(r)
-                      if (v(m,p).eq.1) then
-                        if (v(kx,ky).eq.-1) then
+                        if (x.gt.L/2) then
+                          x = L - x
+                        end if
+                        if (y.gt.L/2) then
+                          y = L - y
+                        end if
 
-                          x = abs(m - kx)
-                          y = abs(p - ky)
+                        x = x + 1
+                        y = y + 1
 
-                          if (x.gt.L/2) then
-                            x = L - x
-                          end if
-                          if (y.gt.L/2) then
-                            y = L - y
-                          end if
+                        dir_struc(x,y) = dir_struc(x,y) +&
+                                v(m,p) * v(kx,ky)
+                      end if ! neg charge at kx,ky,kz
+                    end if ! pos charge at m,p,s
+                  end if ! kx, ky, kz < L
 
-                          x = x + 1
-                          y = y + 1
+                end if ! end v != 0 check
 
-                          dir_struc(x,y) = dir_struc(x,y) +&
-                                  v(m,p) * v(kx,ky)
-                        end if ! neg charge at kx,ky,kz
-                      end if ! pos charge at m,p,s
-                    end if ! kx, ky, kz < L
+            end do ! end p loop
+          end do ! end m loop
 
-                  end if ! end v != 0 check
+          rho_k_p_temp = rho_k_p_temp / float(L**2)
+          rho_k_m_temp = rho_k_m_temp / float(L**2)
+          e_kx_temp = e_kx_temp / float(L**2)
+          e_ky = e_ky / float(L**2)
+          mnphi_kx_temp = mnphi_kx_temp / float(L**2)
+          mnphi_ky = mnphi_ky / float(L**2)
+          e_rot_kx_temp = e_rot_kx_temp / float(L**2)
+          e_rot_ky = e_rot_ky / float(L**2)
 
-              end do ! end p loop
-            end do ! end m loop
+          rho_k_p(i,j) = rho_k_p(i,j) + rho_k_p_temp
+          rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
+          e_kx(i,j) = e_kx(i,j) + e_kx_temp
+          mnphi_kx(i,j) = mnphi_kx(i,j) + mnphi_kx_temp
+          e_rot_kx(i,j) = e_rot_kx(i,j) + e_rot_kx_temp
+          ch_ch(i,j) = ch_ch(i,j) +&
+                        (rho_k_p_temp * conjg(rho_k_m_temp))
+          fe_fe(i,j) = fe_fe(i,j) +&
+                        (e_kx_temp * conjg(e_kx_temp))
+          fe_fe_irrot(i,j) = fe_fe_irrot(i,j) +&
+                              (mnphi_kx_temp * conjg(mnphi_kx_temp))
+          fe_fe_rot(i,j) = fe_fe_rot(i,j) +&
+                              (e_rot_kx_temp * conjg(e_rot_kx_temp))
 
-            rho_k_p_temp = rho_k_p_temp / float(L**3)
-            rho_k_m_temp = rho_k_m_temp / float(L**3)
-            e_kx_temp = e_kx_temp / float(L**3)
-            e_ky = e_ky / float(L**3)
-            mnphi_kx_temp = mnphi_kx_temp / float(L**3)
-            mnphi_ky = mnphi_ky / float(L**3)
-            e_rot_kx_temp = e_rot_kx_temp / float(L**3)
-            e_rot_ky = e_rot_ky / float(L**3)
+          s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
+          e_kx_temp*conjg(e_kx_temp)
+          s_ab(1,2,i,j) = s_ab(1,2,i,j) +&
+          e_kx_temp*conjg(e_ky)
+          s_ab(2,1,i,j) = s_ab(2,1,i,j) +&
+          e_ky*conjg(e_kx_temp)
+          s_ab(2,2,i,j) = s_ab(2,2,i,j) +&
+          e_ky*conjg(e_ky)
 
-            rho_k_p(i,j) = rho_k_p(i,j) + rho_k_p_temp
-            rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
-            e_kx(i,j) = e_kx(i,j) + e_kx_temp
-            mnphi_kx(i,j) = mnphi_kx(i,j) + mnphi_kx_temp
-            e_rot_kx(i,j) = e_rot_kx(i,j) + e_rot_kx_temp
-            ch_ch(i,j) = ch_ch(i,j) +&
-                          (rho_k_p_temp * conjg(rho_k_m_temp))
-            fe_fe(i,j) = fe_fe(i,j) +&
-                          (e_kx_temp * conjg(e_kx_temp))
-            fe_fe_irrot(i,j) = fe_fe_irrot(i,j) +&
-                                (mnphi_kx_temp * conjg(mnphi_kx_temp))
-            fe_fe_rot(i,j) = fe_fe_rot(i,j) +&
-                                (e_rot_kx_temp * conjg(e_rot_kx_temp))
+          s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i,j) +&
+          e_rot_kx_temp*conjg(e_rot_kx_temp)
+          s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i,j) +&
+          e_rot_kx_temp*conjg(e_rot_ky)
+          s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i,j) +&
+          e_rot_ky*conjg(e_rot_kx_temp)
+          s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i,j) +&
+          e_rot_ky*conjg(e_rot_ky)
 
-            s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
-            e_kx_temp*conjg(e_kx_temp)
-            s_ab(1,2,i,j) = s_ab(1,2,i,j) +&
-            e_kx_temp*conjg(e_ky)
-            s_ab(2,1,i,j) = s_ab(2,1,i,j) +&
-            e_ky*conjg(e_kx_temp)
-            s_ab(2,2,i,j) = s_ab(2,2,i,j) +&
-            e_ky*conjg(e_ky)
+          s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i,j) +&
+          mnphi_kx_temp*conjg(mnphi_kx_temp)
+          s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i,j) +&
+          mnphi_kx_temp*conjg(mnphi_ky)
+          s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i,j) +&
+          mnphi_ky*conjg(mnphi_kx_temp)
+          s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i,j) +&
+          mnphi_ky*conjg(mnphi_ky)
 
-            s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i,j) +&
-            e_rot_kx_temp*conjg(e_rot_kx_temp)
-            s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i,j) +&
-            e_rot_kx_temp*conjg(e_rot_ky)
-            s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i,j) +&
-            e_rot_ky*conjg(e_rot_kx_temp)
-            s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i,j) +&
-            e_rot_ky*conjg(e_rot_ky)
+          ! direct space one
+          if (i.le.L/2+1.and.j.le.L/2+1) then
 
-            s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i,j) +&
-            mnphi_kx_temp*conjg(mnphi_kx_temp)
-            s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i,j) +&
-            mnphi_kx_temp*conjg(mnphi_ky)
-            s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i,j) +&
-            mnphi_ky*conjg(mnphi_kx_temp)
-            s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i,j) +&
-            mnphi_ky*conjg(mnphi_ky)
+            dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
+            dist_bin = floor(dist / bin_size) + 1
+            dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
+            bin_count(dist_bin) = bin_count(dist_bin) + 1
 
-            ! direct space one
-            if (i.le.L/2+1.and.j.le.L/2+1) then
-
-              dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
-              dist_bin = floor(dist / bin_size) + 1
-              dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
-              bin_count(dist_bin) = bin_count(dist_bin) + 1
-
-            end if
+          end if
 
 
-          end do
         end do
+      end do ! end kx, ky loops
 
     end do ! n loop
 
@@ -784,77 +783,90 @@ module io
     allocate(s_perp((sp*L)+1,(sp*L)+1))
     allocate(s_perp_irrot((sp*L)+1,(sp*L)+1))
     allocate(s_perp_rot((sp*L)+1,(sp*L)+1))
+    allocate(s_par((sp*L)+1,(sp*L)+1))
+    allocate(s_par_irrot((sp*L)+1,(sp*L)+1))
+    allocate(s_par_rot((sp*L)+1,(sp*L)+1))
     s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
+    s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
 
-      do p = (-L/2)*sp,(L/2)*sp
-        do m = (-L/2)*sp,(L/2)*sp
+    do p = (-L/2)*sp,(L/2)*sp
+      do m = (-L/2)*sp,(L/2)*sp
 
-          i = m + 1 + sp*(L/2)
-          j = p + 1 + sp*(L/2)
+        i = m + 1 + sp*(L/2)
+        j = p + 1 + sp*(L/2)
 
-          ! use separate variables, we're gonna mess around with values
-          kx_float = m * ((2 * pi)/(L * lambda))
-          ky_float = p * ((2 * pi)/(L * lambda))
+        ! use separate variables, we're gonna mess around with values
+        kx_float = m * ((2 * pi)/(L * lambda))
+        ky_float = p * ((2 * pi)/(L * lambda))
 
-          ! --- NOTE TO SELF ---
-          ! need to sort this shit out. this could be a start????
-          !gx = floor(kx_float / (2 * pi))
-          !gy = floor(ky_float / (2 * pi))
-          !qx = mod(kx_float, 2 * pi)
-          !qy = mod(ky_float, 2 * pi)
+        ! --- NOTE TO SELF ---
+        ! need to sort this shit out. this could be a start????
+        !gx = floor((kx_float * L) / (2 * pi))
+        !gy = floor((ky_float * L) / (2 * pi))
+        !qx = mod(kx_float, 2 * pi)
+        !qy = mod(ky_float, 2 * pi)
 
-          if (kx_float.eq.0.and.ky_float.eq.0) then
-            norm_k = 0.0
-          else
-            norm_k = 1.0/(kx_float**2 + ky_float**2)
-          end if
+        if (kx_float.eq.0.and.ky_float.eq.0) then
+          norm_k = 0.0
+        else
+          norm_k = 1.0/(kx_float**2 + ky_float**2)
+        end if
 
-          ! move back to somewhere we already know about
-          ! this is probably not right yet.
-          ! but i know something needs doing here
-          ! s_ab should be periodic in 2pi so mod should be fine
+        ! move back to somewhere we already know about
+        ! this is probably not right yet.
+        ! but i know something needs doing here
+        ! s_ab should be periodic in 2pi so mod should be fine
 
-          if (abs(p).gt.(L/2)*bz) then
-            ky = mod(p,(bz*L)/2) + 1 + (bz*L)/2
-          else
-            ky = p + 1 + (bz*L)/2
-          end if
-          if (abs(m).gt.(L/2)*bz) then
-            kx = mod(m,(bz*L)/2) + 1 + (bz*L)/2
-          else
-            kx = m + 1 + (bz*L)/2
-          end if
+        if (abs(p).gt.(L/2)*bz) then
+          ky = mod(p,(bz*L)/2) + 1 + (bz*L)/2
+        else
+          ky = p + 1 + (bz*L)/2
+        end if
+        if (abs(m).gt.(L/2)*bz) then
+          kx = mod(m,(bz*L)/2) + 1 + (bz*L)/2
+        else
+          kx = m + 1 + (bz*L)/2
+        end if
 
-          if (abs(ky_float).gt.(L/2)*bz) then
-            ky_float = mod(ky_float,bz * pi)
-          end if
-          if (abs(kx_float).gt.(L/2)*bz) then
-            kx_float = mod(kx_float,bz * pi)
-          end if
+        if (abs(ky_float).gt.(L/2)*bz) then
+          ky_float = mod(ky_float,bz * pi)
+        end if
+        if (abs(kx_float).gt.(L/2)*bz) then
+          kx_float = mod(kx_float,bz * pi)
+        end if
 
-          s_perp(kx,ky) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky) +&
-                          ((-1)*kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
-                          ((-1)*ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
-                          (1 - ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
+        s_perp(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
+                        ((-1)*kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
+                        ((-1)*ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
+                        (1 - ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
 
-          s_perp_irrot(kx,ky) = (1 - kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky) +&
-                          ((-1)*kx_float*ky_float*norm_k) * s_ab_irrot(1,2,kx,ky)+&
-                          ((-1)*ky_float*kx_float*norm_k) * s_ab_irrot(2,1,kx,ky)+&
-                          (1 - ky_float*ky_float*norm_k) * s_ab_irrot(2,2,kx,ky)
+        s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky)+&
+                        ((-1)*kx_float*ky_float*norm_k) * s_ab_irrot(1,2,kx,ky)+&
+                        ((-1)*ky_float*kx_float*norm_k) * s_ab_irrot(2,1,kx,ky)+&
+                        (1 - ky_float*ky_float*norm_k) * s_ab_irrot(2,2,kx,ky)
 
-          s_perp_rot(kx,ky) = (1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky) +&
-                          ((-1)*kx_float*ky_float*norm_k) * s_ab_rot(1,2,kx,ky)+&
-                          ((-1)*ky_float*kx_float*norm_k) * s_ab_rot(2,1,kx,ky)+&
-                          (1 - ky_float*ky_float*norm_k) * s_ab_rot(2,2,kx,ky)
+        s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky)+&
+                        ((-1)*kx_float*ky_float*norm_k) * s_ab_rot(1,2,kx,ky)+&
+                        ((-1)*ky_float*kx_float*norm_k) * s_ab_rot(2,1,kx,ky)+&
+                        (1 - ky_float*ky_float*norm_k) * s_ab_rot(2,2,kx,ky)
 
-        end do
+        s_par(i,j) = (kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
+                       (kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
+                       (ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
+                       (ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
+
+        s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*s_ab_irrot(1,1,kx,ky)+&
+                             (kx_float*ky_float*norm_k)*s_ab_irrot(1,2,kx,ky)+&
+                             (ky_float*kx_float*norm_k)*s_ab_irrot(2,1,kx,ky)+&
+                             (ky_float*ky_float*norm_k)*s_ab_irrot(2,2,kx,ky)
+
+        s_par_rot(i,j) = (kx_float*kx_float*norm_k)*s_ab_rot(1,1,kx,ky)+&
+                           (kx_float*ky_float*norm_k)*s_ab_rot(1,2,kx,ky)+&
+                           (ky_float*kx_float*norm_k)*s_ab_rot(2,1,kx,ky)+&
+                           (ky_float*ky_float*norm_k)*s_ab_rot(2,2,kx,ky)
+
       end do
-
-      !do i = 1,10
-      !  do j = 30,(sp*L) + 1
-      !    write (*,*) i,j, s_perp_irrot(i,j)
-      !  end do
-      !end do
+    end do ! end p, m loops
 
     open(unit=10, file=dir_st_file)
     open(unit=11, file=dir_dist_file)
@@ -868,6 +880,9 @@ module io
     open(unit=19, file=rot_field_file)
     open(unit=20, file=rot_sab_file)
     open(unit=21, file=rot_sperp_file)
+    open(unit=22, file=spar_file)
+    open(unit=23, file=irrot_spar_file)
+    open(unit=24, file=rot_spar_file)
 
     dist_r = dist_r / (no_measurements)
     do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
@@ -889,15 +904,21 @@ module io
 
           if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
 
+            ! either this block, or the one below it.
+            ! still not entirely sure which to use.
             charge_struc(i,j) = abs(ch_ch(i,j))
             field_struc(i,j) = abs(fe_fe(i,j))
             field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j))
             field_struc_rot(i,j) = abs(fe_fe_rot(i,j))
 
-            !charge_struc(i,j) = abs(ch_ch(i,j) - (rho_k_p(i,j)*conjg(rho_k_m(i,j))))
-            !field_struc(i,j) = abs(fe_fe(i,j) - (e_kx(i,j)*conjg(e_kx(i,j))))
-            !field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j) - (mnphi_kx(i,j)*conjg(mnphi_kx(i,j))))
-            !field_struc_rot(i,j) = abs(fe_fe_rot(i,j) - (e_rot_kx(i,j)*conjg(e_rot_kx(i,j))))
+            !charge_struc(i,j) = abs(ch_ch(i,j) -&
+            !(rho_k_p(i,j)*conjg(rho_k_m(i,j))))
+            !field_struc(i,j) = abs(fe_fe(i,j) -&
+            !(e_kx(i,j)*conjg(e_kx(i,j))))
+            !field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j) -&
+            !(mnphi_kx(i,j)*conjg(mnphi_kx(i,j))))
+            !field_struc_rot(i,j) = abs(fe_fe_rot(i,j) -&
+            !(e_rot_kx(i,j)*conjg(e_rot_kx(i,j))))
 
             write (12, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
@@ -960,6 +981,21 @@ module io
             2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
             s_perp_rot(i,j)
 
+            write (22, field_format_string)&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            s_par(i,j)
+
+            write (23, field_format_string)&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            s_par_irrot(i,j)
+
+            write (24, field_format_string)&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            s_par_rot(i,j)
+
         end do
       end do
 
@@ -974,8 +1010,12 @@ module io
     close(19)
     close(20)
     close(21)
+    close(22)
+    close(23)
+    close(24)
 
     deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
+    deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);
 
     write (*,'(a)') "]. Completed."
 

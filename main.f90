@@ -419,7 +419,7 @@ subroutine measure(step_number)
   n = step_number / sample_interval
 
   u_tot_run = 0.0
-  u_tot_run = 0.5 * eps_0 * sum(e_field * e_field)
+  u_tot_run = 0.5 * eps_0 * sum(e_field**2)
 
   ! if this is the first step, start a new file;
   ! otherwise append to the file that's there
