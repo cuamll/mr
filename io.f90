@@ -339,188 +339,6 @@ module io
 
   end subroutine write_output
 
-!  subroutine correlations
-!
-!    ! calculate charge-charge correlations, I guess
-!    ! Fourier transform the field and then time average
-!    ! Project out transverse part, it should be flat
-!    ! Longitudinal part should display pinch points
-!    ! Width of pinch points --> charge density
-!    use common
-!    implicit none
-!    integer :: i, j, k, kx, ky, kz, dist_bin
-!    real*8 :: knorm, dist
-!    real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: s_perp
-!    !real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: charge_struc,field_struc
-!    real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
-!    integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
-!    character(74) :: struc_format_string
-!    character(97) :: field_format_string
-!    character(21) :: dir_format_string
-!    character(22) :: dir_dist_format_string
-!
-!    knorm = 0.0; dist_bin = 0; dist = 0.0; dist_r = 0.0; bin_count = 0.0
-!    s_perp = 0.0
-!    !charge_struc = 0.0; field_struc = 0.0
-!
-!    field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
-!    struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
-!    dir_format_string = "(I2, I2, I2, ES18.9)"
-!    dir_dist_format_string = "(ES18.9, I8, ES18.9)"
-!
-!    ! normalise
-!    write (*,*) "ch_ch unnormalised",ch_ch(L,L + 1,L + 1),ch_ch(L + 1,L + 1,L + 1)
-!    ! delete these! just for testing
-!    !rho_k_m = rho_k_m * 2
-!    !rho_k_p = rho_k_p * 2
-!
-!    rho_k_p = rho_k_p / (no_measurements)
-!    rho_k_m = rho_k_m / (no_measurements)
-!    ch_ch = ch_ch / (no_measurements)
-!    e_kx = e_kx / (no_measurements)
-!    fe_fe = fe_fe / (no_measurements)
-!    s_ab = s_ab / (no_measurements)
-!    !charge_struc = charge_struc / (no_measurements)
-!    !field_struc = field_struc / (no_measurements)
-!    !write (*,*) "ch_ch normalised",ch_ch(L,L + 1,L + 1),ch_ch(L + 1,L + 1,L + 1)
-!    !write (*,*) "rho_k_pm normalised at 0,0,0",rho_k_p(L + 1,L + 1,L + 1),rho_k_m(L + 1,L + 1,L + 1)
-!    !write (*,*) "charge_struc normalised from main",charge_struc(L,L + 1,L + 1),charge_struc(L + 1,L + 1,L + 1)
-!
-!    ! what's going on with this?
-!    ! only difference is this is real space instead of Fourier
-!    dir_struc = dir_struc / (no_measurements&
-!              * (0.5 * add_charges / L**3)**2)
-!    !charge_struc = 0.0; field_struc = 0.0
-!
-!    open(unit=5, file=charge_st_file)
-!    open(unit=7, file=field_st_file)
-!    open(unit=9, file=s_perp_file)
-!    open(unit=10, file=dir_st_file)
-!    open(unit=11, file=dir_dist_file)
-!    open(unit=12, file=s_ab_file)
-!
-!    write (*,*) "Writing out to files..."
-!
-!    do k = 1,bz*(L) + 1
-!      do j = 1,bz*(L) + 1
-!        do i = 1,bz*(L) + 1
-!
-!            !field_struc(i,j,k) = field_struc(i,j,k) +&
-!            !  abs(fe_fe(i,j,k) - e_kx(i,j,k)&
-!            !  *e_kx(i,j,k))
-!
-!            !charge_struc(i,j,k) = charge_struc(i,j,k) +&
-!            !  abs(ch_ch(i,j,k) - rho_k_p(i,j,k)&
-!            !  *rho_k_m(i,j,k))
-!
-!            if (k.eq.(L+1).and.j.eq.(L+1).and.i.eq.(L+1)) then
-!              write (*,*) "charge_struc calculating at 0,0,0",ch_ch(i,j,k),rho_k_p(i,j,k),rho_k_m(i,j,k),&
-!                ch_ch(i,j,k) - rho_k_p(i,j,k) * rho_k_m(i,j,k),charge_struc(i,j,k)
-!            end if
-!
-!            kx = i - 1 - bz*(L/2)
-!            ky = j - 1 - bz*(L/2)
-!            kz = k - 1 - bz*(L/2)
-!
-!            if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
-!              knorm = 0.0
-!            else
-!              knorm = 1.0/(kx*kx + ky*ky + kz*kz)
-!            end if
-!
-!            if (i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
-!              write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,s_ab(:,:,i,j,k)
-!            end if
-!
-!            ! sum over alpha, beta
-!            s_perp(i,j,k) = (1 - kx*kx*knorm) * s_ab(1,1,i,j,k) +&
-!                            ((-1)*kx*ky*knorm) * s_ab(1,2,i,j,k)+&
-!                            ((-1)*kx*kz*knorm) * s_ab(1,3,i,j,k)+&
-!                            ((-1)*ky*kx*knorm) * s_ab(2,1,i,j,k)+&
-!                            (1 - ky*ky*knorm) * s_ab(2,2,i,j,k) +&
-!                            ((-1)*ky*kz*knorm) * s_ab(2,3,i,j,k)+&
-!                            ((-1)*kz*kx*knorm) * s_ab(3,1,i,j,k)+&
-!                            ((-1)*kz*ky*knorm) * s_ab(3,2,i,j,k)+&
-!                            (1 - kz*kz*knorm) * s_ab(3,3,i,j,k)
-!
-!          ! direct space one
-!          if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
-!
-!            dist = sqrt(dble((i - 1)**2 + (j - 1)**2 + (k - 1)**2))
-!            dist_bin = floor(dist / bin_size) + 1
-!            dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j,k)
-!            bin_count(dist_bin) = bin_count(dist_bin) + 1
-!
-!          end if
-!
-!        end do
-!      end do
-!    end do
-!
-!    do k = 1,bz*(L) + 1
-!      do i = 1,bz*(L) + 1
-!        do j = 1,bz*(L) + 1
-!
-!          ! output is kx, ky, kz, S(\vec{k})
-!
-!          write (5, struc_format_string)&
-!          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-!          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-!          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-!          charge_struc(i,j,k)
-!
-!          ! write direct space one
-!          if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
-!            write (10, dir_format_string)&
-!            i - 1,j - 1,k - 1,abs(dir_struc(i,j,k))
-!          end if
-!
-!          write (7, field_format_string)&
-!          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-!          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-!          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-!          field_struc(i,j,k)
-!
-!          write (9, field_format_string)&
-!          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
-!          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
-!          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
-!          s_perp(i,j,k)
-!
-!          write (12, field_format_string)&
-!          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
-!          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
-!          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
-!          s_ab(1,1,i,j,k),&
-!          s_ab(1,2,i,j,k),&
-!          s_ab(1,3,i,j,k),&
-!          s_ab(2,1,i,j,k),&
-!          s_ab(2,2,i,j,k),&
-!          s_ab(2,3,i,j,k),&
-!          s_ab(3,1,i,j,k),&
-!          s_ab(3,2,i,j,k),&
-!          s_ab(3,3,i,j,k)
-!
-!        end do
-!      end do
-!    end do
-!    write (*,*) "charge_struc recalculated",charge_struc(L,L + 1,L + 1),charge_struc(L + 1,L + 1,L + 1)
-!
-!    dist_r = dist_r / (no_measurements)
-!    do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
-!        write (11, dir_dist_format_string)&
-!        i * bin_size, bin_count(i), abs(dist_r(i))
-!    end do
-!
-!    close(5)
-!    close(7)
-!    close(9)
-!    close(10)
-!    close(11)
-!    close(12)
-!
-!  end subroutine correlations
-
   subroutine calc_correlations(filename)
     use common
     implicit none
@@ -790,14 +608,6 @@ module io
     s_ab_irrot = s_ab_irrot / no_measurements
     s_ab_rot = s_ab_rot / no_measurements
 
-    ! not sure if this is okay
-    !charge_struc = ch_ch - (rho_k_p*conjg(rho_k_m))
-    !field_struc = fe_fe - (e_kx*conjg(e_kx))
-    !field_struc_irrot = fe_fe_irrot - (mnphi_kx*conjg(mnphi_kx))
-    !charge_struc = ch_ch
-    !field_struc = fe_fe
-    !field_struc_irrot = fe_fe_irrot
-
     ! we can calculate s_perp up to wherever
     sp = 8
     allocate(s_perp((sp*L)+1,(sp*L)+1))
@@ -924,21 +734,11 @@ module io
 
           if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
 
-            ! either this block, or the one below it.
-            ! still not entirely sure which to use.
+            ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
             charge_struc(i,j) = abs(ch_ch(i,j))
             field_struc(i,j) = abs(fe_fe(i,j))
             field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j))
             field_struc_rot(i,j) = abs(fe_fe_rot(i,j))
-
-            !charge_struc(i,j) = abs(ch_ch(i,j) -&
-            !(rho_k_p(i,j)*conjg(rho_k_m(i,j))))
-            !field_struc(i,j) = abs(fe_fe(i,j) -&
-            !(e_kx(i,j)*conjg(e_kx(i,j))))
-            !field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j) -&
-            !(mnphi_kx(i,j)*conjg(mnphi_kx(i,j))))
-            !field_struc_rot(i,j) = abs(fe_fe_rot(i,j) -&
-            !(e_rot_kx(i,j)*conjg(e_rot_kx(i,j))))
 
             write (12, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&

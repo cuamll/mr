@@ -13,5 +13,4 @@ set bmargin at screen 0.85
 set lmargin at screen 0.15
 set rmargin at screen 0.85
 set title PLOTTITLE
-# set palette defined (0 "black", 0.06 "navy", 0.12 "red", 0.18 "white")
 splot FILE w image title LINETITLE
