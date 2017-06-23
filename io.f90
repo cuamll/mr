@@ -212,7 +212,7 @@ module io
       end if
 
       ! set up other variables, allocations etc.
-      volume = lambda**3
+      volume = lambda**2
       no_measurements = measurement_sweeps / sample_interval
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
@@ -246,7 +246,7 @@ module io
       stop
     end if
 
-    close(1)
+    close(10)
 
   end subroutine read_input
 
@@ -332,8 +332,7 @@ module io
 
     close(2)
     close(3)
-
-    !call correlations
+    close(4)
 
     call calc_correlations(field_charge_file)
 

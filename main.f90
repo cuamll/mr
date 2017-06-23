@@ -19,7 +19,7 @@ program mr
   write (*,*) "Maggs-Rossetto algorithm on the simple cubic lattice."
   write (*,*) "Callum Gray, University College London, 2017."
   write (*,*) "Git revision ",revision
-  write (*,*) "Repo at http://github.com/callumgray/mr"
+  write (*,*) "Repo at http://github.com/cuamll/mr"
 
   call date_and_time(VALUES=values)
 
