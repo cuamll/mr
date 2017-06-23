@@ -130,7 +130,7 @@ module io
             read(buffer, '(a)', iostat=ios) r_sp_l
             write (*,*) 'Rotational S_(⊥) file name: ',r_sp_l
           case ('rot_s_(par)_file')
-            read(buffer, '(a)', iostat=ios) r_sp_l
+            read(buffer, '(a)', iostat=ios) r_spa_l
             write (*,*) 'Rotational S_(//) file name: ',r_spa_l
           case ('field_charge_file')
             read(buffer, '(a)', iostat=ios) fe_ch_l
@@ -524,7 +524,7 @@ module io
   subroutine calc_correlations(filename)
     use common
     implicit none
-    character(len = *), intent=in :: filename
+    character(len = *), intent(in) :: filename
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin
     integer :: start_point,field_size,ch_size,sp
     integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
@@ -779,7 +779,7 @@ module io
     !field_struc_irrot = fe_fe_irrot
 
     ! we can calculate s_perp up to wherever
-    sp = 6
+    sp = 8
     allocate(s_perp((sp*L)+1,(sp*L)+1))
     allocate(s_perp_irrot((sp*L)+1,(sp*L)+1))
     allocate(s_perp_rot((sp*L)+1,(sp*L)+1))
@@ -828,12 +828,12 @@ module io
           kx = m + 1 + (bz*L)/2
         end if
 
-        if (abs(ky_float).gt.(L/2)*bz) then
-          ky_float = mod(ky_float,bz * pi)
-        end if
-        if (abs(kx_float).gt.(L/2)*bz) then
-          kx_float = mod(kx_float,bz * pi)
-        end if
+        !if (abs(ky_float).gt.(pi)*bz) then
+        !  ky_float = mod(ky_float,bz * pi)
+        !end if
+        !if (abs(kx_float).gt.(pi)*bz) then
+        !  kx_float = mod(kx_float,bz * pi)
+        !end if
 
         s_perp(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
                         ((-1)*kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&

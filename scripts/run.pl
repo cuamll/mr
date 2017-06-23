@@ -25,7 +25,9 @@ my $input;
 my $inputfile;
 my $doplots;
 my $dorun;
+my $comment;
 $input = GetOptions ("i=s"=> \$inputfile,
+                     "c=s"=> \$comment,
                      "p=i"=> \$doplots,
                      "r=i"=> \$dorun);
 
@@ -67,6 +69,7 @@ open my $fh, '<:encoding(UTF-8)', "$inputfile"
 my %parameters = map { split /\s+/; } <$fh>;
 close $fh;
 $parameters{timestamp} = "$timestamp";
+$parameters{comment} = "$comment";
 my $parameters_json = encode_json [%parameters];
 
 # ----------

@@ -38,7 +38,10 @@ my @filenames = ('charge_struc',
                  'rot_field_struc',
                  's_perp',
                  'irrot_s_perp',
-                 'rot_s_perp');
+                 'rot_s_perp',
+                 's_par',
+                 'irrot_s_par',
+                 'rot_s_par');
 
 my @linetitles = ("Charge-charge structure factor",
                   "Field-field structure factor",
@@ -46,7 +49,10 @@ my @linetitles = ("Charge-charge structure factor",
                   "Field-field structure factor - rotational",
                   "S_{⟂}",
                   "S_{⟂} - irrotational",
-                  "S_{⟂} - rotational");
+                  "S_{⟂} - rotational",
+                  "S_{∥}",
+                  "S_{∥} - irrotational",
+                  "S_{∥} - rotational");
 
 my $basedir = File::Spec->curdir();
 my $inpath = "$basedir/out/";
