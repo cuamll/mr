@@ -105,6 +105,9 @@ module io
           case ('total_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
             write (*,*) 'Total S_(⊥) file name: ',s_p_l
+          case ('total_s_(par)_file')
+            read(buffer, '(a)', iostat=ios) spa_l
+            write (*,*) 'Total S_(//) file name: ',spa_l
           case ('irrot_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) ir_fe_l
             write (*,*) 'Irrotational field-field structure factor file name: ',ir_fe_l
@@ -114,6 +117,9 @@ module io
           case ('irrot_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) ir_sp_l
             write (*,*) 'Irrotational S_(⊥) file name: ',ir_sp_l
+          case ('irrot_s_(par)_file')
+            read(buffer, '(a)', iostat=ios) ir_spa_l
+            write (*,*) 'Irrotational S_(//) file name: ',ir_spa_l
           case ('rot_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) r_fe_l
             write (*,*) 'Rotational field-field structure factor file name: ',r_fe_l
@@ -123,6 +129,9 @@ module io
           case ('rot_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) r_sp_l
             write (*,*) 'Rotational S_(⊥) file name: ',r_sp_l
+          case ('rot_s_(par)_file')
+            read(buffer, '(a)', iostat=ios) r_spa_l
+            write (*,*) 'Rotational S_(//) file name: ',r_spa_l
           case ('field_charge_file')
             read(buffer, '(a)', iostat=ios) fe_ch_l
             write (*,*) 'Raw file name for fields/charges: ',fe_ch_l
@@ -220,12 +229,15 @@ module io
       field_st_file = trim(adjustl(fi_st_l))
       s_ab_file = trim(adjustl(s_ab_l))
       s_perp_file = trim(adjustl(s_p_l))
+      spar_file = trim(adjustl(spa_l))
       irrot_field_file = trim(adjustl(ir_fe_l))
       irrot_sab_file = trim(adjustl(ir_sab_l))
       irrot_sperp_file = trim(adjustl(ir_sp_l))
+      irrot_spar_file = trim(adjustl(ir_spa_l))
       rot_field_file = trim(adjustl(r_fe_l))
       rot_sab_file = trim(adjustl(r_sab_l))
       rot_sperp_file = trim(adjustl(r_sp_l))
+      rot_spar_file = trim(adjustl(r_spa_l))
       field_charge_file = trim(adjustl(fe_ch_l))
 
     else
@@ -234,7 +246,7 @@ module io
       stop
     end if
 
-    close(1)
+    close(10)
 
   end subroutine read_input
 
@@ -322,198 +334,16 @@ module io
 
     close(2)
     close(3)
+    close(4)
 
-    !call correlations
-
-    call calc_correlations
+    call calc_correlations(field_charge_file)
 
   end subroutine write_output
 
-  subroutine correlations
-
-    ! calculate charge-charge correlations, I guess
-    ! Fourier transform the field and then time average
-    ! Project out transverse part, it should be flat
-    ! Longitudinal part should display pinch points
-    ! Width of pinch points --> charge density
+  subroutine calc_correlations(filename)
     use common
     implicit none
-    integer :: i, j, k, kx, ky, kz, dist_bin
-    real*8 :: knorm, dist
-    real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: s_perp
-    !real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: charge_struc,field_struc
-    real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
-    integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
-    character(74) :: struc_format_string
-    character(97) :: field_format_string
-    character(21) :: dir_format_string
-    character(22) :: dir_dist_format_string
-
-    knorm = 0.0; dist_bin = 0; dist = 0.0; dist_r = 0.0; bin_count = 0.0
-    s_perp = 0.0
-    !charge_struc = 0.0; field_struc = 0.0
-
-    field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
-    struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
-    dir_format_string = "(I2, I2, I2, ES18.9)"
-    dir_dist_format_string = "(ES18.9, I8, ES18.9)"
-
-    ! normalise
-    write (*,*) "ch_ch unnormalised",ch_ch(L,L + 1,L + 1),ch_ch(L + 1,L + 1,L + 1)
-    ! delete these! just for testing
-    !rho_k_m = rho_k_m * 2
-    !rho_k_p = rho_k_p * 2
-
-    rho_k_p = rho_k_p / (no_measurements)
-    rho_k_m = rho_k_m / (no_measurements)
-    ch_ch = ch_ch / (no_measurements)
-    e_kx = e_kx / (no_measurements)
-    fe_fe = fe_fe / (no_measurements)
-    s_ab = s_ab / (no_measurements)
-    !charge_struc = charge_struc / (no_measurements)
-    !field_struc = field_struc / (no_measurements)
-    !write (*,*) "ch_ch normalised",ch_ch(L,L + 1,L + 1),ch_ch(L + 1,L + 1,L + 1)
-    !write (*,*) "rho_k_pm normalised at 0,0,0",rho_k_p(L + 1,L + 1,L + 1),rho_k_m(L + 1,L + 1,L + 1)
-    !write (*,*) "charge_struc normalised from main",charge_struc(L,L + 1,L + 1),charge_struc(L + 1,L + 1,L + 1)
-
-    ! what's going on with this?
-    ! only difference is this is real space instead of Fourier
-    dir_struc = dir_struc / (no_measurements&
-              * (0.5 * add_charges / L**3)**2)
-    !charge_struc = 0.0; field_struc = 0.0
-
-    open(unit=5, file=charge_st_file)
-    open(unit=7, file=field_st_file)
-    open(unit=9, file=s_perp_file)
-    open(unit=10, file=dir_st_file)
-    open(unit=11, file=dir_dist_file)
-    open(unit=12, file=s_ab_file)
-
-    write (*,*) "Writing out to files..."
-
-    do k = 1,bz*(L) + 1
-      do j = 1,bz*(L) + 1
-        do i = 1,bz*(L) + 1
-
-            !field_struc(i,j,k) = field_struc(i,j,k) +&
-            !  abs(fe_fe(i,j,k) - e_kx(i,j,k)&
-            !  *e_kx(i,j,k))
-
-            !charge_struc(i,j,k) = charge_struc(i,j,k) +&
-            !  abs(ch_ch(i,j,k) - rho_k_p(i,j,k)&
-            !  *rho_k_m(i,j,k))
-
-            if (k.eq.(L+1).and.j.eq.(L+1).and.i.eq.(L+1)) then
-              write (*,*) "charge_struc calculating at 0,0,0",ch_ch(i,j,k),rho_k_p(i,j,k),rho_k_m(i,j,k),&
-                ch_ch(i,j,k) - rho_k_p(i,j,k) * rho_k_m(i,j,k),charge_struc(i,j,k)
-            end if
-
-            kx = i - 1 - bz*(L/2)
-            ky = j - 1 - bz*(L/2)
-            kz = k - 1 - bz*(L/2)
-
-            if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
-              knorm = 0.0
-            else
-              knorm = 1.0/(kx*kx + ky*ky + kz*kz)
-            end if
-
-            if (i.eq.(L-2).and.j.eq.(L+1).and.k.eq.(L+1)) then
-              write (*,*) 2*pi*kx/L,2*pi*ky/L,2*pi*kz/L,s_ab(:,:,i,j,k)
-            end if
-
-            ! sum over alpha, beta
-            s_perp(i,j,k) = (1 - kx*kx*knorm) * s_ab(1,1,i,j,k) +&
-                            ((-1)*kx*ky*knorm) * s_ab(1,2,i,j,k)+&
-                            ((-1)*kx*kz*knorm) * s_ab(1,3,i,j,k)+&
-                            ((-1)*ky*kx*knorm) * s_ab(2,1,i,j,k)+&
-                            (1 - ky*ky*knorm) * s_ab(2,2,i,j,k) +&
-                            ((-1)*ky*kz*knorm) * s_ab(2,3,i,j,k)+&
-                            ((-1)*kz*kx*knorm) * s_ab(3,1,i,j,k)+&
-                            ((-1)*kz*ky*knorm) * s_ab(3,2,i,j,k)+&
-                            (1 - kz*kz*knorm) * s_ab(3,3,i,j,k)
-
-          ! direct space one
-          if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
-
-            dist = sqrt(dble((i - 1)**2 + (j - 1)**2 + (k - 1)**2))
-            dist_bin = floor(dist / bin_size) + 1
-            dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j,k)
-            bin_count(dist_bin) = bin_count(dist_bin) + 1
-
-          end if
-
-        end do
-      end do
-    end do
-
-    do k = 1,bz*(L) + 1
-      do i = 1,bz*(L) + 1
-        do j = 1,bz*(L) + 1
-
-          ! output is kx, ky, kz, S(\vec{k})
-
-          write (5, struc_format_string)&
-          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-          charge_struc(i,j,k)
-
-          ! write direct space one
-          if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
-            write (10, dir_format_string)&
-            i - 1,j - 1,k - 1,abs(dir_struc(i,j,k))
-          end if
-
-          write (7, field_format_string)&
-          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-          2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-          field_struc(i,j,k)
-
-          write (9, field_format_string)&
-          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
-          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
-          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
-          s_perp(i,j,k)
-
-          write (12, field_format_string)&
-          2*pi*(i - 1 - bz*(l/2))/(l*lambda),&
-          2*pi*(j - 1 - bz*(l/2))/(l*lambda),&
-          2*pi*(k - 1 - bz*(l/2))/(l*lambda),&
-          s_ab(1,1,i,j,k),&
-          s_ab(1,2,i,j,k),&
-          s_ab(1,3,i,j,k),&
-          s_ab(2,1,i,j,k),&
-          s_ab(2,2,i,j,k),&
-          s_ab(2,3,i,j,k),&
-          s_ab(3,1,i,j,k),&
-          s_ab(3,2,i,j,k),&
-          s_ab(3,3,i,j,k)
-
-        end do
-      end do
-    end do
-    write (*,*) "charge_struc recalculated",charge_struc(L,L + 1,L + 1),charge_struc(L + 1,L + 1,L + 1)
-
-    dist_r = dist_r / (no_measurements)
-    do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
-        write (11, dir_dist_format_string)&
-        i * bin_size, bin_count(i), abs(dist_r(i))
-    end do
-
-    close(5)
-    close(7)
-    close(9)
-    close(10)
-    close(11)
-    close(12)
-
-  end subroutine correlations
-
-  subroutine calc_correlations
-    use common
-    implicit none
+    character(len = *), intent(in) :: filename
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin
     integer :: start_point,field_size,ch_size,sp
     integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
@@ -524,10 +354,8 @@ module io
     complex*16 :: e_rot_kx_temp, e_rot_ky, e_rot_kz
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
     real*8, dimension(3,L,L,L) :: e_rot
-    real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: s_perp
     real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
     real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: fe_fe_rot, field_struc_rot
-    real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: s_perp_irrot, s_perp_rot
     real*8, dimension(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1) :: s_ab_irrot, s_ab_rot
     complex*16, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: mnphi_kx, e_rot_kx
     complex*16 :: imag, kdotx
@@ -558,7 +386,7 @@ module io
     fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
     s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
 
-    open(15, file=field_charge_file, status="old", action="read", access="stream", form="unformatted")
+    open(15, file=filename, status="old", action="read", access="stream", form="unformatted")
 
     do n = 1, no_measurements
 
@@ -836,7 +664,15 @@ module io
     !field_struc_irrot = fe_fe_irrot
 
     ! we can calculate s_perp up to wherever
-    sp = 5
+    sp = 6
+    allocate(s_perp((sp*L)+1,(sp*L)+1,(sp*L)+1))
+    allocate(s_perp_irrot((sp*L)+1,(sp*L)+1,(sp*L)+1))
+    allocate(s_perp_rot((sp*L)+1,(sp*L)+1,(sp*L)+1))
+    allocate(s_par((sp*L)+1,(sp*L)+1,(sp*L)+1))
+    allocate(s_par_irrot((sp*L)+1,(sp*L)+1,(sp*L)+1))
+    allocate(s_par_rot((sp*L)+1,(sp*L)+1,(sp*L)+1))
+    s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
+    s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
 
     do s = (-L/2)*sp,(L/2)*sp
       do p = (-L/2)*sp,(L/2)*sp
@@ -878,17 +714,7 @@ module io
             kx = m + 1 + (bz*L)/2
           end if
 
-          if (abs(kz_float).gt.(L/2)*bz) then
-            kz_float = mod(kz_float,bz * pi)
-          end if
-          if (abs(ky_float).gt.(L/2)*bz) then
-            ky_float = mod(ky_float,bz * pi)
-          end if
-          if (abs(kx_float).gt.(L/2)*bz) then
-            kx_float = mod(kx_float,bz * pi)
-          end if
-
-          s_perp(kx,ky,kz) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky,kz) +&
+          s_perp(i,j,k) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky,kz) +&
                           ((-1)*kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky,kz)+&
                           ((-1)*kx_float*kz_float*norm_k) * s_ab(1,3,kx,ky,kz)+&
                           ((-1)*ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky,kz)+&
@@ -897,7 +723,7 @@ module io
                           ((-1)*kz_float*kx_float*norm_k) * s_ab(3,1,kx,ky,kz)+&
                           ((-1)*kz_float*ky_float*norm_k) * s_ab(3,2,kx,ky,kz)+&
                           (1 - kz_float*kz_float*norm_k) * s_ab(3,3,kx,ky,kz)
-          s_perp_irrot(kx,ky,kz) = (1 - kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky,kz) +&
+          s_perp_irrot(i,j,k) = (1 - kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky,kz) +&
                           ((-1)*kx_float*ky_float*norm_k) * s_ab_irrot(1,2,kx,ky,kz)+&
                           ((-1)*kx_float*kz_float*norm_k) * s_ab_irrot(1,3,kx,ky,kz)+&
                           ((-1)*ky_float*kx_float*norm_k) * s_ab_irrot(2,1,kx,ky,kz)+&
@@ -906,7 +732,7 @@ module io
                           ((-1)*kz_float*kx_float*norm_k) * s_ab_irrot(3,1,kx,ky,kz)+&
                           ((-1)*kz_float*ky_float*norm_k) * s_ab_irrot(3,2,kx,ky,kz)+&
                           (1 - kz_float*kz_float*norm_k) * s_ab_irrot(3,3,kx,ky,kz)
-          s_perp_rot(kx,ky,kz) = (1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky,kz) +&
+          s_perp_rot(i,j,k) = (1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky,kz) +&
                           ((-1)*kx_float*ky_float*norm_k) * s_ab_rot(1,2,kx,ky,kz)+&
                           ((-1)*kx_float*kz_float*norm_k) * s_ab_rot(1,3,kx,ky,kz)+&
                           ((-1)*ky_float*kx_float*norm_k) * s_ab_rot(2,1,kx,ky,kz)+&
@@ -915,6 +741,34 @@ module io
                           ((-1)*kz_float*kx_float*norm_k) * s_ab_rot(3,1,kx,ky,kz)+&
                           ((-1)*kz_float*ky_float*norm_k) * s_ab_rot(3,2,kx,ky,kz)+&
                           (1 - kz_float*kz_float*norm_k) * s_ab_rot(3,3,kx,ky,kz)
+
+          s_par(i,j,k) = (kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky,kz) +&
+                          (kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky,kz)+&
+                          (kx_float*kz_float*norm_k) * s_ab(1,3,kx,ky,kz)+&
+                          (ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky,kz)+&
+                          (ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky,kz) +&
+                          (ky_float*kz_float*norm_k) * s_ab(2,3,kx,ky,kz)+&
+                          (kz_float*kx_float*norm_k) * s_ab(3,1,kx,ky,kz)+&
+                          (kz_float*ky_float*norm_k) * s_ab(3,2,kx,ky,kz)+&
+                          (kz_float*kz_float*norm_k) * s_ab(3,3,kx,ky,kz)
+          s_par_irrot(i,j,k) = (kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky,kz) +&
+                          (kx_float*ky_float*norm_k) * s_ab_irrot(1,2,kx,ky,kz)+&
+                          (kx_float*kz_float*norm_k) * s_ab_irrot(1,3,kx,ky,kz)+&
+                          (ky_float*kx_float*norm_k) * s_ab_irrot(2,1,kx,ky,kz)+&
+                          (ky_float*ky_float*norm_k) * s_ab_irrot(2,2,kx,ky,kz) +&
+                          (ky_float*kz_float*norm_k) * s_ab_irrot(2,3,kx,ky,kz)+&
+                          (kz_float*kx_float*norm_k) * s_ab_irrot(3,1,kx,ky,kz)+&
+                          (kz_float*ky_float*norm_k) * s_ab_irrot(3,2,kx,ky,kz)+&
+                          (kz_float*kz_float*norm_k) * s_ab_irrot(3,3,kx,ky,kz)
+          s_par_rot(i,j,k) = (kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky,kz) +&
+                          (kx_float*ky_float*norm_k) * s_ab_rot(1,2,kx,ky,kz)+&
+                          (kx_float*kz_float*norm_k) * s_ab_rot(1,3,kx,ky,kz)+&
+                          (ky_float*kx_float*norm_k) * s_ab_rot(2,1,kx,ky,kz)+&
+                          (ky_float*ky_float*norm_k) * s_ab_rot(2,2,kx,ky,kz) +&
+                          (ky_float*kz_float*norm_k) * s_ab_rot(2,3,kx,ky,kz)+&
+                          (kz_float*kx_float*norm_k) * s_ab_rot(3,1,kx,ky,kz)+&
+                          (kz_float*ky_float*norm_k) * s_ab_rot(3,2,kx,ky,kz)+&
+                          (kz_float*kz_float*norm_k) * s_ab_rot(3,3,kx,ky,kz)
 
         end do
       end do
@@ -932,6 +786,9 @@ module io
     open(unit=19, file=rot_field_file)
     open(unit=20, file=rot_sab_file)
     open(unit=21, file=rot_sperp_file)
+    open(unit=22, file=spar_file)
+    open(unit=23, file=irrot_spar_file)
+    open(unit=24, file=rot_spar_file)
 
     dist_r = dist_r / (no_measurements)
     do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
@@ -1039,16 +896,34 @@ module io
             s_perp(i,j,k)
 
             write (18, field_format_string)&
-            2*pi*(i - 1 - sp*(l/2))/(l*lambda),&
-            2*pi*(j - 1 - sp*(l/2))/(l*lambda),&
-            2*pi*(k - 1 - sp*(l/2))/(l*lambda),&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(k - 1 - sp*(L/2))/(L*lambda),&
             s_perp_irrot(i,j,k)
 
             write (21, field_format_string)&
-            2*pi*(i - 1 - sp*(l/2))/(l*lambda),&
-            2*pi*(j - 1 - sp*(l/2))/(l*lambda),&
-            2*pi*(k - 1 - sp*(l/2))/(l*lambda),&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(k - 1 - sp*(L/2))/(L*lambda),&
             s_perp_rot(i,j,k)
+
+            write (22, field_format_string)&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(k - 1 - sp*(L/2))/(L*lambda),&
+            s_par(i,j,k)
+
+            write (23, field_format_string)&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(k - 1 - sp*(L/2))/(L*lambda),&
+            s_par_irrot(i,j,k)
+
+            write (24, field_format_string)&
+            2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+            2*pi*(k - 1 - sp*(L/2))/(L*lambda),&
+            s_par_rot(i,j,k)
 
         end do
       end do
