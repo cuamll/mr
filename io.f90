@@ -352,6 +352,8 @@ module io
     complex*16 :: e_kx_temp, e_ky, e_kz
     complex*16 :: mnphi_kx_temp, mnphi_ky, mnphi_kz
     complex*16 :: e_rot_kx_temp, e_rot_ky, e_rot_kz
+    real*8, dimension(:,:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
+    real*8, dimension(:,:,:), allocatable :: s_par, s_par_irrot, s_par_rot
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
     real*8, dimension(3,L,L,L) :: e_rot
     real*8, dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
@@ -363,7 +365,7 @@ module io
     character(100) :: dir_format_string, dir_dist_format_string
     ! CALL THIS AFTER CORRELATIONS SUBROUTINE
 
-    write (*,'(A10,I5.1,A27)',advance='no') "Reading in fields and charge distributions, &
+    write (*,'(a)',advance='no') "Reading in fields and charge distributions, &
       and calculating correlations... ["
 
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
@@ -384,7 +386,6 @@ module io
     ch_ch = 0.0; fe_fe = 0.0; s_ab = 0.0
     e_rot = 0.0; fe_fe_rot = 0.0; field_struc_rot = 0.0; s_ab_rot = 0.0;
     fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
-    s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
 
     open(15, file=filename, status="old", action="read", access="stream", form="unformatted")
 
@@ -687,10 +688,10 @@ module io
           ky_float = p * ((2 * pi)/(L * lambda))
           kz_float = s * ((2 * pi)/(L * lambda))
 
-          if (kx.eq.0.and.ky.eq.0.and.kz.eq.0) then
+          if (kx_float.eq.0.0.and.ky_float.eq.0.0.and.kz_float.eq.0.0) then
             norm_k = 0.0
           else
-            norm_k = 1.0/(kx*kx + ky*ky + kz*kz)
+            norm_k = 1.0/(kx_float**2 + ky_float**2 + kz_float**2)
           end if
 
           ! move back to somewhere we already know about
