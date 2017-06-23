@@ -525,6 +525,7 @@ module io
     use common
     implicit none
     character(len = *), intent(in) :: filename
+    logical :: fixed_length_spins
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin
     integer :: start_point,field_size,ch_size,sp
     integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
@@ -559,6 +560,7 @@ module io
     field_size = 16 * L**2
     ch_size = 4 * L**2
 
+    fixed_length_spins = .false.
     imag = (0.0, 1.0)
     dist_bin = 0; dist = 0.0;
     dist_r = 0.0; bin_count = 0;
@@ -588,6 +590,24 @@ module io
       read(15, POS=start_point) e_field
       read(15, POS=start_point + field_size) mnphi
       read(15, POS=start_point + 2 * field_size) v
+
+      if (fixed_length_spins) then
+        where (e_field.ne.0.0)
+          e_field = e_field / abs(e_field)
+        elsewhere
+          e_field = 0.0
+        end where
+        where (e_rot.ne.0.0)
+          e_rot = e_rot / abs(e_rot)
+        elsewhere
+          e_rot = 0.0
+        end where
+        where (mnphi.ne.0.0)
+          mnphi = mnphi / abs(mnphi)
+        elsewhere
+          mnphi = 0.0
+        end where
+      end if
 
       ! this way we can get decomposed parts along with total
       e_rot = e_field - mnphi

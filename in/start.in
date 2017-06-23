@@ -1,6 +1,6 @@
 L 16
-thermalisation_sweeps 10000
-measurement_sweeps 75000
+thermalisation_sweeps 1000
+measurement_sweeps 50000
 sample_interval 25
 temperature 0.50
 lattice_spacing 1.0

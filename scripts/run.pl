@@ -81,6 +81,7 @@ if ($dorun) {
     or die "Unable to open JSON file:$!\n";
   print "Adding JSON parameter data to " .
             "$timedir/parameters.json:\n$parameters_json\n";
+  print $fh "$parameters_json";
   close $fh;
 
   # keep a list of every run and its parameters
@@ -123,6 +124,7 @@ if ($doplots) {
   my $plotfile = "$basedir/scripts/plot.pl";
   my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
   my $kz = 0;
-  my $plotcmd = qq[./$plotfile -l=$parameters{L} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$timestamp" -o="$timedir/plots/"];
+  my $palette = "inferno.pal";
+  my $plotcmd = qq[./$plotfile -l=$parameters{L} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$timestamp" -o="$timedir/plots/" -p="$palette"];
   system($plotcmd);
 }

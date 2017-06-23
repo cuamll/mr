@@ -14,6 +14,7 @@ my $steps;
 my $chg;
 my $kz;
 my $fileprefix;
+my $palette;
 my $outputpath;
 my @inputfiles;
 my @outputfiles;
@@ -26,9 +27,14 @@ $input = GetOptions ("l=i"=> \$length,
                      "c=i"=> \$chg,
                      "k=i"=> \$kz,
                      "fp=s"=> \$fileprefix,
+                     "p=s"=> \$palette,
                      "o=s"=> \$outputpath);
 my $plottitle = "L = $length, $meas measurements from " .
                 "$steps MC steps, $chg charges";
+
+if ($palette !~ /.*\.pal/) {
+  $palette = "$palette.pal";
+}
 
 # construct the input and output files to pass to gnuplot
 # call this script from $MR_DIR! so curdir() gives the base directory
@@ -50,15 +56,15 @@ my @linetitles = ("Charge-charge structure factor",
                   "S_{⟂}",
                   "S_{⟂} - irrotational",
                   "S_{⟂} - rotational",
-                  "S_{∥}",
-                  "S_{∥} - irrotational",
-                  "S_{∥} - rotational");
+                  "S_{∥∥}",
+                  "S_{∥∥} - irrotational",
+                  "S_{∥∥} - rotational");
 
 my $basedir = File::Spec->curdir();
 my $inpath = "$basedir/out/";
 my $insuffix = '.dat';
 my $tempsuffix = '.temp';
-my $plotpath = "$basedir/plots/";
+my $plotpath = "$basedir/scripts/";
 my $plotsuffix = ".png";
 my $gnuplotscript = "$plotpath" . "heatmap.p";
 
@@ -90,7 +96,7 @@ warn "Different number of titles and files!\n" unless @linetitles == @filenames;
 
 for my $i (0..$#filenames) {
   my $syscall;
-  push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$linetitles[$i]');
+  push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$linetitles[$i]'; PALETTE = '$palette');
 
   $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
   system($syscall);
