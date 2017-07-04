@@ -2,7 +2,7 @@ L 12
 thermalisation_sweeps 10000
 measurement_sweeps 75000
 sample_interval 25
-temperature 0.50
+temperature 5.00
 lattice_spacing 1.0
 charge_value 1.0
 delta_max 0.8
@@ -32,3 +32,4 @@ rot_s^(alpha_beta)_file               out/rot_s_ab.dat
 rot_s_(perp)_file                     out/rot_s_perp.dat
 rot_s_(par)_file                      out/rot_s_par.dat
 field_charge_file                     out/fields_charges.dat
+vertex_sum_file                       out/vertex_sums.dat

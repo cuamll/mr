@@ -135,6 +135,9 @@ module io
           case ('field_charge_file')
             read(buffer, '(a)', iostat=ios) fe_ch_l
             write (*,*) 'Raw file name for fields/charges: ',fe_ch_l
+          case ('vertex_sum_file')
+            read(buffer, '(a)', iostat=ios) v_s_l
+            write (*,*) 'Raw file name for fields/charges: ',v_s_l
           case default
             write (*,*) 'Skipping invalid label at line ',line
           end select
@@ -239,6 +242,7 @@ module io
       rot_sperp_file = trim(adjustl(r_sp_l))
       rot_spar_file = trim(adjustl(r_spa_l))
       field_charge_file = trim(adjustl(fe_ch_l))
+      vertex_sum_file = trim(adjustl(v_s_l))
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg
@@ -345,6 +349,8 @@ module io
     logical :: fixed_length_spins
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin
     integer :: start_point,field_size,ch_size,sp
+    integer :: vertex_type
+    integer, dimension(5) :: vertex_type_count
     integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
     real*8 :: norm_k,kx_float,ky_float,kz_float,dist
     complex*16 :: rho_k_p_temp, rho_k_m_temp
@@ -353,6 +359,7 @@ module io
     complex*16 :: e_rot_kx_temp, e_rot_ky, e_rot_kz
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
     real*8, dimension(2,L,L) :: e_rot
+    real*8, dimension(2) :: vertex_sum
     real*8, dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
     real*8, dimension(:,:), allocatable :: s_par, s_par_irrot, s_par_rot
     real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
@@ -360,7 +367,7 @@ module io
     real*8, dimension(2,2,(bz*L)+1,(bz*L)+1) :: s_ab_irrot, s_ab_rot
     complex*16, dimension((bz*L)+1,(bz*L)+1) :: mnphi_kx, e_rot_kx
     complex*16 :: imag, kdotx
-    character(100) :: struc_format_string, field_format_string
+    character(100) :: struc_format_string, field_format_string,vertex_format
     character(100) :: dir_format_string, dir_dist_format_string
     ! CALL THIS AFTER CORRELATIONS SUBROUTINE
 
@@ -370,6 +377,7 @@ module io
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
     dir_format_string = "(I2, I2, ES18.9)"
+    vertex_format = "(I6, I3, I3, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, I3)"
     dir_dist_format_string = "(ES18.9, I9.6, ES18.9)"
 
     ! size of e_field and mnphi is (L**2 * 2) * 8 bytes
@@ -377,7 +385,10 @@ module io
     field_size = 16 * L**2
     ch_size = 4 * L**2
 
-    fixed_length_spins = .false.
+    fixed_length_spins = .true.
+    vertex_type = 0
+    vertex_type_count = 0
+    vertex_sum = 0.0
     imag = (0.0, 1.0)
     dist_bin = 0; dist = 0.0;
     dist_r = 0.0; bin_count = 0;
@@ -388,6 +399,7 @@ module io
     fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
 
     open(15, file=filename, status="old", action="read", access="stream", form="unformatted")
+    open(30, file=vertex_sum_file)
 
     do n = 1, no_measurements
 
@@ -476,6 +488,39 @@ module io
                 e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
                 mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
                 e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
+
+                if (kx.eq.0.and.ky.eq.0) then
+                  ! vertex sums -- only want to do this once
+                  vertex_sum(1) = e_field(1,m,p) + e_field(1,neg(m),p)
+                  vertex_sum(2) = e_field(2,m,p) + e_field(2,m,neg(p))
+
+                  ! only if we're doing fixed-length
+                  if (fixed_length_spins) then
+                    vertex_type = int(sum(abs(vertex_sum)))
+                    if (vertex_type.eq.2) then
+                      vertex_type = 3
+                    else if (vertex_type.eq.4) then
+                      vertex_type = 2
+                    else if (vertex_type.eq.0) then
+                      if ((e_field(1,m,p) + e_field(2,m,p)).eq.0) then
+                        vertex_type = 1
+                      else
+                        vertex_type = 4
+                      end if
+                    else
+                      write(*,*) "something weird happening with vertex sum at",n,m,p
+                    end if
+                  else
+                    ! meaningless number in this context
+                    vertex_type = 5
+                  end if
+                  vertex_type_count(vertex_type) = vertex_type_count(vertex_type) + 1
+
+                  write(30, vertex_format) n, m, p, e_field(1,m,p),&
+                        e_field(2,m,p), e_field(1,neg(m),p),&
+                        e_field(2,m,neg(p)),vertex_sum(1),vertex_sum(2),&
+                        vertex_type
+                end if
 
                 if (v(m,p).ne.0) then ! calculate <++ + +->!
 
@@ -590,9 +635,28 @@ module io
         end do
       end do ! end kx, ky loops
 
+      write(30,*)
+
     end do ! n loop
 
     close(15)
+
+    write(30,'(a)') "---AVERAGES---"
+    write(30,*)
+    write(30,'(a)') "vertex type      avg. population"
+
+    write(*,'(a)') "---AVERAGES---"
+    write(*,*)
+    write(*,'(a)') "vertex type      avg. population"
+
+    do n=1,size(vertex_type_count)
+      write (30,'(I2, a, ES18.9)') n, "            ",&
+      dble(vertex_type_count(n)) / (no_measurements * L**2)
+      write (*,'(I2, a, ES18.9)') n, "            ",&
+      dble(vertex_type_count(n)) / (no_measurements * L**2)
+    end do
+
+    close(30)
 
     rho_k_p = rho_k_p / no_measurements
     rho_k_m = rho_k_m / no_measurements
