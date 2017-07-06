@@ -650,9 +650,9 @@ module io
     write(*,'(a)') "vertex type      avg. population"
 
     do n=1,size(vertex_type_count)
-      write (30,'(I2, a, ES18.9)') n, "            ",&
+      write (30,'(ES18.9, I2, I3, a, ES18.9)') temp, n, add_charges, "            ",&
       dble(vertex_type_count(n)) / (no_measurements * L**2)
-      write (*,'(I2, a, ES18.9)') n, "            ",&
+      write (*,'(ES18.9, I2, I3, a, ES18.9)') temp, n, add_charges, "            ",&
       dble(vertex_type_count(n)) / (no_measurements * L**2)
     end do
 

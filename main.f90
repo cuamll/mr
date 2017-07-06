@@ -108,9 +108,11 @@ program mr
 
   write (*,*)
   write (*,*) '--- MOVE STATS: ---'
-  write (*,*) 'hops: moves, acceptance ratio: ',&
-    &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
-    &* tot_q * hop_ratio)
+  if (tot_q.ne.0) then
+    write (*,*) 'hops: moves, acceptance ratio: ',&
+      &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
+      &* tot_q * hop_ratio)
+  end if
   write (*,*) 'rotational updates: moves, acceptance ratio: ',&
     &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
     &* 3*L**3 * rot_ratio)

@@ -9,8 +9,8 @@ set xtics (6, 12, 24, 36, 48, 60)
 set yrange [0.04:0.6]
 set title PLOTTITLE
 set key top right
-set ylabel "avg. population"
-set xlabel "number of charges"
+set ylabel "Avg. population"
+set xlabel "Number of charges"
 set tmargin at screen 0.15
 set bmargin at screen 0.85
 set lmargin at screen 0.15
