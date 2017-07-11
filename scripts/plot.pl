@@ -9,6 +9,7 @@ use Getopt::Long;
 use File::Spec;
 
 my $length;
+my $temperature;
 my $meas;
 my $steps;
 my $chg;
@@ -23,14 +24,14 @@ my @gnuplotargs;
 my $input;
 $input = GetOptions ("l=i"=> \$length,
                      "m=i"=> \$meas,
+                     "t=s"=> \$temperature,
                      "s=s"=> \$steps,
                      "c=i"=> \$chg,
                      "k=i"=> \$kz,
                      "fp=s"=> \$fileprefix,
                      "p=s"=> \$palette,
                      "o=s"=> \$outputpath);
-my $plottitle = "L = $length, $meas measurements from " .
-                "$steps MC steps, $chg charges";
+my $plottitle = qq(L = $length, T = $temperature, $chg charges.\n\n$meas measurements from $steps MC steps.);
 
 if ($palette !~ /.*\.pal/) {
   $palette = "$palette.pal";

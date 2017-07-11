@@ -30,7 +30,7 @@ set arrow from XLOWER,0.250 to XUPPER,0.250 nohead lc rgb '#44A4C2' lw 2 dt 2
 set arrow from XLOWER,0.500 to XUPPER,0.500 nohead lc rgb '#F2D33C' lw 2 dt 2 
 set label "T_{I}, T_{IV}" at first XUPPER + XUPPER / 50, first 0.125
 set label "T_{II}" at first XUPPER + XUPPER / 50, first 0.25
-set label "T_{III}" at first XUPPER + XUPPER / 50, first 0.5
+set label "T_{III}" at first XUPPER + XUPPER / 25, first 0.5
 
 #/* the linestyles here are to make the colours match bjorgvin's paper */
 plot FILE using 1:4 index 0 w lp ls 2 ps 2 title "T_{I}", \

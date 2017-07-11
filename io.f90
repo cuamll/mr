@@ -426,16 +426,16 @@ module io
         elsewhere
           e_field = 0.0
         end where
-        where (e_rot.ne.0.0)
-          e_rot = e_rot / abs(e_rot)
-        elsewhere
-          e_rot = 0.0
-        end where
-        where (mnphi.ne.0.0)
-          mnphi = mnphi / abs(mnphi)
-        elsewhere
-          mnphi = 0.0
-        end where
+        !where (e_rot.ne.0.0)
+        !  e_rot = e_rot / abs(e_rot)
+        !elsewhere
+        !  e_rot = 0.0
+        !end where
+        !where (mnphi.ne.0.0)
+        !  mnphi = mnphi / abs(mnphi)
+        !elsewhere
+        !  mnphi = 0.0
+        !end where
       end if
 
       ! this way we can get decomposed parts along with total
@@ -640,6 +640,9 @@ module io
     end do ! n loop
 
     close(15)
+
+
+    write (*,'(a)') "]. Completed."
 
     write(30,'(a)') "---AVERAGES---"
     write(30,*)
@@ -899,8 +902,6 @@ module io
 
     deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
     deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);
-
-    write (*,'(a)') "]. Completed."
 
   end subroutine calc_correlations
 
