@@ -1,4 +1,4 @@
-set terminal pngcairo dashed enhanced font 'Helvetica, 14' size 800,800
+set terminal pngcairo dashed enhanced font 'CMU Serif Roman, 14' size 800,800
 set output OUTPUT
 set view map
 load PALETTE

@@ -5,103 +5,165 @@
 # call with "perl plot.pl -l=L ..." etc. from scripts dir
 use strict;
 use warnings;
+use Env;
+use Cwd;
 use Getopt::Long;
-use File::Spec;
+use File::Path qw(make_path);
+use File::Copy;
+use File::Basename;
+use JSON::MaybeXS qw(encode_json decode_json);
+use Data::Dumper qw(Dumper);
 
-my $length;
-my $temperature;
-my $meas;
-my $steps;
-my $chg;
+my $three_d = 0;
+my $dir;
 my $kz;
-my $fileprefix;
-my $palette;
-my $outputpath;
+my $palette = 'inferno.pal';
 my @inputfiles;
 my @outputfiles;
 my @tempfiles;
 my @gnuplotargs;
 my $input;
-$input = GetOptions ("l=i"=> \$length,
-                     "m=i"=> \$meas,
-                     "t=s"=> \$temperature,
-                     "s=s"=> \$steps,
-                     "c=i"=> \$chg,
-                     "k=i"=> \$kz,
-                     "fp=s"=> \$fileprefix,
-                     "p=s"=> \$palette,
-                     "o=s"=> \$outputpath);
-my $plottitle = qq(L = $length, T = $temperature, $chg charges.\n\n$meas measurements from $steps MC steps.);
+$input = GetOptions ("d=s"=> \$dir,
+                     "p=s"=> \$palette);
 
 if ($palette !~ /.*\.pal/) {
   $palette = "$palette.pal";
 }
 
-# construct the input and output files to pass to gnuplot
-# call this script from $MR_DIR! so curdir() gives the base directory
-my @filenames = ('charge_struc',
-                 'field_struc',
-                 'irrot_field_struc',
-                 'rot_field_struc',
-                 's_perp',
-                 'irrot_s_perp',
-                 'rot_s_perp',
-                 's_par',
-                 'irrot_s_par',
-                 'rot_s_par');
+# we pass the absolute path to the timestamp directory. now to get parameters:
+my %parameters = get_parameters("$dir/input.in");
 
-my @linetitles = ("Charge-charge structure factor",
-                  "Field-field structure factor",
-                  "Field-field structure factor - irrotational",
-                  "Field-field structure factor - rotational",
-                  "S_{⟂}",
-                  "S_{⟂} - irrotational",
-                  "S_{⟂} - rotational",
-                  "S_{∥∥}",
-                  "S_{∥∥} - irrotational",
-                  "S_{∥∥} - rotational");
+my @filenames;
+foreach my $key (keys %parameters) {
+  if ($key =~ /_file/) {
+    if ($parameters{$key} =~ /.*s_.*/) {
+      if ($parameters{$key} !~ /.*s_ab.*/) {
+        (my $tempfile, my $tempdir, my $tempext) = fileparse($parameters{$key}, qr/\.[^.]*/);
+        push @filenames, $tempfile
+      }
+    }
+  }
+}
+my @titles;
+my $s_component; my $field_component; my $s_string; my $field_string;
+my $linetitle;
+
+foreach my $file (@filenames) {
+
+  if ($file =~ /s_([a-z]+)_([a-z]+)/) {
+    $s_component = $1;
+    $field_component = $2;
+
+    if ($s_component =~ /xx/) {
+      $s_string = qq(S^{$s_component} - );
+    } elsif ($s_component =~ /perp/) {
+      $s_string = qq(S^{⟂} - );
+    } elsif ($s_component =~ /par/) {
+      $s_string = qq(S^{∥} - );
+    } elsif ($s_component =~ /ab/) {
+      print "S^{/alpha /beta still there???}";
+      $s_string = qq(S^{yy} - );
+    } else {
+      die "s_component is weird: $s_component $!\n";
+    }
+
+    if ($field_component =~ /total/) {
+      $field_string = qq(total);
+    } elsif ($field_component =~ /irrot/) {
+      $field_string = qq(irrotational);
+    } elsif ($field_component =~ /rot/) {
+      $field_string = qq(rotational);
+    } else {
+      die "field_component is wrong: $field_component $!\n";
+    }
+
+    $linetitle = $s_string . $field_string;
+  } elsif ($file =~ /s_([a-z]+)/) {
+
+    if ($1 =~ /charge/) {
+      $linetitle = qq(g^{+-}(k));
+    } elsif ($1 =~ /direct/) {
+      $linetitle = qq(g^{+-}(r));
+    } else {
+      die "File name doesn't match regex. $file $!\n";
+    }
+
+  } else {
+    die "File name doesn't match anything. $file $!\n";
+  }
+
+  push @titles, $linetitle;
+}
+
+my $meas = $parameters{measurement_sweeps} / $parameters{sample_interval};
+
+my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges.\n\n$meas measurements from $parameters{measurement_sweeps} MC steps.);
 
 my $basedir = File::Spec->curdir();
-my $inpath = "$basedir/out/";
-my $insuffix = '.dat';
-my $tempsuffix = '.temp';
 my $plotpath = "$basedir/scripts/";
 my $plotsuffix = ".png";
 my $gnuplotscript = "$plotpath" . "heatmap.p";
 
-# get the relevant lines of the plot files based on kz
-my $bz = 2;
-my $sperp_size = 5;
-my $lowerbound = ((($bz * $length) + 1)**2) * ($kz + ($bz * ($length / 2)));
-my $upperbound = $lowerbound + 1 + (($bz * $length) + 1)**2;
-my $splb = ((($sperp_size * $length) + 1)**2) * ($kz + ($sperp_size * ($length / 2)));
-my $spub = $splb + 1 + (($sperp_size * $length) + 1)**2;
+my $inpath = "$dir/";
+my $insuffix = ".dat";
+my $outpath = "$dir/plots/";
+my $tempsuffix = '.temp';
 
 for my $i (0..$#filenames) {
-  # run awk to create temp files
-  # not necessary in 2D, so we just won't bother
-  my $awkcall;
   push @inputfiles, $inpath . $filenames[$i] . $insuffix;
   push @tempfiles, $inpath . $filenames[$i] . $tempsuffix;
-  push @outputfiles, $outputpath . $filenames[$i] . $plotsuffix;
+  push @outputfiles, $outpath . $filenames[$i] . $plotsuffix;
 
-  #if (index($inputfiles[$i],'s_perp') != -1) {
-  #  $awkcall = qq[awk '{ if (NR>$splb && NR<$spub) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
-  #} else {
-  #  $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
-  #}
-  #system($awkcall);
+  # don't need any of this in 2d
+  # in 3d, create temp files for each slice in kz
+  if ($three_d) {
+
+    my $length = $parameters{L};
+    my $awkcall;
+    my $bz = 2;
+    my $sperp_size = 5;
+    my $lowerbound = ((($bz * $length) + 1)**2) * ($kz + ($bz * ($length / 2)));
+    my $upperbound = $lowerbound + 1 + (($bz * $length) + 1)**2;
+    my $splb = ((($sperp_size * $length) + 1)**2) * ($kz + ($sperp_size * ($length / 2)));
+    my $spub = $splb + 1 + (($sperp_size * $length) + 1)**2;
+
+    if (index($inputfiles[$i],'s_perp') != -1) {
+      $awkcall = qq[awk '{ if (NR>$splb && NR<$spub) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
+    } else {
+      $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
+    }
+    system($awkcall);
+
+  }
 }
 
-warn "Different number of titles and files!\n" unless @linetitles == @filenames;
+warn "Different number of titles and files!\n" unless @titles == @filenames;
 
 for my $i (0..$#filenames) {
   my $syscall;
-  push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$linetitles[$i]'; PALETTE = '$palette');
+
+  if ($three_d) {
+    push @gnuplotargs, qq(FILE='$tempfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette');
+  } else {
+    push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette');
+  }
 
   $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
   system($syscall);
 
   # delete the temp files
   unlink($tempfiles[$i]);
+}
+
+sub get_parameters {
+
+  # get parameters from input file; add them to JSON file
+  my ($input) = @_;
+  open my $fh, '<:encoding(UTF-8)', "$input"
+    or die "Unable to open file:$!\n";
+  my %parameters = map { split /\s+/; } <$fh>;
+  close $fh;
+
+  return %parameters;
+
 }

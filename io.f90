@@ -385,7 +385,7 @@ module io
     field_size = 16 * L**2
     ch_size = 4 * L**2
 
-    fixed_length_spins = .true.
+    fixed_length_spins = .false.
     vertex_type = 0
     vertex_type_count = 0
     vertex_sum = 0.0
@@ -399,7 +399,6 @@ module io
     fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
 
     open(15, file=filename, status="old", action="read", access="stream", form="unformatted")
-    open(30, file=vertex_sum_file)
 
     do n = 1, no_measurements
 
@@ -421,6 +420,8 @@ module io
       read(15, POS=start_point + 2 * field_size) v
 
       if (fixed_length_spins) then
+
+        open(30, file=vertex_sum_file)
         where (e_field.ne.0.0)
           e_field = e_field / abs(e_field)
         elsewhere
@@ -510,16 +511,17 @@ module io
                     else
                       write(*,*) "something weird happening with vertex sum at",n,m,p
                     end if
+
+                    vertex_type_count(vertex_type) = vertex_type_count(vertex_type) + 1
+                    write(30, vertex_format) n, m, p, e_field(1,m,p),&
+                          e_field(2,m,p), e_field(1,neg(m),p),&
+                          e_field(2,m,neg(p)),vertex_sum(1),vertex_sum(2),&
+                          vertex_type
                   else
                     ! meaningless number in this context
                     vertex_type = 5
                   end if
-                  vertex_type_count(vertex_type) = vertex_type_count(vertex_type) + 1
 
-                  write(30, vertex_format) n, m, p, e_field(1,m,p),&
-                        e_field(2,m,p), e_field(1,neg(m),p),&
-                        e_field(2,m,neg(p)),vertex_sum(1),vertex_sum(2),&
-                        vertex_type
                 end if
 
                 if (v(m,p).ne.0) then ! calculate <++ + +->!
@@ -635,7 +637,9 @@ module io
         end do
       end do ! end kx, ky loops
 
-      write(30,*)
+      if (fixed_length_spins) then
+        write(30,*)
+      end if
 
     end do ! n loop
 
@@ -643,6 +647,8 @@ module io
 
 
     write (*,'(a)') "]. Completed."
+
+    if (fixed_length_spins) then
 
     write(30,'(a)') "---AVERAGES---"
     write(30,*)
@@ -660,6 +666,8 @@ module io
     end do
 
     close(30)
+
+    end if
 
     rho_k_p = rho_k_p / no_measurements
     rho_k_m = rho_k_m / no_measurements

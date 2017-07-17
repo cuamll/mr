@@ -99,6 +99,7 @@ make_path($logdir);
 $tempinputfile = "$basedir/in.temp";
 
 my %parameters = get_parameters("$inputfile");
+print Dumper %parameters;
 
 # portably change relative path names into absolute ones
 foreach (keys %parameters) {
@@ -162,6 +163,7 @@ if ($dorun) {
           print "Running $progname with command $runcmd\n";
           system($runcmd);
 
+          copy($tempinputfile, "$stampdir/input.in");
           unlink($tempinputfile);
 
           # program should have terminated now
@@ -185,7 +187,8 @@ if ($dorun) {
             my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
             my $kz = 0;
             my $palette = "inferno.pal";
-            my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
+            #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
+            my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
             system($plotcmd);
           }
         }

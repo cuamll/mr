@@ -227,8 +227,8 @@ subroutine mc_sweep
       else ! move it "positive"
 
         en1 = eo1 - increment
-        old_e = 0.5 * eps_0 * eo1**2
-        new_e = 0.5 * eps_0 * en1**2
+        old_e = 0.5 * eps_0 * lambda**2 * eo1**2
+        new_e = 0.5 * eps_0 * lambda**2 * en1**2
         delta_e = new_e - old_e
 
         ! get pos in the mu1 direction
@@ -264,7 +264,7 @@ subroutine mc_sweep
 
   mu1 = 0; increment = 0.0;
   u_tot = 0.0
-  u_tot = 0.5 * eps_0 * sum(e_field * e_field)
+  u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
 
   ! --- ROTATIONAL UPDATE ---
 
@@ -311,8 +311,8 @@ subroutine mc_sweep
     en3 = eo3 + increment
     en4 = eo4 - increment
 
-    old_e = 0.5 * eps_0 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
-    new_e = 0.5 * eps_0 * (en1**2 + en2**2 + en3**2 + en4**2)
+    old_e = 0.5 * eps_0 * lambda**2 * (eo1**2 + eo2**2 + eo3**2 + eo4**2)
+    new_e = 0.5 * eps_0 * lambda**2 * (en1**2 + en2**2 + en3**2 + en4**2)
     delta_e = new_e - old_e
 
     if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
