@@ -1,7 +1,8 @@
 module common
   implicit none
-  integer, public :: L,seed,accepth,acceptr,acceptg,add_charges,no_measurements
-  integer, public :: therm_sweeps,measurement_sweeps,sample_interval
+  integer, public :: seed
+  integer*8, public :: L,accepth,acceptr,acceptg,add_charges,no_measurements
+  integer*8, public :: therm_sweeps,measurement_sweeps,sample_interval
   real*8, public :: q, lambda, volume, temp, beta
   real*8, public :: eps_0, bin_size, rot_delt
   integer, dimension(:), allocatable, public :: pos,neg

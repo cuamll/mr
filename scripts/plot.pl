@@ -37,10 +37,10 @@ my @filenames;
 foreach my $key (keys %parameters) {
   if ($key =~ /_file/) {
     if ($parameters{$key} =~ /.*s_.*/) {
-      if ($parameters{$key} !~ /.*s_ab.*/) {
+      #if ($parameters{$key} !~ /.*s_ab.*/) {
         (my $tempfile, my $tempdir, my $tempext) = fileparse($parameters{$key}, qr/\.[^.]*/);
         push @filenames, $tempfile
-      }
+      #}
     }
   }
 }
@@ -61,8 +61,8 @@ foreach my $file (@filenames) {
     } elsif ($s_component =~ /par/) {
       $s_string = qq(S^{∥} - );
     } elsif ($s_component =~ /ab/) {
-      print "S^{/alpha /beta still there???}";
-      $s_string = qq(S^{yy} - );
+      # print "S^{/alpha /beta still there???}";
+      $s_string = qq(S^{/Symbol a /Symbol b} - );
     } else {
       die "s_component is weird: $s_component $!\n";
     }
@@ -97,7 +97,7 @@ foreach my $file (@filenames) {
 
 my $meas = $parameters{measurement_sweeps} / $parameters{sample_interval};
 
-my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges.\n\n$meas measurements from $parameters{measurement_sweeps} MC steps.);
+my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, charge value = $parameters{charge_value}.\n\n$meas measurements from $parameters{measurement_sweeps} MC steps.);
 
 my $basedir = File::Spec->curdir();
 my $plotpath = "$basedir/scripts/";
@@ -145,7 +145,15 @@ for my $i (0..$#filenames) {
   if ($three_d) {
     push @gnuplotargs, qq(FILE='$tempfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette');
   } else {
-    push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette');
+
+    push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette';);
+
+    #if (index($inputfiles[$i],'s_direct') != -1) {
+    #  push @gnuplotargs, qq( PITICS = 'N');
+    #} else {
+    #  push @gnuplotargs, qq( PITICS = 'Y');
+    #}
+
   }
 
   $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);

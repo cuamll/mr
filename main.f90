@@ -103,6 +103,9 @@ program mr
       end do
     end do
 
+  !write (*,*) "E_bar:",ebar(1),ebar(2)
+  !write(*,*)
+
   write (*,*) "Total charges: ",tot_q
   write(*,*)
 
@@ -376,7 +379,7 @@ subroutine mc_sweep
           !  do k = 1,L
           !    do j = 1,L
           !      e_field(mu1,j,k,m) = e_field(mu1,j,k,m) + pm1 * (increment / L**3)
-                e_field(mu1,:,:) = e_field(mu1,:,:) + pm1 * (increment / L**3)
+                e_field(mu1,:,:) = e_field(mu1,:,:) + pm1 * (increment / L**2)
           !    end do
           !  end do
           !end do
@@ -445,6 +448,7 @@ subroutine measure(step_number)
   write(15) e_field
   write(15) mnphi
   write(15) v
+  write(15) ebar
 
   close(15)
 

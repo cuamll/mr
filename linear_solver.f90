@@ -119,18 +119,19 @@ module linear_solver
           end if
 
           do kz=-(L-1)/2,L/2
-            fkx=2*pi*kx/L
             do ky=-(L-1)/2,L/2
-              fky=2*pi*ky/L
               do kx=-(L-1)/2,L/2
-                fkz=2*pi*kz/L
+                ! fkz=2*pi*kz/L
+                fkz=pi/2
+                fky=2*pi*ky/L
+                fkx=2*pi*kx/L
                 if ((kx.eq.0).and.(ky.eq.0).and.(kz.eq.0)) then
 
                 else
 
                   lgf(a,b,x,y)=lgf(a,b,x,y)+(cos(fkx*p1)&
                     *cos(fky*q1)*cos(fkz*r1))&
-                    /(3-cos(fkx)-cos(fky)-cos(fkz))
+                    /(2-cos(fkx)-cos(fky)-cos(fkz))
 
                 end if ! end of kx=ky=kz=0 block
               end do ! end kz loop

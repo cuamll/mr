@@ -259,13 +259,12 @@ module io
     ! guess what this one does
     use common
     implicit none
-    integer*8 :: i, j, k, N
+    integer*8 :: i, j, k
     real*8 :: avg_e, avg_e2, prefac, sp_he
 
     avg_e = 0.0
     avg_e2 = 0.0
     sp_he = 0.0
-    N = L**3
 
     open(unit=2, file=energy_file)
     open(unit=3, file=sq_energy_file)
@@ -309,16 +308,16 @@ module io
     write(*,*) "avg_e^2 unnormalised = ",avg_e2
 
     ! prefactor troubles
-    prefac = 1.0 * N / (temp**2)
+    prefac = 1.0 * L**2 / (temp**2)
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
     write(*,*) "prefactor = ",prefac
     write(*,*) "sp. heat (C) = ",sp_he
-    write(*,*) "C / (N) = ",sp_he / N
+    write(*,*) "C / (N) = ",sp_he / L**2
     write(*,*)
 
-    avg_e = avg_e / (N)
-    avg_e2 = avg_e2 / (N**2)
+    avg_e = avg_e / (L**2)
+    avg_e2 = avg_e2 / ((L**2)**2)
 
     write(*,*) "<U> norm. = ",avg_e
     write(*,*) "<U>^2 norm. = ",avg_e**2
@@ -329,9 +328,9 @@ module io
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
     write(*,*) "sp. heat (C) = ",sp_he
-    write(*,*) "C / (N) = ",sp_he / N
+    write(*,*) "C / (N) = ",sp_he / L**2
     write(*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
-    write(*,*) "N(<U^2> - <U>^2) = ",N * (avg_e2 - ((avg_e)**2))
+    write(*,*) "N(<U^2> - <U>^2) = ",L**2 * (avg_e2 - ((avg_e)**2))
     write(*,*)
 
     close(2)
@@ -349,7 +348,7 @@ module io
     logical :: fixed_length_spins
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin
     integer :: start_point,field_size,ch_size,sp
-    integer :: vertex_type
+    integer :: vertex_type, ebar_size
     integer, dimension(5) :: vertex_type_count
     integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
     real*8 :: norm_k,kx_float,ky_float,kz_float,dist
@@ -360,6 +359,7 @@ module io
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
     real*8, dimension(2,L,L) :: e_rot
     real*8, dimension(2) :: vertex_sum
+    real(kind=8), dimension(2) :: ebar_sum, ebar_sq_sum
     real*8, dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
     real*8, dimension(:,:), allocatable :: s_par, s_par_irrot, s_par_rot
     real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
@@ -376,7 +376,7 @@ module io
 
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
-    dir_format_string = "(I2, I2, ES18.9)"
+    dir_format_string = "(I3, I3, ES18.9)"
     vertex_format = "(I6, I3, I3, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, I3)"
     dir_dist_format_string = "(ES18.9, I9.6, ES18.9)"
 
@@ -384,11 +384,13 @@ module io
     ! charge distribution is 4-byte integers so 4 L**2
     field_size = 16 * L**2
     ch_size = 4 * L**2
+    ebar_size = 16
 
-    fixed_length_spins = .false.
+    fixed_length_spins = .true.
     vertex_type = 0
     vertex_type_count = 0
     vertex_sum = 0.0
+    ebar_sum = 0.0; ebar_sq_sum = 0.0
     imag = (0.0, 1.0)
     dist_bin = 0; dist = 0.0;
     dist_r = 0.0; bin_count = 0;
@@ -412,12 +414,19 @@ module io
       mnphi = 0.0
       e_rot = 0.0
       v = 0
+      ebar = 0.0
 
       ! POS = 1 is the start of the file so we need to add 1
-      start_point = ((n - 1) * ((2 * field_size) + ch_size)) + 1
+      start_point = ((n - 1) * ((2 * field_size) + ch_size + ebar_size)) + 1
       read(15, POS=start_point) e_field
       read(15, POS=start_point + field_size) mnphi
       read(15, POS=start_point + 2 * field_size) v
+      read(15, POS=start_point + 2 * field_size + ch_size) ebar
+
+      ebar_sum(1) = ebar_sum(1) + ebar(1)
+      ebar_sum(2) = ebar_sum(2) + ebar(2)
+      ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
+      ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
 
       if (fixed_length_spins) then
 
@@ -513,10 +522,10 @@ module io
                     end if
 
                     vertex_type_count(vertex_type) = vertex_type_count(vertex_type) + 1
-                    write(30, vertex_format) n, m, p, e_field(1,m,p),&
-                          e_field(2,m,p), e_field(1,neg(m),p),&
-                          e_field(2,m,neg(p)),vertex_sum(1),vertex_sum(2),&
-                          vertex_type
+                    ! write(30, vertex_format) n, m, p, e_field(1,m,p),&
+                    !      e_field(2,m,p), e_field(1,neg(m),p),&
+                    !      e_field(2,m,neg(p)),vertex_sum(1),vertex_sum(2),&
+                    !      vertex_type
                   else
                     ! meaningless number in this context
                     vertex_type = 5
@@ -638,34 +647,60 @@ module io
       end do ! end kx, ky loops
 
       if (fixed_length_spins) then
-        write(30,*)
+        ! write(30,*)
       end if
 
     end do ! n loop
 
-    close(15)
+    ebar_sum = ebar_sum / no_measurements
+    ebar_sq_sum = ebar_sq_sum / no_measurements
 
+    close(15)
 
     write (*,'(a)') "]. Completed."
 
     if (fixed_length_spins) then
 
-    write(30,'(a)') "---AVERAGES---"
-    write(30,*)
-    write(30,'(a)') "vertex type      avg. population"
+    ! write(30,'(a)') "---AVERAGES---"
+    ! write(30,*)
+    !write(30,'(a)') "T      vertex type  no. charges      avg. population"
 
     write(*,'(a)') "---AVERAGES---"
     write(*,*)
-    write(*,'(a)') "vertex type      avg. population"
+    write(*,'(a)') "Temperature      v.t  chg.       avg. population"
 
     do n=1,size(vertex_type_count)
-      write (30,'(ES18.9, I2, I3, a, ES18.9)') temp, n, add_charges, "            ",&
+      write (30,'(ES18.9, I5.1, I5.3, ES18.9)') temp, n, add_charges,&
       dble(vertex_type_count(n)) / (no_measurements * L**2)
-      write (*,'(ES18.9, I2, I3, a, ES18.9)') temp, n, add_charges, "            ",&
+      write (*,'(ES18.9, I2, I3, ES18.9)') temp, n, add_charges,&
       dble(vertex_type_count(n)) / (no_measurements * L**2)
     end do
 
-    close(30)
+    ! close(30)
+
+
+    write(*,*)
+    write(*,*) "E^bar averages:"
+    write(*,'(a)') "<E^bar_x>, <E^bar_y>, <|E^bar|>"
+    write (*,*) ebar_sum(1), ebar_sum(2),&
+    sqrt(ebar_sum(1)**2+ebar_sum(2)**2)
+    write(*,'(a)') "<(E^bar_x)^2>, <(E^bar_y)^2>, <|(E^bar)^2|>"
+    write (*,*) ebar_sq_sum(1), ebar_sq_sum(2),&
+    sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)
+
+    write(*,'(a)') "<|(E^bar)^2|> - <|E^bar|>^2"
+    write (*,*) sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
+    - (ebar_sum(1)**2+ebar_sum(2)**2)
+
+    write (30,'(a)') "   # <ebar^2> - <ebar>^2"
+    write (30,'(ES18.9, ES18.9)') temp,&
+    sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
+    - (ebar_sum(1)**2+ebar_sum(2)**2)
+
+    write (30,'(a)') "   # hop acceptance"
+    write (30,'(ES18.9, ES18.9)') temp,&
+    (float(accepth) / &
+    ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
 
     end if
 

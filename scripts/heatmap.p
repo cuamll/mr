@@ -4,10 +4,15 @@ set view map
 load PALETTE
 set key center bottom
 set grid xtics mxtics ytics dt 2 lt 2 lc rgb '#666666'
-set xtics pi
-set ytics pi
-set format x '%.0Pπ'
-set format y '%.0Pπ'
+#if (PITICS eq "Y") {
+  set xtics pi
+  set ytics pi
+  set format x '%.0Pπ'
+  set format y '%.0Pπ'
+#} else {
+#  set xtics
+#  set ytics
+#}
 set tmargin at screen 0.10
 set bmargin at screen 0.85
 set lmargin at screen 0.15

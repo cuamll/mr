@@ -50,7 +50,7 @@ my $helpstring = "Run script for Maggs-Rossetto code. Options:
   --temperatures or -t = comma-separated list of temperatures. Specifying will cause the script to run once using each temperature given. If a list is given here, the temperature in the input file will be ignored.
 
   --charge_values  or -ch = comma-separated list of charge values. Specifying will cause the script to run once using each charge value given (i.e. changing the strength of Coulomb interactions, basically). If a list is given here, the temperature in the input file will be ignored.
-  
+
   --spacings or -s = comma-separated list of spacings. Specifying will cause the script to run once using each spacing given. Here for completeness really. If a list is given here, the temperature in the input file will be ignored.
 
   --input_file or -i = \$filename: Give input file name. Default is \$PWD/in/start.in.
@@ -130,7 +130,7 @@ if ($dorun) {
           my $timestamp = get_timestamp();
 
           # don't think i can call a function inside an array assignment
-          my @stamparray = ('T', $temperatures[$i],'chg', $charges[$l],'z', $charge_values[$j],'a', $spacings[$k], $timestamp);
+          my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'z', $charge_values[$j],'a', $spacings[$k]);
           my $stamp = join('_', @stamparray);
           my $stampdir = "$outdir/$stamp";
           print "Creating directories $stampdir and $stampdir/plots .\n";
