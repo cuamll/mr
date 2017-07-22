@@ -661,48 +661,50 @@ module io
 
     if (fixed_length_spins) then
 
-    ! write(30,'(a)') "---AVERAGES---"
-    ! write(30,*)
-    !write(30,'(a)') "T      vertex type  no. charges      avg. population"
+      ! write(30,'(a)') "---AVERAGES---"
+      ! write(30,*)
+      !write(30,'(a)') "T      vertex type  no. charges      avg. population"
 
-    write(*,'(a)') "---AVERAGES---"
-    write(*,*)
-    write(*,'(a)') "Temperature      v.t  chg.       avg. population"
+      write(*,'(a)') "---AVERAGES---"
+      write(*,*)
+      write(*,'(a)') "Temperature      v.t  chg.       avg. population"
 
-    do n=1,size(vertex_type_count)
-      write (30,'(ES18.9, I5.1, I5.3, ES18.9)') temp, n, add_charges,&
-      dble(vertex_type_count(n)) / (no_measurements * L**2)
-      write (*,'(ES18.9, I2, I3, ES18.9)') temp, n, add_charges,&
-      dble(vertex_type_count(n)) / (no_measurements * L**2)
-    end do
-
-    ! close(30)
+      do n=1,size(vertex_type_count)
+        write (30,'(ES18.9, I5.1, I5.3, ES18.9)') temp, n, add_charges,&
+        dble(vertex_type_count(n)) / (no_measurements * L**2)
+        write (*,'(ES18.9, I2, I3, ES18.9)') temp, n, add_charges,&
+        dble(vertex_type_count(n)) / (no_measurements * L**2)
+      end do
 
 
-    write(*,*)
-    write(*,*) "E^bar averages:"
-    write(*,'(a)') "<E^bar_x>, <E^bar_y>, <|E^bar|>"
-    write (*,*) ebar_sum(1), ebar_sum(2),&
-    sqrt(ebar_sum(1)**2+ebar_sum(2)**2)
-    write(*,'(a)') "<(E^bar_x)^2>, <(E^bar_y)^2>, <|(E^bar)^2|>"
-    write (*,*) ebar_sq_sum(1), ebar_sq_sum(2),&
-    sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)
 
-    write(*,'(a)') "<|(E^bar)^2|> - <|E^bar|>^2"
-    write (*,*) sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
-    - (ebar_sum(1)**2+ebar_sum(2)**2)
+      write(*,*)
+      write(*,*) "E^bar averages:"
+      write(*,'(a)') "<E^bar_x>, <E^bar_y>, <|E^bar|>"
+      write (*,*) ebar_sum(1), ebar_sum(2),&
+      sqrt(ebar_sum(1)**2+ebar_sum(2)**2)
+      write(*,'(a)') "<(E^bar_x)^2>, <(E^bar_y)^2>, <|(E^bar)^2|>"
+      write (*,*) ebar_sq_sum(1), ebar_sq_sum(2),&
+      sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)
 
-    write (30,'(a)') "   # <ebar^2> - <ebar>^2"
-    write (30,'(ES18.9, ES18.9)') temp,&
-    sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
-    - (ebar_sum(1)**2+ebar_sum(2)**2)
+      write(*,'(a)') "<|(E^bar)^2|> - <|E^bar|>^2"
+      write (*,*) sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
+      - (ebar_sum(1)**2+ebar_sum(2)**2)
 
-    write (30,'(a)') "   # hop acceptance"
-    write (30,'(ES18.9, ES18.9)') temp,&
-    (float(accepth) / &
-    ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
+      write (30,'(a)') "   # <ebar^2> - <ebar>^2"
+      write (30,'(ES18.9, ES18.9)') temp,&
+      sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
+      - (ebar_sum(1)**2+ebar_sum(2)**2)
+
+      write (30,'(a)') "   # hop acceptance"
+      write (30,'(ES18.9, ES18.9)') temp,&
+      (float(accepth) / &
+      ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
+
+      close(30)
 
     end if
+
 
     rho_k_p = rho_k_p / no_measurements
     rho_k_m = rho_k_m / no_measurements
