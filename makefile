@@ -14,11 +14,11 @@ VPATH = $(MOD_DIR)
 UNAME = $(shell uname)
 REV = $(shell git rev-parse --short HEAD)
 
-DEBUG = 1
+DEBUG = 0
 ifeq ($(DEBUG), 1)
 	DEBUGFLAGS = -g -pg -fbacktrace -ffpe-trap=invalid,zero,underflow,denormal,overflow
 else
-	DEBUGFLAGS =
+	DEBUGFLAGS = -O2
 endif
 
 ifeq ($(UNAME), Darwin)

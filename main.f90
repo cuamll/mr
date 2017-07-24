@@ -118,10 +118,10 @@ program mr
   end if
   write (*,*) 'rotational updates: moves, acceptance ratio: ',&
     &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
-    &* 3*L**3 * rot_ratio)
+    &* L**2 * rot_ratio)
   write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
     &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
-    &* L**3 * g_ratio * 3)
+    &* L**2 * g_ratio * 2)
   write(*,*)
 
 
@@ -172,7 +172,7 @@ subroutine mc_sweep
 
   ! --- CHARGE HOP UPDATE ---
 
-  do i = 1, int(L**3 * hop_ratio)
+  do i = 1, int(L**2 * hop_ratio)
 
     ! NOTE TO SELF: this whole procedure assumes
     ! single-valued charges only.
@@ -195,20 +195,19 @@ subroutine mc_sweep
     if (v(site(1),site(2)).ne.0) then
 
       charge = v(site(1),site(2))
-      eo1 = e_field(mu1,site(1),site(2))
 
       ! this takes care of sign issues when hopping
-      increment = charge / (eps_0 * lambda**2)
+      increment = q * charge / (eps_0 * lambda**2)
 
       if (rand().lt.0.5) then ! move it "negative"
 
+        ! get negative in the mu1 direction
+        site(mu1) = neg(site(mu1))
+        eo1 = e_field(mu1,site(1),site(2))
         en1 = eo1 + increment
         old_e = 0.5 * eps_0 * eo1**2
         new_e = 0.5 * eps_0 * en1**2
         delta_e = new_e - old_e
-
-        ! get negative in the mu1 direction
-        site(mu1) = neg(site(mu1))
 
         if (v(site(1),site(2)).eq.0) then
           if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
@@ -229,6 +228,7 @@ subroutine mc_sweep
 
       else ! move it "positive"
 
+        eo1 = e_field(mu1,site(1),site(2))
         en1 = eo1 - increment
         old_e = 0.5 * eps_0 * lambda**2 * eo1**2
         new_e = 0.5 * eps_0 * lambda**2 * en1**2
@@ -271,7 +271,7 @@ subroutine mc_sweep
 
   ! --- ROTATIONAL UPDATE ---
 
-  do i = 1,int(L**3 * rot_ratio)
+  do i = 1,int(L**2 * rot_ratio)
 
     eo1 = 0.0; eo2 = 0.0; eo3 = 0.0; eo4 = 0.0
     en1 = 0.0; en2 = 0.0; en3 = 0.0; en4 = 0.0
@@ -347,7 +347,7 @@ subroutine mc_sweep
   if (glob.eq.1) then
 
     ! NOTE TO SELF: again this int cast might need changing
-    do i = 1,int(L**3 * g_ratio)
+    do i = 1,int(L**2 * g_ratio)
 
       increment = q/(L**2 * eps_0)
 
