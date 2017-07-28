@@ -69,7 +69,9 @@ module linear_solver
     end do ! b do loop
   end do ! a do loop
 
-  nch=nch/L**3 ! bc we count nch once for each abc
+  ebar = ebar / L**2
+
+  nch=nch/L**2 ! bc we count nch once for each abc
 
   !write (*,*) "ebar = ",ebar(1),ebar(2),ebar(3)
   !write(*,*)
@@ -84,6 +86,8 @@ module linear_solver
 
   subroutine lgfcalc
 
+  g0 = 0.0
+
   do y=1,L
     do x=1,L
       do b=1,L
@@ -94,7 +98,6 @@ module linear_solver
           ! these need to be real, for cos to work later
           p1=float(a-x)
           q1=float(b-y)
-          r1=0.0
 
           ! these need to be within [L/2,-L/2]. The Green's
           ! function is even though because we use cosines, so it
@@ -112,39 +115,38 @@ module linear_solver
             q1=q1+float(L)
           end if
 
-          if (r1.gt.float(L/2)) then
-            r1=r1-float(L)
-          else if (r1.lt.(-float(L/2))) then
-            r1=r1+float(L)
-          end if
-
-          do kz=-(L-1)/2,L/2
             do ky=-(L-1)/2,L/2
               do kx=-(L-1)/2,L/2
-                ! fkz=2*pi*kz/L
-                fkz=pi/2
                 fky=2*pi*ky/L
                 fkx=2*pi*kx/L
-                if ((kx.eq.0).and.(ky.eq.0).and.(kz.eq.0)) then
+                if ((kx.eq.0).and.(ky.eq.0)) then
 
                 else
 
                   lgf(a,b,x,y)=lgf(a,b,x,y)+(cos(fkx*p1)&
-                    *cos(fky*q1)*cos(fkz*r1))&
-                    /(2-cos(fkx)-cos(fky)-cos(fkz))
+                    *cos(fky*q1))&
+                    /(2-cos(fkx)-cos(fky))
 
                 end if ! end of kx=ky=kz=0 block
-              end do ! end kz loop
+              end do ! end kx loop
             end do ! end ky loop
-          end do ! end kx loop
 
-          lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**3)
+          lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
 
-        end do ! end x loop
-      end do ! end c loop
-    end do ! end b loop
-  end do ! end a loop
+          if (a.eq.x.and.b.eq.y) then
+            g0 = g0 + lgf(a,b,x,y)
+          end if
+
+        end do ! end a loop
+      end do ! end b loop
+    end do ! end x loop
+  end do ! end y loop
   have_lgf=1
+
+  g0 = g0 / L**2
+
+  write (*,*) "g(0) = ",g0
+  write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
 
   end subroutine lgfcalc
 

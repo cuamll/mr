@@ -4,7 +4,7 @@ module common
   integer*8, public :: L,accepth,acceptr,acceptg,add_charges,no_measurements
   integer*8, public :: therm_sweeps,measurement_sweeps,sample_interval
   real*8, public :: q, lambda, volume, temp, beta
-  real*8, public :: eps_0, bin_size, rot_delt
+  real*8, public :: eps_0, bin_size, rot_delt, g0
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:), allocatable, public :: v
   real*8, dimension(:), allocatable, public :: ebar, energy, sq_energy

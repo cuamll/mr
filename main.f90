@@ -197,7 +197,7 @@ subroutine mc_sweep
       charge = v(site(1),site(2))
 
       ! this takes care of sign issues when hopping
-      increment = q * charge / (eps_0 * lambda**2)
+      increment = q * charge / (eps_0 * lambda)
 
       if (rand().lt.0.5) then ! move it "negative"
 
@@ -218,7 +218,7 @@ subroutine mc_sweep
             site(mu1) = pos(site(mu1))
             v(site(1),site(2)) = 0
             e_field(mu1,site(1),site(2)) = en1
-            ebar(mu1) = ebar(mu1) + increment
+            ebar(mu1) = ebar(mu1) + (increment / L**2)
 
             accepth = accepth + 1
             u_tot_run = u_tot_run + delta_e
@@ -246,7 +246,7 @@ subroutine mc_sweep
             site(mu1) = neg(site(mu1))
             v(site(1),site(2)) = 0
             e_field(mu1,site(1),site(2)) = en1
-            ebar(mu1) = ebar(mu1) - increment
+            ebar(mu1) = ebar(mu1) - (increment / L**2)
 
             accepth = accepth + 1
             u_tot_run = u_tot_run + delta_e
@@ -349,7 +349,7 @@ subroutine mc_sweep
     ! NOTE TO SELF: again this int cast might need changing
     do i = 1,int(L**2 * g_ratio)
 
-      increment = q/(L**2 * eps_0)
+      increment = (q) / (L * eps_0 * lambda)
 
       do mu1 = 1,2
 
@@ -368,18 +368,19 @@ subroutine mc_sweep
         delta_e = new_e - old_e
         !delta_e = (0.5 - float(L) * ebar_x)
 
-        if ((delta_e.lt.0).or.((exp(-beta*delta_e).gt.rand())&
+        if ((delta_e.lt.0.0).or.((exp(-beta*delta_e).gt.rand())&
           .and.(exp(-beta*delta_e).gt.0.00000000001))) then
           ! this block is basically stolen from Michael
           ! not sure what's happening here tbh
           !write (*,*) ebar(1),ebar(2),ebar(3)
           ebar(mu1) = ebar(mu1) + pm1 * increment
+          e_field(mu1,:,:) = e_field(mu1,:,:) + pm1 * (increment)
+
           !write (*,*) ebar(1),ebar(2),ebar(3)
           !do m = 1,L
           !  do k = 1,L
           !    do j = 1,L
           !      e_field(mu1,j,k,m) = e_field(mu1,j,k,m) + pm1 * (increment / L**3)
-                e_field(mu1,:,:) = e_field(mu1,:,:) + pm1 * (increment / L**2)
           !    end do
           !  end do
           !end do

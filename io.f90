@@ -219,7 +219,9 @@ module io
       no_measurements = measurement_sweeps / sample_interval
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
-      eps_0 = 1.0 / L
+      ! eps_0 = 1.0 / L
+      eps_0 = 1.0
+      ! q = 2 * pi * q
       beta = 1.0 / temp
 
       lattfile = trim(adjustl(lattfile_long))
@@ -422,6 +424,10 @@ module io
       read(15, POS=start_point + field_size) mnphi
       read(15, POS=start_point + 2 * field_size) v
       read(15, POS=start_point + 2 * field_size + ch_size) ebar
+
+      !open(unit=2, file=energy_file)
+      !open(unit=3, file=sq_energy_file)
+      !open(unit=4, file=e_field_file)
 
       ebar_sum(1) = ebar_sum(1) + ebar(1)
       ebar_sum(2) = ebar_sum(2) + ebar(2)
@@ -718,6 +724,7 @@ module io
     s_ab = s_ab / no_measurements
     s_ab_irrot = s_ab_irrot / no_measurements
     s_ab_rot = s_ab_rot / no_measurements
+    dir_struc = dir_struc / no_measurements
 
     ! we can calculate s_perp up to wherever
     sp = 8

@@ -62,7 +62,7 @@ foreach my $file (@filenames) {
       $s_string = qq(S^{∥} - );
     } elsif ($s_component =~ /ab/) {
       # print "S^{/alpha /beta still there???}";
-      $s_string = qq(S^{/Symbol a /Symbol b} - );
+      $s_string = qq(S^{/Symbol ab} - );
     } else {
       die "s_component is weird: $s_component $!\n";
     }
