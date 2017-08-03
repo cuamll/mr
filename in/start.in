@@ -1,12 +1,12 @@
 L 20
-thermalisation_sweeps 10000
-measurement_sweeps 150000
-sample_interval 15
+thermalisation_sweeps 25000
+measurement_sweeps 1000000
+sample_interval 10
 temperature 0.400
 lattice_spacing 1.0
-charge_value 5.0
+charge_value 1.0
 delta_max 1.0
-charges 36
+charges 2
 rng_seed 0
 hop_ratio 1.0
 rot_ratio 1.0
@@ -32,4 +32,5 @@ rot_s^(alpha_beta)_file               out/s_ab_rot.dat
 rot_s_(perp)_file                     out/s_perp_rot.dat
 rot_s_(par)_file                      out/s_par_rot.dat
 field_charge_file                     out/temp.bin
-vertex_sum_file                       out/vert_ebar.dat
+average_field_file                    out/avg_fields.dat
+vertex_ebar_file                      out/vert_ebar.dat

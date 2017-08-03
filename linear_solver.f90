@@ -8,6 +8,10 @@ module linear_solver
   real*8, private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,fkx,fky,fkz
   real*8, private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
   real*8, public :: u_tot, u_int, u_self, g_zero, g_z_sum
+  character(4) :: lgf_path = "lgf/"
+  character(2) :: l_char
+  character(6) :: lgf_file
+  logical :: lgf_there
   save
 
   contains
@@ -21,7 +25,20 @@ module linear_solver
   nch=0
 
   if (have_lgf.eq.0) then
-    call lgfcalc
+
+    write (l_char,'(i2)') L
+    lgf_file = lgf_path//l_char
+
+    inquire(file=lgf_file, exist = lgf_there)
+
+    if (lgf_there) then
+      open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
+      read(30) lgf
+      close(30)
+    else
+      call lgfcalc(lgf_file)
+    end if
+
   end if
 
     do b=1,L
@@ -38,17 +55,17 @@ module linear_solver
 
               if (v(x,y).ne.0) then ! non-zero charge at (x,y,z)
 
-                charge=q*v(x,y)
-                nch=nch+1
-                sum_x=sum_x+charge*(-1)&
-                      *(lgf(a,b,x,y)-lgf(a,b,neg(x),y))
-                sum_y=sum_y+charge*(-1)&
-                      *(lgf(a,b,x,y)-lgf(a,b,x,neg(y)))
+                charge = q * v(x,y)
+                nch = nch + 1
+                sum_x = sum_x + charge * (-1)&
+                      * (lgf(a,b,x,y) - lgf(a,b,neg(x),y))
+                sum_y = sum_y + charge * (-1)&
+                      * (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
                 if (v(a,b).ne.0) then
                   if (a.eq.x.and.b.eq.y) then
-                    u_self=u_self+charge**2*lgf(x,y,x,y)
+                    u_self = u_self + charge**2 * lgf(x,y,x,y)
                   else
-                    u_int=u_int+q*v(a,b)*charge*lgf(a,b,x,y)
+                    u_int = u_int + q * v(a,b) * charge * lgf(a,b,x,y)
                   end if
                 end if
 
@@ -84,69 +101,74 @@ module linear_solver
 
   end subroutine linsol
 
-  subroutine lgfcalc
+  subroutine lgfcalc(filename)
+    character(6), intent(in) :: filename
 
-  g0 = 0.0
+    g0 = 0.0
 
-  do y=1,L
-    do x=1,L
-      do b=1,L
-        do a=1,L
+    do y=1,L
+      do x=1,L
+        do b=1,L
+          do a=1,L
 
-          lgf(a,b,x,y)=0.0
+            lgf(a,b,x,y)=0.0
 
-          ! these need to be real, for cos to work later
-          p1=float(a-x)
-          q1=float(b-y)
+            ! these need to be real, for cos to work later
+            p1=float(a-x)
+            q1=float(b-y)
 
-          ! these need to be within [L/2,-L/2]. The Green's
-          ! function is even though because we use cosines, so it
-          ! doesn't matter whether it's positive or negative.
+            ! these need to be within [L/2,-L/2]. The Green's
+            ! function is even though because we use cosines, so it
+            ! doesn't matter whether it's positive or negative.
 
-          if (p1.gt.float(L/2)) then
-            p1=p1-float(L)
-          else if (p1.lt.(-float(L/2))) then
-            p1=p1+float(L)
-          end if
+            if (p1.gt.float(L/2)) then
+              p1=p1-float(L)
+            else if (p1.lt.(-float(L/2))) then
+              p1=p1+float(L)
+            end if
 
-          if (q1.gt.float(L/2)) then
-            q1=q1-float(L)
-          else if (q1.lt.(-float(L/2))) then
-            q1=q1+float(L)
-          end if
+            if (q1.gt.float(L/2)) then
+              q1=q1-float(L)
+            else if (q1.lt.(-float(L/2))) then
+              q1=q1+float(L)
+            end if
 
-            do ky=-(L-1)/2,L/2
-              do kx=-(L-1)/2,L/2
-                fky=2*pi*ky/L
-                fkx=2*pi*kx/L
-                if ((kx.eq.0).and.(ky.eq.0)) then
+              do ky=-(L-1)/2,L/2
+                do kx=-(L-1)/2,L/2
+                  fky=2*pi*ky/L
+                  fkx=2*pi*kx/L
+                  if ((kx.eq.0).and.(ky.eq.0)) then
 
-                else
+                  else
 
-                  lgf(a,b,x,y)=lgf(a,b,x,y)+(cos(fkx*p1)&
-                    *cos(fky*q1))&
-                    /(2-cos(fkx)-cos(fky))
+                    lgf(a,b,x,y)=lgf(a,b,x,y)+(cos(fkx*p1)&
+                      *cos(fky*q1))/(2-cos(fkx)-cos(fky))
 
-                end if ! end of kx=ky=kz=0 block
-              end do ! end kx loop
-            end do ! end ky loop
+                  end if ! end of kx=ky=kz=0 block
+                end do ! end kx loop
+              end do ! end ky loop
 
-          lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
+            lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
 
-          if (a.eq.x.and.b.eq.y) then
-            g0 = g0 + lgf(a,b,x,y)
-          end if
+            if (a.eq.x.and.b.eq.y) then
+              g0 = g0 + lgf(a,b,x,y)
+            end if
 
-        end do ! end a loop
-      end do ! end b loop
-    end do ! end x loop
-  end do ! end y loop
-  have_lgf=1
+          end do ! end a loop
+        end do ! end b loop
+      end do ! end x loop
+    end do ! end y loop
 
-  g0 = g0 / L**2
+    g0 = g0 / L**2
 
-  write (*,*) "g(0) = ",g0
-  write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
+    write (*,*) "g(0) = ",g0
+    write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
+    
+    open(30, file=filename, status="new", action="write", access="stream", form="unformatted")
+    write(30) lgf
+    close(30)
+
+    have_lgf=1
 
   end subroutine lgfcalc
 

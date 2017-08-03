@@ -134,10 +134,13 @@ module io
             write (*,*) 'Rotational S_(//) file name: ',r_spa_l
           case ('field_charge_file')
             read(buffer, '(a)', iostat=ios) fe_ch_l
-            write (*,*) 'Raw file name for fields/charges: ',fe_ch_l
-          case ('vertex_sum_file')
+            write (*,*) 'Raw file name for binary fields/charges output: ',fe_ch_l
+          case ('average_field_file')
+            read(buffer, '(a)', iostat=ios) av_fe_l
+            write (*,*) 'Raw file name for average fields/charges: ',av_fe_l
+          case ('vertex_ebar_file')
             read(buffer, '(a)', iostat=ios) v_s_l
-            write (*,*) 'Raw file name for fields/charges: ',v_s_l
+            write (*,*) 'Raw file name for vertices/ebar: ',v_s_l
           case default
             write (*,*) 'Skipping invalid label at line ',line
           end select
@@ -221,7 +224,8 @@ module io
       ! is the dimensional analysis sorted out?
       ! eps_0 = 1.0 / L
       eps_0 = 1.0
-      ! q = 2 * pi * q
+      q = 2 * pi * q
+      write (*,*) "q = ",q
       beta = 1.0 / temp
 
       lattfile = trim(adjustl(lattfile_long))
@@ -244,6 +248,7 @@ module io
       rot_sperp_file = trim(adjustl(r_sp_l))
       rot_spar_file = trim(adjustl(r_spa_l))
       field_charge_file = trim(adjustl(fe_ch_l))
+      avg_field_file = trim(adjustl(av_fe_l))
       vertex_sum_file = trim(adjustl(v_s_l))
 
     else
@@ -360,6 +365,8 @@ module io
     complex*16 :: e_rot_kx_temp, e_rot_ky, e_rot_kz
     real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
     real*8, dimension(2,L,L) :: e_rot
+    real*8, dimension(2,L,L) :: e_tot_avg,e_irrot_avg,e_rot_avg
+    real*8, dimension(L,L) :: v_avg
     real*8, dimension(2) :: vertex_sum
     real(kind=8), dimension(2) :: ebar_sum, ebar_sq_sum
     real*8, dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
@@ -370,12 +377,13 @@ module io
     complex*16, dimension((bz*L)+1,(bz*L)+1) :: mnphi_kx, e_rot_kx
     complex*16 :: imag, kdotx
     character(100) :: struc_format_string, field_format_string,vertex_format
-    character(100) :: dir_format_string, dir_dist_format_string
+    character(100) :: avg_field_format,dir_format_string, dir_dist_format_string
     ! CALL THIS AFTER CORRELATIONS SUBROUTINE
 
     write (*,'(a)',advance='no') "Reading in fields and charge distributions, &
       and calculating correlations... ["
 
+    avg_field_format = "(I3, I3, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
     dir_format_string = "(I3, I3, ES18.9)"
@@ -388,7 +396,7 @@ module io
     ch_size = 4 * L**2
     ebar_size = 16
 
-    fixed_length_spins = .true.
+    fixed_length_spins = .false.
     vertex_type = 0
     vertex_type_count = 0
     vertex_sum = 0.0
@@ -400,6 +408,7 @@ module io
     rho_k_p = (0.0, 0.0); rho_k_m = (0.0, 0.0)
     ch_ch = 0.0; fe_fe = 0.0; s_ab = 0.0
     e_rot = 0.0; fe_fe_rot = 0.0; field_struc_rot = 0.0; s_ab_rot = 0.0;
+    e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0; v_avg = 0.0
     fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
 
     open(15, file=filename, status="old", action="read", access="stream", form="unformatted")
@@ -419,24 +428,29 @@ module io
       ebar = 0.0
 
       ! POS = 1 is the start of the file so we need to add 1
-      start_point = ((n - 1) * ((2 * field_size) + ch_size + ebar_size)) + 1
+      !start_point = ((n - 1) * ((2 * field_size) + ch_size + ebar_size)) + 1
+      start_point = ((n - 1) * ((2 * field_size) + ch_size)) + 1
       read(15, POS=start_point) e_field
       read(15, POS=start_point + field_size) mnphi
       read(15, POS=start_point + 2 * field_size) v
-      read(15, POS=start_point + 2 * field_size + ch_size) ebar
+      !read(15, POS=start_point + 2 * field_size + ch_size) ebar
 
       !open(unit=2, file=energy_file)
       !open(unit=3, file=sq_energy_file)
       !open(unit=4, file=e_field_file)
+
+      ebar(1) = sum(e_field(1,:,:))
+      ebar(2) = sum(e_field(2,:,:))
+      ebar = ebar / L**2
 
       ebar_sum(1) = ebar_sum(1) + ebar(1)
       ebar_sum(2) = ebar_sum(2) + ebar(2)
       ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
       ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
 
+      open(30, file=vertex_sum_file)
       if (fixed_length_spins) then
 
-        open(30, file=vertex_sum_file)
         where (e_field.ne.0.0)
           e_field = e_field / abs(e_field)
         elsewhere
@@ -456,6 +470,11 @@ module io
 
       ! this way we can get decomposed parts along with total
       e_rot = e_field - mnphi
+
+      e_tot_avg = e_tot_avg + e_field
+      e_rot_avg = e_rot_avg + e_rot
+      e_irrot_avg = e_irrot_avg + mnphi
+      v_avg = v_avg + float(v)
 
       do ky = (-1*L/2)*bz, (L/2)*bz
         do kx = (-1*L/2)*bz, (L/2)*bz
@@ -546,11 +565,11 @@ module io
                           ((p-1)*ky/(L*lambda))))
 
                   if (v(m,p).eq.-1) then
-                    rho_k_m_temp = rho_k_m_temp + v(m,p) * exp(kdotx)
+                    rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
                   end if
 
                   if (v(m,p).eq.1) then ! take away <++>
-                    rho_k_p_temp = rho_k_p_temp + v(m,p) * exp(kdotx)
+                    rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
                   end if
 
                   ! --- real space correlation function ---
@@ -658,18 +677,19 @@ module io
 
     end do ! n loop
 
-    ebar_sum = ebar_sum / no_measurements
-    ebar_sq_sum = ebar_sq_sum / no_measurements
+    ebar_sum = (ebar_sum / no_measurements)
+    ebar_sq_sum = (ebar_sq_sum / no_measurements)
 
     close(15)
 
     write (*,'(a)') "]. Completed."
 
-    if (fixed_length_spins) then
 
       ! write(30,'(a)') "---AVERAGES---"
       ! write(30,*)
       !write(30,'(a)') "T      vertex type  no. charges      avg. population"
+
+    if (fixed_length_spins) then
 
       write(*,'(a)') "---AVERAGES---"
       write(*,*)
@@ -682,7 +702,7 @@ module io
         dble(vertex_type_count(n)) / (no_measurements * L**2)
       end do
 
-
+    end if
 
       write(*,*)
       write(*,*) "E^bar averages:"
@@ -694,13 +714,13 @@ module io
       sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)
 
       write(*,'(a)') "<|(E^bar)^2|> - <|E^bar|>^2"
-      write (*,*) sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
-      - (ebar_sum(1)**2+ebar_sum(2)**2)
+      write (*,*) L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
+      - (ebar_sum(1)**2 + ebar_sum(2)**2))
 
       write (30,'(a)') "   # <ebar^2> - <ebar>^2"
       write (30,'(ES18.9, ES18.9)') temp,&
-      sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)&
-      - (ebar_sum(1)**2+ebar_sum(2)**2)
+      L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
+      - (ebar_sum(1)**2 + ebar_sum(2)**2))
 
       write (30,'(a)') "   # hop acceptance"
       write (30,'(ES18.9, ES18.9)') temp,&
@@ -708,9 +728,6 @@ module io
       ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
 
       close(30)
-
-    end if
-
 
     rho_k_p = rho_k_p / no_measurements
     rho_k_m = rho_k_m / no_measurements
@@ -725,6 +742,10 @@ module io
     s_ab_irrot = s_ab_irrot / no_measurements
     s_ab_rot = s_ab_rot / no_measurements
     dir_struc = dir_struc / no_measurements
+    e_tot_avg = e_tot_avg / no_measurements
+    e_rot_avg = e_rot_avg / no_measurements
+    e_irrot_avg = e_irrot_avg / no_measurements
+    v_avg = v_avg / no_measurements
 
     ! we can calculate s_perp up to wherever
     sp = 8
@@ -831,6 +852,7 @@ module io
     open(unit=22, file=spar_file)
     open(unit=23, file=irrot_spar_file)
     open(unit=24, file=rot_spar_file)
+    open(unit=25, file=avg_field_file)
 
     dist_r = dist_r / (no_measurements)
     do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
@@ -850,10 +872,18 @@ module io
             i - 1,j - 1,abs(dir_struc(i,j))
           end if
 
+          if (i.le.L.and.j.le.L) then
+            write (25, avg_field_format)&
+            i,j,e_tot_avg(1,i,j),e_tot_avg(2,i,j),&
+            e_rot_avg(1,i,j),e_rot_avg(2,i,j),&
+            e_irrot_avg(1,i,j),e_irrot_avg(2,i,j),&
+            v_avg(i,j)
+          end if
+
           if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
 
             ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
-            charge_struc(i,j) = abs(ch_ch(i,j))
+            charge_struc(i,j) = abs(ch_ch(i,j) - rho_k_p(i,j) * conjg(rho_k_m(i,j)))
             field_struc(i,j) = abs(fe_fe(i,j))
             field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j))
             field_struc_rot(i,j) = abs(fe_fe_rot(i,j))

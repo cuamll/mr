@@ -97,7 +97,7 @@ foreach my $file (@filenames) {
 
 my $meas = $parameters{measurement_sweeps} / $parameters{sample_interval};
 
-my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, charge value = $parameters{charge_value}.\n\n$meas measurements from $parameters{measurement_sweeps} MC steps.);
+my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, charge value = $parameters{charge_value} * 2 {/Symbol p}.\n\n$meas measurements from $parameters{measurement_sweeps} MC steps.);
 
 my $basedir = File::Spec->curdir();
 my $plotpath = "$basedir/scripts/";

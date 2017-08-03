@@ -449,7 +449,7 @@ subroutine measure(step_number)
   write(15) e_field
   write(15) mnphi
   write(15) v
-  write(15) ebar
+  !write(15) ebar
 
   close(15)
 
