@@ -352,36 +352,16 @@ module io
     use common
     implicit none
     character(len = *), intent(in) :: filename
-    logical :: fixed_length_spins
-    integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin
-    integer :: start_point,field_size,ch_size,sp
-    integer :: vertex_type, ebar_size
-    integer, dimension(5) :: vertex_type_count
-    integer, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bin_count
-    real*8 :: norm_k,kx_float,ky_float,kz_float,dist
-    complex*16 :: rho_k_p_temp, rho_k_m_temp
-    complex*16 :: e_kx_temp, e_ky, e_kz
-    complex*16 :: mnphi_kx_temp, mnphi_ky, mnphi_kz
-    complex*16 :: e_rot_kx_temp, e_rot_ky, e_rot_kz
-    real*8, dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dist_r
-    real*8, dimension(2,L,L) :: e_rot
-    real*8, dimension(2,L,L) :: e_tot_avg,e_irrot_avg,e_rot_avg
-    real*8, dimension(L,L) :: v_avg
-    real*8, dimension(2) :: vertex_sum
-    real(kind=8), dimension(2) :: ebar_sum, ebar_sq_sum
-    real*8, dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
-    real*8, dimension(:,:), allocatable :: s_par, s_par_irrot, s_par_rot
-    real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_irrot, field_struc_irrot
-    real*8, dimension((bz*L)+1,(bz*L)+1) :: fe_fe_rot, field_struc_rot
-    real*8, dimension(2,2,(bz*L)+1,(bz*L)+1) :: s_ab_irrot, s_ab_rot
-    complex*16, dimension((bz*L)+1,(bz*L)+1) :: mnphi_kx, e_rot_kx
-    complex*16 :: imag, kdotx
+    integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin,sp
+    real(kind=16) :: norm_k,kx_float,ky_float,kz_float,dist
+    real(kind=16) :: sp_he_tot, sp_he_rot, sp_he_irrot, prefac
+    real(kind=16), dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
+    real(kind=16), dimension(:,:), allocatable :: s_par, s_par_irrot, s_par_rot
+    real(kind=16), dimension((bz*L)+1,(bz*L)+1) :: charge_struc, field_struc
+    real(kind=16), dimension((bz*L)+1,(bz*L)+1) :: field_struc_irrot
+    real(kind=16), dimension((bz*L)+1,(bz*L)+1) :: field_struc_rot
     character(100) :: struc_format_string, field_format_string,vertex_format
     character(100) :: avg_field_format,dir_format_string, dir_dist_format_string
-    ! CALL THIS AFTER CORRELATIONS SUBROUTINE
-
-    write (*,'(a)',advance='no') "Reading in fields and charge distributions, &
-      and calculating correlations... ["
 
     avg_field_format = "(I3, I3, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
     field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
@@ -390,354 +370,15 @@ module io
     vertex_format = "(I6, I3, I3, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, I3)"
     dir_dist_format_string = "(ES18.9, I9.6, ES18.9)"
 
-    ! size of e_field and mnphi is (L**2 * 2) * 8 bytes
-    ! charge distribution is 4-byte integers so 4 L**2
-    field_size = 16 * L**2
-    ch_size = 4 * L**2
-    ebar_size = 16
-
-    fixed_length_spins = .false.
-    vertex_type = 0
-    vertex_type_count = 0
-    vertex_sum = 0.0
-    ebar_sum = 0.0; ebar_sq_sum = 0.0
-    imag = (0.0, 1.0)
-    dist_bin = 0; dist = 0.0;
-    dist_r = 0.0; bin_count = 0;
-    e_kx = (0.0, 0.0); mnphi_kx = (0.0, 0.0); e_rot_kx = (0.0, 0.0)
-    rho_k_p = (0.0, 0.0); rho_k_m = (0.0, 0.0)
-    ch_ch = 0.0; fe_fe = 0.0; s_ab = 0.0
-    e_rot = 0.0; fe_fe_rot = 0.0; field_struc_rot = 0.0; s_ab_rot = 0.0;
-    e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0; v_avg = 0.0
-    fe_fe_irrot = 0.0; field_struc_irrot = 0.0; s_ab_irrot = 0.0;
-
-    open(15, file=filename, status="old", action="read", access="stream", form="unformatted")
-
-    do n = 1, no_measurements
-
-    if (no_measurements.gt.100) then
-      if (mod(n,no_measurements / 100).eq.0) then
-        write (*,'(a)',advance='no') "*"
-      end if
-    end if
-
-      e_field = 0.0
-      mnphi = 0.0
-      e_rot = 0.0
-      v = 0
-      ebar = 0.0
-
-      ! POS = 1 is the start of the file so we need to add 1
-      !start_point = ((n - 1) * ((2 * field_size) + ch_size + ebar_size)) + 1
-      start_point = ((n - 1) * ((2 * field_size) + ch_size)) + 1
-      read(15, POS=start_point) e_field
-      read(15, POS=start_point + field_size) mnphi
-      read(15, POS=start_point + 2 * field_size) v
-      !read(15, POS=start_point + 2 * field_size + ch_size) ebar
-
-      !open(unit=2, file=energy_file)
-      !open(unit=3, file=sq_energy_file)
-      !open(unit=4, file=e_field_file)
-
-      ebar(1) = sum(e_field(1,:,:))
-      ebar(2) = sum(e_field(2,:,:))
-      ebar = ebar / L**2
-
-      ebar_sum(1) = ebar_sum(1) + ebar(1)
-      ebar_sum(2) = ebar_sum(2) + ebar(2)
-      ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
-      ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
-
-      open(30, file=vertex_sum_file)
-      if (fixed_length_spins) then
-
-        where (e_field.ne.0.0)
-          e_field = e_field / abs(e_field)
-        elsewhere
-          e_field = 0.0
-        end where
-        !where (e_rot.ne.0.0)
-        !  e_rot = e_rot / abs(e_rot)
-        !elsewhere
-        !  e_rot = 0.0
-        !end where
-        !where (mnphi.ne.0.0)
-        !  mnphi = mnphi / abs(mnphi)
-        !elsewhere
-        !  mnphi = 0.0
-        !end where
-      end if
-
-      ! this way we can get decomposed parts along with total
-      e_rot = e_field - mnphi
-
-      e_tot_avg = e_tot_avg + e_field
-      e_rot_avg = e_rot_avg + e_rot
-      e_irrot_avg = e_irrot_avg + mnphi
-      v_avg = v_avg + float(v)
-
-      do ky = (-1*L/2)*bz, (L/2)*bz
-        do kx = (-1*L/2)*bz, (L/2)*bz
-
-          rho_k_p_temp = (0.0,0.0)
-          rho_k_m_temp = (0.0,0.0)
-          e_kx_temp = (0.0,0.0)
-          mnphi_kx_temp = (0.0,0.0)
-          e_rot_kx_temp = (0.0,0.0)
-          e_ky = (0.0,0.0)
-          mnphi_ky = (0.0,0.0)
-          e_rot_ky = (0.0,0.0)
-          e_kz = (0.0,0.0)
-          mnphi_kz = (0.0,0.0)
-          e_rot_kz = (0.0,0.0)
-          kdotx = (0.0,0.0)
-          norm_k = 0.0
-
-          ! for array indices
-          i = kx + 1 + bz*(L/2)
-          j = ky + 1 + bz*(L/2)
-
-          if (kx.eq.0.and.ky.eq.0) then
-            norm_k = 0.0
-          else
-            norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
-          end if
-
-          ! m,p,s are the real space coordinates
-            do p = 1,L
-              do m = 1,L
-
-                ! different offsets for x,y,z
-                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
-                        ((p-1)*ky)))
-
-                ! we want this for every step so we can
-                ! average at the end to get field-field struc
-                e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
-                mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
-                e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
-
-                kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                        ((p-(1.0/2))*ky)))
-
-                e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
-                mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
-                e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
-
-                if (kx.eq.0.and.ky.eq.0) then
-                  ! vertex sums -- only want to do this once
-                  vertex_sum(1) = e_field(1,m,p) + e_field(1,neg(m),p)
-                  vertex_sum(2) = e_field(2,m,p) + e_field(2,m,neg(p))
-
-                  ! only if we're doing fixed-length
-                  if (fixed_length_spins) then
-                    vertex_type = int(sum(abs(vertex_sum)))
-                    if (vertex_type.eq.2) then
-                      vertex_type = 3
-                    else if (vertex_type.eq.4) then
-                      vertex_type = 2
-                    else if (vertex_type.eq.0) then
-                      if ((e_field(1,m,p) + e_field(2,m,p)).eq.0) then
-                        vertex_type = 1
-                      else
-                        vertex_type = 4
-                      end if
-                    else
-                      write(*,*) "something weird happening with vertex sum at",n,m,p
-                    end if
-
-                    vertex_type_count(vertex_type) = vertex_type_count(vertex_type) + 1
-                    ! write(30, vertex_format) n, m, p, e_field(1,m,p),&
-                    !      e_field(2,m,p), e_field(1,neg(m),p),&
-                    !      e_field(2,m,neg(p)),vertex_sum(1),vertex_sum(2),&
-                    !      vertex_type
-                  else
-                    ! meaningless number in this context
-                    vertex_type = 5
-                  end if
-
-                end if
-
-                if (v(m,p).ne.0) then ! calculate <++ + +->!
-
-                  ! FT of charge distribution
-                  kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                          ((p-1)*ky/(L*lambda))))
-
-                  if (v(m,p).eq.-1) then
-                    rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
-                  end if
-
-                  if (v(m,p).eq.1) then ! take away <++>
-                    rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
-                  end if
-
-                  ! --- real space correlation function ---
-
-                  if (kx.gt.0.and.kx.le.L.and.&
-                      ky.gt.0.and.ky.le.L) then
-
-                    ! this should sort it out. kx ky kz here are
-                    ! the "r"s, m p s are the "zeros"
-                    ! we want to do rho_+(0) rho_-(r)
-                    if (v(m,p).eq.1) then
-                      if (v(kx,ky).eq.-1) then
-
-                        x = abs(m - kx)
-                        y = abs(p - ky)
-
-                        if (x.gt.L/2) then
-                          x = L - x
-                        end if
-                        if (y.gt.L/2) then
-                          y = L - y
-                        end if
-
-                        x = x + 1
-                        y = y + 1
-
-                        dir_struc(x,y) = dir_struc(x,y) +&
-                                v(m,p) * v(kx,ky)
-                      end if ! neg charge at kx,ky,kz
-                    end if ! pos charge at m,p,s
-                  end if ! kx, ky, kz < L
-
-                end if ! end v != 0 check
-
-            end do ! end p loop
-          end do ! end m loop
-
-          rho_k_p_temp = rho_k_p_temp / float(L**2)
-          rho_k_m_temp = rho_k_m_temp / float(L**2)
-          e_kx_temp = e_kx_temp / float(L**2)
-          e_ky = e_ky / float(L**2)
-          mnphi_kx_temp = mnphi_kx_temp / float(L**2)
-          mnphi_ky = mnphi_ky / float(L**2)
-          e_rot_kx_temp = e_rot_kx_temp / float(L**2)
-          e_rot_ky = e_rot_ky / float(L**2)
-
-          rho_k_p(i,j) = rho_k_p(i,j) + rho_k_p_temp
-          rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
-          e_kx(i,j) = e_kx(i,j) + e_kx_temp
-          mnphi_kx(i,j) = mnphi_kx(i,j) + mnphi_kx_temp
-          e_rot_kx(i,j) = e_rot_kx(i,j) + e_rot_kx_temp
-          ch_ch(i,j) = ch_ch(i,j) +&
-                        (rho_k_p_temp * conjg(rho_k_m_temp))
-          fe_fe(i,j) = fe_fe(i,j) +&
-                        (e_kx_temp * conjg(e_kx_temp))
-          fe_fe_irrot(i,j) = fe_fe_irrot(i,j) +&
-                              (mnphi_kx_temp * conjg(mnphi_kx_temp))
-          fe_fe_rot(i,j) = fe_fe_rot(i,j) +&
-                              (e_rot_kx_temp * conjg(e_rot_kx_temp))
-
-          s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
-          e_kx_temp*conjg(e_kx_temp)
-          s_ab(1,2,i,j) = s_ab(1,2,i,j) +&
-          e_kx_temp*conjg(e_ky)
-          s_ab(2,1,i,j) = s_ab(2,1,i,j) +&
-          e_ky*conjg(e_kx_temp)
-          s_ab(2,2,i,j) = s_ab(2,2,i,j) +&
-          e_ky*conjg(e_ky)
-
-          s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i,j) +&
-          e_rot_kx_temp*conjg(e_rot_kx_temp)
-          s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i,j) +&
-          e_rot_kx_temp*conjg(e_rot_ky)
-          s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i,j) +&
-          e_rot_ky*conjg(e_rot_kx_temp)
-          s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i,j) +&
-          e_rot_ky*conjg(e_rot_ky)
-
-          s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i,j) +&
-          mnphi_kx_temp*conjg(mnphi_kx_temp)
-          s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i,j) +&
-          mnphi_kx_temp*conjg(mnphi_ky)
-          s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i,j) +&
-          mnphi_ky*conjg(mnphi_kx_temp)
-          s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i,j) +&
-          mnphi_ky*conjg(mnphi_ky)
-
-          ! direct space one
-          if (i.le.L/2+1.and.j.le.L/2+1) then
-
-            dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
-            dist_bin = floor(dist / bin_size) + 1
-            dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
-            bin_count(dist_bin) = bin_count(dist_bin) + 1
-
-          end if
-
-
-        end do
-      end do ! end kx, ky loops
-
-      if (fixed_length_spins) then
-        ! write(30,*)
-      end if
-
-    end do ! n loop
+    field_struc = 0.0; field_struc_rot = 0.0;
+    charge_struc = 0.0; field_struc_irrot = 0.0;
 
     ebar_sum = (ebar_sum / no_measurements)
     ebar_sq_sum = (ebar_sq_sum / no_measurements)
 
-    close(15)
-
-    write (*,'(a)') "]. Completed."
-
-
-      ! write(30,'(a)') "---AVERAGES---"
-      ! write(30,*)
-      !write(30,'(a)') "T      vertex type  no. charges      avg. population"
-
-    if (fixed_length_spins) then
-
-      write(*,'(a)') "---AVERAGES---"
-      write(*,*)
-      write(*,'(a)') "Temperature      v.t  chg.       avg. population"
-
-      do n=1,size(vertex_type_count)
-        write (30,'(ES18.9, I5.1, I5.3, ES18.9)') temp, n, add_charges,&
-        dble(vertex_type_count(n)) / (no_measurements * L**2)
-        write (*,'(ES18.9, I2, I3, ES18.9)') temp, n, add_charges,&
-        dble(vertex_type_count(n)) / (no_measurements * L**2)
-      end do
-
-    end if
-
-      write(*,*)
-      write(*,*) "E^bar averages:"
-      write(*,'(a)') "<E^bar_x>, <E^bar_y>, <|E^bar|>"
-      write (*,*) ebar_sum(1), ebar_sum(2),&
-      sqrt(ebar_sum(1)**2+ebar_sum(2)**2)
-      write(*,'(a)') "<(E^bar_x)^2>, <(E^bar_y)^2>, <|(E^bar)^2|>"
-      write (*,*) ebar_sq_sum(1), ebar_sq_sum(2),&
-      sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)
-
-      write(*,'(a)') "<|(E^bar)^2|> - <|E^bar|>^2"
-      write (*,*) L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
-      - (ebar_sum(1)**2 + ebar_sum(2)**2))
-
-      write (30,'(a)') "   # <ebar^2> - <ebar>^2"
-      write (30,'(ES18.9, ES18.9)') temp,&
-      L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
-      - (ebar_sum(1)**2 + ebar_sum(2)**2))
-
-      write (30,'(a)') "   # hop acceptance"
-      write (30,'(ES18.9, ES18.9)') temp,&
-      (float(accepth) / &
-      ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
-
-      close(30)
-
     rho_k_p = rho_k_p / no_measurements
     rho_k_m = rho_k_m / no_measurements
-    e_kx = e_kx / no_measurements
-    mnphi_kx = mnphi_kx / no_measurements
-    e_rot_kx = e_rot_kx / no_measurements
     ch_ch = ch_ch / no_measurements
-    fe_fe = fe_fe / no_measurements
-    fe_fe_irrot = fe_fe_irrot / no_measurements
-    fe_fe_rot = fe_fe_rot / no_measurements
     s_ab = s_ab / no_measurements
     s_ab_irrot = s_ab_irrot / no_measurements
     s_ab_rot = s_ab_rot / no_measurements
@@ -746,6 +387,58 @@ module io
     e_rot_avg = e_rot_avg / no_measurements
     e_irrot_avg = e_irrot_avg / no_measurements
     v_avg = v_avg / no_measurements
+
+    ener_tot_sum = ener_tot_sum / no_measurements
+    ener_rot_sum = ener_rot_sum / no_measurements
+    ener_irrot_sum = ener_irrot_sum / no_measurements
+    ener_tot_sq_sum = ener_tot_sq_sum / no_measurements
+    ener_rot_sq_sum = ener_rot_sq_sum / no_measurements
+    ener_irrot_sq_sum = ener_irrot_sq_sum / no_measurements
+
+    !ener_tot_sum = ener_tot_sum / L**2
+    !ener_rot_sum = ener_rot_sum / L**2
+    !ener_irrot_sum = ener_irrot_sum / L**2
+    !ener_tot_sq_sum = ener_tot_sq_sum / ((L**2)**2)
+    !ener_rot_sq_sum = ener_rot_sq_sum / ((L**2)**2)
+    !ener_irrot_sq_sum = ener_irrot_sq_sum / ((L**2)**2)
+
+    prefac = 1.0 * L**2 / (temp**2)
+
+    sp_he_tot = prefac * (ener_tot_sq_sum - (ener_tot_sum)**2)
+    sp_he_rot = prefac * (ener_rot_sq_sum - (ener_rot_sum)**2)
+    sp_he_irrot = prefac * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
+
+    write(*,*)
+    write (*,'(a)') "   # Specific heat: total, rot., irrot."
+    write (*,'(ES18.9, ES18.9, ES18.9, ES18.9)') temp,&
+    sp_he_tot, sp_he_rot, sp_he_irrot
+    write(*,*) "E^bar averages:"
+    write(*,'(a)') "<E^bar_x>, <E^bar_y>, <|E^bar|>"
+    write (*,*) ebar_sum(1), ebar_sum(2),&
+    sqrt(ebar_sum(1)**2+ebar_sum(2)**2)
+    write(*,'(a)') "<(E^bar_x)^2>, <(E^bar_y)^2>, <|(E^bar)^2|>"
+    write (*,*) ebar_sq_sum(1), ebar_sq_sum(2),&
+    sqrt(ebar_sq_sum(1)**2+ebar_sq_sum(2)**2)
+
+    write(*,'(a)') "<|(E^bar)^2|> - <|E^bar|>^2"
+    write (*,*) L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
+    - (ebar_sum(1)**2 + ebar_sum(2)**2))
+
+    write (30,'(a)') "   # Specific heat: total, rot., irrot."
+    write (30,'(ES18.9, ES18.9, ES18.9, ES18.9)') temp,&
+    sp_he_tot, sp_he_rot, sp_he_irrot
+
+    write (30,'(a)') "   # <ebar^2> - <ebar>^2"
+    write (30,'(ES18.9, ES18.9)') temp,&
+    L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
+    - (ebar_sum(1)**2 + ebar_sum(2)**2))
+
+    write (30,'(a)') "   # hop acceptance"
+    write (30,'(ES18.9, ES18.9)') temp,&
+    (float(accepth) / &
+    ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
+
+    close(30)
 
     ! we can calculate s_perp up to wherever
     sp = 8
@@ -763,6 +456,14 @@ module io
 
         i = m + 1 + sp*(L/2)
         j = p + 1 + sp*(L/2)
+
+        if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
+          ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
+          charge_struc(i,j) = abs(ch_ch(i,j) - rho_k_p(i,j) * conjg(rho_k_m(i,j)))
+          field_struc(i,j) = abs(s_ab(1,1,i,j))
+          field_struc_irrot(i,j) = abs(s_ab_irrot(1,1,i,j))
+          field_struc_rot(i,j) = abs(s_ab_rot(1,1,i,j))
+        end if
 
         ! use separate variables, we're gonna mess around with values
         kx_float = m * ((2 * pi)/(L * lambda))
@@ -881,12 +582,6 @@ module io
           end if
 
           if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
-
-            ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
-            charge_struc(i,j) = abs(ch_ch(i,j) - rho_k_p(i,j) * conjg(rho_k_m(i,j)))
-            field_struc(i,j) = abs(fe_fe(i,j))
-            field_struc_irrot(i,j) = abs(fe_fe_irrot(i,j))
-            field_struc_rot(i,j) = abs(fe_fe_rot(i,j))
 
             write (12, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&

@@ -416,41 +416,215 @@ subroutine measure(step_number)
   use common
   use linear_solver
   implicit none
-  logical :: field_ch_exist
   integer,intent(in) :: step_number
-  integer :: n
-  real*8 :: u_tot_run
+  integer :: i,j,n,kx,ky,m,p,x,y,dist_bin
+  real(kind=8) :: norm_k,dist, ener_tot, ener_rot, ener_irrot
+  real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq
+  real(kind=8), dimension(2,L,L) :: e_rot
+  complex(kind=16) :: rho_k_p_temp, rho_k_m_temp
+  complex(kind=16) :: e_kx_temp, e_ky
+  complex(kind=16) :: mnphi_kx_temp, mnphi_ky
+  complex(kind=16) :: e_rot_kx_temp, e_rot_ky
+  complex(kind=16) :: imag, kdotx
 
-  ! this is basically just used for the energy at this point
-  ! could move this to the analysis part pretty trivially
-  n = step_number / sample_interval
-
-  u_tot_run = 0.0
-  u_tot_run = 0.5 * eps_0 * sum(e_field**2)
-
-  ! if this is the first step, start a new file;
-  ! otherwise append to the file that's there
-  inquire(file=field_charge_file, exist=field_ch_exist)
-  if (n.eq.1) then
-    open(15, file=field_charge_file, status="replace", action="write",access="stream",form="unformatted")
-  else if (field_ch_exist) then
-    open(15, file=field_charge_file, status="old", position="append", action="write", access="stream", form="unformatted")
-  else
-    write (*,*) "Fields/charges file does not exist? Current step is ",n
-    open(15, file=field_charge_file, status="new", action="write",access="stream",form="unformatted")
-  end if
-
-  energy(n + 1) = u_tot_run
-  sq_energy(n + 1) = u_tot_run**2
+  norm_k = 0.0
+  dist = 0.0
+  rho_k_p_temp = (0.0,0.0)
+  rho_k_m_temp = (0.0,0.0)
+  e_kx_temp = (0.0,0.0)
+  mnphi_kx_temp = (0.0,0.0)
+  e_rot_kx_temp = (0.0,0.0)
+  e_ky = (0.0,0.0)
+  mnphi_ky = (0.0,0.0)
+  e_rot_ky = (0.0,0.0)
+  kdotx = (0.0,0.0)
+  imag = (0.0, 1.0)
 
   ! get irrotational part of field
+  ! this way we can get decomposed parts along with total
   call linsol
+  e_rot = e_field - mnphi
 
-  write(15) e_field
-  write(15) mnphi
-  write(15) v
-  !write(15) ebar
+  e_tot_avg =       e_tot_avg + e_field
+  e_rot_avg =       e_rot_avg + e_rot
+  e_irrot_avg =     e_irrot_avg + mnphi
+  v_avg =           v_avg + float(v)
+  ener_tot =        0.5 * eps_0 * sum(e_field * e_field)
+  ener_rot =        0.5 * eps_0 * sum(e_rot * e_rot)
+  ener_irrot =      0.5 * eps_0 * sum(mnphi * mnphi)
+  ener_tot =        ener_tot / L**2
+  ener_rot =        ener_rot / L**2
+  ener_irrot =      ener_irrot / L**2
+  ener_tot_sq =     ener_tot**2
+  ener_rot_sq =     ener_rot**2
+  ener_irrot_sq =   ener_irrot**2
+  ener_tot_sum =    ener_tot_sum + ener_tot
+  ener_rot_sum =    ener_rot_sum + ener_rot
+  ener_irrot_sum =  ener_irrot_sum + ener_irrot
+  ener_tot_sq_sum =    ener_tot_sq_sum + ener_tot_sq
+  ener_rot_sq_sum =    ener_rot_sq_sum + ener_rot_sq
+  ener_irrot_sq_sum =  ener_irrot_sq_sum + ener_irrot_sq
 
-  close(15)
+  ebar(1) = sum(e_field(1,:,:))
+  ebar(2) = sum(e_field(2,:,:))
+  ebar = ebar / L**2
+  ebar_sum(1) = ebar_sum(1) + ebar(1)
+  ebar_sum(2) = ebar_sum(2) + ebar(2)
+  ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
+  ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
+
+  !do omp_index = 1, ((L*bz)+1)**2
+
+  !  i = floor((omp_index - 1) / ((L*bz)+1)) + 1
+  !  j = mod(omp_index - 1, ((L*bz)+1)) + 1
+  !  kx = i - 1 - bz*(L/2)
+  !  ky = j - 1 - bz*(L/2)
+  do ky = (-1*L/2)*bz, (L/2)*bz
+    do kx = (-1*L/2)*bz, (L/2)*bz
+
+      rho_k_p_temp = (0.0,0.0)
+      rho_k_m_temp = (0.0,0.0)
+      e_kx_temp = (0.0,0.0)
+      mnphi_kx_temp = (0.0,0.0)
+      e_rot_kx_temp = (0.0,0.0)
+      e_ky = (0.0,0.0)
+      mnphi_ky = (0.0,0.0)
+      e_rot_ky = (0.0,0.0)
+      kdotx = (0.0,0.0)
+      norm_k = 0.0
+
+      ! for array indices
+      i = kx + 1 + bz*(L/2)
+      j = ky + 1 + bz*(L/2)
+
+      if (kx.eq.0.and.ky.eq.0) then
+        norm_k = 0.0
+      else
+        norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
+      end if
+
+      ! m,p,s are the real space coordinates
+        do p = 1,L
+          do m = 1,L
+
+            ! different offsets for x,y,z
+            kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
+                    ((p-1)*ky)))
+
+            ! we want this for every step so we can
+            ! average at the end to get field-field struc
+            e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
+            mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
+            e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
+
+            kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
+                    ((p-(1.0/2))*ky)))
+
+            e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
+            mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
+            e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
+
+            if (v(m,p).ne.0) then ! calculate <++ + +->!
+
+              ! FT of charge distribution
+              kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                      ((p-1)*ky/(L*lambda))))
+
+              if (v(m,p).eq.-1) then
+                rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
+              end if
+
+              if (v(m,p).eq.1) then ! take away <++>
+                rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
+              end if
+
+              ! --- real space correlation function ---
+
+              if (kx.gt.0.and.kx.le.L.and.&
+                  ky.gt.0.and.ky.le.L) then
+
+                ! this should sort it out. kx ky kz here are
+                ! the "r"s, m p s are the "zeros"
+                ! we want to do rho_+(0) rho_-(r)
+                if (v(m,p).eq.1) then
+                  if (v(kx,ky).eq.-1) then
+
+                    x = abs(m - kx)
+                    y = abs(p - ky)
+
+                    if (x.gt.L/2) then
+                      x = L - x
+                    end if
+                    if (y.gt.L/2) then
+                      y = L - y
+                    end if
+
+                    x = x + 1
+                    y = y + 1
+
+                    dir_struc(x,y) = dir_struc(x,y) +&
+                            v(m,p) * v(kx,ky)
+                  end if ! neg charge at kx,ky,kz
+                end if ! pos charge at m,p,s
+              end if ! kx, ky, kz < L
+
+            end if ! end v != 0 check
+
+        end do ! end p loop
+      end do ! end m loop
+
+      rho_k_p_temp = rho_k_p_temp / float(L**2)
+      rho_k_m_temp = rho_k_m_temp / float(L**2)
+      e_kx_temp = e_kx_temp / float(L**2)
+      e_ky = e_ky / float(L**2)
+      mnphi_kx_temp = mnphi_kx_temp / float(L**2)
+      mnphi_ky = mnphi_ky / float(L**2)
+      e_rot_kx_temp = e_rot_kx_temp / float(L**2)
+      e_rot_ky = e_rot_ky / float(L**2)
+
+      rho_k_p(i,j) = rho_k_p(i,j) + rho_k_p_temp
+      rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
+      ch_ch(i,j) = ch_ch(i,j) +&
+                    (rho_k_p_temp * conjg(rho_k_m_temp))
+
+      s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
+      e_kx_temp*conjg(e_kx_temp)
+      s_ab(1,2,i,j) = s_ab(1,2,i,j) +&
+      e_kx_temp*conjg(e_ky)
+      s_ab(2,1,i,j) = s_ab(2,1,i,j) +&
+      e_ky*conjg(e_kx_temp)
+      s_ab(2,2,i,j) = s_ab(2,2,i,j) +&
+      e_ky*conjg(e_ky)
+
+      s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i,j) +&
+      e_rot_kx_temp*conjg(e_rot_kx_temp)
+      s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i,j) +&
+      e_rot_kx_temp*conjg(e_rot_ky)
+      s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i,j) +&
+      e_rot_ky*conjg(e_rot_kx_temp)
+      s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i,j) +&
+      e_rot_ky*conjg(e_rot_ky)
+
+      s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i,j) +&
+      mnphi_kx_temp*conjg(mnphi_kx_temp)
+      s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i,j) +&
+      mnphi_kx_temp*conjg(mnphi_ky)
+      s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i,j) +&
+      mnphi_ky*conjg(mnphi_kx_temp)
+      s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i,j) +&
+      mnphi_ky*conjg(mnphi_ky)
+
+      ! direct space one
+      if (i.le.L/2+1.and.j.le.L/2+1) then
+
+        dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
+        dist_bin = floor(dist / bin_size) + 1
+        dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
+        bin_count(dist_bin) = bin_count(dist_bin) + 1
+
+      end if
+
+    end do
+  end do ! end kx, ky loops
 
 end subroutine measure

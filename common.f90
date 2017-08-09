@@ -1,21 +1,26 @@
 module common
   implicit none
   integer, public :: seed
-  integer*8, public :: L,accepth,acceptr,acceptg,add_charges,no_measurements
-  integer*8, public :: therm_sweeps,measurement_sweeps,sample_interval
-  real*8, public :: q, lambda, volume, temp, beta
-  real*8, public :: eps_0, bin_size, rot_delt, g0
+  integer(kind=8), public :: L,accepth,acceptr,acceptg,add_charges,no_measurements
+  integer(kind=8), public :: therm_sweeps,measurement_sweeps,sample_interval
+  real(kind=8), public :: q, lambda, volume, temp, beta
+  real(kind=16), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum
+  real(kind=16), public :: ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum
+  real(kind=8), public :: eps_0, bin_size, rot_delt, g0
+  integer(kind=8), dimension(:), allocatable, public :: bin_count
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:), allocatable, public :: v
-  real*8, dimension(:), allocatable, public :: ebar, energy, sq_energy
-  real*8, dimension(:,:,:), allocatable, public :: e_field, mnphi
-  complex*16, dimension(:,:), allocatable, public :: ch_ch,fe_fe
-  real(kind=16), dimension(:,:), allocatable, public :: charge_struc, field_struc
+  real(kind=8), dimension(:), allocatable, public :: ebar, energy, sq_energy
+  real(kind=16), dimension(:), allocatable, public :: ebar_sum, ebar_sq_sum
+  real(kind=16), dimension(:), allocatable, public :: dist_r
+  real(kind=16), dimension(:,:), allocatable, public :: v_avg
+  real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
+  real(kind=16), dimension(:,:,:), allocatable, public :: e_tot_avg, e_rot_avg, e_irrot_avg
   real(kind=16), dimension(:,:), allocatable, public :: dir_struc
-  real(kind=16), dimension(:,:,:,:), allocatable, public :: lgf
-  real(kind=16), dimension(:,:,:,:), allocatable, public :: s_ab
-  complex*16, dimension(:,:), allocatable, public :: e_kx
-  complex*16, dimension(:,:), allocatable, public :: rho_k_m,rho_k_p
+  real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
+  real(kind=16), dimension(:,:,:,:), allocatable, public :: s_ab, s_ab_rot, s_ab_irrot
+  complex(kind=16), dimension(:,:), allocatable, public :: ch_ch
+  complex(kind=16), dimension(:,:), allocatable, public :: rho_k_m,rho_k_p
 
     ! probably more things need to go here
   character(len=200), public :: lattfile_long, en_long, sq_en_long
