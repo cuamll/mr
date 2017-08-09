@@ -63,7 +63,11 @@ module setup
     deallocate(dir_struc)
     deallocate(e_kx)
     deallocate(fe_fe)
+    deallocate(charge_struc)
+    deallocate(field_struc)
     deallocate(s_ab)
+    deallocate(energy)
+    deallocate(sq_energy)
 
   end subroutine deallocations
 
@@ -74,8 +78,8 @@ module setup
 
     if (add_charges.ne.0) then
 
-      write (*,*)
-      write (*,'(a,I4.1,a)') "Adding ",add_charges," charges. Charge positions:"
+      !write (*,*)
+      !write (*,'(a,I4.1,a)') "Adding ",add_charges," charges. Charge positions:"
 
       do while (n.lt.add_charges)
 
@@ -96,7 +100,7 @@ module setup
 
         n = n + 1
 
-        write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,v(i,j)
+        !write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,v(i,j)
 
       end do
 
@@ -132,11 +136,13 @@ module setup
 
   end subroutine arrays_init
 
-  subroutine setup_wrapper
+  subroutine setup_wrapper(n)
+    integer, intent(in) :: n
 
     ! wrapper for convenience in main
-    call read_input
-    call randinit(seed)
+    !call read_input
+    call randinit(n)
+    write (*,'(a,i3.1)') "RNG initialised with seed ",n
     call allocations
     call latt_init
     call PBCs

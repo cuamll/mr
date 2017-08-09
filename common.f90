@@ -1,9 +1,13 @@
 module common
   implicit none
-  integer, public :: seed
+  logical, public :: do_corr
+  integer, public :: seed, no_samples
   integer*8, public :: L,accepth,acceptr,acceptg,add_charges,no_measurements
   integer*8, public :: therm_sweeps,measurement_sweeps,sample_interval
   real*8, public :: q, lambda, volume, temp, beta
+  real(kind=16), public :: e_tot_sum, e_rot_sum, e_irrot_sum
+  real(kind=16), public :: e_tot_sq_sum, e_rot_sq_sum, e_irrot_sq_sum
+  real(kind=16), dimension(2), public :: ebar_sum, ebar_sq_sum
   real*8, public :: eps_0, bin_size, rot_delt, g0
   integer, dimension(:), allocatable, public :: pos,neg
   integer, dimension(:,:), allocatable, public :: v
@@ -22,9 +26,9 @@ module common
   character(len=200), public :: e_field_long, arg_long, ch_st_l, fi_st_l
   character(len=200), public :: s_ab_l, s_p_l, dir_st_l, dir_d_s_l, fe_ch_l
   character(len=200), public :: ir_fe_l,ir_sab_l,ir_sp_l,r_fe_l,r_sab_l,r_sp_l
-  character(len=200), public :: spa_l, r_spa_l, ir_spa_l, v_s_l, av_fe_l
+  character(len=200), public :: spa_l, r_spa_l, ir_spa_l, s_s_l, av_fe_l
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file
-  character(:), allocatable :: dir_st_file, dir_dist_file, vertex_sum_file
+  character(:), allocatable :: dir_st_file, dir_dist_file, sphe_sus_file
   character(:), allocatable :: s_ab_file, s_perp_file, field_charge_file
   character(:), allocatable :: energy_file, sq_energy_file, e_field_file
   character(:), allocatable :: irrot_field_file, irrot_sab_file, irrot_sperp_file

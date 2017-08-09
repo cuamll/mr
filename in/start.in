@@ -1,10 +1,12 @@
-L 20
+L 16
+no_samples 100
+do_corr F
 thermalisation_sweeps 25000
 measurement_sweeps 1000000
 sample_interval 10
-temperature 1.500
+temperature 1.200
 lattice_spacing 1.0
-charge_value 1.0
+charge_value 6.283185307179586
 delta_max 1.0
 charges 8
 rng_seed 0
@@ -33,4 +35,4 @@ rot_s_(perp)_file                     out/s_perp_rot.dat
 rot_s_(par)_file                      out/s_par_rot.dat
 field_charge_file                     out/temp.bin
 average_field_file                    out/avg_fields.dat
-vertex_ebar_file                      out/vert_ebar.dat
+sphe_sus_file                      out/sphe_sus.dat

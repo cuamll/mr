@@ -12,14 +12,20 @@ program mr
   integer :: i, j, k, tot_q
   real*8 :: start_time, end_time
   real*8, dimension(6) :: timings
+  real(kind=16) :: sp_he_tot, sp_he_rot, sp_he_irrot, ebar_sus
   integer, dimension(8) :: values
-
-  call cpu_time(start_time)
 
   write (*,*) "Maggs-Rossetto algorithm on the simple cubic lattice."
   write (*,*) "Callum Gray, University College London, 2017."
   write (*,*) "Git revision ",revision
   write (*,*) "Repo at http://github.com/cuamll/mr"
+
+  e_tot_sum = 0.0; e_rot_sum = 0.0; e_irrot_sum = 0.0;
+  e_tot_sq_sum = 0.0; e_rot_sq_sum = 0.0; e_irrot_sq_sum = 0.0;
+  ebar_sum = 0.0; ebar_sq_sum = 0.0;
+  sp_he_tot = 0.0; sp_he_rot = 0.0; sp_he_irrot = 0.0; ebar_sus = 0.0;
+
+  call cpu_time(start_time)
 
   call date_and_time(VALUES=values)
 
@@ -27,126 +33,181 @@ program mr
     &" Current date and time: ",values(3),"/",values(2),"/"&
     &,values(1)," ",values(5),":",values(6),":",values(7)
 
-  call setup_wrapper
+  call read_input
 
-  accepth = 0
-  acceptr = 0
-  acceptg = 0
+  do k = 1, no_samples
 
-  write (*,*)
-  write (*,'(A10,I5.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
+    write (*,'(a, i3.1)') "Sample no. ", k
 
-  call cpu_time(timings(1))
-
-  do i = 1,therm_sweeps
-    call mc_sweep
-    if (mod(i,therm_sweeps/10).eq.0) then
-      write (*,'(a)',advance='no') "*"
-    end if
-  end do
-
-  call cpu_time(timings(2))
-
-  write (*,'(a)') "]. Completed."
-  write (*,'(a,f8.3,a)') "Time taken: ",timings(2)-timings(1)," seconds."
-  write (*,*)
-  write (*,'(a,I7.1,a,I4.1,a)',advance='no') "Beginning ",measurement_sweeps,&
-    &" measurement sweeps with sampling every ",&
-    &sample_interval," MC steps... ["
-
-  call cpu_time(timings(3))
-
-  do i = 1,measurement_sweeps
-    call mc_sweep
-
-    if (mod(i, sample_interval).eq.0) then
-      call measure(i)
+    if (no_samples.eq.1) then
+      call setup_wrapper(seed)
+    else
+      call setup_wrapper(k - 1)
     end if
 
-    if (measurement_sweeps.gt.100) then
-      if (mod(i,measurement_sweeps / 100).eq.0) then
+    accepth = 0
+    acceptr = 0
+    acceptg = 0
+
+    write (*,*)
+    write (*,'(A10,I5.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
+
+    call cpu_time(timings(1))
+
+    do i = 1,therm_sweeps
+      call mc_sweep
+      if (mod(i,therm_sweeps/10).eq.0) then
         write (*,'(a)',advance='no') "*"
       end if
+    end do
+
+    call cpu_time(timings(2))
+
+    write (*,'(a)') "]. Completed."
+    write (*,'(a,f8.3,a)') "Time taken: ",timings(2)-timings(1)," seconds."
+    write (*,*)
+    write (*,'(a,I7.1,a,I4.1,a)',advance='no') "Beginning ",measurement_sweeps,&
+      &" measurement sweeps with sampling every ",&
+      &sample_interval," MC steps... ["
+
+    call cpu_time(timings(3))
+
+    do i = 1,measurement_sweeps
+      call mc_sweep
+
+      if (mod(i, sample_interval).eq.0) then
+        call measure(i)
+      end if
+
+      if (measurement_sweeps.gt.100) then
+        if (mod(i,measurement_sweeps / 100).eq.0) then
+          write (*,'(a)',advance='no') "*"
+        end if
+      end if
+
+    end do
+
+    write (*,'(a)') "]"
+
+    call cpu_time(timings(4))
+
+    write (*,*)
+    write (*,'(I7.1,a)') measurement_sweeps," measurement sweeps completed."
+    write (*,'(a,f8.3,a)') "Time taken: ",timings(4)-timings(3)," seconds."
+
+    if (sum(v,mask=v.gt.0).ne.0) then
+      call linsol
     end if
+
+    !write(*,*)
+    !write(*,*) "--- END: CHARGE POSITIONS ---"
+
+    tot_q = 0
+      do j = 1,L
+        do i = 1,L
+
+          tot_q = tot_q + abs(v(i,j))
+
+          !if (v(i,j).eq.1) then
+          !  write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
+          !end if
+
+          !if (v(i,j).eq.-1) then
+          !  write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
+          !end if
+
+        end do
+      end do
+
+    !write (*,*) "E_bar:",ebar(1),ebar(2)
+    !write(*,*)
+
+    !write (*,*) "Total charges: ",tot_q
+    !write(*,*)
+
+    write (*,*)
+    write (*,*) '--- MOVE STATS: ---'
+    if (tot_q.ne.0) then
+      write (*,*) 'hops: moves, acceptance ratio: ',&
+        &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
+        &* tot_q * hop_ratio)
+    end if
+    write (*,*) 'rotational updates: moves, acceptance ratio: ',&
+      &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
+      &* L**2 * rot_ratio)
+    write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
+      &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
+      &* L**2 * g_ratio * 2)
+    write(*,*)
+
+    call cpu_time(timings(5))
+
+    if (do_corr) then
+      write (*,*) "Writing output for ",no_measurements," measurements..."
+      call write_output
+      write (*,*) "Done."
+    end if
+
+    call deallocations
+
+    write (*,*)
+
+    call cpu_time(timings(6))
+
+    call cpu_time(end_time)
+
+    write (*,*) "--- Current energies: ---"
+    write (*,*) "Total: ",e_tot_sum
+    write (*,*) "Rotational: ",e_rot_sum
+    write (*,*) "Irrotational: ",e_irrot_sum
+    write (*,*) "Ebar sum: ",ebar_sum(1), ebar_sum(2)
+    write (*,*) "Ebar^2 sum: ",ebar_sq_sum(1), ebar_sq_sum(2)
+    write (*,*)
 
   end do
 
-  write (*,'(a)') "]"
-
-  call cpu_time(timings(4))
-
-  write (*,*)
-  write (*,'(I7.1,a)') measurement_sweeps," measurement sweeps completed."
-  write (*,'(a,f8.3,a)') "Time taken: ",timings(4)-timings(3)," seconds."
-
-  if (sum(v,mask=v.gt.0).ne.0) then
-    call linsol
-  end if
-
-  write(*,*)
-  write(*,*) "--- END: CHARGE POSITIONS ---"
-
-  tot_q = 0
-    do j = 1,L
-      do i = 1,L
-
-        tot_q = tot_q + abs(v(i,j))
-
-        if (v(i,j).eq.1) then
-          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
-        end if
-
-        if (v(i,j).eq.-1) then
-          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
-        end if
-
-      end do
-    end do
-
-  !write (*,*) "E_bar:",ebar(1),ebar(2)
-  !write(*,*)
-
-  write (*,*) "Total charges: ",tot_q
-  write(*,*)
-
-  write (*,*)
-  write (*,*) '--- MOVE STATS: ---'
-  if (tot_q.ne.0) then
-    write (*,*) 'hops: moves, acceptance ratio: ',&
-      &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
-      &* tot_q * hop_ratio)
-  end if
-  write (*,*) 'rotational updates: moves, acceptance ratio: ',&
-    &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
-    &* L**2 * rot_ratio)
-  write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
-    &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
-    &* L**2 * g_ratio * 2)
-  write(*,*)
-
-
-  write (*,*) "Writing output for ",no_measurements," measurements..."
-
-  call cpu_time(timings(5))
-
-  call write_output
-
-  call deallocations
-
-  write (*,*) "Done."
-  write (*,*)
-
-  call cpu_time(timings(6))
-
-  call cpu_time(end_time)
   write (*,'(a,f8.3,a)') "Total time taken: ",end_time-start_time," seconds."
+  write (*,'(a,f8.3,a)') "Total time per sample: ",(end_time-start_time)/no_samples," seconds."
   write (*,'(a,f8.5,a)') "Time per thermalisation sweep: "&
-    &,(timings(2) - timings(1)) / therm_sweeps," seconds."
+    &,(timings(2) - timings(1)) / (therm_sweeps)," seconds."
   write (*,'(a,f8.5,a)') "Time per measurement sweep (including&
-    & measurements): ",(timings(4) - timings(3)) / measurement_sweeps," seconds."
-  write (*,'(a,f8.5,a)') "Time to read in data and calculate correlations&
-    &(per step): ",(timings(6) - timings(5)) / measurement_sweeps," seconds."
+    & measurements): ",(timings(4) - timings(3)) / (measurement_sweeps)," seconds."
+
+  if (do_corr) then
+    write (*,'(a,f8.5,a)') "Time to read in data and calculate correlations&
+    &(per step): ",(timings(6) - timings(5)) / (measurement_sweeps)," seconds."
+  end if
+
   write (*,*)
+
+
+  e_tot_sum = e_tot_sum / (no_samples * no_measurements)
+  e_rot_sum = e_rot_sum / (no_samples * no_measurements)
+  e_irrot_sum = e_irrot_sum / (no_samples * no_measurements)
+  e_tot_sq_sum = e_tot_sq_sum / (no_samples * no_measurements)
+  e_rot_sq_sum = e_rot_sq_sum / (no_samples * no_measurements)
+  e_irrot_sq_sum = e_irrot_sq_sum / (no_samples * no_measurements)
+  ebar_sum = ebar_sum / (no_samples * no_measurements)
+  ebar_sq_sum = ebar_sq_sum / (no_samples * no_measurements)
+
+  sp_he_tot = L**2 * beta**2 * (e_tot_sq_sum - (e_tot_sum)**2)
+  sp_he_rot = L**2 * beta**2 * (e_rot_sq_sum - (e_rot_sum)**2)
+  sp_he_irrot = L**2 * beta**2 * (e_irrot_sq_sum - (e_irrot_sum)**2)
+
+  ebar_sus = L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2) - (ebar_sum(1)**2 + ebar_sum(2)**2))
+
+  write (*,*) "--- Specific heats: ---"
+  write (*,*) "Total: ",sp_he_tot
+  write (*,*) "Rotational: ",sp_he_rot
+  write (*,*) "Irrotational: ",sp_he_irrot
+  write (*,*)
+  write (*,*) "Ebar susceptibility: ",ebar_sus
+
+  open(30, file=sphe_sus_file)
+  write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
+  write (30,'(ES18.9,ES18.9,ES18.9,ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
+  write (30,'(a)') "# Temp., <Ebar^2> - <Ebar>^2"
+  write (30,'(ES18.9, ES18.9)') temp, ebar_sus
 
   stop
 
@@ -213,12 +274,12 @@ subroutine mc_sweep
           if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
             v(site(1),site(2)) = charge
+            e_field(mu1,site(1),site(2)) = en1
+            ebar(mu1) = ebar(mu1) + (increment / L**2)
 
             ! go back to the original site and set the charge to 0
             site(mu1) = pos(site(mu1))
             v(site(1),site(2)) = 0
-            e_field(mu1,site(1),site(2)) = en1
-            ebar(mu1) = ebar(mu1) + (increment / L**2)
 
             accepth = accepth + 1
             u_tot_run = u_tot_run + delta_e
@@ -420,37 +481,69 @@ subroutine measure(step_number)
   integer,intent(in) :: step_number
   integer :: n
   real*8 :: u_tot_run
+  real(kind=8) :: ener_tot, ener_rot, ener_irrot
+  real(kind=8), dimension(2,L,L) :: e_rot
+
+  ener_tot = 0.0; ener_rot = 0.0; ener_irrot = 0.0;
 
   ! this is basically just used for the energy at this point
   ! could move this to the analysis part pretty trivially
   n = step_number / sample_interval
+  do_corr = .false.
 
-  u_tot_run = 0.0
-  u_tot_run = 0.5 * eps_0 * sum(e_field**2)
+  !u_tot_run = 0.0
+  !u_tot_run = 0.5 * eps_0 * sum(e_field**2)
 
-  ! if this is the first step, start a new file;
-  ! otherwise append to the file that's there
-  inquire(file=field_charge_file, exist=field_ch_exist)
-  if (n.eq.1) then
-    open(15, file=field_charge_file, status="replace", action="write",access="stream",form="unformatted")
-  else if (field_ch_exist) then
-    open(15, file=field_charge_file, status="old", position="append", action="write", access="stream", form="unformatted")
-  else
-    write (*,*) "Fields/charges file does not exist? Current step is ",n
-    open(15, file=field_charge_file, status="new", action="write",access="stream",form="unformatted")
-  end if
-
-  energy(n + 1) = u_tot_run
-  sq_energy(n + 1) = u_tot_run**2
+  !energy(n + 1) = u_tot_run
+  !sq_energy(n + 1) = u_tot_run**2
 
   ! get irrotational part of field
+  mnphi = 0.0; e_rot = 0.0
   call linsol
 
-  write(15) e_field
-  write(15) mnphi
-  write(15) v
-  !write(15) ebar
+  if (do_corr) then
+    ! if this is the first step, start a new file;
+    ! otherwise append to the file that's there
+    inquire(file=field_charge_file, exist=field_ch_exist)
+    if (n.eq.1) then
+      open(15, file=field_charge_file, status="replace", action="write",access="stream",form="unformatted")
+    else if (field_ch_exist) then
+      open(15, file=field_charge_file, status="old", position="append", action="write", access="stream", form="unformatted")
+    else
+      write (*,*) "Fields/charges file does not exist? Current step is ",n
+      open(15, file=field_charge_file, status="new", action="write",access="stream",form="unformatted")
+    end if
 
-  close(15)
+    write(15) e_field
+    write(15) mnphi
+    write(15) v
+    !write(15) ebar
+
+    close(15)
+
+  else
+
+    e_rot = e_field - mnphi
+
+    ener_tot = 0.5 * eps_0 * sum(e_field * e_field) / L**2
+    ener_rot = 0.5 * eps_0 * sum(e_rot * e_rot) / L**2
+    ener_irrot = 0.5 * eps_0 * sum(mnphi * mnphi) / L**2
+
+    e_tot_sum = e_tot_sum + ener_tot
+    e_rot_sum = e_rot_sum + ener_rot
+    e_irrot_sum = e_irrot_sum + ener_irrot
+    e_tot_sq_sum = e_tot_sq_sum + ener_tot**2
+    e_rot_sq_sum = e_rot_sq_sum + ener_rot**2
+    e_irrot_sq_sum = e_irrot_sq_sum + ener_irrot**2
+
+    ebar(1) = lambda**2 * sum(e_field(1,:,:))
+    ebar(2) = lambda**2 * sum(e_field(2,:,:))
+    ebar = ebar / L**2
+    ebar_sum(1) = ebar_sum(1) + ebar(1)
+    ebar_sum(2) = ebar_sum(2) + ebar(2)
+    ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1)**2)
+    ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2)**2)
+
+  end if
 
 end subroutine measure
