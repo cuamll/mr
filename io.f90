@@ -224,7 +224,7 @@ module io
       ! is the dimensional analysis sorted out?
       ! eps_0 = 1.0 / L
       eps_0 = 1.0
-      q = 2 * pi * q
+      !q = 2 * pi * q
       write (*,*) "q = ",q
       beta = 1.0 / temp
 

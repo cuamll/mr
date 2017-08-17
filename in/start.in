@@ -4,9 +4,9 @@ measurement_sweeps 10000
 sample_interval 10
 temperature 1.500
 lattice_spacing 1.0
-charge_value 1.0
+charge_value 6.283185307179586
 delta_max 1.0
-charges 8
+charges 4
 rng_seed 0
 hop_ratio 1.0
 rot_ratio 1.0

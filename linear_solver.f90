@@ -50,10 +50,12 @@ module linear_solver
         sum_x=0.0
         sum_y=0.0
 
+        !write (*,*) sum_x,sum_y,ebar(1),ebar(2),mnphi(1,a,b),mnphi(2,a,b)
           do y=1,L
             do x=1,L
 
               if (v(x,y).ne.0) then ! non-zero charge at (x,y,z)
+                !write (*,*) lgf(a,b,x,y)
 
                 charge = q * v(x,y)
                 nch = nch + 1
@@ -79,6 +81,7 @@ module linear_solver
 
         ebar(1)=ebar(1)+mnphi(1,a,b)
         ebar(2)=ebar(2)+mnphi(2,a,b)
+        !write (*,*) sum_x,sum_y,ebar(1),ebar(2),mnphi(1,a,b),mnphi(2,a,b)
 
         u_tot=u_tot+0.5*(mnphi(1,a,b)**2&
               +mnphi(2,a,b)**2)

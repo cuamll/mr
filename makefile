@@ -1,5 +1,5 @@
 # maggs-rossetto makefile
-GF = gfortran
+GF = mpif90
 EXECNAME = mr_test
 MOD_DIR = mod
 OBJ_DIR = obj
@@ -16,9 +16,9 @@ REV = $(shell git rev-parse --short HEAD)
 
 DEBUG = 0
 ifeq ($(DEBUG), 1)
-	DEBUGFLAGS = -g -pg -fbacktrace -ffpe-trap=invalid,zero,underflow,denormal,overflow
+	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -ffpe-trap=invalid,zero,underflow,denormal,overflow
 else
-	DEBUGFLAGS = -O2
+	DEBUGFLAGS = -O2 -fopenmp
 endif
 
 ifeq ($(UNAME), Darwin)
