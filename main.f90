@@ -162,6 +162,7 @@ program mr
     write (*,*) "Irrotational: ",e_irrot_sum
     write (*,*) "Ebar sum: ",ebar_sum(1), ebar_sum(2)
     write (*,*) "Ebar^2 sum: ",ebar_sq_sum(1), ebar_sq_sum(2)
+    write (*,*) "Current susc: ",((L**2 * beta) * (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum))) / (no_measurements * k)
     write (*,*)
 
   end do
@@ -320,6 +321,7 @@ subroutine mc_sweep
 
   end do ! end charge hop sweep
 
+  !glob = 1
   if (ebar(mu1).gt.(g_thr).or.ebar(mu1).lt.((-1)*g_thr)) then
     glob = 1
   else
@@ -488,8 +490,7 @@ subroutine measure(step_number)
 
   ! this is basically just used for the energy at this point
   ! could move this to the analysis part pretty trivially
-  n = step_number / sample_interval
-  do_corr = .false.
+  !do_corr = .false.
 
   !u_tot_run = 0.0
   !u_tot_run = 0.5 * eps_0 * sum(e_field**2)
@@ -502,6 +503,7 @@ subroutine measure(step_number)
   call linsol
 
   if (do_corr) then
+    n = step_number / sample_interval
     ! if this is the first step, start a new file;
     ! otherwise append to the file that's there
     inquire(file=field_charge_file, exist=field_ch_exist)
