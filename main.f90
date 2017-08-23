@@ -13,149 +13,274 @@ program mr
   include 'revision.inc'
   integer :: i, j, k, tot_q, mpierr, rank, num_procs
   real*8 :: start_time, end_time
-  real*8, dimension(6) :: timings
+  real*8, dimension(8) :: timings
+  real(kind=16) :: ener_reduced, ener_rot_reduced, ener_irrot_reduced
+  real(kind=16) :: ener_sq_reduced, ener_rot_sq_reduced, ener_irrot_sq_reduced
+  real(kind=16), dimension(2) :: ebar_reduced, ebar_sq_reduced
+  real(kind=16) :: sp_he_tot, sp_he_rot, sp_he_irrot, ebar_sus
   integer, dimension(8) :: values
 
+  ener_reduced = 0.0; ener_rot_reduced = 0.0; ener_irrot_reduced = 0.0;
+  ener_sq_reduced = 0.0; ener_rot_sq_reduced = 0.0; ener_irrot_sq_reduced = 0.0;
+  sp_he_tot = 0.0; sp_he_rot = 0.0; sp_he_irrot = 0.0; ebar_sus = 0.0;
+
   call MPI_Init(mpierr)
+
+  ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
+  ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
+  ebar_sum = 0.0; ebar_sq_sum = 0.0;
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, mpierr)
 
   call MPI_Comm_size(MPI_COMM_WORLD, num_procs, mpierr)
 
-  write (*,*) "Proc. number ", rank, " out of ",num_procs
+  write (*,'(a,i2.1,a,i2.1)') "Proc. number ", rank, " out of ",num_procs
 
-  call cpu_time(start_time)
 
-  write (*,*) "Maggs-Rossetto algorithm on the simple cubic lattice."
-  write (*,*) "Callum Gray, University College London, 2017."
-  write (*,*) "Git revision ",revision
-  write (*,*) "Repo at http://github.com/cuamll/mr"
+  if (rank.eq.0) then
+    call cpu_time(start_time)
 
-  call date_and_time(VALUES=values)
+    write (*,*) "Maggs-Rossetto algorithm on the simple cubic lattice."
+    write (*,*) "Callum Gray, University College London, 2017."
+    write (*,*) "Git revision ",revision
+    write (*,*) "Repo at http://github.com/cuamll/mr"
 
-  write (*,'(a24,I2.1,a1,I2.1,a1,I4.2,a1,I2.1,a1,I2.1,a1,I2.1)')&
-    &" Current date and time: ",values(3),"/",values(2),"/"&
-    &,values(1)," ",values(5),":",values(6),":",values(7)
+    call date_and_time(VALUES=values)
 
-  call setup_wrapper
-
-  accepth = 0
-  acceptr = 0
-  acceptg = 0
-
-  write (*,*)
-  write (*,'(A10,I5.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
-
-  call cpu_time(timings(1))
-
-  do i = 1,therm_sweeps
-    call mc_sweep
-    if (mod(i,therm_sweeps/10).eq.0) then
-      write (*,'(a)',advance='no') "*"
-    end if
-  end do
-
-  call cpu_time(timings(2))
-
-  write (*,'(a)') "]. Completed."
-  write (*,'(a,f8.3,a)') "Time taken: ",timings(2)-timings(1)," seconds."
-  write (*,*)
-  write (*,'(a,I7.1,a,I4.1,a)',advance='no') "Beginning ",measurement_sweeps,&
-    &" measurement sweeps with sampling every ",&
-    &sample_interval," MC steps... ["
-
-  call cpu_time(timings(3))
-
-  do i = 1,measurement_sweeps
-    call mc_sweep
-
-    if (mod(i, sample_interval).eq.0) then
-      call measure(i)
-    end if
-
-    if (measurement_sweeps.gt.100) then
-      if (mod(i,measurement_sweeps / 100).eq.0) then
-        write (*,'(a)',advance='no') "*"
-      end if
-    end if
-
-  end do
-
-  write (*,'(a)') "]"
-
-  call cpu_time(timings(4))
-
-  write (*,*)
-  write (*,'(I7.1,a)') measurement_sweeps," measurement sweeps completed."
-  write (*,'(a,f8.3,a)') "Time taken: ",timings(4)-timings(3)," seconds."
-
-  if (sum(v,mask=v.gt.0).ne.0) then
-    call linsol
+    write (*,'(a24,I2.1,a1,I2.1,a1,I4.2,a1,I2.1,a1,I2.1,a1,I2.1)')&
+      &" Current date and time: ",values(3),"/",values(2),"/"&
+      &,values(1)," ",values(5),":",values(6),":",values(7)
+    write (*,'(a,i2.1)') "Max OpenMP threads: ",omp_get_max_threads()
   end if
 
-  write(*,*)
-  write(*,*) "--- END: CHARGE POSITIONS ---"
+  call read_input
+  call initial_setup
 
-  tot_q = 0
-    do j = 1,L
-      do i = 1,L
+  do k = 1, no_samples
 
-        tot_q = tot_q + abs(v(i,j))
+    call cpu_time(timings(1))
 
-        if (v(i,j).eq.1) then
-          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
-        end if
+    ! every proc/sample combination should have a different seed,
+    ! otherwise we're averaging identical data. i choose to start @ 0
+    call setup_wrapper((rank * num_procs) + k - 1)
 
-        if (v(i,j).eq.-1) then
-          write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
-        end if
+    accepth = 0
+    acceptr = 0
+    acceptg = 0
 
-      end do
+    !write (*,*)
+    !write (*,'(A10,I5.1,A27)',advance='no') "Beginning ",therm_sweeps," thermalisation sweeps... ["
+
+    call cpu_time(timings(2))
+
+    write (*,'(a,i2.1,a,i2.1,a,i2.1,a,i3.1)') "Proc. number ", rank, " out of ",&
+      num_procs," starting thermalisation sweeps for sample ",k,&
+      ". RNG seed = ",((rank * num_procs) + (k - 1))
+
+    do i = 1,therm_sweeps
+      call mc_sweep
+    !  if (mod(i,therm_sweeps/10).eq.0) then
+    !    write (*,'(a)',advance='no') "*"
+    !  end if
     end do
 
-  !write (*,*) "E_bar:",ebar(1),ebar(2)
-  !write(*,*)
+    write (*,'(a,i2.1,a,i2.1,a,i2.1)') "Proc. number ", rank, " out of ",&
+      num_procs," finished thermalisation sweeps for sample ",k
 
-  write (*,*) "Total charges: ",tot_q
-  write(*,*)
+    call cpu_time(timings(3))
 
+    !write (*,'(a)') "]. Completed."
+    !write (*,'(a,f8.3,a)') "Time taken: ",timings(2)-timings(1)," seconds."
+    !write (*,*)
+    !write (*,'(a,I7.1,a,I4.1,a)',advance='no') "Beginning ",measurement_sweeps,&
+    !  &" measurement sweeps with sampling every ",&
+    !  &sample_interval," MC steps... ["
+
+    do i = 1,measurement_sweeps
+      call mc_sweep
+
+      if (mod(i, sample_interval).eq.0) then
+        call measure(i)
+      end if
+
+    !  if (measurement_sweeps.gt.100) then
+    !    if (mod(i,measurement_sweeps / 100).eq.0) then
+    !      write (*,'(a)',advance='no') "*"
+    !    end if
+    !  end if
+
+    end do
+
+    write (*,'(a,i2.1,a,i2.1,a,i2.1)') "Proc. number ", rank, " out of ",&
+      num_procs," finished measurement sweeps for sample ",k
+
+    !write (*,'(a)') "]"
+
+    call cpu_time(timings(4))
+
+    !write (*,*)
+    !write (*,'(I7.1,a)') measurement_sweeps," measurement sweeps completed."
+    !write (*,'(a,f8.3,a)') "Time taken: ",timings(4)-timings(3)," seconds."
+
+    if (sum(v,mask=v.gt.0).ne.0) then
+      call linsol
+    end if
+
+    !write(*,*)
+    !write(*,*) "--- END: CHARGE POSITIONS ---"
+
+    tot_q = 0
+      do j = 1,L
+        do i = 1,L
+
+          tot_q = tot_q + abs(v(i,j))
+
+    !      if (v(i,j).eq.1) then
+    !        write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
+    !      end if
+
+    !      if (v(i,j).eq.-1) then
+    !        write (*,'(I3.1,I3.1,I3.1,I3.1)') i,j,v(i,j)
+    !      end if
+
+        end do
+      end do
+
+    !write (*,*) "E_bar:",ebar(1),ebar(2)
+    !write(*,*)
+
+    !write (*,*) "Total charges: ",tot_q
+    !write(*,*)
+
+    !write (*,*)
+    !write (*,*) '--- MOVE STATS: ---'
+    !if (tot_q.ne.0) then
+    !  write (*,*) 'hops: moves, acceptance ratio: ',&
+    !    &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
+    !    &* tot_q * hop_ratio)
+    !end if
+    !write (*,*) 'rotational updates: moves, acceptance ratio: ',&
+    !  &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
+    !  &* L**2 * rot_ratio)
+    !write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
+    !  &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
+    !  &* L**2 * g_ratio * 2)
+    !write(*,*)
+
+    !write (*,*) "Writing output for ",no_measurements," measurements..."
+
+    if (do_corr) then
+      call write_output
+    end if
+
+    call deallocations
+
+    !write (*,*) "Done."
+    !write (*,*)
+
+    call cpu_time(timings(5))
+
+    write (*,'(a,i2.1,a,i2.1,a)') "Proc. ",rank, " finished sample ",k,"."
+    write (*,'(a,f8.3,a)') "Time taken: ",(timings(5) - timings(1))," seconds."
+    write (*,'(a,f8.3,a)') "Setup time: ",(timings(2) - timings(1))," seconds."
+    write (*,'(a,f8.5,a)') "Time per therm sweep: "&
+      &,(timings(3) - timings(2)) / therm_sweeps," seconds."
+    write (*,'(a,f8.5,a)') "Time per measurement sweep (including&
+      & measurements): ",(timings(4) - timings(3)) / measurement_sweeps," seconds."
+    write (*,'(a,f8.5,a)') "Time to read in data and calculate correlations&
+      &(per step): ",(timings(5) - timings(4)) / measurement_sweeps," seconds."
+    write (*,*)
+    write (*,*) '--- MOVE STATS: ---'
+    if (tot_q.ne.0) then
+      write (*,*) 'hops: moves, acceptance ratio: ',&
+        &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
+        &* tot_q * hop_ratio)
+    end if
+    write (*,*) 'rotational updates: moves, acceptance ratio: ',&
+      &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
+      &* L**2 * rot_ratio)
+    write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
+      &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
+      &* L**2 * g_ratio * 2)
+    write(*,*)
+    write (*,*) "--- Current energies: ---"
+    write (*,*) "Total: ",ener_tot_sum
+    write (*,*) "Rotational: ",ener_rot_sum
+    write (*,*) "Irrotational: ",ener_irrot_sum
+    write (*,*) "Ebar sum: ",ebar_sum(1), ebar_sum(2)
+    write (*,*) "Ebar^2 sum: ",ebar_sq_sum(1), ebar_sq_sum(2)
+    write (*,*) "Current susc: ",((L**2 * beta) * (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum))) / (no_measurements * k)
+    write (*,*)
+
+  end do ! end k loop: samples
+
+  ener_reduced = 0.0; ener_rot_reduced = 0.0; ener_irrot_reduced = 0.0;
+  ener_sq_reduced = 0.0; ener_rot_sq_reduced = 0.0; ener_irrot_sq_reduced = 0.0;
+  sp_he_tot = 0.0; sp_he_rot = 0.0; sp_he_irrot = 0.0; ebar_sus = 0.0;
+
+  call MPI_Reduce(ener_tot_sum, ener_reduced, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  call MPI_Reduce(ener_rot_sum, ener_rot_reduced, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  call MPI_Reduce(ener_irrot_sum, ener_irrot_reduced, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  call MPI_Reduce(ener_tot_sq_sum, ener_sq_reduced, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  call MPI_Reduce(ener_rot_sq_sum, ener_rot_sq_reduced, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  call MPI_Reduce(ener_irrot_sq_sum, ener_irrot_sq_reduced, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  call MPI_Reduce(ebar_sum, ebar_reduced, 2, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  call MPI_Reduce(ebar_sq_sum, ebar_sq_reduced, 2, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+
+  write (*,*) "--- MPI reduce done: unnormalised results ---"
+  write (*,*) "Total: ",ener_reduced
+  write (*,*) "Rotational: ",ener_rot_reduced
+  write (*,*) "Irrotational: ",ener_irrot_reduced
+  write (*,*) "Total^2: ",ener_sq_reduced
+  write (*,*) "Rotational^2: ",ener_rot_sq_reduced
+  write (*,*) "Irrotational^2: ",ener_irrot_sq_reduced
+  write (*,*) "Ebar sum: ",ebar_reduced(1), ebar_reduced(2)
+  write (*,*) "Ebar^2 sum: ",ebar_sq_reduced(1), ebar_sq_reduced(2)
+  write (*,*) "Current susc: ",((L**2 * beta) *&
+  (sum(ebar_sq_reduced) - sum(ebar_reduced * ebar_reduced))) / (no_measurements * no_samples)
   write (*,*)
-  write (*,*) '--- MOVE STATS: ---'
-  if (tot_q.ne.0) then
-    write (*,*) 'hops: moves, acceptance ratio: ',&
-      &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
-      &* tot_q * hop_ratio)
-  end if
-  write (*,*) 'rotational updates: moves, acceptance ratio: ',&
-    &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
-    &* L**2 * rot_ratio)
-  write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
-    &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
-    &* L**2 * g_ratio * 2)
-  write(*,*)
 
-  write (*,*) "Writing output for ",no_measurements," measurements..."
+  if (rank.eq.0) then
 
-  call cpu_time(timings(5))
+    ! between the end of the k loop and MPI_Finalize, we need to
+    ! average over measurements/samples, then MPI_Reduce() and
+    ! average over procs as well to get a final measurement
+    ener_reduced = ener_reduced / (no_samples * num_procs * no_measurements)
+    ener_rot_reduced = ener_rot_reduced / (no_samples * num_procs * no_measurements)
+    ener_irrot_reduced = ener_irrot_reduced / (no_samples * num_procs * no_measurements)
+    ener_sq_reduced = ener_sq_reduced / (no_samples * num_procs * no_measurements)
+    ener_rot_sq_reduced = ener_rot_sq_reduced / (no_samples * num_procs * no_measurements)
+    ener_irrot_sq_reduced = ener_irrot_sq_reduced / (no_samples * num_procs * no_measurements)
+    ebar_reduced = ebar_reduced / (no_samples * num_procs * no_measurements)
+    ebar_sq_reduced = ebar_sq_reduced / (no_samples * num_procs * no_measurements)
 
-  call write_output
+    sp_he_tot = L**2 * beta**2 * (ener_sq_reduced - (ener_reduced)**2)
+    sp_he_rot = L**2 * beta**2 * (ener_rot_sq_reduced - (ener_rot_reduced)**2)
+    sp_he_irrot = L**2 * beta**2 * (ener_irrot_sq_reduced - (ener_irrot_reduced)**2)
 
-  call deallocations
+    ebar_sus = L**2 * beta * (ebar_sq_reduced(1) + ebar_sq_reduced(2) - (ebar_reduced(1)**2 + ebar_reduced(2)**2))
 
-  write (*,*) "Done."
-  write (*,*)
+    write (*,*) "END. MPI_Reduce done, averages calculated."
+    write (*,*) "--- Specific heats: ---"
+    write (*,*) "Total: ",sp_he_tot
+    write (*,*) "Rotational: ",sp_he_rot
+    write (*,*) "Irrotational: ",sp_he_irrot
+    write (*,*)
+    write (*,*) "Ebar_reduced: ",ebar_reduced(1),ebar_reduced(2)
+    write (*,*) "Ebar_sq_reduced: ",ebar_sq_reduced(1),ebar_sq_reduced(2)
+    write (*,*) "Ebar susceptibility: ",ebar_sus
 
-  call cpu_time(timings(6))
+    open(30, file=sphe_sus_file)
+    write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
+    write (30,'(ES18.9,ES18.9,ES18.9,ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
+    write (30,'(a)') "# Temp., <Ebar^2> - <Ebar>^2"
+    write (30,'(ES18.9, ES18.9)') temp, ebar_sus
 
-  call cpu_time(end_time)
-  write (*,'(a,f8.3,a)') "Total time taken: ",end_time-start_time," seconds."
-  write (*,'(a,f8.5,a)') "Time per thermalisation sweep: "&
-    &,(timings(2) - timings(1)) / therm_sweeps," seconds."
-  write (*,'(a,f8.5,a)') "Time per measurement sweep (including&
-    & measurements): ",(timings(4) - timings(3)) / measurement_sweeps," seconds."
-  write (*,'(a,f8.5,a)') "Time to read in data and calculate correlations&
-    &(per step): ",(timings(6) - timings(5)) / measurement_sweeps," seconds."
-  write (*,*)
+    call cpu_time(end_time)
+    write (*,'(a,f10.3,a)') "Simulation finished. Time taken:",&
+                            end_time-start_time,"seconds."
+
+  end if ! rank = 0
 
   call MPI_Finalize(mpierr)
 
@@ -429,7 +554,7 @@ subroutine measure(step_number)
   use omp_lib
   implicit none
   integer,intent(in) :: step_number
-  integer :: omp_index,i,j,n,kx,ky,m,p,x,y,dist_bin
+  integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
   real(kind=8) :: norm_k,dist, ener_tot, ener_rot, ener_irrot
   real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq
   real(kind=8), dimension(2,L,L) :: e_rot
@@ -439,24 +564,19 @@ subroutine measure(step_number)
   complex(kind=16) :: e_rot_kx_temp, e_rot_ky
   complex(kind=16) :: imag, kdotx
 
-  norm_k = 0.0
-  dist = 0.0
-  rho_k_p_temp = (0.0,0.0)
-  rho_k_m_temp = (0.0,0.0)
-  e_kx_temp = (0.0,0.0)
-  mnphi_kx_temp = (0.0,0.0)
+  norm_k = 0.0; dist = 0.0
+  rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
+  e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
   e_rot_kx_temp = (0.0,0.0)
-  e_ky = (0.0,0.0)
-  mnphi_ky = (0.0,0.0)
-  e_rot_ky = (0.0,0.0)
-  kdotx = (0.0,0.0)
-  imag = (0.0, 1.0)
+  e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
+  kdotx = (0.0,0.0); imag = (0.0, 1.0)
 
   ! get irrotational part of field
   ! this way we can get decomposed parts along with total
   call linsol
   e_rot = e_field - mnphi
 
+  !write (*,*) e_tot_avg(1,1,1), e_field(1,1,1)
   e_tot_avg =       e_tot_avg + e_field
   e_rot_avg =       e_rot_avg + e_rot
   e_irrot_avg =     e_irrot_avg + mnphi
@@ -485,44 +605,69 @@ subroutine measure(step_number)
   ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
   ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
 
-  !$omp parallel do
+  if (do_corr) then
+    n = step_number / sample_interval
 
-  do omp_index = 1, ((L*bz)+1)**2
-
-    !if (omp_index.eq.1.and.step_number.eq.1) then
-    !  n = omp_get_num_threads()
-    !  write (*,*) "num_threads = ",n
-    !end if
-
-    i = ((omp_index - 1) / ((L*bz)+1)) + 1
-    j = mod(omp_index - 1, ((L*bz)+1)) + 1
-    kx = i - 1 - bz*(L/2)
-    ky = j - 1 - bz*(L/2)
-
-    rho_k_p_temp = (0.0,0.0)
-    rho_k_m_temp = (0.0,0.0)
-    e_kx_temp = (0.0,0.0)
-    mnphi_kx_temp = (0.0,0.0)
-    e_rot_kx_temp = (0.0,0.0)
-    e_ky = (0.0,0.0)
-    mnphi_ky = (0.0,0.0)
-    e_rot_ky = (0.0,0.0)
-    kdotx = (0.0,0.0)
-    norm_k = 0.0
-
-    !! for array indices
-    !i = kx + 1 + bz*(L/2)
-    !j = ky + 1 + bz*(L/2)
-
-    if (kx.eq.0.and.ky.eq.0) then
-      norm_k = 0.0
-    else
-      norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
+    if (mod(n,100).eq.0) then
+      write (*,'(a,i6.3)') "n = ",n
     end if
 
-    ! m,p,s are the real space coordinates
-      do p = 1,L
-        do m = 1,L
+    !if (n.eq.1) then
+    !  do omp_index = 1, ((L*bz)+1)**2*L**2
+    !    i = mod(((omp_index - 1) / ((L*bz)+1)), (L*bz)+1) + 1
+    !    j = mod(omp_index - 1, ((L*bz)+1)) + 1
+    !    m = mod(((omp_index - 1) / (L)), L) + 1
+    !    p = mod(omp_index - 1, L) + 1
+
+    !    write (*,*) i,j,m,p
+    !  end do
+    !end if
+    !i = 0; j = 0; m = 0; p = 0; omp_index = 0;
+
+
+    !$omp parallel do num_threads(2)&
+    !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
+    !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
+    !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
+    do omp_index = 1, ((L*bz)+1)**2
+
+      if (omp_index.eq.1.and.n.eq.1) then
+        i = omp_get_num_threads()
+        write (*,*) "num_threads = ",i
+        i = 0
+      end if
+
+      i = ((omp_index - 1) / ((L*bz)+1)) + 1
+      j = mod(omp_index - 1, ((L*bz)+1)) + 1
+      !i = mod(((omp_index - 1) / ((L*bz)+1)), (L*bz)+1) + 1
+      !j = mod(omp_index - 1, ((L*bz)+1)) + 1
+      !m = mod(((omp_index - 1) / (L)), L) + 1
+      !p = mod(omp_index - 1, L) + 1
+      kx = i - 1 - bz*(L/2)
+      ky = j - 1 - bz*(L/2)
+
+      rho_k_p_temp = (0.0,0.0)
+      rho_k_m_temp = (0.0,0.0)
+      e_kx_temp = (0.0,0.0)
+      mnphi_kx_temp = (0.0,0.0)
+      e_rot_kx_temp = (0.0,0.0)
+      e_ky = (0.0,0.0)
+      mnphi_ky = (0.0,0.0)
+      e_rot_ky = (0.0,0.0)
+      kdotx = (0.0,0.0)
+      norm_k = 0.0
+
+      if (kx.eq.0.and.ky.eq.0) then
+        norm_k = 0.0
+      else
+        norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
+      end if
+
+      do s = 1,L**2
+      !do m = 1,L
+      !  do p = 1,L
+        m = ((s - 1) / L) + 1
+        p = mod(s - 1, L) + 1
 
           ! different offsets for x,y,z
           kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
@@ -587,61 +732,66 @@ subroutine measure(step_number)
 
           end if ! end v != 0 check
 
-      end do ! end p loop
-    end do ! end m loop
+      !  end do
+      !end do ! m,p blocks
+      end do ! s
 
-    rho_k_p_temp = rho_k_p_temp / float(L**2)
-    rho_k_m_temp = rho_k_m_temp / float(L**2)
-    e_kx_temp = e_kx_temp / float(L**2)
-    e_ky = e_ky / float(L**2)
-    mnphi_kx_temp = mnphi_kx_temp / float(L**2)
-    mnphi_ky = mnphi_ky / float(L**2)
-    e_rot_kx_temp = e_rot_kx_temp / float(L**2)
-    e_rot_ky = e_rot_ky / float(L**2)
+      rho_k_p_temp = rho_k_p_temp / float(L**2)
+      rho_k_m_temp = rho_k_m_temp / float(L**2)
+      e_kx_temp = e_kx_temp / float(L**2)
+      e_ky = e_ky / float(L**2)
+      mnphi_kx_temp = mnphi_kx_temp / float(L**2)
+      mnphi_ky = mnphi_ky / float(L**2)
+      e_rot_kx_temp = e_rot_kx_temp / float(L**2)
+      e_rot_ky = e_rot_ky / float(L**2)
 
-    rho_k_p(i,j) = rho_k_p(i,j) + rho_k_p_temp
-    rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
-    ch_ch(i,j) = ch_ch(i,j) +&
-                  (rho_k_p_temp * conjg(rho_k_m_temp))
+      rho_k_p(i,j) = rho_k_p(i,j) + rho_k_p_temp
+      rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
+      ch_ch(i,j) = ch_ch(i,j) +&
+                    (rho_k_p_temp * conjg(rho_k_m_temp))
 
-    s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
-    e_kx_temp*conjg(e_kx_temp)
-    s_ab(1,2,i,j) = s_ab(1,2,i,j) +&
-    e_kx_temp*conjg(e_ky)
-    s_ab(2,1,i,j) = s_ab(2,1,i,j) +&
-    e_ky*conjg(e_kx_temp)
-    s_ab(2,2,i,j) = s_ab(2,2,i,j) +&
-    e_ky*conjg(e_ky)
+      s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
+      e_kx_temp*conjg(e_kx_temp)
+      s_ab(1,2,i,j) = s_ab(1,2,i,j) +&
+      e_kx_temp*conjg(e_ky)
+      s_ab(2,1,i,j) = s_ab(2,1,i,j) +&
+      e_ky*conjg(e_kx_temp)
+      s_ab(2,2,i,j) = s_ab(2,2,i,j) +&
+      e_ky*conjg(e_ky)
 
-    s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i,j) +&
-    e_rot_kx_temp*conjg(e_rot_kx_temp)
-    s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i,j) +&
-    e_rot_kx_temp*conjg(e_rot_ky)
-    s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i,j) +&
-    e_rot_ky*conjg(e_rot_kx_temp)
-    s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i,j) +&
-    e_rot_ky*conjg(e_rot_ky)
+      !write(*,*) i,j,s_ab_rot(1,1,i,j),e_rot_kx_temp
+      s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i,j) +&
+      e_rot_kx_temp*conjg(e_rot_kx_temp)
+      s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i,j) +&
+      e_rot_kx_temp*conjg(e_rot_ky)
+      s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i,j) +&
+      e_rot_ky*conjg(e_rot_kx_temp)
+      s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i,j) +&
+      e_rot_ky*conjg(e_rot_ky)
 
-    s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i,j) +&
-    mnphi_kx_temp*conjg(mnphi_kx_temp)
-    s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i,j) +&
-    mnphi_kx_temp*conjg(mnphi_ky)
-    s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i,j) +&
-    mnphi_ky*conjg(mnphi_kx_temp)
-    s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i,j) +&
-    mnphi_ky*conjg(mnphi_ky)
+      s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i,j) +&
+      mnphi_kx_temp*conjg(mnphi_kx_temp)
+      s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i,j) +&
+      mnphi_kx_temp*conjg(mnphi_ky)
+      s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i,j) +&
+      mnphi_ky*conjg(mnphi_kx_temp)
+      s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i,j) +&
+      mnphi_ky*conjg(mnphi_ky)
 
-    ! direct space one
-    if (i.le.L/2+1.and.j.le.L/2+1) then
+      ! direct space one
+      !write (*,*) i,j,(i.le.L/2+1.and.j.le.L/2+1)
+      if (i.le.L/2+1.and.j.le.L/2+1) then
 
-      dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
-      dist_bin = floor(dist / bin_size) + 1
-      dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
-      bin_count(dist_bin) = bin_count(dist_bin) + 1
+        dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
+        dist_bin = floor(dist / bin_size) + 1
+        dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
+        bin_count(dist_bin) = bin_count(dist_bin) + 1
 
-    end if
+      end if
 
-  end do ! end openmp_index loop
-  !$omp end parallel do
+    end do ! end openmp_index loop
+    !$omp end parallel do
+
+  end if ! if do_corr
 
 end subroutine measure

@@ -8,20 +8,31 @@ module setup
 
   contains
 
-  subroutine allocations
+  subroutine initial_setup
+    ! various things which can't be zeroed
+    ! at the start of every sample
 
-    allocate(v(L,L))
     allocate(v_avg(L,L))
-    allocate(pos(L))
-    allocate(neg(L))
-    allocate(ebar(2))
-    allocate(ebar_sum(2))
-    allocate(ebar_sq_sum(2))
-    allocate(e_field(2,L,L))
-    allocate(mnphi(2,L,L))
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
     allocate(e_irrot_avg(2,L,L))
+
+    v_avg = 0.0; 
+    e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0
+    ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
+    ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
+    ebar_sum = 0.0; ebar_sq_sum = 0.0;
+
+  end subroutine initial_setup
+
+  subroutine allocations
+
+    allocate(v(L,L))
+    allocate(pos(L))
+    allocate(neg(L))
+    allocate(ebar(2))
+    allocate(e_field(2,L,L))
+    allocate(mnphi(2,L,L))
     allocate(lgf(L,L,L,L))
     allocate(ch_ch((bz*L)+1,(bz*L)+1))
     allocate(rho_k_m((bz*L)+1,(bz*L)+1))
@@ -38,31 +49,28 @@ module setup
     v = 0; pos = 0; neg = 0
     ebar = 0.0; ebar_sum = 0.0; ebar_sq_sum = 0.0
     e_field = 0.0; mnphi = 0.0; lgf = 0.0
-    e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0
     ch_ch = (0.0,0.0); rho_k_m = (0.0,0.0); rho_k_p = (0.0,0.0)
-    dir_struc = 0.0
+    dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
     s_ab = 0.0
     energy = 0.0
     sq_energy= 0.0
-    ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
-    ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
 
   end subroutine allocations
 
   subroutine deallocations
 
     deallocate(v)
-    deallocate(v_avg)
+    !deallocate(v_avg)
     deallocate(pos)
     deallocate(neg)
     deallocate(ebar)
-    deallocate(ebar_sum)
-    deallocate(ebar_sq_sum)
+    !deallocate(ebar_sum)
+    !deallocate(ebar_sq_sum)
     deallocate(e_field)
     deallocate(mnphi)
-    deallocate(e_tot_avg)
-    deallocate(e_rot_avg)
-    deallocate(e_irrot_avg)
+    !deallocate(e_tot_avg)
+    !deallocate(e_rot_avg)
+    !deallocate(e_irrot_avg)
     deallocate(lgf)
     deallocate(ch_ch)
     deallocate(rho_k_m)
@@ -143,11 +151,12 @@ module setup
 
   end subroutine arrays_init
 
-  subroutine setup_wrapper
+  subroutine setup_wrapper(n)
+    integer, intent(in) :: n
 
     ! wrapper for convenience in main
     call read_input
-    call randinit(seed)
+    call randinit(n)
     call allocations
     call latt_init
     call PBCs

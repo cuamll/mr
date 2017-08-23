@@ -3,9 +3,17 @@ module io
   implicit none
   logical, private :: start_file_there
   character(len = 100) :: label, buffer
+  character :: corr_char
   integer :: posit
   integer :: ios = 0
   integer :: line = 0
+
+  !type parameters
+  !  integer :: L, therm_sweeps, meas_sweeps, samp_interval, no_charges
+  !  real(kind=8) :: temp, lambda, q, rot_delt, hop_ratio, rot_ratio, g_ratio
+  !  character(100) :: e_f_l, en_l, sq_en_l, sp_su_l
+  !  character(:), allocatable :: e_field_file, energy_file, sq_energy_file, sphe_sus_file
+  !end type parameters
 
   contains
 
@@ -36,6 +44,12 @@ module io
           case ('L')
             read(buffer, '(I10.1)', iostat=ios) L
             write (*,*) 'System size: ',L
+          case ('no_samples')
+            read(buffer, '(I10.1)', iostat=ios) no_samples
+            write (*,*) 'Number of samples: ',no_samples
+          case ('do_corr')
+            read(buffer, '(a)', iostat=ios) corr_char
+            write (*,*) 'Calculate correlations? ',corr_char
           case ('thermalisation_sweeps')
             read(buffer, '(I10.1)', iostat=ios) therm_sweeps
             write (*,*) 'Thermalisation sweeps: ',therm_sweeps
@@ -52,7 +66,7 @@ module io
             read(buffer, '(F10.1)', iostat=ios) lambda
             write (*,*) 'Lattice spacing: ',lambda
           case ('charge_value')
-            read(buffer, '(F10.1)', iostat=ios) q
+            read(buffer, '(F16.1)', iostat=ios) q
             write (*,*) 'Charge value: ',q
           case ('delta_max')
             read(buffer, '(F10.1)', iostat=ios) rot_delt
@@ -138,9 +152,9 @@ module io
           case ('average_field_file')
             read(buffer, '(a)', iostat=ios) av_fe_l
             write (*,*) 'Raw file name for average fields/charges: ',av_fe_l
-          case ('vertex_ebar_file')
-            read(buffer, '(a)', iostat=ios) v_s_l
-            write (*,*) 'Raw file name for vertices/ebar: ',v_s_l
+          case ('sphe_sus_file')
+            read(buffer, '(a)', iostat=ios) sp_su_l
+            write (*,*) 'Raw file name for specific heat/susceptibility: ',sp_su_l
           case default
             write (*,*) 'Skipping invalid label at line ',line
           end select
@@ -220,6 +234,11 @@ module io
       ! set up other variables, allocations etc.
       volume = lambda**2
       no_measurements = measurement_sweeps / sample_interval
+      if (corr_char.eq.'T'.or.corr_char.eq.'Y') then
+        do_corr = .true.
+      else
+        do_corr = .false.
+      end if
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
       ! eps_0 = 1.0 / L
@@ -249,7 +268,7 @@ module io
       rot_spar_file = trim(adjustl(r_spa_l))
       field_charge_file = trim(adjustl(fe_ch_l))
       avg_field_file = trim(adjustl(av_fe_l))
-      vertex_sum_file = trim(adjustl(v_s_l))
+      sphe_sus_file = trim(adjustl(sp_su_l))
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg
@@ -309,36 +328,36 @@ module io
     avg_e = avg_e / (no_measurements)
     avg_e2 = avg_e2 / (no_measurements)
 
-    write(*,*)
-    write(*,*) " --- averages and specific heat ---"
-    write(*,*) "avg_e unnormalised = ",avg_e
-    write(*,*) "avg_e^2 unnormalised = ",avg_e2
+    !write(*,*)
+    !write(*,*) " --- averages and specific heat ---"
+    !write(*,*) "avg_e unnormalised = ",avg_e
+    !write(*,*) "avg_e^2 unnormalised = ",avg_e2
 
-    ! prefactor troubles
+    !! prefactor troubles
     prefac = 1.0 * L**2 / (temp**2)
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
-    write(*,*) "prefactor = ",prefac
-    write(*,*) "sp. heat (C) = ",sp_he
-    write(*,*) "C / (N) = ",sp_he / L**2
-    write(*,*)
+    !write(*,*) "prefactor = ",prefac
+    !write(*,*) "sp. heat (C) = ",sp_he
+    !write(*,*) "C / (N) = ",sp_he / L**2
+    !write(*,*)
 
     avg_e = avg_e / (L**2)
     avg_e2 = avg_e2 / ((L**2)**2)
 
-    write(*,*) "<U> norm. = ",avg_e
-    write(*,*) "<U>^2 norm. = ",avg_e**2
-    write(*,*) "<U^2> norm. = ",avg_e2
-    write(*,*) "prefactor = ",prefac
-    write(*,*)
+    !write(*,*) "<U> norm. = ",avg_e
+    !write(*,*) "<U>^2 norm. = ",avg_e**2
+    !write(*,*) "<U^2> norm. = ",avg_e2
+    !write(*,*) "prefactor = ",prefac
+    !write(*,*)
 
     sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
-    write(*,*) "sp. heat (C) = ",sp_he
-    write(*,*) "C / (N) = ",sp_he / L**2
-    write(*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
-    write(*,*) "N(<U^2> - <U>^2) = ",L**2 * (avg_e2 - ((avg_e)**2))
-    write(*,*)
+    !write(*,*) "sp. heat (C) = ",sp_he
+    !write(*,*) "C / (N) = ",sp_he / L**2
+    !write(*,*) "C / sqrt(L) = ",sp_he / sqrt(float(L))
+    !write(*,*) "N(<U^2> - <U>^2) = ",L**2 * (avg_e2 - ((avg_e)**2))
+    !write(*,*)
 
     close(2)
     close(3)
