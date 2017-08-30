@@ -8,13 +8,6 @@ module io
   integer :: ios = 0
   integer :: line = 0
 
-  !type parameters
-  !  integer :: L, therm_sweeps, meas_sweeps, samp_interval, no_charges
-  !  real(kind=8) :: temp, lambda, q, rot_delt, hop_ratio, rot_ratio, g_ratio
-  !  character(100) :: e_f_l, en_l, sq_en_l, sp_su_l
-  !  character(:), allocatable :: e_field_file, energy_file, sq_energy_file, sphe_sus_file
-  !end type parameters
-
   contains
 
   subroutine read_input
@@ -24,13 +17,16 @@ module io
 
     inquire(file=arg,exist=start_file_there)
     if (start_file_there) then
-      write (*,*)
-      write (*,*) "--- INPUT PARAMETERS: ---"
-      write (*,*) "Input file: ",arg
-
       open(unit=10, file=arg)
 
       do while (ios == 0)
+
+        if (line.eq.0) then
+          write (*,*)
+          write (*,*) "--- INPUT PARAMETERS: ---"
+          write (*,*) "Input file: ",arg
+        end if
+
         read(10, '(A)', iostat=ios) buffer
         if (ios == 0) then
           line = line + 1
@@ -44,6 +40,9 @@ module io
           case ('L')
             read(buffer, '(I10.1)', iostat=ios) L
             write (*,*) 'System size: ',L
+          case ('omp_threads')
+            read(buffer, '(I10.1)', iostat=ios) no_threads
+            write (*,*) 'OpenMP threads: ',no_threads
           case ('no_samples')
             read(buffer, '(I10.1)', iostat=ios) no_samples
             write (*,*) 'Number of samples: ',no_samples
@@ -244,7 +243,7 @@ module io
       ! eps_0 = 1.0 / L
       eps_0 = 1.0
       !q = 2 * pi * q
-      write (*,*) "q = ",q
+      !write (*,*) "q = ",q
       beta = 1.0 / temp
 
       lattfile = trim(adjustl(lattfile_long))
@@ -303,30 +302,30 @@ module io
     write (2,*) "rot. ratio",rot_ratio
     write (2,*) "ebar ratio",g_ratio
 
-    do i = 1,no_measurements + 1
-      write(2,*) i - 1, energy(i)
-      write(3,*) i - 1, sq_energy(i)
+    !do i = 1,no_measurements + 1
+    !  write(2,*) i - 1, energy(i)
+    !  write(3,*) i - 1, sq_energy(i)
 
-      avg_e = avg_e + energy(i)
-      avg_e2 = avg_e2 + sq_energy(i)
-    end do
+    !  avg_e = avg_e + energy(i)
+    !  avg_e2 = avg_e2 + sq_energy(i)
+    !end do
 
-      do j = 1,L
-        do i = 1,L
+    !  do j = 1,L
+    !    do i = 1,L
 
-        write (4,*) i, j, e_field(1,i,j),&
-                  & e_field(2,i,j)
+    !    write (4,*) i, j, e_field(1,i,j),&
+    !              & e_field(2,i,j)
 
-        end do
-      end do
+    !    end do
+    !  end do
 
     !write (*,*) "<U> = ", avg_e / no_measurements
     !write (*,*) "sum U^2 / iter = ",avg_e2 / no_measurements
     !write (*,*) "N^2 = ",N**2
     !write (*,*) "N T = ",N * temp
 
-    avg_e = avg_e / (no_measurements)
-    avg_e2 = avg_e2 / (no_measurements)
+    !avg_e = avg_e / (no_measurements)
+    !avg_e2 = avg_e2 / (no_measurements)
 
     !write(*,*)
     !write(*,*) " --- averages and specific heat ---"
@@ -334,24 +333,24 @@ module io
     !write(*,*) "avg_e^2 unnormalised = ",avg_e2
 
     !! prefactor troubles
-    prefac = 1.0 * L**2 / (temp**2)
-    sp_he = prefac * ((avg_e2) - ((avg_e)**2))
+    !prefac = 1.0 * L**2 / (temp**2)
+    !sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
-    !write(*,*) "prefactor = ",prefac
-    !write(*,*) "sp. heat (C) = ",sp_he
-    !write(*,*) "C / (N) = ",sp_he / L**2
-    !write(*,*)
+    !!write(*,*) "prefactor = ",prefac
+    !!write(*,*) "sp. heat (C) = ",sp_he
+    !!write(*,*) "C / (N) = ",sp_he / L**2
+    !!write(*,*)
 
-    avg_e = avg_e / (L**2)
-    avg_e2 = avg_e2 / ((L**2)**2)
+    !avg_e = avg_e / (L**2)
+    !avg_e2 = avg_e2 / ((L**2)**2)
 
-    !write(*,*) "<U> norm. = ",avg_e
-    !write(*,*) "<U>^2 norm. = ",avg_e**2
-    !write(*,*) "<U^2> norm. = ",avg_e2
-    !write(*,*) "prefactor = ",prefac
-    !write(*,*)
+    !!write(*,*) "<U> norm. = ",avg_e
+    !!write(*,*) "<U>^2 norm. = ",avg_e**2
+    !!write(*,*) "<U^2> norm. = ",avg_e2
+    !!write(*,*) "prefactor = ",prefac
+    !!write(*,*)
 
-    sp_he = prefac * ((avg_e2) - ((avg_e)**2))
+    !sp_he = prefac * ((avg_e2) - ((avg_e)**2))
 
     !write(*,*) "sp. heat (C) = ",sp_he
     !write(*,*) "C / (N) = ",sp_he / L**2
@@ -392,28 +391,25 @@ module io
     field_struc = 0.0; field_struc_rot = 0.0;
     charge_struc = 0.0; field_struc_irrot = 0.0;
 
-    ebar_sum = (ebar_sum / no_measurements)
-    ebar_sq_sum = (ebar_sq_sum / no_measurements)
-
-    rho_k_p = rho_k_p / no_measurements
-    rho_k_m = rho_k_m / no_measurements
-    ch_ch = ch_ch / no_measurements
-    s_ab = s_ab / no_measurements
-    s_ab_irrot = s_ab_irrot / no_measurements
-    s_ab_rot = s_ab_rot / no_measurements
-    dir_struc = dir_struc / no_measurements
-    e_tot_avg = e_tot_avg / no_measurements
-    e_rot_avg = e_rot_avg / no_measurements
-    e_irrot_avg = e_irrot_avg / no_measurements
-    v_avg = v_avg / no_measurements
-
-    ener_tot_sum = ener_tot_sum / no_measurements
-    ener_rot_sum = ener_rot_sum / no_measurements
-    ener_irrot_sum = ener_irrot_sum / no_measurements
-    ener_tot_sq_sum = ener_tot_sq_sum / no_measurements
-    ener_rot_sq_sum = ener_rot_sq_sum / no_measurements
-    ener_irrot_sq_sum = ener_irrot_sq_sum / no_measurements
-
+    !ebar_sum = (ebar_sum / no_measurements)
+    !ebar_sq_sum = (ebar_sq_sum / no_measurements)
+    !rho_k_p = rho_k_p / no_measurements
+    !rho_k_m = rho_k_m / no_measurements
+    !ch_ch = ch_ch / no_measurements
+    !s_ab = s_ab / no_measurements
+    !s_ab_irrot = s_ab_irrot / no_measurements
+    !s_ab_rot = s_ab_rot / no_measurements
+    !dir_struc = dir_struc / no_measurements
+    !e_tot_avg = e_tot_avg / no_measurements
+    !e_rot_avg = e_rot_avg / no_measurements
+    !e_irrot_avg = e_irrot_avg / no_measurements
+    !v_avg = v_avg / no_measurements
+    !ener_tot_sum = ener_tot_sum / no_measurements
+    !ener_rot_sum = ener_rot_sum / no_measurements
+    !ener_irrot_sum = ener_irrot_sum / no_measurements
+    !ener_tot_sq_sum = ener_tot_sq_sum / no_measurements
+    !ener_rot_sq_sum = ener_rot_sq_sum / no_measurements
+    !ener_irrot_sq_sum = ener_irrot_sq_sum / no_measurements
     !ener_tot_sum = ener_tot_sum / L**2
     !ener_rot_sum = ener_rot_sum / L**2
     !ener_irrot_sum = ener_irrot_sum / L**2
@@ -574,7 +570,7 @@ module io
     open(unit=24, file=rot_spar_file)
     open(unit=25, file=avg_field_file)
 
-    dist_r = dist_r / (no_measurements)
+    !dist_r = dist_r / (no_measurements)
     do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
         write (11, dir_dist_format_string)&
         i * bin_size, bin_count(i), abs(dist_r(i))

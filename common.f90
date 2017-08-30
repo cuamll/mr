@@ -1,9 +1,10 @@
 module common
   implicit none
   logical, public :: do_corr
-  integer, public :: seed
-  integer(kind=8), public :: L,accepth,acceptr,acceptg,add_charges,no_measurements
-  integer(kind=8), public :: therm_sweeps,measurement_sweeps,sample_interval,no_samples
+  integer, public :: seed,no_samples,no_threads
+  integer(kind=8), public :: L,add_charges,no_measurements
+  integer(kind=8), public :: accepth,acceptr,acceptg
+  integer(kind=8), public :: therm_sweeps,measurement_sweeps,sample_interval
   real(kind=8), public :: q, lambda, volume, temp, beta
   real(kind=8), public :: eps_0, bin_size, rot_delt, g0
   real(kind=16), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum
@@ -38,6 +39,40 @@ module common
   character(:), allocatable :: rot_field_file, rot_sab_file, rot_sperp_file
   character(:), allocatable :: spar_file, rot_spar_file, irrot_spar_file
   character(:), allocatable :: avg_field_file
+
+  !type parameters
+    !integer(kind=8), public :: L,add_charges,no_measurements
+    !integer(kind=8), public :: therm_sweeps,measurement_sweeps,sample_interval,no_samples
+    !real(kind=8), public :: q, lambda, volume, temp, beta
+    !real(kind=8), public :: eps_0, bin_size, rot_delt, g0
+    !real(kind=8) :: temp, lambda, q, rot_delt, hop_ratio, rot_ratio, g_ratio
+    !real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
+
+    !character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file
+    !character(:), allocatable :: dir_st_file, dir_dist_file, sphe_sus_file
+    !character(:), allocatable :: s_ab_file, s_perp_file, field_charge_file
+    !character(:), allocatable :: energy_file, sq_energy_file, e_field_file
+    !character(:), allocatable :: irrot_field_file, irrot_sab_file, irrot_sperp_file
+    !character(:), allocatable :: rot_field_file, rot_sab_file, rot_sperp_file
+    !character(:), allocatable :: spar_file, rot_spar_file, irrot_spar_file
+    !character(:), allocatable :: avg_field_file
+  !end type parameters
+
+  !type output
+
+  !  real(kind=16), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum
+  !  real(kind=16), public :: ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum
+  !  real(kind=16), dimension(2), public :: ebar_sum, ebar_sq_sum
+  !  integer(kind=8), dimension(:), allocatable, public :: bin_count
+  !  real(kind=16), dimension(:,:), allocatable, public :: v_avg
+  !  real(kind=16), dimension(:,:,:), allocatable, public :: e_tot_avg, e_rot_avg, e_irrot_avg
+  !  real(kind=16), dimension(:,:), allocatable, public :: dir_struc
+  !  real(kind=16), dimension(:,:,:,:), allocatable, public :: s_ab, s_ab_rot, s_ab_irrot
+  !  complex(kind=16), dimension(:,:), allocatable, public :: ch_ch
+  !  complex(kind=16), dimension(:,:), allocatable, public :: rho_k_m,rho_k_p
+  !  integer(kind=8) :: output_size
+
+  !end type output
 
   integer, public :: have_lgf = 0
   integer, public, parameter :: bz=2
