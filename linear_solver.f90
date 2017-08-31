@@ -5,9 +5,9 @@ module linear_solver
   implicit none
 
   integer, private :: a,b,c,x,y,z,kx,ky,kz,i,nch
-  real*8, private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,fkx,fky,fkz
-  real*8, private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
-  real*8, public :: u_tot, u_int, u_self, g_zero, g_z_sum
+  real(kind=8), private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,fkx,fky,fkz
+  real(kind=8), private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
+  real(kind=8), public :: u_tot, u_int, u_self, g_zero, g_z_sum
   character(4) :: lgf_path = "lgf/"
   character(2) :: l_char
   character(6) :: lgf_file
@@ -166,7 +166,7 @@ module linear_solver
 
     write (*,*) "g(0) = ",g0
     write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
-    
+
     open(30, file=filename, status="new", action="write", access="stream", form="unformatted")
     write(30) lgf
     close(30)

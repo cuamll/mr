@@ -12,7 +12,7 @@ module io
 
   subroutine read_input
 
-    call getarg(1, arg_long)
+    call get_command_argument(1, arg_long)
     arg = trim(arg_long)
 
     inquire(file=arg,exist=start_file_there)
@@ -284,8 +284,8 @@ module io
     ! guess what this one does
     use common
     implicit none
-    integer*8 :: i, j, k
-    real*8 :: avg_e, avg_e2, prefac, sp_he
+    integer(kind=4) :: i, j, k
+    real(kind=8) :: avg_e, avg_e2, prefac, sp_he
 
     avg_e = 0.0
     avg_e2 = 0.0

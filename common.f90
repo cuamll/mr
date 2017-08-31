@@ -1,18 +1,18 @@
 module common
   implicit none
   logical, public :: do_corr
-  integer, public :: seed,no_samples,no_threads
-  integer(kind=8), public :: L,add_charges,no_measurements
-  integer(kind=8), public :: accepth,acceptr,acceptg
-  integer(kind=8), public :: therm_sweeps,measurement_sweeps,sample_interval
+  integer(kind=4), public :: seed,no_samples,no_threads
+  integer(kind=4), public :: L,add_charges,no_measurements
+  integer(kind=4), public :: accepth,acceptr,acceptg
+  integer(kind=4), public :: therm_sweeps,measurement_sweeps,sample_interval
   real(kind=8), public :: q, lambda, volume, temp, beta
   real(kind=8), public :: eps_0, bin_size, rot_delt, g0
   real(kind=16), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum
   real(kind=16), public :: ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum
   real(kind=16), dimension(2), public :: ebar_sum, ebar_sq_sum
-  integer(kind=8), dimension(:), allocatable, public :: bin_count
-  integer, dimension(:), allocatable, public :: pos,neg
-  integer, dimension(:,:), allocatable, public :: v
+  integer(kind=4), dimension(:), allocatable, public :: bin_count
+  integer(kind=4), dimension(:), allocatable, public :: pos,neg
+  integer(kind=4), dimension(:,:), allocatable, public :: v
   real(kind=8), dimension(:), allocatable, public :: ebar, energy, sq_energy
   !real(kind=16), dimension(:), allocatable, public :: ebar_sum, ebar_sq_sum
   real(kind=16), dimension(:), allocatable, public :: dist_r
@@ -76,16 +76,16 @@ module common
 
   integer, public :: have_lgf = 0
   integer, public, parameter :: bz=2
-  real*8, public :: rot_ratio, g_ratio, hop_ratio
-  real, parameter, public :: pi=3.141592653589793
-  real, parameter, public :: twopi=6.283185307179586
-  real, parameter, public :: e=2.718281828459045
+  real(kind=8), public :: rot_ratio, g_ratio, hop_ratio
+  real(kind=8), parameter, public :: pi=3.141592653589793
+  real(kind=8), parameter, public :: twopi=6.283185307179586
+  real(kind=8), parameter, public :: e=2.718281828459045
   save
 
   contains
 
     subroutine PBCs
-      integer :: i
+      integer(kind=4) :: i
       do i=1,L
         pos(i)=mod(i,L)+1
         neg(i)=mod(i+L-2,L)+1
@@ -94,16 +94,16 @@ module common
     end subroutine PBCs
 
     function one_to_three(x) result(coord)
-      integer*8, intent(in) :: x
-      integer*8 :: coord(3)
+      integer(kind=4), intent(in) :: x
+      integer(kind=4) :: coord(3)
       coord(1) = (x - 1)/L**2 + 1
       coord(2) = modulo((x - 1)/L,L) + 1
       coord(3) = modulo(x - 1,L) + 1
     end function one_to_three
 
     function three_to_one(coord) result(x)
-      integer*8, intent(in) :: coord(3)
-      integer*8 :: x
+      integer(kind=4), intent(in) :: coord(3)
+      integer(kind=4) :: x
       x = (coord(1) - 1) * L**2 + (coord(2) - 1) * L + coord(3)
     end function three_to_one
 
@@ -133,7 +133,7 @@ module common
       IMPLICIT NONE
       INTEGER seed
       INTEGER ij,kl, i,j,k,l, ii,jj, m
-      REAL*8 s,t
+      REAL(KIND=8) s,t
       INTEGER Maxseed
       PARAMETER (Maxseed = 900000000)
       REAL u(97), c, cd, cm
@@ -169,7 +169,7 @@ module common
       i97 = 97
       j97 = 33
       RETURN
-      END
+      END SUBROUTINE randinit
 
 
 
@@ -198,6 +198,6 @@ module common
       IF( uni .LT. 0.0 ) uni = uni + 1.0
       rand = uni
       RETURN
-      END
+      END FUNCTION rand
 
 end module common

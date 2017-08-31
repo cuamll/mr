@@ -11,10 +11,10 @@ program mr
   use mpi
   implicit none
   include 'revision.inc'
-  integer :: i, j, k, tot_q, mpierr, rank, num_procs
+  integer(kind=4) :: i, j, k, tot_q, rank, num_procs, mpierr
   real(kind=16) :: ener_recv
-  real*8 :: start_time, end_time
-  real*8, dimension(8) :: timings
+  real(kind=8) :: start_time, end_time
+  real(kind=8), dimension(8) :: timings
   integer, dimension(8) :: values
 
   call MPI_Init(mpierr)
@@ -66,9 +66,9 @@ program mr
 
     call cpu_time(timings(2))
 
-    write (*,'(a,i2.1,a,i2.1,a,i2.1,a,i3.1)') "Proc. number ", rank, " out of ",&
-      num_procs," starting thermalisation sweeps for sample ",k,&
-      ". RNG seed = ",((rank * no_samples) + (k - 1))
+    !write (*,'(a,i2.1,a,i2.1,a,i2.1,a,i3.1)') "Proc. number ", rank,&
+    !  " out of ",num_procs," starting thermalisation sweeps for sample ",k,&
+    !  ". RNG seed = ",((rank * no_samples) + (k - 1))
 
     do i = 1,therm_sweeps
       call mc_sweep
@@ -105,61 +105,21 @@ program mr
 
     call cpu_time(timings(5))
 
-    !do i = 1,num_procs
-    !  if (i.eq.rank) then
-    !    call MPI_Send(ener_tot_sum, 1, MPI_LONG_DOUBLE,&
-    !                  0, i, MPI_COMM_WORLD, mpierr)
-    !  else if (rank.eq.0) then
-    !    call MPI_Recv(ener_recv, 1, MPI_LONG_DOUBLE, MPI_ANY_SOURCE,&
-    !                  i, MPI_COMM_WORLD, MPI_STATUS_IGNORE, mpierr)
-    !    write (*,'(a,i3.1,a,i3.1,a,es18.9)') "Current energy for proc. ",&
-    !          i,"after sample ",k,": ",ener_recv
-    !  end if
-    !end do
-
-    !write (*,'(a,i2.1,a,i2.1,a)') "Proc. ",rank, " finished sample ",k,"."
-    write (*,'(a,i2.1,a,i2.1,a,es18.9)') "Rank: ",rank,&
-          " sample: ",k," energy: ",ener_tot_sum
+    write (*,'(a,i2.1,a,i2.1,a,i4.1,a,es18.9)') "Rank: ",rank,&
+          " sample: ",k," seed: ",(rank * no_samples) + k - 1,&
+          " energy: ",ener_tot_sum
     write (*,'(a,f8.3,a)') "Time taken: ",(timings(5) - timings(1))," seconds."
     write (*,'(a,f8.3,a)') "Setup time: ",(timings(2) - timings(1))," seconds."
     write (*,'(a,f8.5,a)') "Time per therm sweep: "&
       &,(timings(3) - timings(2)) / therm_sweeps," seconds."
     write (*,'(a,f8.5,a)') "Time per measurement sweep: ",&
       &(timings(4) - timings(3)) / measurement_sweeps," seconds."
-    !write (*,'(a,f8.5,a)') "Time to read in data and calculate correlations&
-    !  &(per step): ",(timings(5) - timings(4)) / measurement_sweeps," seconds."
-    !write (*,*)
-    !write (*,*) '--- MOVE STATS: ---'
-    !if (tot_q.ne.0) then
-    !  write (*,*) 'hops: moves, acceptance ratio: ',&
-    !    &accepth,float(accepth) / ((therm_sweeps + measurement_sweeps)&
-    !    &* tot_q * hop_ratio)
-    !end if
-    !write (*,*) 'rotational updates: moves, acceptance ratio: ',&
-    !  &acceptr,float(acceptr) / ((therm_sweeps + measurement_sweeps)&
-    !  &* L**2 * rot_ratio)
-    !write (*,*) 'harmonic updates: moves, acceptance ratio: ',&
-    !  &acceptg,float(acceptg) / ((therm_sweeps + measurement_sweeps)&
-    !  &* L**2 * g_ratio * 2)
-    !write(*,*)
-    !write (*,*) "--- Current energies: ---"
-    !write (*,*) "Total: ",ener_tot_sum
-    !write (*,*) "Rotational: ",ener_rot_sum
-    !write (*,*) "Irrotational: ",ener_irrot_sum
-    !write (*,*) "Ebar sum: ",ebar_sum(1), ebar_sum(2)
-    !write (*,*) "Ebar^2 sum: ",ebar_sq_sum(1), ebar_sq_sum(2)
-    !write (*,*) "Current susc: ",((L**2 * beta) *&
-    !            (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum)))&
-    !            / (no_measurements * k)
-    !write (*,*)
 
   end do ! end k loop: samples
 
   write (*,*) "Calling MPI barrier from process ",rank
   call MPI_Barrier(MPI_COMM_WORLD, mpierr)
 
-  write (*,*)
-  write (*,*) "Beginning reductions..."
   call reductions(rank)
 
   if (rank.eq.0) then
@@ -177,106 +137,6 @@ program mr
                 (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum)))&
                 / (no_measurements * no_samples)
     write (*,*)
-
-!    call MPI_Reduce(ener_tot_sum, ener_red, 1, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!
-!    write (*,*) "reduced total energy: ",ener_red
-!
-!    call MPI_Reduce(ener_rot_sum, ener_rot_red, 1, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!    call MPI_Reduce(ener_irrot_sum, ener_irrot_red, 1, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!    call MPI_Reduce(ener_tot_sq_sum, ener_sq_red, 1, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!    call MPI_Reduce(ener_rot_sq_sum, ener_rot_sq_red, 1, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!    call MPI_Reduce(ener_irrot_sq_sum, ener_irrot_sq_red, 1, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!    call MPI_Reduce(ebar_sum, ebar_red, 2, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!    call MPI_Reduce(ebar_sq_sum, ebar_sq_red, 2, MPI_LONG_DOUBLE,&
-!                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!    if (do_corr) then
-!
-!      call MPI_Reduce(s_ab, s_ab_red, 4*((bz*L)+1)**2, MPI_LONG_DOUBLE,&
-!                      MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!      call MPI_Reduce(s_ab_rot, s_ab_rot_red, 4*((bz*L)+1)**2, MPI_LONG_DOUBLE,&
-!                      MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!      call MPI_Reduce(s_ab_irrot, s_ab_irrot_red, 4*((bz*L)+1)**2,&
-!                      MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!      call MPI_Reduce(ch_ch, ch_ch_red, ((bz*L)+1)**2,&
-!                      MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!      call MPI_Reduce(rho_k_p, rho_k_p_red, 2*((bz*L)+1)**2,&
-!                      MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!      call MPI_Reduce(rho_k_m, rho_k_m_red, 2*((bz*L)+1)**2,&
-!                      MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!      call MPI_Reduce(dir_struc, dir_struc_red, ((L/2)+1)**2,&
-!                      MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-!
-!      ! this is extreeeeeeeemely hacky!!!!!! disgusting
-!      ! but means i don't have to rewrite the correlation stuff for now
-!      s_ab = s_ab_red; s_ab_rot = s_ab_rot_red; s_ab_irrot = s_ab_irrot_red;
-!      ch_ch = ch_ch_red; rho_k_p = rho_k_p_red; rho_k_m = rho_k_m_red;
-!      dir_struc = dir_struc_red
-!
-!    end if
-!
-!    write (*,*) "--- MPI reduce done: unnormalised results ---"
-!    write (*,*) "Total: ",ener_red
-!    write (*,*) "Rotational: ",ener_rot_red
-!    write (*,*) "Irrotational: ",ener_irrot_red
-!    write (*,*) "Total^2: ",ener_sq_red
-!    write (*,*) "Rotational^2: ",ener_rot_sq_red
-!    write (*,*) "Irrotational^2: ",ener_irrot_sq_red
-!    write (*,*) "Ebar sum: ",ebar_red(1), ebar_red(2)
-!    write (*,*) "Ebar^2 sum: ",ebar_sq_red(1), ebar_sq_red(2)
-!    write (*,*) "Current susc: ",((L**2 * beta) *&
-!                (sum(ebar_sq_red) - sum(ebar_red * ebar_red)))&
-!                / (no_measurements * no_samples)
-!    write (*,*)
-!
-!    ! between the end of the k loop and MPI_Finalize, we need to
-!    ! average over measurements/samples, then MPI_Reduce() and
-!    ! average over procs as well to get a final measurement
-!    ener_red = ener_red&
-!    / (no_samples * num_procs * no_measurements)
-!    ener_rot_red = ener_rot_red&
-!    / (no_samples * num_procs * no_measurements)
-!    ener_irrot_red = ener_irrot_red&
-!    / (no_samples * num_procs * no_measurements)
-!    ener_sq_red = ener_sq_red&
-!    / (no_samples * num_procs * no_measurements)
-!    ener_rot_sq_red = ener_rot_sq_red&
-!    / (no_samples * num_procs * no_measurements)
-!    ener_irrot_sq_red = ener_irrot_sq_red&
-!    / (no_samples * num_procs * no_measurements)
-!    ebar_red = ebar_red&
-!    / (no_samples * num_procs * no_measurements)
-!    ebar_sq_red = ebar_sq_red&
-!    / (no_samples * num_procs * no_measurements)
-!
-!    sp_he_tot = L**2 * beta**2 * (ener_sq_red - (ener_red)**2)
-!    sp_he_rot = L**2 * beta**2 * (ener_rot_sq_red - (ener_rot_red)**2)
-!    sp_he_irrot = L**2 * beta**2 * (ener_irrot_sq_red - (ener_irrot_red)**2)
-!
-!    ebar_sus = L**2 * beta * (sum(ebar_sq_red) - sum(ebar_red**2))
-!
-!    write (*,*) "END. MPI_Reduce done, averages calculated."
-!    write (*,*) "--- Specific heats: ---"
-!    write (*,*) "Total: ",sp_he_tot
-!    write (*,*) "Rotational: ",sp_he_rot
-!    write (*,*) "Irrotational: ",sp_he_irrot
-!    write (*,*)
-!    write (*,*) "Ebar_red: ",ebar_red(1),ebar_red(2)
-!    write (*,*) "Ebar_sq_red: ",ebar_sq_red(1),ebar_sq_red(2)
-!    write (*,*) "Ebar susceptibility: ",ebar_sus
-!
-!    open  (30, file=sphe_sus_file // '_reduced')
-!    write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
-!    write (30,'(ES18.9,ES18.9,ES18.9,ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
-!    write (30,'(a)') "# Temp., <Ebar^2> - <Ebar>^2"
-!    write (30,'(ES18.9, ES18.9)') temp, ebar_sus
 
     call normalisations(num_procs)
 
@@ -300,11 +160,11 @@ end program mr
 subroutine mc_sweep
   use common
   implicit none
-  integer :: i,j,k,m,charge,glob,totq,mu1,mu2,pm1
-  integer, dimension(2) :: site
-  real*8 :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
-  real*8 :: u_tot,u_tot_run,increment
-  real*8 :: old_e, new_e, delta_e, g_thr
+  integer(kind=4) :: i,j,k,m,charge,glob,totq,mu1,mu2,pm1
+  integer(kind=4), dimension(2) :: site
+  real(kind=8) :: eo1,eo2,eo3,eo4,en1,en2,en3,en4
+  real(kind=8) :: u_tot,u_tot_run,increment
+  real(kind=8) :: old_e, new_e, delta_e, g_thr
 
   charge = 0; totq = 0; mu1 = 0; mu2 = 0; pm1 = 0
   site = (/ 0, 0 /)
@@ -811,111 +671,242 @@ subroutine reductions(id)
   implicit none
   integer, intent(in) :: id
   integer :: mpierr
-  real(kind=16) :: dummy
+  real(kind=16) :: et_r, er_r, ei_r, ets_r, ers_r, eis_r
+  real(kind=16), dimension(2) :: eb_r, ebs_r
+  real(kind=16), dimension(2,2,(bz*L)+1,(bz*L)+1) :: st_r, sr_r, si_r
+  real(kind=16), dimension((bz*L)+1,(bz*L)+1) :: c_r
+  complex(kind=16), dimension((bz*L)+1,(bz*L)+1) :: rkp_r, rkm_r
+  real(kind=16), dimension(2,L,L) :: eta_r, era_r, eia_r
+  real(kind=16), dimension(L,L) :: va_r
+  real(kind=16), dimension((L/2) + 1,(L/2) + 1) :: ds_r
+  real(kind=16),dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: dr_r
+  real(kind=16),dimension(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))) :: bc_r
 
+  ! dummy arrays, because MPI_IN_PLACE doesn't work
+  ! extreeeeeeeemely hacky, i know
+  et_r = 0.0; er_r = 0.0; ei_r = 0.0; ets_r = 0.0; ers_r = 0.0; eis_r = 0.0;
+  eb_r = 0.0; ebs_r = 0.0; st_r = 0.0; sr_r = 0.0; si_r = 0.0; c_r = 0.0;
+  rkp_r = (0.0, 0.0); rkm_r = (0.0, 0.0);
+  eta_r = 0.0; era_r = 0.0; eia_r = 0.0; va_r = 0.0;
+  ds_r = 0.0; dr_r = 0.0; bc_r = 0.0;
+
+  call MPI_Reduce(ener_tot_sum, et_r, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank", id, "ener_tot_sum",et_r
+  call MPI_Reduce(ener_rot_sum, er_r, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank ", id," ener_rot_sum",er_r
+  call MPI_Reduce(ener_irrot_sum, ei_r, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank ", id," ener_irrot_sum",ei_r
+  call MPI_Reduce(ener_tot_sq_sum, ets_r, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank ", id," ener_tot_sq_sum",ets_r
+  call MPI_Reduce(ener_rot_sq_sum, ers_r, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank ", id," ener_rot_sq_sum",ers_r
+  call MPI_Reduce(ener_irrot_sq_sum, eis_r, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank ", id," ener_irrot_sq_sum",eis_r
+  call MPI_Reduce(ebar_sum, eb_r, 2, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank ", id," ebar_sum",eb_r
+  call MPI_Reduce(ebar_sq_sum, ebs_r, 2, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  write (*,*) "reductions: rank ", id," ebar_sq_sum",ebs_r
+
+  ! call MPI_Reduce(s_ab, st_r, size(s_ab), MPI_LONG_DOUBLE,&
+  !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," s_ab"
+  ! call MPI_Reduce(s_ab_rot, sr_r, size(s_ab_rot),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," s_ab_rot"
+  ! call MPI_Reduce(s_ab_irrot, si_r, size(s_ab_irrot),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," s_ab_irrot"
+  ! call MPI_Reduce(ch_ch, c_r, size(ch_ch),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," ch_ch"
+  ! call MPI_Reduce(rho_k_p, rkp_r, size(rho_k_p),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," rho_k_p"
+  ! call MPI_Reduce(rho_k_m, rkm_r, size(rho_k_m),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," rho_k_m"
+  ! call MPI_Reduce(dir_struc, ds_r, size(dir_struc),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," dir_struc"
+  ! call MPI_Reduce(dist_r, dr_r, size(dist_r),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," dist_r"
+  ! call MPI_Reduce(bin_count, bc_r, size(bin_count),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," bin_count"
+  ! call MPI_Reduce(v_avg, va_r, size(v_avg), MPI_LONG_DOUBLE,&
+  !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," v_avg"
+  ! call MPI_Reduce(e_tot_avg, eta_r, size(e_tot_avg),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," e_tot_avg"
+  ! call MPI_Reduce(e_rot_avg, era_r, size(e_rot_avg),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," e_rot_avg"
+  ! call MPI_Reduce(e_irrot_avg, eia_r, size(e_irrot_avg),&
+  !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+  ! write (*,*) "reductions: rank ", id," e_irrot_avg"
+
+  ! here's where it gets truly disgusting. brace yourself
+  ! it was either this or rewrite all the output functions
+  ! this is a test though and needs to be cleaned the fuck up if it works
   if (id.eq.0) then
-
-    call MPI_Reduce(MPI_IN_PLACE, ener_tot_sum, 1, MPI_LONG_DOUBLE,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_rot_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_tot_sq_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_rot_sq_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sq_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_sum, 2, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_sq_sum, 2, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-
-  else
-
-    call MPI_Reduce(ener_tot_sum, ener_tot_sum, 1, MPI_LONG_DOUBLE,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_rot_sum, ener_rot_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_irrot_sum, ener_irrot_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_tot_sq_sum, ener_tot_sq_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_rot_sq_sum, ener_rot_sq_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_irrot_sq_sum, ener_irrot_sq_sum, 1, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ebar_sum, ebar_sum, 2, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ebar_sq_sum, ebar_sq_sum, 2, MPI_LONG_DOUBLE,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-
+    ener_tot_sum = et_r; ener_rot_sum = er_r; ener_irrot_sum = ei_r
+    ener_tot_sq_sum = ets_r; ener_rot_sq_sum = ers_r; ener_irrot_sq_sum = eis_r
+    ebar_sum = eb_r; ebar_sq_sum = ebs_r
+    s_ab = st_r; s_ab_rot = sr_r; s_ab_irrot = si_r
+    ch_ch = c_r; rho_k_p = rkp_r; rho_k_m = rkm_r
+    v_avg = va_r; e_tot_avg = eta_r; e_rot_avg = era_r; e_irrot_avg = eia_r
+    dir_struc = ds_r; dist_r = dr_r; bin_count = bc_r
   end if
 
-  if (do_corr) then
+  ! if (id.eq.0) then
 
-    if (id.eq.0) then
+    !write (*,*) "reductions: rank 0"
 
-      call MPI_Reduce(MPI_IN_PLACE, s_ab, size(s_ab), MPI_LONG_DOUBLE,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_rot, size(s_ab_rot),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, rho_k_m, size(rho_k_m),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, dir_struc, size(dir_struc),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, bin_count, size(bin_count),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, dist_r, size(dist_r),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, v_avg, size(v_avg), MPI_LONG_DOUBLE,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_tot_avg, size(e_tot_avg),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_rot_avg, size(e_rot_avg),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_irrot_avg, size(e_irrot_avg),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! call MPI_Reduce(MPI_IN_PLACE, ener_tot_sum, 1, MPI_LONG_DOUBLE,&
+    !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ener_tot_sum"
+    ! call MPI_Reduce(MPI_IN_PLACE, ener_rot_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ener_rot_sum"
+    ! call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ener_irrot_sum"
+    ! call MPI_Reduce(MPI_IN_PLACE, ener_tot_sq_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ener_tot_sq_sum"
+    ! call MPI_Reduce(MPI_IN_PLACE, ener_rot_sq_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ener_rot_sq_sum"
+    ! call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sq_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ener_irrot_sq_sum"
+    ! call MPI_Reduce(MPI_IN_PLACE, ebar_sum, 2, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ebar_sum"
+    ! call MPI_Reduce(MPI_IN_PLACE, ebar_sq_sum, 2, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 0, ebar_sq_sum"
+    ! call MPI_Reduce(ener_tot_sum, et_r, 1, MPI_LONG_DOUBLE,&
+    !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_tot_sum"
+    ! call MPI_Reduce(ener_rot_sum, er_r, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_rot_sum"
+    ! call MPI_Reduce(ener_irrot_sum, ei_r, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_irrot_sum"
+    ! call MPI_Reduce(ener_tot_sq_sum, ets_r, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_tot_sq_sum"
+    ! call MPI_Reduce(ener_rot_sq_sum, ers_r, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_rot_sq_sum"
+    ! call MPI_Reduce(ener_irrot_sq_sum, eis_r, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_irrot_sq_sum"
+    ! call MPI_Reduce(ebar_sum, eb_r, 2, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ebar_sum"
+    ! call MPI_Reduce(ebar_sq_sum, ebs_r, 2, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ebar_sq_sum"
 
-    else
+  ! else
 
-      call MPI_Reduce(s_ab, s_ab, size(s_ab), MPI_LONG_DOUBLE,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(ch_ch, ch_ch, size(ch_ch),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(rho_k_p, rho_k_p, size(rho_k_p),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(rho_k_m, rho_k_m, size(rho_k_m),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(dir_struc, dir_struc, size(dir_struc),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(dist_r, dist_r, size(dist_r),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(bin_count, bin_count, size(bin_count),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(v_avg, v_avg, size(v_avg), MPI_LONG_DOUBLE,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_tot_avg, e_tot_avg, size(e_tot_avg),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_rot_avg, e_rot_avg, size(e_rot_avg),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_irrot_avg, e_irrot_avg, size(e_irrot_avg),&
-                         MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1"
 
-    end if
+    ! call MPI_Reduce(ener_tot_sum, ener_tot_sum, 1, MPI_LONG_DOUBLE,&
+    !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_tot_sum"
+    ! call MPI_Reduce(ener_rot_sum, ener_rot_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_rot_sum"
+    ! call MPI_Reduce(ener_irrot_sum, ener_irrot_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_irrot_sum"
+    ! call MPI_Reduce(ener_tot_sq_sum, ener_tot_sq_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_tot_sq_sum"
+    ! call MPI_Reduce(ener_rot_sq_sum, ener_rot_sq_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_rot_sq_sum"
+    ! call MPI_Reduce(ener_irrot_sq_sum, ener_irrot_sq_sum, 1, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ener_irrot_sq_sum"
+    ! call MPI_Reduce(ebar_sum, ebar_sum, 2, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ebar_sum"
+    ! call MPI_Reduce(ebar_sq_sum, ebar_sq_sum, 2, MPI_LONG_DOUBLE,&
+    !                 MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    ! write (*,*) "reductions: rank 1, ebar_sq_sum"
 
-  end if
+  ! end if
+
+  ! if (do_corr) then
+
+    ! if (id.eq.0) then
+
+      ! call MPI_Reduce(MPI_IN_PLACE, s_ab, size(s_ab), MPI_LONG_DOUBLE,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, s_ab_rot, size(s_ab_rot),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, rho_k_m, size(rho_k_m),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, dir_struc, size(dir_struc),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, bin_count, size(bin_count),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, dist_r, size(dist_r),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, v_avg, size(v_avg), MPI_LONG_DOUBLE,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, e_tot_avg, size(e_tot_avg),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, e_rot_avg, size(e_rot_avg),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, e_irrot_avg, size(e_irrot_avg),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+
+    ! else
+
+      ! call MPI_Reduce(s_ab, s_ab, size(s_ab), MPI_LONG_DOUBLE,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(ch_ch, ch_ch, size(ch_ch),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(rho_k_p, rho_k_p, size(rho_k_p),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(rho_k_m, rho_k_m, size(rho_k_m),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(dir_struc, dir_struc, size(dir_struc),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(dist_r, dist_r, size(dist_r),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(bin_count, bin_count, size(bin_count),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(v_avg, v_avg, size(v_avg), MPI_LONG_DOUBLE,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(e_tot_avg, e_tot_avg, size(e_tot_avg),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(e_rot_avg, e_rot_avg, size(e_rot_avg),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(e_irrot_avg, e_irrot_avg, size(e_irrot_avg),&
+      !                    MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+
+    ! end if
+
+  ! end if
 
 end subroutine reductions
 
@@ -980,6 +971,10 @@ subroutine normalisations(num_procs)
   ebar_sus = L**2 * beta * (sum(ebar_sq_sum) - sum(ebar_sum**2))
 
   write (*,*) "END. MPI_Reduce done, averages calculated."
+  write (*,*) "--- Energies: ---"
+  write (*,*) "Total: ",ener_tot_sum, ener_tot_sq_sum
+  write (*,*) "Rotational: ",ener_rot_sum, ener_rot_sq_sum
+  write (*,*) "Irrotational: ",ener_irrot_sum, ener_irrot_sq_sum
   write (*,*) "--- Specific heats: ---"
   write (*,*) "Total: ",sp_he_tot
   write (*,*) "Rotational: ",sp_he_rot

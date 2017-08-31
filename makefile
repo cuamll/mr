@@ -3,7 +3,7 @@ GF = mpif90
 EXECNAME = mr_test
 MOD_DIR = mod
 OBJ_DIR = obj
-CFLAGS = -J$(MOD_DIR)
+CFLAGS = -J$(MOD_DIR) -std=f2003 -fopenmp
 
 $(shell mkdir -p $(MOD_DIR))
 $(shell mkdir -p $(OBJ_DIR))
@@ -16,10 +16,10 @@ REV = $(shell git rev-parse --short HEAD)
 
 DEBUG = 1
 ifeq ($(DEBUG), 1)
-	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -ffpe-trap=invalid,zero,underflow,overflow
+	DEBUGFLAGS = -g -pg -fbounds-check -ffpe-trap=invalid,zero,underflow,overflow
 	#DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -ffpe-trap=invalid,zero,underflow,denormal,overflow
 else
-	DEBUGFLAGS = -O2 -fopenmp
+	DEBUGFLAGS = -O2
 endif
 
 ifeq ($(UNAME), Darwin)
