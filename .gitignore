@@ -50,7 +50,7 @@ mr_*
 *_rot*
 lattice.dat
 latts*
-revision*
+*.inc
 
 
 # LaTeX extras

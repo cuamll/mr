@@ -26,9 +26,9 @@ module common
 
   real(kind=8), public :: q, lambda, volume, temp, beta
   real(kind=8), public :: eps_0, bin_size, rot_delt, g0
-  real(kind=8), dimension(:), allocatable, public :: ebar
   real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
   real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
+  real(kind=rk), dimension(:), allocatable, public :: ebar
   real(kind=rk), dimension(:), allocatable, public :: dist_r
   real(kind=rk), dimension(:,:), allocatable, public :: v_avg
   real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg,&

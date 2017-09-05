@@ -12,12 +12,12 @@ VPATH = $(MOD_DIR)
 
 # libraries in different directories on Mac
 UNAME = $(shell uname)
-REV = $(shell git rev-parse --short HEAD)
+RV = $(shell git rev-parse --short HEAD)
 
 DEBUG = 0
 ifeq ($(DEBUG), 1)
-	DEBUGFLAGS = -g -pg -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,underflow,overflow
-	#DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -ffpe-trap=invalid,zero,underflow,denormal,overflow
+	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
+		     -ffpe-trap=invalid,zero,denormal,underflow,overflow
 else
 	DEBUGFLAGS = -O2
 endif
@@ -44,7 +44,7 @@ MOD_T2 = $(notdir $(MOD_T1))
 MODS = $(patsubst %.o, $(MOD_DIR)/%.o,$(MOD_T2))
 
 $(EXECNAME) : $(OBJECTS)
-	echo "character(len=7), parameter :: revision = '$(REV)'" > revision.inc
+	echo "character(len=7), parameter :: revision = '$(RV)'" > rev.inc
 	$(GF) $(CFLAGS)  $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
 
 $(OBJ_DIR)/%.o : %.f90

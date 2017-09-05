@@ -10,7 +10,7 @@ program mr
   use omp_lib
   use mpi
   implicit none
-  include 'revision.inc'
+  include 'rev.inc'
   integer(kind=4) :: i, j, k, tot_q, rank, num_procs, mpierr
   real(kind=rk) :: ener_recv
   real(kind=8) :: start_time, end_time
@@ -70,6 +70,8 @@ program mr
     do i = 1,therm_sweeps
       call mc_sweep
     end do
+
+    call cpu_time(timings(3))
 
     do i = 1,measurement_sweeps
       call mc_sweep
@@ -234,12 +236,12 @@ subroutine mc_sweep
           if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
             v(site(1),site(2)) = charge
+            e_field(mu1,site(1),site(2)) = en1
+            ebar(mu1) = ebar(mu1) + (increment / L**2)
 
             ! go back to the original site and set the charge to 0
             site(mu1) = pos(site(mu1))
             v(site(1),site(2)) = 0
-            e_field(mu1,site(1),site(2)) = en1
-            ebar(mu1) = ebar(mu1) + (increment / L**2)
 
             accepth = accepth + 1
             u_tot_run = u_tot_run + delta_e
