@@ -54,6 +54,10 @@ module linear_solver
           do y=1,L
             do x=1,L
 
+              if (a.eq.x.and.b.eq.y) then
+                g0 = g0 + lgf(a,b,x,y)
+              end if
+
               if (v(x,y).ne.0) then ! non-zero charge at (x,y,z)
                 !write (*,*) lgf(a,b,x,y)
 
@@ -90,6 +94,7 @@ module linear_solver
   end do ! a do loop
 
   ebar = ebar / L**2
+  g0 = g0 / L**2
 
   nch=nch/L**2 ! bc we count nch once for each abc
 
@@ -167,7 +172,8 @@ module linear_solver
     write (*,*) "g(0) = ",g0
     write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
 
-    open(30, file=filename, status="new", action="write", access="stream", form="unformatted")
+    open(30, file=filename, status="new",&
+         action="write", access="stream", form="unformatted")
     write(30) lgf
     close(30)
 

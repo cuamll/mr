@@ -1,29 +1,38 @@
 module common
   implicit none
+  integer, public, parameter :: prec = 16
+  integer, public, parameter :: expo = 50
+  integer, public, parameter :: rk = selected_real_kind(prec, expo)
+  integer, public, parameter :: ik = selected_int_kind(prec)
+  integer, public, parameter :: bz=2
+  real(kind=8), parameter, public :: pi=3.141592653589793
+  real(kind=8), parameter, public :: twopi=6.283185307179586
+  real(kind=8), parameter, public :: e=2.718281828459045
+  real(kind=8), public :: rot_ratio, g_ratio, hop_ratio
   logical, public :: do_corr
+  integer, public :: MPI_NEW_REAL, MPI_NEW_INT
   integer(kind=4), public :: seed,no_samples,no_threads
   integer(kind=4), public :: L,add_charges,no_measurements
   integer(kind=4), public :: accepth,acceptr,acceptg
   integer(kind=4), public :: therm_sweeps,measurement_sweeps,sample_interval
-  real(kind=8), public :: q, lambda, volume, temp, beta
-  real(kind=8), public :: eps_0, bin_size, rot_delt, g0
-  real(kind=16), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum
-  real(kind=16), public :: ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum
-  real(kind=16), dimension(2), public :: ebar_sum, ebar_sq_sum
-  integer(kind=4), dimension(:), allocatable, public :: bin_count
+  integer(kind=ik), dimension(:), allocatable, public :: bin_count
   integer(kind=4), dimension(:), allocatable, public :: pos,neg
   integer(kind=4), dimension(:,:), allocatable, public :: v
+  real(kind=8), public :: q, lambda, volume, temp, beta
+  real(kind=8), public :: eps_0, bin_size, rot_delt, g0
   real(kind=8), dimension(:), allocatable, public :: ebar, energy, sq_energy
-  !real(kind=16), dimension(:), allocatable, public :: ebar_sum, ebar_sq_sum
-  real(kind=16), dimension(:), allocatable, public :: dist_r
-  real(kind=16), dimension(:,:), allocatable, public :: v_avg
   real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
-  real(kind=16), dimension(:,:,:), allocatable, public :: e_tot_avg, e_rot_avg, e_irrot_avg
-  real(kind=16), dimension(:,:), allocatable, public :: dir_struc
   real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
-  real(kind=16), dimension(:,:,:,:), allocatable, public :: s_ab, s_ab_rot, s_ab_irrot
-  complex(kind=16), dimension(:,:), allocatable, public :: ch_ch
-  complex(kind=16), dimension(:,:), allocatable, public :: rho_k_m,rho_k_p
+  real(kind=rk), dimension(:), allocatable, public :: dist_r
+  real(kind=rk), dimension(:,:), allocatable, public :: v_avg
+  real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg, e_rot_avg, e_irrot_avg
+  real(kind=rk), dimension(:,:), allocatable, public :: dir_struc
+  real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum
+  real(kind=rk), public :: ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum
+  real(kind=rk), dimension(2), public :: ebar_sum, ebar_sq_sum
+  real(kind=rk), dimension(:,:,:,:), allocatable, public :: s_ab, s_ab_rot, s_ab_irrot
+  complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch
+  complex(kind=rk), dimension(:,:), allocatable, public :: rho_k_m,rho_k_p
 
     ! probably more things need to go here
   character(len=200), public :: lattfile_long, en_long, sq_en_long
@@ -75,11 +84,6 @@ module common
   !end type output
 
   integer, public :: have_lgf = 0
-  integer, public, parameter :: bz=2
-  real(kind=8), public :: rot_ratio, g_ratio, hop_ratio
-  real(kind=8), parameter, public :: pi=3.141592653589793
-  real(kind=8), parameter, public :: twopi=6.283185307179586
-  real(kind=8), parameter, public :: e=2.718281828459045
   save
 
   contains

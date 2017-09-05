@@ -284,23 +284,23 @@ module io
     ! guess what this one does
     use common
     implicit none
-    integer(kind=4) :: i, j, k
-    real(kind=8) :: avg_e, avg_e2, prefac, sp_he
+    !integer(kind=4) :: i, j, k
+    !real(kind=8) :: avg_e, avg_e2, prefac, sp_he
 
-    avg_e = 0.0
-    avg_e2 = 0.0
-    sp_he = 0.0
+    !avg_e = 0.0
+    !avg_e2 = 0.0
+    !sp_he = 0.0
 
-    open(unit=2, file=energy_file)
-    open(unit=3, file=sq_energy_file)
-    open(unit=4, file=e_field_file)
+    !open(unit=2, file=energy_file)
+    !open(unit=3, file=sq_energy_file)
+    !open(unit=4, file=e_field_file)
 
-    ! write out the parameters in the energy file
-    write (2,*) "L",L
-    write (2,*) "T",temp
-    write (2,*) "number of measurements",no_measurements
-    write (2,*) "rot. ratio",rot_ratio
-    write (2,*) "ebar ratio",g_ratio
+    !! write out the parameters in the energy file
+    !write (2,*) "L",L
+    !write (2,*) "T",temp
+    !write (2,*) "number of measurements",no_measurements
+    !write (2,*) "rot. ratio",rot_ratio
+    !write (2,*) "ebar ratio",g_ratio
 
     !do i = 1,no_measurements + 1
     !  write(2,*) i - 1, energy(i)
@@ -358,9 +358,9 @@ module io
     !write(*,*) "N(<U^2> - <U>^2) = ",L**2 * (avg_e2 - ((avg_e)**2))
     !write(*,*)
 
-    close(2)
-    close(3)
-    close(4)
+    !close(2)
+    !close(3)
+    !close(4)
 
     call calc_correlations(field_charge_file)
 
@@ -371,21 +371,21 @@ module io
     implicit none
     character(len = *), intent(in) :: filename
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin,sp
-    real(kind=16) :: norm_k,kx_float,ky_float,kz_float,dist
-    real(kind=16) :: sp_he_tot, sp_he_rot, sp_he_irrot, prefac
-    real(kind=16), dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
-    real(kind=16), dimension(:,:), allocatable :: s_par, s_par_irrot, s_par_rot
-    real(kind=16), dimension((bz*L)+1,(bz*L)+1) :: charge_struc, field_struc
-    real(kind=16), dimension((bz*L)+1,(bz*L)+1) :: field_struc_irrot
-    real(kind=16), dimension((bz*L)+1,(bz*L)+1) :: field_struc_rot
+    real(kind=rk) :: norm_k,kx_float,ky_float,kz_float,dist
+    real(kind=rk) :: sp_he_tot, sp_he_rot, sp_he_irrot, prefac
+    real(kind=rk), dimension(:,:), allocatable :: s_perp, s_perp_irrot, s_perp_rot
+    real(kind=rk), dimension(:,:), allocatable :: s_par, s_par_irrot, s_par_rot
+    real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: charge_struc, field_struc
+    real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: field_struc_irrot
+    real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: field_struc_rot
     character(100) :: struc_format_string, field_format_string,vertex_format
     character(100) :: avg_field_format,dir_format_string, dir_dist_format_string
 
-    avg_field_format = "(I3, I3, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
-    field_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9)"
-    struc_format_string = "(ES18.9, ES18.9, ES18.9, ES18.9)"
+    avg_field_format = "(I3, I3, 7ES18.9)"
+    field_format_string = "(12ES18.9)"
+    struc_format_string = "(4ES18.9)"
     dir_format_string = "(I3, I3, ES18.9)"
-    vertex_format = "(I6, I3, I3, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, ES18.9, I3)"
+    vertex_format = "(I6, I3, I3, 6ES18.9, I3)"
     dir_dist_format_string = "(ES18.9, I9.6, ES18.9)"
 
     field_struc = 0.0; field_struc_rot = 0.0;
@@ -424,7 +424,7 @@ module io
     sp_he_irrot = prefac * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
 
     write(*,*)
-    write (*,'(a)') "   # Specific heat: total, rot., irrot."
+    write (*,'(a)') "# Specific heat: total, rot., irrot."
     write (*,'(ES18.9, ES18.9, ES18.9, ES18.9)') temp,&
     sp_he_tot, sp_he_rot, sp_he_irrot
     write(*,*) "E^bar averages:"
@@ -439,17 +439,18 @@ module io
     write (*,*) L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
     - (ebar_sum(1)**2 + ebar_sum(2)**2))
 
+    open  (30, file=sphe_sus_file)
     write (30,'(a)') "   # Specific heat: total, rot., irrot."
-    write (30,'(ES18.9, ES18.9, ES18.9, ES18.9)') temp,&
+    write (30,'(4ES18.9)') temp,&
     sp_he_tot, sp_he_rot, sp_he_irrot
 
     write (30,'(a)') "   # <ebar^2> - <ebar>^2"
-    write (30,'(ES18.9, ES18.9)') temp,&
+    write (30,'(2ES18.9)') temp,&
     L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
     - (ebar_sum(1)**2 + ebar_sum(2)**2))
 
     write (30,'(a)') "   # hop acceptance"
-    write (30,'(ES18.9, ES18.9)') temp,&
+    write (30,'(2ES18.9)') temp,&
     (float(accepth) / &
     ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
 
@@ -474,7 +475,8 @@ module io
 
         if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
           ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
-          charge_struc(i,j) = abs(ch_ch(i,j) - rho_k_p(i,j) * conjg(rho_k_m(i,j)))
+          charge_struc(i,j) = abs(ch_ch(i,j) - &
+            rho_k_p(i,j) * conjg(rho_k_m(i,j)))
           field_struc(i,j) = abs(s_ab(1,1,i,j))
           field_struc_irrot(i,j) = abs(s_ab_irrot(1,1,i,j))
           field_struc_rot(i,j) = abs(s_ab_rot(1,1,i,j))
