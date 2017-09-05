@@ -21,10 +21,6 @@ program mr
   call MPI_TYPE_CREATE_F90_REAL(prec, expo, MPI_NEW_REAL, mpierr)
   call MPI_TYPE_CREATE_F90_INTEGER(prec, MPI_NEW_INT, mpierr)
 
-  ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
-  ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
-  ebar_sum = 0.0; ebar_sq_sum = 0.0;
-
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, mpierr)
   call MPI_Comm_size(MPI_COMM_WORLD, num_procs, mpierr)
 
@@ -40,7 +36,7 @@ program mr
 
     call date_and_time(VALUES=values)
 
-    write (*,'(a24,I2.1,a1,I2.1,a1,I4.2,a1,I2.1,a1,I2.1,a1,I2.1)')&
+    write (*,'(a24,I2.2,a1,I2.2,a1,I4.2,a1,I2.2,a1,I2.2,a1,I2.2)')&
       &" Current date and time: ",values(3),"/",values(2),"/"&
       &,values(1)," ",values(5),":",values(6),":",values(7)
     !write (*,'(a,i2.1)') "Max OpenMP threads: ",omp_get_max_threads()
@@ -63,24 +59,17 @@ program mr
     ! otherwise we're averaging identical data. i choose to start @ 0
     call setup_wrapper((rank * no_samples) + k - 1)
 
-    accepth = 0
-    acceptr = 0
-    acceptg = 0
-
     call cpu_time(timings(2))
 
-    !write (*,'(a,i2.1,a,i2.1,a,i2.1,a,i3.1)') "Proc. number ", rank,&
-    !  " out of ",num_procs," starting thermalisation sweeps for sample ",k,&
-    !  ". RNG seed = ",((rank * no_samples) + (k - 1))
+    if (verbose) then
+      write (*,'(a,i2.1,a,i2.1,a,i2.1,a,i3.1)') "Proc. ", rank,&
+        " out of ",num_procs," starting sample ",k,&
+        ". RNG seed = ",((rank * no_samples) + (k - 1))
+    end if
 
     do i = 1,therm_sweeps
       call mc_sweep
     end do
-
-    !write (*,'(a,i2.1,a,i2.1,a,i2.1)') "Proc. number ", rank, " out of ",&
-    !  num_procs," finished thermalisation sweeps for sample ",k
-
-    call cpu_time(timings(3))
 
     do i = 1,measurement_sweeps
       call mc_sweep
@@ -91,8 +80,10 @@ program mr
 
     end do
 
-    write (*,'(a,i2.1,a,i2.1,a,i2.1)') "Proc. number ", rank, " out of ",&
-      num_procs," finished measurement sweeps for sample ",k
+    if (verbose) then
+      write (*,'(a,i2.1,a,i2.1,a,i2.1)') "Proc. ", rank, " out of ",&
+        num_procs," finished measurements for sample ",k
+    end if
 
     call cpu_time(timings(4))
 
@@ -108,15 +99,17 @@ program mr
 
     call cpu_time(timings(5))
 
-    write (*,'(a,i2.1,a,i2.1,a,i4.1,a,es18.9)') "Rank: ",rank,&
-          " sample: ",k," seed: ",(rank * no_samples) + k - 1,&
-          " energy: ",ener_tot_sum
-    write (*,'(a,f8.3,a)') "Time taken: ",(timings(5) - timings(1))," seconds."
-    write (*,'(a,f8.3,a)') "Setup time: ",(timings(2) - timings(1))," seconds."
-    write (*,'(a,f8.5,a)') "Time per therm sweep: "&
-      &,(timings(3) - timings(2)) / therm_sweeps," seconds."
-    write (*,'(a,f8.5,a)') "Time per measurement sweep: ",&
-      &(timings(4) - timings(3)) / measurement_sweeps," seconds."
+    if (verbose) then
+      write (*,'(a,i2.1,a,i2.1,a,i4.1,a,es18.9)') "Rank: ",rank,&
+            " sample: ",k," seed: ",(rank * no_samples) + k - 1,&
+            " energy: ",ener_tot_sum
+      write (*,'(a,f8.3,a)') "Time taken: ",(timings(5) - timings(1))," seconds."
+      write (*,'(a,f8.3,a)') "Setup time: ",(timings(2) - timings(1))," seconds."
+      write (*,'(a,f8.5,a)') "Time per therm sweep: "&
+        &,(timings(3) - timings(2)) / therm_sweeps," seconds."
+      write (*,'(a,f8.5,a)') "Time per measurement sweep: ",&
+        &(timings(4) - timings(3)) / measurement_sweeps," seconds."
+    end if
 
   end do ! end k loop: samples
 
@@ -127,31 +120,51 @@ program mr
 
   if (rank.eq.0) then
 
-    write (*,*) "--- MPI_Reduce done: unnormalised results ---"
-    write (*,*) "Total: ",ener_tot_sum
-    write (*,*) "Rotational: ",ener_rot_sum
-    write (*,*) "Irrotational: ",ener_irrot_sum
-    write (*,*) "Total^2: ",ener_tot_sq_sum
-    write (*,*) "Rotational^2: ",ener_rot_sq_sum
-    write (*,*) "Irrotational^2: ",ener_irrot_sq_sum
-    write (*,*) "Ebar sum: ",ebar_sum(1), ebar_sum(2)
-    write (*,*) "Ebar^2 sum: ",ebar_sq_sum(1), ebar_sq_sum(2)
-    write (*,*) "Current susc: ",((L**2 * beta) *&
-                (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum)))&
-                / (no_measurements * no_samples)
-    write (*,*)
+    if (verbose) then
+      write (*,*) "--- MPI_Reduce done: unnormalised results ---"
+      write (*,*) "Total: ",ener_tot_sum
+      write (*,*) "Rotational: ",ener_rot_sum
+      write (*,*) "Irrotational: ",ener_irrot_sum
+      write (*,*) "Total^2: ",ener_tot_sq_sum
+      write (*,*) "Rotational^2: ",ener_rot_sq_sum
+      write (*,*) "Irrotational^2: ",ener_irrot_sq_sum
+      write (*,*) "Ebar sum: ",ebar_sum(1), ebar_sum(2)
+      write (*,*) "Ebar^2 sum: ",ebar_sq_sum(1), ebar_sq_sum(2)
+      write (*,*) "Current susc: ",((L**2 * beta) *&
+                  (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum)))&
+                  / (no_measurements * no_samples)
+      write (*,*)
+    end if
 
     call normalisations(num_procs)
 
     if (do_corr) then
-      write (*,*) "Writing output..."
       call write_output
-      write (*,*) "Output written."
     end if
 
     call cpu_time(end_time)
+
     write (*,'(a,f10.3,a)') "Simulation finished. Time taken:",&
                             end_time-start_time,"seconds."
+    write (*,'(a,i4.1,a,i2.1,a,f10.3,a,f10.3,a)') "Total samples: ",&
+      no_samples * num_procs, " across ",num_procs,&
+      " processes. Time per sample: ",&
+      (end_time - start_time) / (no_samples * num_procs)," seconds."&
+      " Time per measurement: ",&
+      (end_time - start_time) /&
+      (no_samples * num_procs * no_measurements)," seconds."
+
+    ! These probably need a little more thought
+    write (*,'(a,i12.1,es18.9)') "Charge hops: total, acceptance rate: ",&
+      accepth, accepth / ((therm_sweeps + measurement_sweeps) * &
+      hop_ratio * L**2 * (num_procs * no_samples))
+    write (*,'(a,i12.1,es18.9)') "Plaquette update: total, acceptance rate: ",&
+      acceptr, acceptr / ((therm_sweeps + measurement_sweeps) * &
+      rot_ratio * L**2 * (num_procs * no_samples))
+    write (*,'(a,i12.1,es18.9)') "Harmonic update: total, acceptance rate: ",&
+      acceptg, acceptg / ((therm_sweeps + measurement_sweeps) * &
+      g_ratio * L**2 * 2 * (num_procs * no_samples))
+
   end if
 
   call MPI_Finalize(mpierr)
@@ -480,41 +493,14 @@ subroutine measure(step_number)
   if (do_corr) then
     n = step_number / sample_interval
 
-    !if (mod(n,100).eq.0) then
-    !  write (*,'(a,i6.3)') "n = ",n
-    !end if
-
-    !if (n.eq.1) then
-    !  do omp_index = 1, ((L*bz)+1)**2*L**2
-    !    i = mod(((omp_index - 1) / ((L*bz)+1)), (L*bz)+1) + 1
-    !    j = mod(omp_index - 1, ((L*bz)+1)) + 1
-    !    m = mod(((omp_index - 1) / (L)), L) + 1
-    !    p = mod(omp_index - 1, L) + 1
-
-    !    write (*,*) i,j,m,p
-    !  end do
-    !end if
-    !i = 0; j = 0; m = 0; p = 0; omp_index = 0;
-
-
     !$omp parallel do num_threads(2)&
     !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
     !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
     !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
     do omp_index = 1, ((L*bz)+1)**2
 
-      !if (omp_index.eq.1.and.n.eq.1) then
-      !  i = omp_get_num_threads()
-      !  write (*,*) "num_threads = ",i
-      !  i = 0
-      !end if
-
       i = ((omp_index - 1) / ((L*bz)+1)) + 1
       j = mod(omp_index - 1, ((L*bz)+1)) + 1
-      !i = mod(((omp_index - 1) / ((L*bz)+1)), (L*bz)+1) + 1
-      !j = mod(omp_index - 1, ((L*bz)+1)) + 1
-      !m = mod(((omp_index - 1) / (L)), L) + 1
-      !p = mod(omp_index - 1, L) + 1
       kx = i - 1 - bz*(L/2)
       ky = j - 1 - bz*(L/2)
 
@@ -899,7 +885,7 @@ subroutine normalisations(num_procs)
   sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)
   sp_he_irrot = L**2 * beta**2 * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
 
-  ebar_sus = L**2 * beta * (sum(ebar_sq_sum) - sum(ebar_sum**2))
+  ebar_sus = L**2 * beta * (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum))
 
   write (*,*) "END. MPI_Reduce done, averages calculated."
   write (*,*) "--- Energies: ---"

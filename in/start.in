@@ -1,4 +1,5 @@
 L 16
+! leave omp_threads as 0 to use default
 omp_threads 0
 no_samples 2
 do_corr T
@@ -15,10 +16,6 @@ hop_ratio 1.0
 rot_ratio 1.0
 harmonic_ratio 1.0
 bin_size 1.0
-lattice_file                          in/lattice.dat
-energy_file                           out/energy.dat
-squared_energy_file                   out/sq_energy.dat
-electric_field_file                   out/e_field.dat
 direct_space_structure_factor_file    out/s_direct.dat
 direct_space_g(r)_file                out/dir_dist.dat
 charge_structure_factor_file          out/s_charge.dat
@@ -34,6 +31,11 @@ rot_field_structure_factor_file       out/s_xx_rot.dat
 rot_s^(alpha_beta)_file               out/s_ab_rot.dat
 rot_s_(perp)_file                     out/s_perp_rot.dat
 rot_s_(par)_file                      out/s_par_rot.dat
-field_charge_file                     out/temp.bin
 average_field_file                    out/avg_fields.dat
 sphe_sus_file                         out/sphe_sus.dat
+! deprecated; probably can be removed
+! lattice_file                          in/lattice.dat
+! field_charge_file                     out/temp.bin
+! energy_file                           out/energy.dat
+! squared_energy_file                   out/sq_energy.dat
+! electric_field_file                   out/e_field.dat

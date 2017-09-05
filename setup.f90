@@ -34,6 +34,7 @@ module setup
     s_ab = 0.0; s_ab_rot = 0.0; s_ab_irrot = 0.0; ch_ch = 0.0;
     rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0);
     dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
+    accepth = 0; acceptr = 0; acceptg = 0
 
   end subroutine initial_setup
 
@@ -46,14 +47,10 @@ module setup
     allocate(e_field(2,L,L))
     allocate(mnphi(2,L,L))
     allocate(lgf(L,L,L,L))
-    allocate(energy(no_measurements + 1))
-    allocate(sq_energy(no_measurements + 1))
 
     v = 0; pos = 0; neg = 0
     ebar = 0.0;
     e_field = 0.0; mnphi = 0.0; lgf = 0.0
-    energy = 0.0
-    sq_energy= 0.0
 
   end subroutine allocations
 
@@ -66,23 +63,6 @@ module setup
     deallocate(e_field)
     deallocate(mnphi)
     deallocate(lgf)
-    deallocate(energy)
-    deallocate(sq_energy)
-    !deallocate(ebar_sum)
-    !deallocate(ebar_sq_sum)
-    !deallocate(e_tot_avg)
-    !deallocate(e_rot_avg)
-    !deallocate(e_irrot_avg)
-    !deallocate(ch_ch)
-    !deallocate(rho_k_m)
-    !deallocate(rho_k_p)
-    !deallocate(dir_struc)
-    !deallocate(s_ab)
-    !deallocate(s_ab_rot)
-    !deallocate(s_ab_irrot)
-    !deallocate(v_avg)
-    !deallocate(dist_r)
-    !deallocate(bin_count)
 
   end subroutine deallocations
 

@@ -22,6 +22,7 @@ my $dorun = 1;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
 my $comment = '';
+my @lengths = '';
 my @temperatures = '';
 my @charges = '';
 my @charge_values = '';
@@ -32,6 +33,7 @@ my @params_temp = '';
 $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
                      "run=i"=> \$dorun,
+                     "lengths=s"=> \@lengths,
                      "temperatures=s"=> \@temperatures,
                      "charges=s"=> \@charges,
                      "charge_values=s"=> \@charge_values,
@@ -61,6 +63,11 @@ my $helpstring = "Run script for Maggs-Rossetto code. Options:
 if ($help || !$input) {
   print $helpstring;
   exit $input;
+}
+
+if (@lengths) {
+  @lengths = split(/,/,join(',',@lengths));
+  shift(@lengths);
 }
 
 if (@temperatures) {
@@ -99,7 +106,7 @@ make_path($logdir);
 $tempinputfile = "$basedir/in.temp";
 
 my %parameters = get_parameters("$inputfile");
-print Dumper %parameters;
+# print Dumper %parameters;
 
 # portably change relative path names into absolute ones
 foreach (keys %parameters) {
@@ -117,79 +124,98 @@ if ($dorun) {
     for( my $j = 0; $j < @charge_values; $j++) {
       for( my $k = 0; $k < @spacings; $k++) {
         for( my $l = 0; $l < @charges; $l++) {
+          for( my $m = 0; $m < @lengths; $m++) {
 
-          $parameters{temperature} = $temperatures[$i];
-          $parameters{charge_value} = $charge_values[$j];
-          $parameters{lattice_spacing} = $spacings[$k];
-          $parameters{charges} = $charges[$l];
-          print "New temperature: $parameters{temperature}\n";
-          print "New number of charges: $parameters{charges}\n";
-          print "New charge value: $parameters{charge_value}\n";
-          print "New lattice spacing $parameters{lattice_spacing}\n";
+            $parameters{temperature} = $temperatures[$i];
+            $parameters{charge_value} = $charge_values[$j];
+            $parameters{lattice_spacing} = $spacings[$k];
+            $parameters{charges} = $charges[$l];
+            $parameters{L} = $lengths[$m];
+            print "New temperature: $parameters{temperature}\n";
+            print "New number of charges: $parameters{charges}\n";
+            print "New charge value: $parameters{charge_value}\n";
+            print "New lattice spacing $parameters{lattice_spacing}\n";
+            print "New system size $parameters{L}\n";
 
-          my $timestamp = get_timestamp();
+            my $timestamp = get_timestamp();
 
-          # don't think i can call a function inside an array assignment
-          my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'z', $charge_values[$j],'a', $spacings[$k]);
-          my $stamp = join('_', @stamparray);
-          my $stampdir = "$outdir/$stamp";
-          print "Creating directories $stampdir and $stampdir/plots .\n";
-          make_path($stampdir,"$stampdir/plots");
-          $parameters{stamp} = "$stamp";
-          my $parameters_json = create_json(%parameters);
+            # don't think i can call a function inside an array assignment
+            my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'z', $charge_values[$j],'a', $spacings[$k]);
+            my $stamp = join('_', @stamparray);
+            my $stampdir = "$outdir/$stamp";
+            print "Creating directories $stampdir and $stampdir/plots .\n";
+            make_path($stampdir,"$stampdir/plots");
+            $parameters{stamp} = "$stamp";
+            my $parameters_json = create_json(%parameters);
 
-          my $logfile = "$logdir/$timestamp.log";
+            my $logfile = "$logdir/$timestamp.log";
 
-          open($fh, '>:encoding(UTF-8)', $tempinputfile)
-            or die "Unable to create temporary input file:$!\n";
-          print "Creating temporary input file at $tempinputfile\n";
+            open($fh, '>:encoding(UTF-8)', $tempinputfile)
+              or die "Unable to create temporary input file:$!\n";
+            print "Creating temporary input file at $tempinputfile\n";
 
-          for my $key (keys %parameters) {
-            if ($key !~ /comment/) {
-              if ($key !~ /stamp/) {
-                print $fh "$key $parameters{$key}\n";
+            for my $key (keys %parameters) {
+              if ($key !~ /comment/) {
+                if ($key !~ /stamp/) {
+                  print $fh "$key $parameters{$key}\n";
+                }
               }
             }
-          }
-          close $fh;
+            close $fh;
 
-          write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
-          # keep a list of every run and its parameters
-          my $jsondb = "$logdir/db.json";
-          write_to_file($jsondb, "$parameters_json\n", "append");
+            write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
+            # keep a list of every run and its parameters
+            my $jsondb = "$logdir/db.json";
+            write_to_file($jsondb, "$parameters_json\n", "append");
 
-          # run program
-          my $runcmd = qq(./$progname $tempinputfile 2>&1 | tee $logfile);
-          print "Running $progname with command $runcmd\n";
-          system($runcmd);
+            # run program
+            my $np = 2;
+            my $mpi_args = '--bind-to none';
+            my $verbose = '-v';
+            my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
+            print "Running $progname with command $runcmd\n";
+            system($runcmd);
 
-          copy($tempinputfile, "$stampdir/input.in");
-          unlink($tempinputfile);
+            copy($tempinputfile, "$stampdir/input.in");
+            unlink($tempinputfile);
 
-          # program should have terminated now
-          # we want to copy the out directory into the timestamped one.
-          # do ls, make a list, then iterate over the list and copy
-          opendir(my $dh, $outdir) or die "Can't open output directory: $!";
-          foreach (keys %parameters) {
-            if ($_ =~ /_file/) {
-              my $value = $parameters{$_};
-              (my $file, my $dir, my $ext) = fileparse($value);
-              print "Copying $dir$file$ext to $stampdir/$file$ext\n";
-              copy($dir . $file . $ext, "$stampdir/$file" . $ext) or die "Copy failed: $!";
+            # program should have terminated now
+            # we want to copy the out directory into the timestamped one.
+            # do ls, make a list, then iterate over the list and copy
+            opendir(my $dh, $outdir) or die "Can't open output directory: $!";
+            if ($parameters{do_corr} =~ /[TY]/) {
+              foreach (keys %parameters) {
+                if ($_ =~ /_file/ && $_ !~ /! /) {
+                  my $value = $parameters{$_};
+                  (my $file, my $dir, my $ext) = fileparse($value);
+                  print "Copying $dir$file$ext to $stampdir/$file$ext\n";
+                  copy($dir . $file . $ext, "$stampdir/$file" . $ext) or die "Copy failed: $!";
+                }
+              }
+            } else {
+              foreach (keys %parameters) {
+                if ($_ =~ /sphe_sus_file/) {
+                  my $value = $parameters{$_};
+                  (my $file, my $dir, my $ext) = fileparse($value);
+                  print "Copying $dir$file$ext to $stampdir/$file$ext\n";
+                  copy($dir . $file . $ext, "$stampdir/$file" . $ext) or die "Copy failed: $!";
+                }
+              }
             }
-          }
-          close($dh);
 
-          # then probably averaging stuff on the raw output, e_fields and charge dist.
-          # then gnuplot
-          if ($doplots) {
-            my $plotfile = "$basedir/scripts/plot.pl";
-            my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
-            my $kz = 0;
-            my $palette = "inferno.pal";
-            #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
-            my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
-            system($plotcmd);
+            close($dh);
+
+            # then probably averaging stuff on the raw output, e_fields and charge dist.
+            # then gnuplot
+            if ($doplots) {
+              my $plotfile = "$basedir/scripts/plot.pl";
+              my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
+              my $kz = 0;
+              my $palette = "inferno.pal";
+              #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
+              my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
+              system($plotcmd);
+            }
           }
         }
       }
@@ -197,7 +223,7 @@ if ($dorun) {
   }
 }
 
-########
+  ########
 
 sub get_timestamp {
 

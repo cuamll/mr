@@ -2,7 +2,7 @@ module io
   use common
   implicit none
   logical, private :: start_file_there
-  character(len = 100) :: label, buffer
+  character(len = 100) :: label, buffer, verb_arg
   character :: corr_char
   integer :: posit
   integer :: ios = 0
@@ -12,7 +12,21 @@ module io
 
   subroutine read_input
 
-    call get_command_argument(1, arg_long)
+    if (command_argument_count().eq.2) then
+      call get_command_argument(1, verb_arg)
+      if (trim(verb_arg).eq.'-v') then
+        verbose = .true.
+      else
+        write (*,*) "First argument not recognised.&
+           & Check and try again."
+        stop
+      end if
+    else if (command_argument_count().gt.2) then
+      write (*,*) "Too many arguments given. Check and try again."
+      stop
+    end if
+    ! Final argument should be the input file
+    call get_command_argument(command_argument_count(), arg_long)
     arg = trim(arg_long)
 
     inquire(file=arg,exist=start_file_there)
@@ -22,9 +36,14 @@ module io
       do while (ios == 0)
 
         if (line.eq.0) then
-          write (*,*)
-          write (*,*) "--- INPUT PARAMETERS: ---"
-          write (*,*) "Input file: ",arg
+
+          if (verbose) then
+            write (*,*) "Verbose flag set to true."
+            write (*,*)
+            write (*,*) "--- INPUT PARAMETERS: ---"
+            write (*,*) "Input file: ",arg
+          end if
+
         end if
 
         read(10, '(A)', iostat=ios) buffer
@@ -37,123 +56,203 @@ module io
           buffer = buffer(posit + 1:)
 
           select case (label)
+          case ('!')
+            cycle
           case ('L')
             read(buffer, '(I10.1)', iostat=ios) L
-            write (*,*) 'System size: ',L
+            if (verbose) then
+              write (*,*) 'System size: ',L
+            end if
           case ('omp_threads')
             read(buffer, '(I10.1)', iostat=ios) no_threads
-            write (*,*) 'OpenMP threads: ',no_threads
+            if (verbose) then
+              write (*,*) 'OpenMP threads: ',no_threads
+            end if
           case ('no_samples')
             read(buffer, '(I10.1)', iostat=ios) no_samples
-            write (*,*) 'Number of samples: ',no_samples
+            if (verbose) then
+              write (*,*) 'Number of samples: ',no_samples
+            end if
           case ('do_corr')
             read(buffer, '(a)', iostat=ios) corr_char
-            write (*,*) 'Calculate correlations? ',corr_char
+            if (verbose) then
+              write (*,*) 'Calculate correlations? ',corr_char
+            end if
           case ('thermalisation_sweeps')
             read(buffer, '(I10.1)', iostat=ios) therm_sweeps
-            write (*,*) 'Thermalisation sweeps: ',therm_sweeps
+            if (verbose) then
+              write (*,*) 'Thermalisation sweeps: ',therm_sweeps
+            end if
           case ('measurement_sweeps')
             read(buffer, '(I10.1)', iostat=ios) measurement_sweeps
-            write (*,*) 'Measurement sweeps: ',measurement_sweeps
+            if (verbose) then
+              write (*,*) 'Measurement sweeps: ',measurement_sweeps
+            end if
           case ('sample_interval')
             read(buffer, '(I10.1)', iostat=ios) sample_interval
-            write (*,*) 'Sample interval: ',sample_interval
+            if (verbose) then
+              write (*,*) 'Sample interval: ',sample_interval
+            end if
           case ('temperature')
             read(buffer, '(F10.1)', iostat=ios) temp
-            write (*,*) 'Temperature: ',temp
+            if (verbose) then
+              write (*,*) 'Temperature: ',temp
+            end if
           case ('lattice_spacing')
             read(buffer, '(F10.1)', iostat=ios) lambda
-            write (*,*) 'Lattice spacing: ',lambda
+            if (verbose) then
+              write (*,*) 'Lattice spacing: ',lambda
+            end if
           case ('charge_value')
             read(buffer, '(F16.1)', iostat=ios) q
-            write (*,*) 'Charge value: ',q
+            if (verbose) then
+              write (*,*) 'Charge value: ',q
+            end if
           case ('delta_max')
             read(buffer, '(F10.1)', iostat=ios) rot_delt
-            write (*,*) 'Δ_max for rot. update: ',rot_delt
+            if (verbose) then
+              write (*,*) 'Δ_max for rot. update: ',rot_delt
+            end if
           case ('charges')
             read(buffer, '(I10.1)', iostat=ios) add_charges
-            write (*,*) 'Charges: ',add_charges
+            if (verbose) then
+              write (*,*) 'Charges: ',add_charges
+            end if
           case ('rng_seed')
             read(buffer, '(I10.1)', iostat=ios) seed
-            write (*,*) 'RNG seed: ',seed
+            if (verbose) then
+              write (*,*) 'RNG seed: ',seed
+            end if
           case ('hop_ratio')
             read(buffer, '(F10.1)', iostat=ios) hop_ratio
-            write (*,*) 'Ratio of hop updates: ',hop_ratio
+            if (verbose) then
+              write (*,*) 'Ratio of hop updates: ',hop_ratio
+            end if
           case ('rot_ratio')
             read(buffer, '(F10.1)', iostat=ios) rot_ratio
-            write (*,*) 'Ratio of rotational updates: ',rot_ratio
+            if (verbose) then
+              write (*,*) 'Ratio of rotational updates: ',rot_ratio
+            end if
           case ('harmonic_ratio')
             read(buffer, '(F10.1)', iostat=ios) g_ratio
-            write (*,*) 'Ratio of harmonic updates: ',g_ratio
+            if (verbose) then
+              write (*,*) 'Ratio of harmonic updates: ',g_ratio
+            end if
           case ('bin_size')
             read(buffer, '(F10.1)', iostat=ios) bin_size
-            write (*,*) 'Bin size for real space corr.: ',bin_size
+            if (verbose) then
+              write (*,*) 'Bin size for real space corr.: ',bin_size
+            end if
           case ('lattice_file')
             read(buffer, '(a)', iostat=ios) lattfile_long
-            write (*,*) 'Lattice file name: ',lattfile_long
+            if (verbose) then
+              write (*,*) 'Lattice file name: ',lattfile_long
+            end if
           case ('energy_file')
             read(buffer, '(a)', iostat=ios) en_long
-            write (*,*) 'Energy file name: ',en_long
+            if (verbose) then
+              write (*,*) 'Energy file name: ',en_long
+            end if
           case ('squared_energy_file')
             read(buffer, '(a)', iostat=ios) sq_en_long
-            write (*,*) 'Squared energy file name: ',sq_en_long
+            if (verbose) then
+              write (*,*) 'Squared energy file name: ',sq_en_long
+            end if
           case ('electric_field_file')
             read(buffer, '(a)', iostat=ios) e_field_long
-            write (*,*) 'Electric field file name: ',e_field_long
+            if (verbose) then
+              write (*,*) 'Electric field file name: ',e_field_long
+            end if
           case ('direct_space_structure_factor_file')
             read(buffer, '(a)', iostat=ios) dir_st_l
-            write (*,*) 'Direct space structure factor file name: ',dir_st_l
+            if (verbose) then
+              write (*,*) 'Direct space structure factor file name: ',dir_st_l
+            end if
           case ('direct_space_g(r)_file')
             read(buffer, '(a)', iostat=ios) dir_d_s_l
-            write (*,*) 'Direct space g(r) file name: ',dir_d_s_l
+            if (verbose) then
+              write (*,*) 'Direct space g(r) file name: ',dir_d_s_l
+            end if
           case ('charge_structure_factor_file')
             read(buffer, '(a)', iostat=ios) ch_st_l
-            write (*,*) 'Charge-charge structure factor file name: ',ch_st_l
+            if (verbose) then
+              write (*,*) 'Charge-charge structure factor file name: ',ch_st_l
+            end if
           case ('total_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) fi_st_l
-            write (*,*) 'Total field-field structure factor file name: ',fi_st_l
+            if (verbose) then
+              write (*,*) 'Total field-field structure factor file name: ',fi_st_l
+            end if
           case ('total_s^(alpha_beta)_file')
             read(buffer, '(a)', iostat=ios) s_ab_l
-            write (*,*) 'Total S^(α β) file name: ',s_ab_l
+            if (verbose) then
+              write (*,*) 'Total S^(α β) file name: ',s_ab_l
+            end if
           case ('total_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
-            write (*,*) 'Total S_(⊥) file name: ',s_p_l
+            if (verbose) then
+              write (*,*) 'Total S_(⊥) file name: ',s_p_l
+            end if
           case ('total_s_(par)_file')
             read(buffer, '(a)', iostat=ios) spa_l
-            write (*,*) 'Total S_(//) file name: ',spa_l
+            if (verbose) then
+              write (*,*) 'Total S_(//) file name: ',spa_l
+            end if
           case ('irrot_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) ir_fe_l
-            write (*,*) 'Irrotational field-field structure factor file name: ',ir_fe_l
+            if (verbose) then
+              write (*,*) 'Irrotational field-field structure factor file name: ',ir_fe_l
+            end if
           case ('irrot_s^(alpha_beta)_file')
             read(buffer, '(a)', iostat=ios) ir_sab_l
-            write (*,*) 'Irrotational S^(α β) file name: ',ir_sab_l
+            if (verbose) then
+              write (*,*) 'Irrotational S^(α β) file name: ',ir_sab_l
+            end if
           case ('irrot_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) ir_sp_l
-            write (*,*) 'Irrotational S_(⊥) file name: ',ir_sp_l
+            if (verbose) then
+              write (*,*) 'Irrotational S_(⊥) file name: ',ir_sp_l
+            end if
           case ('irrot_s_(par)_file')
             read(buffer, '(a)', iostat=ios) ir_spa_l
-            write (*,*) 'Irrotational S_(//) file name: ',ir_spa_l
+            if (verbose) then
+              write (*,*) 'Irrotational S_(//) file name: ',ir_spa_l
+            end if
           case ('rot_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) r_fe_l
-            write (*,*) 'Rotational field-field structure factor file name: ',r_fe_l
+            if (verbose) then
+              write (*,*) 'Rotational field-field structure factor file name: ',r_fe_l
+            end if
           case ('rot_s^(alpha_beta)_file')
             read(buffer, '(a)', iostat=ios) r_sab_l
-            write (*,*) 'Rotational S^(α β) file name: ',r_sab_l
+            if (verbose) then
+              write (*,*) 'Rotational S^(α β) file name: ',r_sab_l
+            end if
           case ('rot_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) r_sp_l
-            write (*,*) 'Rotational S_(⊥) file name: ',r_sp_l
+            if (verbose) then
+              write (*,*) 'Rotational S_(⊥) file name: ',r_sp_l
+            end if
           case ('rot_s_(par)_file')
             read(buffer, '(a)', iostat=ios) r_spa_l
-            write (*,*) 'Rotational S_(//) file name: ',r_spa_l
+            if (verbose) then
+              write (*,*) 'Rotational S_(//) file name: ',r_spa_l
+            end if
           case ('field_charge_file')
             read(buffer, '(a)', iostat=ios) fe_ch_l
-            write (*,*) 'Raw file name for binary fields/charges output: ',fe_ch_l
+            if (verbose) then
+              write (*,*) 'Raw file name for binary fields/charges output: ',fe_ch_l
+            end if
           case ('average_field_file')
             read(buffer, '(a)', iostat=ios) av_fe_l
-            write (*,*) 'Raw file name for average fields/charges: ',av_fe_l
+            if (verbose) then
+              write (*,*) 'Raw file name for average fields/charges: ',av_fe_l
+            end if
           case ('sphe_sus_file')
             read(buffer, '(a)', iostat=ios) sp_su_l
-            write (*,*) 'Raw file name for specific heat/susceptibility: ',sp_su_l
+            if (verbose) then
+              write (*,*) 'Raw file name for specific heat/susceptibility: ',sp_su_l
+            end if
           case default
             write (*,*) 'Skipping invalid label at line ',line
           end select
@@ -362,14 +461,14 @@ module io
     !close(3)
     !close(4)
 
-    call calc_correlations(field_charge_file)
+    call calc_correlations
 
   end subroutine write_output
 
-  subroutine calc_correlations(filename)
+  subroutine calc_correlations
     use common
     implicit none
-    character(len = *), intent(in) :: filename
+    !character(len = *), intent(in) :: filename
     integer :: i,j,k,n,kx,ky,kz,m,p,s,x,y,z,dist_bin,sp
     real(kind=rk) :: norm_k,kx_float,ky_float,kz_float,dist
     real(kind=rk) :: sp_he_tot, sp_he_rot, sp_he_irrot, prefac
@@ -390,32 +489,6 @@ module io
 
     field_struc = 0.0; field_struc_rot = 0.0;
     charge_struc = 0.0; field_struc_irrot = 0.0;
-
-    !ebar_sum = (ebar_sum / no_measurements)
-    !ebar_sq_sum = (ebar_sq_sum / no_measurements)
-    !rho_k_p = rho_k_p / no_measurements
-    !rho_k_m = rho_k_m / no_measurements
-    !ch_ch = ch_ch / no_measurements
-    !s_ab = s_ab / no_measurements
-    !s_ab_irrot = s_ab_irrot / no_measurements
-    !s_ab_rot = s_ab_rot / no_measurements
-    !dir_struc = dir_struc / no_measurements
-    !e_tot_avg = e_tot_avg / no_measurements
-    !e_rot_avg = e_rot_avg / no_measurements
-    !e_irrot_avg = e_irrot_avg / no_measurements
-    !v_avg = v_avg / no_measurements
-    !ener_tot_sum = ener_tot_sum / no_measurements
-    !ener_rot_sum = ener_rot_sum / no_measurements
-    !ener_irrot_sum = ener_irrot_sum / no_measurements
-    !ener_tot_sq_sum = ener_tot_sq_sum / no_measurements
-    !ener_rot_sq_sum = ener_rot_sq_sum / no_measurements
-    !ener_irrot_sq_sum = ener_irrot_sq_sum / no_measurements
-    !ener_tot_sum = ener_tot_sum / L**2
-    !ener_rot_sum = ener_rot_sum / L**2
-    !ener_irrot_sum = ener_irrot_sum / L**2
-    !ener_tot_sq_sum = ener_tot_sq_sum / ((L**2)**2)
-    !ener_rot_sq_sum = ener_rot_sq_sum / ((L**2)**2)
-    !ener_irrot_sq_sum = ener_irrot_sq_sum / ((L**2)**2)
 
     prefac = 1.0 * L**2 / (temp**2)
 
@@ -451,7 +524,7 @@ module io
 
     write (30,'(a)') "   # hop acceptance"
     write (30,'(2ES18.9)') temp,&
-    (float(accepth) / &
+    (dble(accepth) / &
     ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
 
     close(30)
