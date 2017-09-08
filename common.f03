@@ -10,11 +10,12 @@ module common
   real(kind=8), parameter, public :: pi=3.141592653589793
   real(kind=8), parameter, public :: twopi=6.283185307179586
   real(kind=8), parameter, public :: e=2.718281828459045
-  real(kind=8), public :: rot_ratio, g_ratio, hop_ratio
+  real(kind=8), public :: rot_ratio, g_ratio, hop_ratio, g_thr
 
   logical, public :: do_corr, verbose = .false.
 
   integer, public :: have_lgf = 0
+  integer, public :: glob = 0
   integer, public :: MPI_NEW_REAL, MPI_NEW_INT
   integer(kind=4), public :: seed,no_samples,no_threads
   integer(kind=4), public :: L,add_charges,no_measurements
@@ -24,7 +25,7 @@ module common
   integer(kind=4), dimension(:), allocatable, public :: pos,neg
   integer(kind=4), dimension(:,:), allocatable, public :: v
 
-  real(kind=8), public :: q, lambda, volume, temp, beta
+  real(kind=8), public :: q, lambda, volume, temp, beta, u_tot
   real(kind=8), public :: eps_0, bin_size, rot_delt, g0
   real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
   real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf

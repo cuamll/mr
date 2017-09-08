@@ -1,10 +1,10 @@
-L 16
+L 12
 ! leave omp_threads as 0 to use default
 omp_threads 0
 no_samples 2
 do_corr F
 thermalisation_sweeps 10000
-measurement_sweeps 25000
+measurement_sweeps 250
 sample_interval 10
 temperature 2.000
 lattice_spacing 1.0

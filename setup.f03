@@ -1,7 +1,7 @@
 module setup
 
   use common
-  use io
+  use input
   use linear_solver
   implicit none
   integer, private :: i, j, k, n
@@ -135,7 +135,7 @@ module setup
     integer, intent(in) :: n
 
     ! wrapper for convenience in main
-    call read_input
+    ! call read_input
     call randinit(n)
     call allocations
     call latt_init
