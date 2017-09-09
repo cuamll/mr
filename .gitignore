@@ -39,7 +39,7 @@ Session.vim
 obj*
 mod*
 *temp*
-out*
+out/*
 .DS_Store
 *_backup
 test*
