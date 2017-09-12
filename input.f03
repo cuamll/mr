@@ -2,8 +2,8 @@ module input
   use common
   implicit none
   logical, private :: start_file_there
-  character(len = 100) :: label, buffer, verb_arg
   character :: corr_char
+  character(len=100), private :: label, buffer, verb_arg
   integer :: posit
   integer :: ios = 0
   integer :: line = 0
@@ -11,6 +11,12 @@ module input
   contains
 
   subroutine read_input
+    use common
+    implicit none
+    character(len=200) :: lattfile_long, en_long, sq_en_long,&
+    e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
+    dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
+    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)

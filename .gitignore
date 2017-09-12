@@ -55,6 +55,8 @@ latts*
 
 # LaTeX extras
 *.aux
+*.fls
+*_latexmk
 *.log
 *.bbl
 *.toc
