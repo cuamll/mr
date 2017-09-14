@@ -15,7 +15,8 @@ module output
     implicit none
     integer :: i, j, kx, ky, m, p, x, y, dist_bin, sp
     real(kind=rk) :: norm_k, kx_float, ky_float, dist,&
-    sp_he_tot, sp_he_rot, sp_he_irrot, prefac
+    sp_he_tot, sp_he_rot, sp_he_irrot, prefac,&
+    ebar_sus, ebar_dip_sus, ebar_wind_sus
     real(kind=rk), dimension(:,:), allocatable :: s_perp,&
     s_perp_irrot, s_perp_rot
     real(kind=rk), dimension(:,:), allocatable :: s_par,&
@@ -40,6 +41,12 @@ module output
     sp_he_tot = prefac * (ener_tot_sq_sum - (ener_tot_sum)**2)
     sp_he_rot = prefac * (ener_rot_sq_sum - (ener_rot_sum)**2)
     sp_he_irrot = prefac * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
+    ebar_sus = L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
+    - (ebar_sum(1)**2 + ebar_sum(2)**2))
+    ebar_dip_sus = L**2 * beta * (ebar_dip_sq_sum(1) + ebar_dip_sq_sum(2)&
+    - (ebar_dip_sum(1)**2 + ebar_dip_sum(2)**2))
+    ebar_wind_sus = L**2 * beta * (ebar_wind_sq_sum(1) + ebar_wind_sq_sum(2)&
+    - (ebar_wind_sum(1)**2 + ebar_wind_sum(2)**2))
 
     write(*,*)
     write (*,'(a)') "# Specific heat: total, rot., irrot."
@@ -62,15 +69,22 @@ module output
     write (30,'(4ES18.9)') temp,&
     sp_he_tot, sp_he_rot, sp_he_irrot
 
-    write (30,'(a)') "   # <ebar^2> - <ebar>^2"
-    write (30,'(2ES18.9)') temp,&
-    L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
-    - (ebar_sum(1)**2 + ebar_sum(2)**2))
+    write (30,'(a)') "   # T, Chi_{Ebar}, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
+    write (30,'(2ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
 
-    write (30,'(a)') "   # hop acceptance"
-    write (30,'(2ES18.9)') temp,&
-    (dble(accepth) / &
-    ((therm_sweeps + measurement_sweeps) * add_charges * hop_ratio))
+    ! write (30,'(a)') "   # hop acceptance"
+    ! write (30,'(2ES18.9)') temp,&
+    ! (dble(accepts(1)) / dble(attempts(1)))
+    write (30,'(a,2i12.1,es18.9)') "# Hops: total, attempts, rate: ",&
+    accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+    write (30,'(a,2i12.1,es18.9)') "# Rot.: total, attempts, rate: ",&
+    accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
+    write (30,'(a,2i12.1,es18.9)') "# Harm: total, attempts, rate: ",&
+    accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
+    write (30,'(a,2i12.1,es18.9)') "# Creations: total, attempts, rate: ",&
+    accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+    write (30,'(a,2i12.1,es18.9)') "# Annihilations: total, attempts, rate: ",&
+    accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
 
     close(30)
 

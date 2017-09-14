@@ -26,15 +26,21 @@ module setup
     allocate(dist_r(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
 
-    v_avg = 0.0;
+    v_avg = 0.0; rho_avg = 0.0;
     e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0
     ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
     ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
-    ebar_sum = 0.0; ebar_sq_sum = 0.0;
+    ebar_sum = 0.0; ebar_sq_sum = 0.0; ebar_dip_sum = 0.0;
+    ebar_dip_sq_sum = 0.0; ebar_wind_sum = 0.0; ebar_wind_sq_sum = 0.0;
     s_ab = 0.0; s_ab_rot = 0.0; s_ab_irrot = 0.0; ch_ch = 0.0;
     rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0);
     dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
-    accepth = 0; acceptr = 0; acceptg = 0
+    attempts = 0; accepts = 0
+    ! we know in advance how many rot. and harm. attempts we'll make
+    attempts(2) = (therm_sweeps + measurement_sweeps) *&
+      no_samples * L**2 * rot_ratio
+    attempts(3) = (therm_sweeps + measurement_sweeps) *&
+      no_samples * L**2 * g_ratio
 
   end subroutine initial_setup
 
@@ -66,6 +72,7 @@ module setup
 
   subroutine latt_init
     integer, dimension(:,:), allocatable :: v_temp
+    logical :: read_lattfile = .false.
 
     n = 0
 
@@ -99,17 +106,21 @@ module setup
 
     else ! add_charges = 0; read in lattice file
 
-      allocate(v_temp(L,L))
+      if (read_lattfile) then
+        allocate(v_temp(L,L))
 
-      open(unit = 2, file = lattfile)
-      read(2,*)((v_temp(i,j),j=1,L),i = 1,L)
+        open(unit = 2, file = lattfile)
+        read(2,*)((v_temp(i,j),j=1,L),i = 1,L)
 
-      ! 2,3,1 makes x,y,z correspond with what you expect from the file
-      ! doesn't actually make any difference so long as you're consistent
-      v  =  v_temp
+        ! 2,3,1 makes x,y,z correspond with what you expect from the file
+        ! doesn't actually make any difference so long as you're consistent
+        v  =  v_temp
 
-      deallocate(v_temp)
-      close(2)
+        deallocate(v_temp)
+        close(2)
+      else ! all zeroes
+        v = 0
+      end if
 
     end if
 

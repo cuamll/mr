@@ -137,6 +137,7 @@ program mr
       write (*,*) "Current susc: ",((L**2 * beta) *&
                   (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum)))&
                   / (no_measurements * no_samples)
+      write (*,*) "Avg. charge density: ",rho_avg
       write (*,*)
     end if
 
@@ -159,15 +160,29 @@ program mr
       (no_samples * num_procs * no_measurements)," seconds."
 
     ! These probably need a little more thought
-    write (*,'(a,i12.1,es18.9)') "Charge hops: total, acceptance rate: ",&
-      accepth, accepth / ((therm_sweeps + measurement_sweeps) * &
-      hop_ratio * L**2 * (num_procs * no_samples))
-    write (*,'(a,i12.1,es18.9)') "Plaquette update: total, acceptance rate: ",&
-      acceptr, acceptr / ((therm_sweeps + measurement_sweeps) * &
-      rot_ratio * L**2 * (num_procs * no_samples))
-    write (*,'(a,i12.1,es18.9)') "Harmonic update: total, acceptance rate: ",&
-      acceptg, acceptg / ((therm_sweeps + measurement_sweeps) * &
-      g_ratio * L**2 * 2 * (num_procs * no_samples))
+    ! and reducing!
+    ! write (*,'(a,i12.1,es18.9)') "Charge hops: total, acceptance rate: ",&
+    !   accepth, accepth / ((therm_sweeps + measurement_sweeps) * &
+    !   hop_ratio * L**2 * (num_procs * no_samples))
+    ! write (*,'(a,i12.1,es18.9)') "Plaquette update: total, acceptance rate: ",&
+    !   acceptr, acceptr / ((therm_sweeps + measurement_sweeps) * &
+    !   rot_ratio * L**2 * (num_procs * no_samples))
+    ! write (*,'(a,i12.1,es18.9)') "Harmonic update: total, acceptance rate: ",&
+    !   acceptg, acceptg / ((therm_sweeps + measurement_sweeps) * &
+    !   g_ratio * L**2 * 2 * (num_procs * no_samples))
+    ! write (*,'(a,a,6i12.1)') "Hops, creations, annihilations ",&
+    !   "(attempts, accepts): ",&
+    !   attempth, accepth, attemptc, acceptc, attempta, accepta
+    write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
+    accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+    write (*,'(a,2i12.1,es18.9)') "Rot.: total, attempts, rate: ",&
+    accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
+    write (*,'(a,2i12.1,es18.9)') "Harm: total, attempts, rate: ",&
+    accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
+    write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+    accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+    write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
+    accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
 
   end if
 
@@ -203,6 +218,10 @@ subroutine reductions(id)
 
   if (id.eq.0) then
 
+    call MPI_Reduce(MPI_IN_PLACE, accepts, 5, MPI_NEW_INT,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, attempts, 5, MPI_NEW_INT,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_tot_sum, 1, MPI_NEW_REAL,&
                        MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_rot_sum, 1, MPI_NEW_REAL,&
@@ -219,9 +238,23 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_sq_sum, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sq_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sq_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, rho_avg, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   else
 
+    call MPI_Reduce(accepts, accepts, 5, MPI_NEW_INT,&
+                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(attempts, attempts, 5, MPI_NEW_INT,&
+                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_tot_sum, ener_tot_sum, 1, MPI_NEW_REAL,&
                        MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_rot_sum, ener_rot_sum, 1, MPI_NEW_REAL,&
@@ -237,6 +270,16 @@ subroutine reductions(id)
     call MPI_Reduce(ebar_sum, ebar_sum, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_sq_sum, ebar_sq_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(ebar_dip_sum, ebar_dip_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(ebar_dip_sq_sum, ebar_dip_sq_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(ebar_wind_sum, ebar_wind_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(ebar_wind_sq_sum, ebar_wind_sq_sum, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(rho_avg, rho_avg, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   end if
@@ -317,8 +360,10 @@ subroutine normalisations(num_procs)
   use common
   implicit none
   integer, intent(in) :: num_procs
-  real(kind=rk) :: denom, sp_he_tot, sp_he_rot, sp_he_irrot, ebar_sus
-  sp_he_tot = 0.0; sp_he_rot = 0.0; sp_he_irrot = 0.0; ebar_sus = 0.0;
+  real(kind=rk) :: denom, sp_he_tot, sp_he_rot, sp_he_irrot,&
+  ebar_sus, ebar_dip_sus, ebar_wind_sus
+  sp_he_tot = 0.0; sp_he_rot = 0.0; sp_he_irrot = 0.0;
+  ebar_sus = 0.0; ebar_dip_sus = 0.0; ebar_wind_sus = 0.0;
 
   ! between the end of the k loop and MPI_Finalize, we need to
   ! average over measurements/samples, then MPI_Reduce() and
@@ -334,6 +379,10 @@ subroutine normalisations(num_procs)
   ener_irrot_sq_sum = ener_irrot_sq_sum / denom
   ebar_sum = ebar_sum / denom
   ebar_sq_sum = ebar_sq_sum / denom
+  ebar_dip_sum = ebar_dip_sum / denom
+  ebar_dip_sq_sum = ebar_dip_sq_sum / denom
+  ebar_wind_sum = ebar_wind_sum / denom
+  ebar_wind_sq_sum = ebar_wind_sq_sum / denom
   rho_k_p = rho_k_p / denom
   rho_k_m = rho_k_m / denom
   ch_ch = ch_ch / denom
@@ -347,12 +396,17 @@ subroutine normalisations(num_procs)
   e_rot_avg = e_rot_avg / denom
   e_irrot_avg = e_irrot_avg / denom
   v_avg = v_avg / denom
+  rho_avg = rho_avg / denom
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
   sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)
   sp_he_irrot = L**2 * beta**2 * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
 
   ebar_sus = L**2 * beta * (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum))
+  ebar_dip_sus = L**2 * beta *&
+  (sum(ebar_dip_sq_sum) - sum(ebar_dip_sum * ebar_dip_sum))
+  ebar_wind_sus = L**2 * beta *&
+  (sum(ebar_wind_sq_sum) - sum(ebar_wind_sum * ebar_wind_sum))
 
   write (*,*) "END. MPI_Reduce done, averages calculated."
   write (*,*) "--- Energies: ---"
@@ -367,12 +421,21 @@ subroutine normalisations(num_procs)
   write (*,*) "Ebar_sum: ",ebar_sum(1),ebar_sum(2)
   write (*,*) "Ebar_sq_sum: ",ebar_sq_sum(1),ebar_sq_sum(2)
   write (*,*) "Ebar susceptibility: ",ebar_sus
+  write (*,*) "Ebar_dip_sum: ",ebar_dip_sum(1),ebar_dip_sum(2)
+  write (*,*) "Ebar_dip_sq_sum: ",ebar_dip_sq_sum(1),ebar_dip_sq_sum(2)
+  write (*,*) "Ebar_dip susceptibility: ",ebar_dip_sus
+  write (*,*) "Ebar_wind_sum: ",ebar_wind_sum(1),ebar_wind_sum(2)
+  write (*,*) "Ebar_wind_sq_sum: ",ebar_wind_sq_sum(1),ebar_wind_sq_sum(2)
+  write (*,*) "Ebar_wind susceptibility: ",ebar_wind_sus
+  write (*,*) "Avg. charge density",rho_avg
 
   open  (30, file=sphe_sus_file // '_MPI_allreduced')
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
-  write (30,'(ES18.9,ES18.9,ES18.9,ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
-  write (30,'(a)') "# Temp., <Ebar^2> - <Ebar>^2"
-  write (30,'(ES18.9, ES18.9)') temp, ebar_sus
+  write (30,'(4ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
+  write (30,'(a)') "# Temp., Chi_Ebar, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
+  write (30,'(2ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
+  write (30,'(a)') "# Avg. charge density"
+  write (30,'(ES18.9)') rho_avg
   close (30)
 
 end subroutine normalisations

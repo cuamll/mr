@@ -1,3 +1,4 @@
+
 module update
   use common
   ! not sure if linear solver is needed
@@ -6,24 +7,23 @@ module update
 
   contains
 
-    subroutine hop(attempts)
+    subroutine hop(n)
       implicit none
-      integer, intent(in) :: attempts
-      integer :: i,j,mu,charge
+      integer, intent(in) :: n
+      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
       integer, dimension(2) :: site
       real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
 
       ! --- CHARGE HOP UPDATE ---
 
-      do i = 1, attempts
+      do i = 1, n
 
         ! NOTE TO SELF: this whole procedure assumes
         ! single-valued charges only.
 
-        ! pick a random site
+        ! pick a random site and random component, x or y
         site = (/ int(rand() * L) + 1,&
                   &int(rand() * L) + 1 /)
-
         mu = floor(2*rand())+1
 
         ! check we're not doing anything weird with multiple charges
@@ -34,71 +34,107 @@ module update
           stop
         end if
 
-        ! pick a non-zero charge - canonical!
-        if (v(site(1),site(2)).ne.0) then
+        ! grand canonical now
 
-          charge = v(site(1),site(2))
+        ! charge = v(site(1),site(2))
+        increment = q / (eps_0 * lambda)
 
-          ! this takes care of sign issues when hopping
-          increment = q * charge / (eps_0 * lambda)
+        if (rand().lt.0.5) then ! increase field bond
+          pm = 1
+        else ! decrease field bond
+          pm = -1
+        end if
 
-          if (rand().lt.0.5) then ! move it "negative"
+        eo = e_field(mu,site(1),site(2))
+        en = eo + pm * increment
+        old_e = 0.5 * eps_0 * eo**2
+        new_e = 0.5 * eps_0 * en**2
+        delta_e = new_e - old_e
 
-            ! get negative in the mu direction
-            site(mu) = neg(site(mu))
-            eo = e_field(mu,site(1),site(2))
-            en = eo + increment
-            old_e = 0.5 * eps_0 * eo**2
-            new_e = 0.5 * eps_0 * en**2
-            delta_e = new_e - old_e
+        ! adding to the field bond means charge moving "backwards"
+        ! current charges tell us if this is hop/creation/annihilation
+        v1o = v(site(1),site(2))
+        v1n = v(site(1),site(2)) - pm
+        ! we need negative in the mu direction
+        site(mu) = neg(site(mu))
+        v2o = v(site(1),site(2))
+        v2n = v(site(1),site(2)) + pm
 
-            if (v(site(1),site(2)).eq.0) then
-              if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((v1o.eq.1.and.v2o.eq.0.and.pm.eq.1).or.&
+            (v1o.eq.-1.and.v2o.eq.0.and.pm.eq.-1).or.&
+            (v1o.eq.0.and.v2o.eq.1.and.pm.eq.-1).or.&
+            (v1o.eq.0.and.v2o.eq.-1.and.pm.eq.1)) then
+          ! HOP
+          attempts(1) = attempts(1) + 1
+        else if ((v1o.eq.0.and.v2o.eq.0)) then
+          ! CREATION
+          attempts(4) = attempts(4) + 1
+        else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
+          ! ANNIHILATION
+          attempts(5) = attempts(5) + 1
+        else
+          ! write (6,'(a,7i3.1)') "SOME WEIRD SHIT GOT ACCEPTED: ",&
+          ! site(1), site(2), v1o, v2o, v1n, v2n, pm
+        end if
 
-                v(site(1),site(2)) = charge
-                e_field(mu,site(1),site(2)) = en
-                ebar(mu) = ebar(mu) + (increment / L**2)
+        if (abs(v1n).le.1.and.abs(v2n).le.1) then
+          if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-                ! go back to the original site and set the charge to 0
-                site(mu) = pos(site(mu))
-                v(site(1),site(2)) = 0
-
-                accepth = accepth + 1
-                u_tot = u_tot + delta_e
-
-                end if
-              end if
-
-          else ! move it "positive"
-
-            eo = e_field(mu,site(1),site(2))
-            en = eo - increment
-            old_e = 0.5 * eps_0 * lambda**2 * eo**2
-            new_e = 0.5 * eps_0 * lambda**2 * en**2
-            delta_e = new_e - old_e
-
-            ! get pos in the mu direction
+            ! site still pointing at neg(orig. site)
+            v(site(1),site(2)) = v2n
             site(mu) = pos(site(mu))
+            v(site(1),site(2)) = v1n
+            e_field(mu,site(1),site(2)) = en
+            ebar(mu) = ebar(mu) + (pm * increment / L**2)
 
-            if (v(site(1),site(2)).eq.0) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+            u_tot = u_tot + delta_e
 
-                v(site(1),site(2)) = charge
-
-                ! go back to the original site and set the charge to 0
-                site(mu) = neg(site(mu))
-                v(site(1),site(2)) = 0
-                e_field(mu,site(1),site(2)) = en
-                ebar(mu) = ebar(mu) - (increment / L**2)
-
-                accepth = accepth + 1
-                u_tot = u_tot + delta_e
-
-              end if
+            if ((v1o.eq.1.and.v2o.eq.0.and.pm.eq.1).or.&
+                (v1o.eq.-1.and.v2o.eq.0.and.pm.eq.-1).or.&
+                (v1o.eq.0.and.v2o.eq.1.and.pm.eq.-1).or.&
+                (v1o.eq.0.and.v2o.eq.-1.and.pm.eq.1)) then
+              accepts(1) = accepts(1) + 1
+            else if ((v1o.eq.0.and.v2o.eq.0)) then
+              accepts(4) = accepts(4) + 1
+            else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
+              accepts(5) = accepts(5) + 1
+            else
+              write (6,'(a,7i3.1)') "SOME WEIRD SHIT GOT ACCEPTED: ",&
+              site(1), site(2), v1o, v2o, v1n, v2n, pm
             end if
 
-          end if ! end "positive" / "negative" choice
-        end if ! end charge.ne.0 block
+            end if
+          end if
+
+          ! else ! decrease field bond
+
+          !   eo = e_field(mu,site(1),site(2))
+          !   en = eo - increment
+          !   old_e = 0.5 * eps_0 * lambda**2 * eo**2
+          !   new_e = 0.5 * eps_0 * lambda**2 * en**2
+          !   delta_e = new_e - old_e
+        !   v1 = v(site(1),site(2)) + 1
+        !   ! get negative in the mu direction
+        !   site(mu) = neg(site(mu))
+        !   v2 = v(site(1),site(2)) - 1
+
+        !   if (abs(v1).le.1.and.abs(v2).le.1) then
+        !     if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+        !       ! site still pointing at neg(orig. site)
+        !       v(site(1),site(2)) = v2
+        !       site(mu) = pos(site(mu))
+        !       v(site(1),site(2)) = v1
+        !       e_field(mu,site(1),site(2)) = en
+        !       ebar(mu) = ebar(mu) + (increment / L**2)
+
+        !       accepth = accepth + 1
+        !       u_tot = u_tot + delta_e
+
+        !     end if
+        !   end if
+
+        ! end if ! end increase / decrease choice
 
       end do ! end charge hop sweep
 
@@ -111,13 +147,14 @@ module update
       mu = 0; increment = 0.0;
       u_tot = 0.0
       u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
+      !write (*,*) "charge density: ", (dble(sum(abs(v))) / L**2)
 
     end subroutine hop
 
-    subroutine rot(attempts)
+    subroutine rot(n)
       use common
       implicit none
-      integer, intent(in) :: attempts
+      integer, intent(in) :: n
       integer :: i, mu1, mu2
       integer, dimension(2) :: site
       real(kind=8) :: eo1, eo2, eo3, eo4, en1, en2, en3, en4,&
@@ -125,7 +162,7 @@ module update
 
       ! --- ROTATIONAL UPDATE ---
 
-      do i = 1, attempts
+      do i = 1, n
 
         eo1 = 0.0; eo2 = 0.0; eo3 = 0.0; eo4 = 0.0
         en1 = 0.0; en2 = 0.0; en3 = 0.0; en4 = 0.0
@@ -184,7 +221,7 @@ module update
           e_field(mu2,site(1),site(2)) = en3
           site(mu2) = pos(site(mu2))
 
-          acceptr = acceptr + 1
+          accepts(2) = accepts(2) + 1
           u_tot = u_tot + delta_e
 
         end if ! end of Metropolis check
@@ -193,16 +230,16 @@ module update
 
     end subroutine rot
 
-    subroutine harm(attempts)
+    subroutine harm(n)
       use common
       implicit none
-      integer, intent(in) :: attempts
+      integer, intent(in) :: n
       integer :: i, mu, pm1
-      real(kind=8) :: old_e, new_e, delta_e, increment
+      real(kind=8) :: delta_e, increment
 
       ! --- HARMONIC UPDATE ---
 
-      do i = 1, attempts
+      do i = 1, n
 
         increment = (q) / (L * eps_0 * lambda)
 
@@ -214,9 +251,8 @@ module update
             pm1 = +1
           end if
 
-          old_e = ebar(mu)**2
-          new_e = (ebar(mu) + pm1 * increment)**2
-          delta_e = new_e - old_e
+          delta_e = (lambda**2 * q) *&
+                    ((q / (2 * eps_0)) + (pm1 * L * ebar(mu)))
 
           if ((delta_e.lt.0.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then
@@ -224,7 +260,7 @@ module update
             ebar(mu) = ebar(mu) + pm1 * increment
             e_field(mu,:,:) = e_field(mu,:,:) + pm1 * (increment)
 
-            acceptg = acceptg + 1
+            accepts(3) = accepts(3) + 1
 
           end if ! end weird Metropolis block
 
@@ -245,7 +281,7 @@ module update
       integer,intent(in) :: step_number
       integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
       real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
-      real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq
+      real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
       real(kind=8), dimension(2,L,L) :: e_rot
       complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
       complex(kind=rk) :: e_kx_temp, e_ky
@@ -263,6 +299,7 @@ module update
       ! |                                                                 |
       ! | --------------------------------------------------------------- |
 
+      ebar = 0.0; ebar_dip = 0.0; ebar_wind = 0.0; dp = 0.0; np = 0.0
       norm_k = 0.0; dist = 0.0
       rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
       e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
@@ -275,34 +312,64 @@ module update
       call linsol
       e_rot = e_field - mnphi
 
-      !write (*,*) e_tot_avg(1,1,1), e_field(1,1,1)
-      e_tot_avg =       e_tot_avg + e_field
-      e_rot_avg =       e_rot_avg + e_rot
-      e_irrot_avg =     e_irrot_avg + mnphi
-      v_avg =           v_avg + float(v)
-      ener_tot =        0.5 * eps_0 * sum(e_field * e_field)
-      ener_rot =        0.5 * eps_0 * sum(e_rot * e_rot)
-      ener_irrot =      0.5 * eps_0 * sum(mnphi * mnphi)
-      ener_tot =        ener_tot / L**2
-      ener_rot =        ener_rot / L**2
-      ener_irrot =      ener_irrot / L**2
-      ener_tot_sq =     ener_tot**2
-      ener_rot_sq =     ener_rot**2
-      ener_irrot_sq =   ener_irrot**2
-      ener_tot_sum =    ener_tot_sum + ener_tot
-      ener_rot_sum =    ener_rot_sum + ener_rot
-      ener_irrot_sum =  ener_irrot_sum + ener_irrot
-      ener_tot_sq_sum =    ener_tot_sq_sum + ener_tot_sq
-      ener_rot_sq_sum =    ener_rot_sq_sum + ener_rot_sq
-      ener_irrot_sq_sum =  ener_irrot_sq_sum + ener_irrot_sq
+      e_tot_avg =           e_tot_avg + e_field
+      e_rot_avg =           e_rot_avg + e_rot
+      e_irrot_avg =         e_irrot_avg + mnphi
+      v_avg =               v_avg + float(v)
+      rho_avg =             rho_avg + (dble(sum(abs(v))) / L**2)
+      ener_tot =            0.5 * lambda**2 * eps_0 * sum(e_field * e_field)
+      ener_rot =            0.5 * lambda**2 * eps_0 * sum(e_rot * e_rot)
+      ener_irrot =          0.5 * lambda**2 * eps_0 * sum(mnphi * mnphi)
+      ener_tot =            ener_tot / L**2
+      ener_rot =            ener_rot / L**2
+      ener_irrot =          ener_irrot / L**2
+      ener_tot_sq =         ener_tot**2
+      ener_rot_sq =         ener_rot**2
+      ener_irrot_sq =       ener_irrot**2
+      ener_tot_sum =        ener_tot_sum + ener_tot
+      ener_rot_sum =        ener_rot_sum + ener_rot
+      ener_irrot_sum =      ener_irrot_sum + ener_irrot
+      ener_tot_sq_sum =     ener_tot_sq_sum + ener_tot_sq
+      ener_rot_sq_sum =     ener_rot_sq_sum + ener_rot_sq
+      ener_irrot_sq_sum =   ener_irrot_sq_sum + ener_irrot_sq
 
-      ebar(1) = sum(e_field(1,:,:))
-      ebar(2) = sum(e_field(2,:,:))
+      do i = 1,2
+
+        ebar(i) = sum(e_field(i,:,:))
+        dp = ebar(i)
+        np = 0
+
+        if (ebar(i).gt.((q * dble(L)) / 2)) then
+          dp = dp - (q * dble(L))
+          np = ebar(i) - dp
+        else if (ebar(i).le.((-1.0 * q * dble(L)) / 2)) then
+          dp = dp + (q * dble(L))
+          np = ebar(i) - dp
+        end if
+
+        ebar_dip(i) = dp
+        ebar_wind(i) = np
+
+      end do
+
       ebar = ebar / L**2
+      ebar_dip = ebar_dip / L**2
+      ebar_wind = ebar_wind / L**2
+
       ebar_sum(1) = ebar_sum(1) + ebar(1)
       ebar_sum(2) = ebar_sum(2) + ebar(2)
       ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
       ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
+
+      ebar_dip_sum(1) = ebar_dip_sum(1) + ebar_dip(1)
+      ebar_dip_sum(2) = ebar_dip_sum(2) + ebar_dip(2)
+      ebar_dip_sq_sum(1) = ebar_dip_sq_sum(1) + (ebar_dip(1) * ebar_dip(1))
+      ebar_dip_sq_sum(2) = ebar_dip_sq_sum(2) + (ebar_dip(2) * ebar_dip(2))
+
+      ebar_wind_sum(1) = ebar_wind_sum(1) + ebar_wind(1)
+      ebar_wind_sum(2) = ebar_wind_sum(2) + ebar_wind(2)
+      ebar_wind_sq_sum(1) = ebar_wind_sq_sum(1) + (ebar_wind(1) * ebar_wind(1))
+      ebar_wind_sq_sum(2) = ebar_wind_sq_sum(2) + (ebar_wind(2) * ebar_wind(2))
 
       if (do_corr) then
         n = step_number / sample_interval

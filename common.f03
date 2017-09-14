@@ -18,7 +18,7 @@ module common
   integer, public :: MPI_NEW_REAL, MPI_NEW_INT
   integer(kind=4), public :: seed, no_samples, no_threads, L, add_charges,&
   no_measurements, therm_sweeps, measurement_sweeps, sample_interval
-  integer(kind=ik), public :: accepth,acceptr,acceptg
+  integer(kind=ik), dimension(5), public :: attempts, accepts
   integer(kind=ik), dimension(:), allocatable, public :: bin_count
   integer(kind=4), dimension(:), allocatable, public :: pos,neg
   integer(kind=4), dimension(:,:), allocatable, public :: v
@@ -28,8 +28,9 @@ module common
   real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
   real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
   real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&
-  ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum
-  real(kind=rk), dimension(2), public :: ebar, ebar_sum, ebar_sq_sum
+  ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg
+  real(kind=rk), dimension(2), public :: ebar, ebar_dip, ebar_wind, ebar_sum,&
+  ebar_sq_sum, ebar_dip_sum, ebar_dip_sq_sum, ebar_wind_sum, ebar_wind_sq_sum
   real(kind=rk), dimension(:), allocatable, public :: dist_r
   real(kind=rk), dimension(:,:), allocatable, public :: v_avg, dir_struc
   real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg,&
