@@ -70,7 +70,7 @@ module output
     sp_he_tot, sp_he_rot, sp_he_irrot
 
     write (30,'(a)') "   # T, Chi_{Ebar}, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
-    write (30,'(2ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
+    write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
 
     ! write (30,'(a)') "   # hop acceptance"
     ! write (30,'(2ES18.9)') temp,&
@@ -88,231 +88,234 @@ module output
 
     close(30)
 
-    ! we can calculate s_perp up to wherever
-    sp = 8
-    allocate(s_perp((sp*L)+1,(sp*L)+1))
-    allocate(s_perp_irrot((sp*L)+1,(sp*L)+1))
-    allocate(s_perp_rot((sp*L)+1,(sp*L)+1))
-    allocate(s_par((sp*L)+1,(sp*L)+1))
-    allocate(s_par_irrot((sp*L)+1,(sp*L)+1))
-    allocate(s_par_rot((sp*L)+1,(sp*L)+1))
-    s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
-    s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
+    if (do_corr) then
+      ! we can calculate s_perp up to wherever
+      sp = 8
+      allocate(s_perp((sp*L)+1,(sp*L)+1))
+      allocate(s_perp_irrot((sp*L)+1,(sp*L)+1))
+      allocate(s_perp_rot((sp*L)+1,(sp*L)+1))
+      allocate(s_par((sp*L)+1,(sp*L)+1))
+      allocate(s_par_irrot((sp*L)+1,(sp*L)+1))
+      allocate(s_par_rot((sp*L)+1,(sp*L)+1))
+      s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
+      s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
 
-    do p = (-L/2)*sp,(L/2)*sp
-      do m = (-L/2)*sp,(L/2)*sp
+      do p = (-L/2)*sp,(L/2)*sp
+        do m = (-L/2)*sp,(L/2)*sp
 
-        i = m + 1 + sp*(L/2)
-        j = p + 1 + sp*(L/2)
+          i = m + 1 + sp*(L/2)
+          j = p + 1 + sp*(L/2)
 
-        if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
-          ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
-          charge_struc(i,j) = abs(ch_ch(i,j) - &
-            rho_k_p(i,j) * conjg(rho_k_m(i,j)))
-          field_struc(i,j) = abs(s_ab(1,1,i,j))
-          field_struc_irrot(i,j) = abs(s_ab_irrot(1,1,i,j))
-          field_struc_rot(i,j) = abs(s_ab_rot(1,1,i,j))
-        end if
+          if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
+            ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
+            charge_struc(i,j) = abs(ch_ch(i,j) - &
+              rho_k_p(i,j) * conjg(rho_k_m(i,j)))
+            field_struc(i,j) = abs(s_ab(1,1,i,j))
+            field_struc_irrot(i,j) = abs(s_ab_irrot(1,1,i,j))
+            field_struc_rot(i,j) = abs(s_ab_rot(1,1,i,j))
+          end if
 
-        ! use separate variables, we're gonna mess around with values
-        kx_float = m * ((2 * pi)/(L * lambda))
-        ky_float = p * ((2 * pi)/(L * lambda))
+          ! use separate variables, we're gonna mess around with values
+          kx_float = m * ((2 * pi)/(L * lambda))
+          ky_float = p * ((2 * pi)/(L * lambda))
 
-        if (kx_float.eq.0.and.ky_float.eq.0) then
-          norm_k = 0.0
-        else
-          norm_k = 1.0/(kx_float**2 + ky_float**2)
-        end if
+          if (kx_float.eq.0.and.ky_float.eq.0) then
+            norm_k = 0.0
+          else
+            norm_k = 1.0/(kx_float**2 + ky_float**2)
+          end if
 
-        ! move back to somewhere we already know about
-        ! this is probably not right yet.
-        ! but i know something needs doing here
-        ! s_ab should be periodic in 2pi so mod should be fine
+          ! move back to somewhere we already know about
+          ! this is probably not right yet.
+          ! but i know something needs doing here
+          ! s_ab should be periodic in 2pi so mod should be fine
 
-        if (abs(p).gt.(L/2)*bz) then
-          ky = mod(p,(bz*L)/2) + 1 + (bz*L)/2
-        else
-          ky = p + 1 + (bz*L)/2
-        end if
-        if (abs(m).gt.(L/2)*bz) then
-          kx = mod(m,(bz*L)/2) + 1 + (bz*L)/2
-        else
-          kx = m + 1 + (bz*L)/2
-        end if
+          if (abs(p).gt.(L/2)*bz) then
+            ky = mod(p,(bz*L)/2) + 1 + (bz*L)/2
+          else
+            ky = p + 1 + (bz*L)/2
+          end if
+          if (abs(m).gt.(L/2)*bz) then
+            kx = mod(m,(bz*L)/2) + 1 + (bz*L)/2
+          else
+            kx = m + 1 + (bz*L)/2
+          end if
 
-        s_perp(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
-                        ((-1)*kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
-                        ((-1)*ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
-                        (1 - ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
+          s_perp(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
+                          ((-1)*kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
+                          ((-1)*ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
+                          (1 - ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
 
-        s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky)+&
-                        ((-1)*kx_float*ky_float*norm_k) * s_ab_irrot(1,2,kx,ky)+&
-                        ((-1)*ky_float*kx_float*norm_k) * s_ab_irrot(2,1,kx,ky)+&
-                        (1 - ky_float*ky_float*norm_k) * s_ab_irrot(2,2,kx,ky)
+          s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky)+&
+                          ((-1)*kx_float*ky_float*norm_k) * s_ab_irrot(1,2,kx,ky)+&
+                          ((-1)*ky_float*kx_float*norm_k) * s_ab_irrot(2,1,kx,ky)+&
+                          (1 - ky_float*ky_float*norm_k) * s_ab_irrot(2,2,kx,ky)
 
-        s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky)+&
-                        ((-1)*kx_float*ky_float*norm_k) * s_ab_rot(1,2,kx,ky)+&
-                        ((-1)*ky_float*kx_float*norm_k) * s_ab_rot(2,1,kx,ky)+&
-                        (1 - ky_float*ky_float*norm_k) * s_ab_rot(2,2,kx,ky)
+          s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky)+&
+                          ((-1)*kx_float*ky_float*norm_k) * s_ab_rot(1,2,kx,ky)+&
+                          ((-1)*ky_float*kx_float*norm_k) * s_ab_rot(2,1,kx,ky)+&
+                          (1 - ky_float*ky_float*norm_k) * s_ab_rot(2,2,kx,ky)
 
-        s_par(i,j) = (kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
-                       (kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
-                       (ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
-                       (ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
+          s_par(i,j) = (kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
+                         (kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
+                         (ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
+                         (ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
 
-        s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*s_ab_irrot(1,1,kx,ky)+&
-                             (kx_float*ky_float*norm_k)*s_ab_irrot(1,2,kx,ky)+&
-                             (ky_float*kx_float*norm_k)*s_ab_irrot(2,1,kx,ky)+&
-                             (ky_float*ky_float*norm_k)*s_ab_irrot(2,2,kx,ky)
+          s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*s_ab_irrot(1,1,kx,ky)+&
+                               (kx_float*ky_float*norm_k)*s_ab_irrot(1,2,kx,ky)+&
+                               (ky_float*kx_float*norm_k)*s_ab_irrot(2,1,kx,ky)+&
+                               (ky_float*ky_float*norm_k)*s_ab_irrot(2,2,kx,ky)
 
-        s_par_rot(i,j) = (kx_float*kx_float*norm_k)*s_ab_rot(1,1,kx,ky)+&
-                           (kx_float*ky_float*norm_k)*s_ab_rot(1,2,kx,ky)+&
-                           (ky_float*kx_float*norm_k)*s_ab_rot(2,1,kx,ky)+&
-                           (ky_float*ky_float*norm_k)*s_ab_rot(2,2,kx,ky)
+          s_par_rot(i,j) = (kx_float*kx_float*norm_k)*s_ab_rot(1,1,kx,ky)+&
+                             (kx_float*ky_float*norm_k)*s_ab_rot(1,2,kx,ky)+&
+                             (ky_float*kx_float*norm_k)*s_ab_rot(2,1,kx,ky)+&
+                             (ky_float*ky_float*norm_k)*s_ab_rot(2,2,kx,ky)
 
+        end do
+      end do ! end p, m loops
+
+      open(unit=10, file=dir_st_file)
+      open(unit=11, file=dir_dist_file)
+      open(unit=12, file=charge_st_file)
+      open(unit=13, file=field_st_file)
+      open(unit=14, file=s_ab_file)
+      open(unit=15, file=s_perp_file)
+      open(unit=16, file=irrot_field_file)
+      open(unit=17, file=irrot_sab_file)
+      open(unit=18, file=irrot_sperp_file)
+      open(unit=19, file=rot_field_file)
+      open(unit=20, file=rot_sab_file)
+      open(unit=21, file=rot_sperp_file)
+      open(unit=22, file=spar_file)
+      open(unit=23, file=irrot_spar_file)
+      open(unit=24, file=rot_spar_file)
+      open(unit=25, file=avg_field_file)
+
+      !dist_r = dist_r / (no_measurements)
+      do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
+        write (11, dir_dist_format_string)&
+        i * bin_size, bin_count(i), abs(dist_r(i))
       end do
-    end do ! end p, m loops
-    open(unit=10, file=dir_st_file)
-    open(unit=11, file=dir_dist_file)
-    open(unit=12, file=charge_st_file)
-    open(unit=13, file=field_st_file)
-    open(unit=14, file=s_ab_file)
-    open(unit=15, file=s_perp_file)
-    open(unit=16, file=irrot_field_file)
-    open(unit=17, file=irrot_sab_file)
-    open(unit=18, file=irrot_sperp_file)
-    open(unit=19, file=rot_field_file)
-    open(unit=20, file=rot_sab_file)
-    open(unit=21, file=rot_sperp_file)
-    open(unit=22, file=spar_file)
-    open(unit=23, file=irrot_spar_file)
-    open(unit=24, file=rot_spar_file)
-    open(unit=25, file=avg_field_file)
 
-    !dist_r = dist_r / (no_measurements)
-    do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )
-    write (11, dir_dist_format_string)&
-    i * bin_size, bin_count(i), abs(dist_r(i))
-    end do
+      close(11)
 
-    close(11)
+      do i = 1,sp*(L) + 1
+        do j = 1,sp*(L) + 1
 
-    do i = 1,sp*(L) + 1
-    do j = 1,sp*(L) + 1
+          ! output is kx, ky, kz, S(\vec{k})
 
-    ! output is kx, ky, kz, S(\vec{k})
+          if (i.le.L/2+1.and.j.le.L/2+1) then
+            write (10, dir_format_string)&
+            i - 1,j - 1,abs(dir_struc(i,j))
+          end if
 
-    if (i.le.L/2+1.and.j.le.L/2+1) then
-    write (10, dir_format_string)&
-    i - 1,j - 1,abs(dir_struc(i,j))
-    end if
+          if (i.le.L.and.j.le.L) then
+            write (25, avg_field_format)&
+            i,j,e_tot_avg(1,i,j),e_tot_avg(2,i,j),&
+            e_rot_avg(1,i,j),e_rot_avg(2,i,j),&
+            e_irrot_avg(1,i,j),e_irrot_avg(2,i,j),&
+            v_avg(i,j)
+          end if
 
-    if (i.le.L.and.j.le.L) then
-    write (25, avg_field_format)&
-    i,j,e_tot_avg(1,i,j),e_tot_avg(2,i,j),&
-    e_rot_avg(1,i,j),e_rot_avg(2,i,j),&
-    e_irrot_avg(1,i,j),e_irrot_avg(2,i,j),&
-    v_avg(i,j)
-    end if
+          if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
 
-    if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
+            write (12, struc_format_string)&
+            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            charge_struc(i,j)
 
-    write (12, struc_format_string)&
-    2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-    charge_struc(i,j)
+            write (13, struc_format_string)&
+            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            field_struc(i,j)
 
-    write (13, struc_format_string)&
-    2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-    field_struc(i,j)
+            write (14, field_format_string)&
+            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+            s_ab(1,1,i,j),&
+            s_ab(1,2,i,j),&
+            s_ab(2,1,i,j),&
+            s_ab(2,2,i,j)
 
-    write (14, field_format_string)&
-    2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-    2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-    s_ab(1,1,i,j),&
-    s_ab(1,2,i,j),&
-    s_ab(2,1,i,j),&
-    s_ab(2,2,i,j)
+            write (16, struc_format_string)&
+            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            field_struc_irrot(i,j)
 
-    write (16, struc_format_string)&
-    2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-    field_struc_irrot(i,j)
+            write (17, field_format_string)&
+            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            s_ab_irrot(1,1,i,j),&
+            s_ab_irrot(1,2,i,j),&
+            s_ab_irrot(2,1,i,j),&
+            s_ab_irrot(2,2,i,j)
 
-    write (17, field_format_string)&
-    2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-    s_ab_irrot(1,1,i,j),&
-    s_ab_irrot(1,2,i,j),&
-    s_ab_irrot(2,1,i,j),&
-    s_ab_irrot(2,2,i,j)
+            write (19, struc_format_string)&
+            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            field_struc_rot(i,j)
 
-    write (19, struc_format_string)&
-    2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-    field_struc_rot(i,j)
+            write (20, field_format_string)&
+            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+            s_ab_rot(1,1,i,j),&
+            s_ab_rot(1,2,i,j),&
+            s_ab_rot(2,1,i,j),&
+            s_ab_rot(2,2,i,j)
 
-    write (20, field_format_string)&
-    2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-    2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-    s_ab_rot(1,1,i,j),&
-    s_ab_rot(1,2,i,j),&
-    s_ab_rot(2,1,i,j),&
-    s_ab_rot(2,2,i,j)
+          end if
 
-    end if
+          write (15, field_format_string)&
+          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          s_perp(i,j)
 
-    write (15, field_format_string)&
-    2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-    s_perp(i,j)
+          write (18, field_format_string)&
+          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          s_perp_irrot(i,j)
 
-    write (18, field_format_string)&
-    2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-    s_perp_irrot(i,j)
+          write (21, field_format_string)&
+          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          s_perp_rot(i,j)
 
-    write (21, field_format_string)&
-    2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-    s_perp_rot(i,j)
+          write (22, field_format_string)&
+          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          s_par(i,j)
 
-    write (22, field_format_string)&
-    2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-    s_par(i,j)
+          write (23, field_format_string)&
+          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          s_par_irrot(i,j)
 
-    write (23, field_format_string)&
-    2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-    s_par_irrot(i,j)
+          write (24, field_format_string)&
+          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          s_par_rot(i,j)
 
-    write (24, field_format_string)&
-    2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-    2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-    s_par_rot(i,j)
+        end do
+      end do
 
-    end do
-    end do
+      close(10)
+      close(12)
+      close(13)
+      close(14)
+      close(15)
+      close(16)
+      close(17)
+      close(18)
+      close(19)
+      close(20)
+      close(21)
+      close(22)
+      close(23)
+      close(24)
 
-    close(10)
-    close(12)
-    close(13)
-    close(14)
-    close(15)
-    close(16)
-    close(17)
-    close(18)
-    close(19)
-    close(20)
-    close(21)
-    close(22)
-    close(23)
-    close(24)
-
-    deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
-    deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);
+      deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
+      deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);
+    end if ! do_corr
 
   end subroutine calc_correlations
 

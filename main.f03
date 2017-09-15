@@ -143,9 +143,9 @@ program mr
 
     call normalisations(num_procs)
 
-    if (do_corr) then
+    ! if (do_corr) then
       call write_output
-    end if
+    ! end if
 
     call cpu_time(end_time)
 
