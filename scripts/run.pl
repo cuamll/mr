@@ -102,20 +102,11 @@ my $logdir = "$outdir/logs";
 print "Creating directory $logdir\n";
 make_path($logdir);
 
-# keep a timestamped copy of output files
-$tempinputfile = "$basedir/in.temp";
 
 my %parameters = get_parameters("$inputfile");
 # print Dumper %parameters;
 
 # portably change relative path names into absolute ones
-foreach (keys %parameters) {
-  if ($_ =~ /_file/) {
-    my $value = $parameters{$_};
-    $parameters{$_} = "$basedir/$value";
-  }
-}
-
 my $progname = get_progname("EXEC");
 
 # one line in each timestamped folder with parameters
@@ -140,15 +131,30 @@ if ($dorun) {
             my $timestamp = get_timestamp();
 
             # don't think i can call a function inside an array assignment
-            my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'z', $charge_values[$j],'a', $spacings[$k]);
+            # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
+            my @stamparray = ('T', $temperatures[$i],'L',$lengths[$m],'chg', $charges[$l]);
             my $stamp = join('_', @stamparray);
             my $stampdir = "$outdir/$stamp";
-            print "Creating directories $stampdir and $stampdir/plots .\n";
-            make_path($stampdir,"$stampdir/plots");
+            print "Creating directory $stampdir .\n";
+            make_path($stampdir);
             $parameters{stamp} = "$stamp";
             my $parameters_json = create_json(%parameters);
 
-            my $logfile = "$logdir/$timestamp.log";
+            if ($doplots) {
+              print "Creating directory $stampdir/plots .\n";
+              make_path("$stampdir/plots");
+            }
+
+            my $logfile = "$logdir/$stamp.log";
+
+            foreach (keys %parameters) {
+              if ($_ =~ /_file/) {
+                my $value = $parameters{$_};
+                $parameters{$_} = "$stampdir/$value";
+              }
+            }
+
+            $tempinputfile = "$basedir/$stamp.temp";
 
             open($fh, '>:encoding(UTF-8)', $tempinputfile)
               or die "Unable to create temporary input file:$!\n";
@@ -168,42 +174,79 @@ if ($dorun) {
             my $jsondb = "$logdir/db.json";
             write_to_file($jsondb, "$parameters_json\n", "append");
 
-            # run program
-            my $np = 2;
-            my $mpi_args = '--bind-to none';
-            my $verbose = '-v';
-            my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
-            print "Running $progname with command $runcmd\n";
-            system($runcmd);
+            # generate job file
+            my $genjobfile = 1;
+            if ($genjobfile) {
+              my $email = q(zcapg55@ucl.ac.uk);
+              my $vf = '960M';
+              my $pe = '32';
+              my $jobname = "mr_T_$parameters{temperature}_L_$parameters{L}_canon";
+              my $jobfilecontent = qq(
+#!/bin/bash -f
+# ------------------------------
+#\$ \-M $email
+#\$ \-m bes
+#\$ \-V
+#\$ \-j y
+#\$ \-cwd
+#\$ \-N '$jobname'
+#\$ \-S /bin/bash
+#\$ \-l vf=$vf
+#\$ \-pe ompi $pe
+#
+echo "Got \${NSLOTS} slots."
+IPWD=`pwd`
+echo "in \${IPWD}."
+mpirun --mca btl ^openib --mca mtl ^psm --n \${NSLOTS} $basedir/$progname -v $tempinputfile
+exit 0
+);
+              my $jobfilename = "$basedir/$stamp.job";
+              write_to_file($jobfilename, $jobfilecontent, "write");
+
+              my $runcmd = qq(qsub -q 32-32.q $jobfilename);
+              print "Running $progname with command $runcmd\n";
+              # system($runcmd);
+
+            } else {
+
+              # run program
+              my $np = 2;
+              my $mpi_args = '--bind-to none';
+              my $verbose = '-v';
+              my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
+              print "Running $progname with command $runcmd\n";
+              system($runcmd);
+
+          } # end of job file???
 
             copy($tempinputfile, "$stampdir/input.in");
-            unlink($tempinputfile);
+            # unlink($tempinputfile);
 
             # program should have terminated now
             # we want to copy the out directory into the timestamped one.
             # do ls, make a list, then iterate over the list and copy
-            opendir(my $dh, $outdir) or die "Can't open output directory: $!";
-            if ($parameters{do_corr} =~ /[TY]/) {
-              foreach (keys %parameters) {
-                if ($_ =~ /_file/ && $_ !~ /! /) {
-                  my $value = $parameters{$_};
-                  (my $file, my $dir, my $ext) = fileparse($value);
-                  print "Copying $dir$file$ext to $stampdir/$file$ext\n";
-                  copy($dir . $file . $ext, "$stampdir/$file" . $ext) or die "Copy failed: $!";
-                }
-              }
-            } else {
-              foreach (keys %parameters) {
-                if ($_ =~ /sphe_sus_file/) {
-                  my $value = $parameters{$_};
-                  (my $file, my $dir, my $ext) = fileparse($value);
-                  print "Copying $dir$file$ext to $stampdir/$file$ext\n";
-                  copy($dir . $file . $ext, "$stampdir/$file" . $ext) or die "Copy failed: $!";
-                }
-              }
-            }
 
-            close($dh);
+            # opendir(my $dh, $outdir) or die "Can't open output directory: $!";
+            # if ($parameters{do_corr} =~ /[TY]/) {
+            #   foreach (keys %parameters) {
+            #     if ($_ =~ /_file/ && $_ !~ /! /) {
+            #       my $value = $parameters{$_};
+            #       (my $file, my $dir, my $ext) = fileparse($value);
+            #       print "Copying $dir$file$ext to $stampdir/$file$ext\n";
+            #       copy($dir . $file . $ext, "$stampdir/$file" . $ext) or die "Copy failed: $!";
+            #     }
+            #   }
+            # } else {
+            #   foreach (keys %parameters) {
+            #     if ($_ =~ /sphe_sus_file/) {
+            #       my $value = $parameters{$_};
+            #       (my $file, my $dir, my $ext) = fileparse($value);
+            #       print "Copying $dir$file$ext to $stampdir/$file$ext\n";
+            #       copy($dir . $file . $ext, "$stampdir/$file" . $ext) or die "Copy failed: $!";
+            #     }
+            #   }
+            # }
+            # close($dh);
 
             # then probably averaging stuff on the raw output, e_fields and charge dist.
             # then gnuplot

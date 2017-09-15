@@ -33,9 +33,3 @@ rot_s_(perp)_file                     out/s_perp_rot.dat
 rot_s_(par)_file                      out/s_par_rot.dat
 average_field_file                    out/avg_fields.dat
 sphe_sus_file                         out/sphe_sus.dat
-! deprecated; probably can be removed
-! lattice_file                          in/lattice.dat
-! field_charge_file                     out/temp.bin
-! energy_file                           out/energy.dat
-! squared_energy_file                   out/sq_energy.dat
-! electric_field_file                   out/e_field.dat
