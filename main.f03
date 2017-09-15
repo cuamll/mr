@@ -143,9 +143,9 @@ program mr
 
     call normalisations(num_procs)
 
-    if (do_corr) then
+    ! if (do_corr) then
       call write_output
-    end if
+    ! end if
 
     call cpu_time(end_time)
 
@@ -179,10 +179,10 @@ program mr
     accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
     write (*,'(a,2i12.1,es18.9)') "Harm: total, attempts, rate: ",&
     accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
-    write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
-    accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-    write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
-    accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+    ! write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+    ! accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+    ! write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
+    ! accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
 
   end if
 

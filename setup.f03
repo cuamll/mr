@@ -36,7 +36,9 @@ module setup
     rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0);
     dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
     attempts = 0; accepts = 0
-    ! we know in advance how many rot. and harm. attempts we'll make
+    ! we know in advance how many hop, rot. and harm. attempts we'll make
+    attempts(1) = ((therm_sweeps + measurement_sweeps) * &
+    hop_ratio * L**2 * (no_samples))
     attempts(2) = (therm_sweeps + measurement_sweeps) *&
       no_samples * L**2 * rot_ratio
     attempts(3) = (therm_sweeps + measurement_sweeps) *&

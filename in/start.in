@@ -1,16 +1,16 @@
 L 12
 ! leave omp_threads as 0 to use default
 omp_threads 0
-no_samples 2
+no_samples 4
 do_corr F
 thermalisation_sweeps 10000
-measurement_sweeps 25000
+measurement_sweeps 250000
 sample_interval 10
-temperature 1.400
+temperature 2.100
 lattice_spacing 1.0
 charge_value 6.283185307179586
 delta_max 1.1
-charges 0
+charges 18
 rng_seed 0
 hop_ratio 1.0
 rot_ratio 1.0
