@@ -1,4 +1,3 @@
-
 module update
   use common
   ! not sure if linear solver is needed
@@ -12,7 +11,7 @@ module update
       integer, intent(in) :: n
       integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
       integer, dimension(2) :: site
-      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
+      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment, delt
 
       ! --- CHARGE HOP UPDATE ---
 
@@ -23,8 +22,8 @@ module update
 
         ! pick a random site and random component, x or y
         site = (/ int(rand() * L) + 1,&
-                  &int(rand() * L) + 1 /)
-        mu = floor(2*rand())+1
+                  int(rand() * L) + 1 /)
+        mu = floor(2*rand()-0.00000000001)+1
 
         ! check we're not doing anything weird with multiple charges
         if (abs(v(site(1),site(2))).gt.1) then
@@ -36,7 +35,6 @@ module update
 
         ! grand canonical now
 
-        ! charge = v(site(1),site(2))
         increment = q / (eps_0 * lambda)
 
         if (rand().lt.0.5) then ! increase field bond
@@ -45,6 +43,7 @@ module update
           pm = -1
         end if
 
+        eo = 0.0; en = 0.0; old_e = 0.0; new_e = 0.0; delta_e = 0.0;
         eo = e_field(mu,site(1),site(2))
         en = eo + pm * increment
         old_e = 0.5 * eps_0 * eo**2
@@ -77,8 +76,10 @@ module update
           ! site(1), site(2), v1o, v2o, v1n, v2n, pm
         end if
 
+        delt = rand()
+        ! write (*,'(f18.8)') delt
         if (abs(v1n).le.1.and.abs(v2n).le.1) then
-          if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+          if ((delta_e.lt.0.0).or.(exp(-1.0*beta*delta_e).gt.delt)) then
 
             ! site still pointing at neg(orig. site)
             v(site(1),site(2)) = v2n
@@ -96,6 +97,7 @@ module update
               accepts(1) = accepts(1) + 1
             else if ((v1o.eq.0.and.v2o.eq.0)) then
               accepts(4) = accepts(4) + 1
+              ! write (*,'(6i3.1,5f18.8)') site(1),site(2),v1o,v1n,v2o,v2n,new_e,old_e,eo,en,delt
             else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
               accepts(5) = accepts(5) + 1
             else
@@ -106,48 +108,18 @@ module update
             end if
           end if
 
-          ! else ! decrease field bond
-
-          !   eo = e_field(mu,site(1),site(2))
-          !   en = eo - increment
-          !   old_e = 0.5 * eps_0 * lambda**2 * eo**2
-          !   new_e = 0.5 * eps_0 * lambda**2 * en**2
-          !   delta_e = new_e - old_e
-        !   v1 = v(site(1),site(2)) + 1
-        !   ! get negative in the mu direction
-        !   site(mu) = neg(site(mu))
-        !   v2 = v(site(1),site(2)) - 1
-
-        !   if (abs(v1).le.1.and.abs(v2).le.1) then
-        !     if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-        !       ! site still pointing at neg(orig. site)
-        !       v(site(1),site(2)) = v2
-        !       site(mu) = pos(site(mu))
-        !       v(site(1),site(2)) = v1
-        !       e_field(mu,site(1),site(2)) = en
-        !       ebar(mu) = ebar(mu) + (increment / L**2)
-
-        !       accepth = accepth + 1
-        !       u_tot = u_tot + delta_e
-
-        !     end if
-        !   end if
-
-        ! end if ! end increase / decrease choice
-
       end do ! end charge hop sweep
 
-      if (ebar(mu).gt.(g_thr).or.ebar(mu).lt.((-1)*g_thr)) then
-        glob = 1
-      else
-        glob = 0
-      end if
+      glob = 1
+      ! if (ebar(mu).gt.(g_thr).or.ebar(mu).lt.((-1)*g_thr)) then
+      !   glob = 1
+      ! else
+      !   glob = 0
+      ! end if
 
       mu = 0; increment = 0.0;
       u_tot = 0.0
       u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
-      !write (*,*) "charge density: ", (dble(sum(abs(v))) / L**2)
 
     end subroutine hop
 
@@ -179,21 +151,25 @@ module update
         site = (/ int(rand() * L) + 1,&
                  &int(rand() * L) + 1 /)
 
-        ! convention in 2d: a plaquette is defined as
-        ! (1,i,j),(2,i,j),(1,i,neg(j)),(2,neg(i),j)
+        ! ! convention in 2d: a plaquette is defined as
+        ! ! (1,i,j),(2,i,j),(1,i,neg(j)),(2,neg(i),j)
         eo1 = e_field(mu1,site(1),site(2))
         eo2 = e_field(mu2,site(1),site(2))
 
-        ! if e.g. we picked xy, the next line does x -> neg(x)
+        ! ! if e.g. we picked xy, the next line does x -> neg(x)
         site(mu1) = neg(site(mu1))
+        ! write (*,'(a,3i3.1)') "site after first move: ",mu1, site
         eo4 = e_field(mu2,site(1),site(2))
-        ! and now we need to put it back
+        ! ! and now we need to put it back
         site(mu1) = pos(site(mu1))
+        ! write (*,'(a,3i3.1)') "site after put back: ",mu1, site
 
-        ! same for y
+        ! ! same for y
         site(mu2) = neg(site(mu2))
+        ! write (*,'(a,3i3.1)') "site after second move", mu2, site
         eo3 = e_field(mu1,site(1),site(2))
         site(mu2) = pos(site(mu2))
+        ! write (*,'(a,3i3.1)')  "site after put back: ",mu2, site
 
         en1 = eo1 + increment
         en2 = eo2 - increment
@@ -260,7 +236,7 @@ module update
 
             accepts(3) = accepts(3) + 1
 
-          end if ! end weird Metropolis block
+          end if ! end Metropolis block
 
         end do ! end mu1 loop
 
@@ -276,9 +252,9 @@ module update
       use linear_solver
       use omp_lib
       implicit none
-      integer,intent(in) :: step_number
-      integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
-      real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
+      integer, intent(in) :: step_number
+      integer :: omp_index,i,j,kx,ky,m,p,s,x,y,dist_bin
+      real(kind=8) :: norm_k, prefac, dist, ener_tot, ener_rot, ener_irrot
       real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
       real(kind=8), dimension(2,L,L) :: e_rot
       complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
@@ -290,10 +266,10 @@ module update
       ! | --------------- SUBROUTINE MEASURE(STEP_NUMBER) --------------- |
       ! |                 "MEASURES" RELEVANT QUANTITIES                  |
       ! |                                                                 |
-      ! | Basically just take an integer and print out the fields.        |
-      ! | Also runs the linear solver and prints out the irrotational     |
-      ! | field, along with the charge distribution. We read this back in |
-      ! | at the end, and do analysis then.                               |
+      ! | In this version, does fourier transforms of the charge          |
+      ! | distribution and fields, calculates relevant quantities from    |
+      ! | those. Uses OpenMP to parallelise the loop; still very slow.    |
+      ! |                                                                 |
       ! |                                                                 |
       ! | --------------------------------------------------------------- |
 
@@ -303,7 +279,7 @@ module update
       e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
       e_rot_kx_temp = (0.0,0.0)
       e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
-      kdotx = (0.0,0.0); imag = (0.0, 1.0)
+      kdotx = (0.0,0.0); imag = (0.0, 1.0); prefac = (2 * pi)/(L * lambda)
 
       ! get irrotational part of field
       ! this way we can get decomposed parts along with total
@@ -331,12 +307,17 @@ module update
       ener_rot_sq_sum =     ener_rot_sq_sum + ener_rot_sq
       ener_irrot_sq_sum =   ener_irrot_sq_sum + ener_irrot_sq
 
+      ! the harmonic mode can be decomposed into a dipolar part
+      ! and a part corresponding to charge winding: we're mostly
+      ! interested in the winding
       do i = 1,2
 
         ebar(i) = sum(e_field(i,:,:))
         dp = ebar(i)
         np = 0
 
+        ! also assume that the harmonic update does its job and keeps
+        ! the abs(topological sector) <= 1
         if (ebar(i).gt.((q * dble(L)) / 2)) then
           dp = dp - (q * dble(L))
           np = ebar(i) - dp
@@ -354,34 +335,28 @@ module update
       ebar_dip = ebar_dip / L**2
       ebar_wind = ebar_wind / L**2
 
-      ebar_sum(1) = ebar_sum(1) + ebar(1)
-      ebar_sum(2) = ebar_sum(2) + ebar(2)
-      ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
-      ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
-
-      ebar_dip_sum(1) = ebar_dip_sum(1) + ebar_dip(1)
-      ebar_dip_sum(2) = ebar_dip_sum(2) + ebar_dip(2)
-      ebar_dip_sq_sum(1) = ebar_dip_sq_sum(1) + (ebar_dip(1) * ebar_dip(1))
-      ebar_dip_sq_sum(2) = ebar_dip_sq_sum(2) + (ebar_dip(2) * ebar_dip(2))
-
-      ebar_wind_sum(1) = ebar_wind_sum(1) + ebar_wind(1)
-      ebar_wind_sum(2) = ebar_wind_sum(2) + ebar_wind(2)
-      ebar_wind_sq_sum(1) = ebar_wind_sq_sum(1) + (ebar_wind(1) * ebar_wind(1))
-      ebar_wind_sq_sum(2) = ebar_wind_sq_sum(2) + (ebar_wind(2) * ebar_wind(2))
+      ebar_sum = ebar_sum + ebar
+      ebar_sq_sum = ebar_sq_sum + (ebar * ebar)
+      ebar_dip_sum = ebar_dip_sum + ebar_dip
+      ebar_dip_sq_sum = ebar_dip_sq_sum + (ebar_dip * ebar_dip)
+      ebar_wind_sum = ebar_wind_sum + ebar_wind
+      ebar_wind_sq_sum = ebar_wind_sq_sum + (ebar_wind * ebar_wind)
 
       if (do_corr) then
-        n = step_number / sample_interval
 
         !$omp parallel do num_threads(2)&
-        !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
+        !$omp& private(i,j,m,p,x,y,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
         !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
-        do omp_index = 1, ((L*bz)+1)**2
+        do omp_index = 1, L**2
 
-          i = ((omp_index - 1) / ((L*bz)+1)) + 1
-          j = mod(omp_index - 1, ((L*bz)+1)) + 1
-          kx = i - 1 - bz*(L/2)
-          ky = j - 1 - bz*(L/2)
+          i = ((omp_index - 1) / L) + 1
+          j = mod(omp_index - 1, L) + 1
+          kx = i - 1
+          ky = j - 1
+
+          ! if ((kx.ge.0.and.kx.le.((L/2)+1)).and.&
+          !   (ky.ge.0.and.ky.le.((L/2)+1))) then
 
           rho_k_p_temp = (0.0,0.0)
           rho_k_m_temp = (0.0,0.0)
@@ -397,18 +372,18 @@ module update
           if (kx.eq.0.and.ky.eq.0) then
             norm_k = 0.0
           else
-            norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
+            norm_k = 1.0/((prefac**2)*dble(kx**2 + ky**2))
           end if
 
           do s = 1,L**2
-          !do m = 1,L
-          !  do p = 1,L
+
             m = ((s - 1) / L) + 1
             p = mod(s - 1, L) + 1
 
               ! different offsets for x,y,z
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
-                      ((p-1)*ky)))
+              ! kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
+              !         ((p-1)*ky)))
+              kdotx = hw(m, i) + fw(p, j)
 
               ! we want this for every step so we can
               ! average at the end to get field-field struc
@@ -416,8 +391,11 @@ module update
               mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
               e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                      ((p-(1.0/2))*ky)))
+              kdotx = fw(m, i) + hw(p, j)
+
+              if (step_number.eq.10.and.m.eq.L/2.and.i.eq.5.and.j.eq.L/2) then
+                write (*,*) m,p,i,j,fw(m,i),hw(p,j),kdotx
+              end if
 
               e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
               mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
@@ -426,8 +404,9 @@ module update
               if (v(m,p).ne.0) then ! calculate <++ + +->!
 
                 ! FT of charge distribution
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                        ((p-1)*ky/(L*lambda))))
+                ! kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
+                !         ((p-1)*ky/(L*lambda))))
+                kdotx = fw(m, i) + fw(p, j)
 
                 if (v(m,p).eq.-1) then
                   rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
@@ -437,40 +416,50 @@ module update
                   rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
                 end if
 
+              end if ! if v(m,p).ne.0
+
+              ! end if ! 0 <= kx,ky <= (L/2) + 1
+
                 ! --- real space correlation function ---
+                ! should start from 1
+                ! kx = kx + 1; ky = ky + 1
 
-                if (kx.gt.0.and.kx.le.L.and.&
-                    ky.gt.0.and.ky.le.L) then
+                if (v(m,p).ne.0) then
 
-                  ! this should sort it out. kx ky kz here are
-                  ! the "r"s, m p s are the "zeros"
-                  ! we want to do rho_+(0) rho_-(r)
-                  if (v(m,p).eq.1) then
-                    if (v(kx,ky).eq.-1) then
+                  if (i.gt.0.and.i.le.L.and.j.gt.0.and.j.le.L) then
 
-                      x = abs(m - kx)
-                      y = abs(p - ky)
+                    ! this should sort it out. i j kz here are
+                    ! the "r"s, m p s are the "zeros"
+                    ! we want to do rho_+(0) rho_-(r)
+                    if (v(m,p).eq.1) then
+                      if (v(i,j).eq.-1) then
 
-                      if (x.gt.L/2) then
-                        x = L - x
-                      end if
-                      if (y.gt.L/2) then
-                        y = L - y
-                      end if
+                        x = abs(m - i)
+                        y = abs(p - j)
 
-                      x = x + 1
-                      y = y + 1
+                        if (x.gt.L/2) then
+                          x = L - x
+                        end if
+                        if (y.gt.L/2) then
+                          y = L - y
+                        end if
 
-                      dir_struc(x,y) = dir_struc(x,y) +&
-                              v(m,p) * v(kx,ky)
-                    end if ! neg charge at kx,ky,kz
-                  end if ! pos charge at m,p,s
-                end if ! kx, ky, kz < L
+                        x = x + 1
+                        y = y + 1
 
-              end if ! end v != 0 check
+                        if (x.le.9.and.y.le.9) then
+                          dir_struc(x,y) = dir_struc(x,y) +&
+                                  v(m,p) * v(i,j)
+                        else
+                          write (*,'(a,6i3.1)') "???",x,y,m,p,i,j
+                          stop
+                        end if
+                      end if ! neg charge at i,j
+                    end if ! pos charge at m,p
+                  end if ! i,j < L
 
-          !  end do
-          !end do ! m,p blocks
+                end if ! end v != 0 check
+
           end do ! s
 
           rho_k_p_temp = rho_k_p_temp / float(L**2)
@@ -517,7 +506,8 @@ module update
 
           ! direct space one
           ! write (*,*) i,j,(i.le.L/2+1.and.j.le.L/2+1)
-          if (i.le.L/2+1.and.j.le.L/2+1) then
+
+          if (i.le.(L/2)+1.and.j.le.(L/2)+1) then
 
             dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
             dist_bin = floor(dist / bin_size) + 1

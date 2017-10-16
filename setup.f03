@@ -9,19 +9,23 @@ module setup
   contains
 
   subroutine initial_setup
+    real(kind=8) :: kf
+    complex(kind=8) :: imag, prefac
     ! various things which can't be zeroed
     ! at the start of every sample
 
     allocate(v_avg(L,L))
+    allocate(hw(L,L))
+    allocate(fw(L,L))
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
     allocate(e_irrot_avg(2,L,L))
-    allocate(s_ab(2,2,(bz*L)+1,(bz*L)+1))
-    allocate(s_ab_rot(2,2,(bz*L)+1,(bz*L)+1))
-    allocate(s_ab_irrot(2,2,(bz*L)+1,(bz*L)+1))
-    allocate(ch_ch((bz*L)+1,(bz*L)+1))
-    allocate(rho_k_m((bz*L)+1,(bz*L)+1))
-    allocate(rho_k_p((bz*L)+1,(bz*L)+1))
+    allocate(s_ab(2,2,L,L))
+    allocate(s_ab_rot(2,2,L,L))
+    allocate(s_ab_irrot(2,2,L,L))
+    allocate(ch_ch(L,L))
+    allocate(rho_k_m(L,L))
+    allocate(rho_k_p(L,L))
     allocate(dir_struc((L/2) + 1,(L/2) + 1))
     allocate(dist_r(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
@@ -41,6 +45,18 @@ module setup
       no_samples * L**2 * rot_ratio
     attempts(3) = (therm_sweeps + measurement_sweeps) *&
       no_samples * L**2 * g_ratio
+
+    ! fourier transform weights
+    imag = (0.0, 1.0)
+    prefac = (-1 * imag) * ((2*pi)/(L * lambda))
+    do i = 1, L
+      do k = 1, L
+        kf = float(k) - 1 ! kfloat runs from 0 to L - 1
+        hw(i,k) = prefac * (i - 0.5) * kf
+        fw(i,k) = prefac * (i - 1.0) * kf
+      end do
+    end do
+
 
   end subroutine initial_setup
 
@@ -78,9 +94,6 @@ module setup
 
     if (add_charges.ne.0) then
 
-      !write (*,*)
-      !write (*,'(a,I4.1,a)') "Adding ",add_charges," charges. Charge positions:"
-
       do while (n.lt.add_charges)
 
         ! pick a random position, check if there's a charge there
@@ -99,8 +112,6 @@ module setup
         end if
 
         n = n + 1
-
-        !write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,v(i,j)
 
       end do
 
@@ -133,10 +144,11 @@ module setup
     if (sum(v,mask=v.gt.0).ne.0) then
       !write (*,*) "Calling Poisson solver..."
       call linsol
+      e_field = mnphi
+    else
+      mnphi = 0.0
+      e_field = 0.0
     end if
-
-    ! set e_field to irrotational - temporary solution
-    e_field = mnphi
 
   end subroutine arrays_init
 

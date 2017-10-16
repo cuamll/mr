@@ -151,28 +151,14 @@ program mr
 
     write (*,'(a,f10.3,a)') "Simulation finished. Time taken:",&
                             end_time-start_time,"seconds."
-    write (*,'(a,i4.1,a,i2.1,a,f10.3,a,f10.3,a)') "Total samples: ",&
+    write (*,'(a,i4.1,a,i2.1,a,f10.3,a,a,f10.3,a)') "Total samples: ",&
       no_samples * num_procs, " across ",num_procs,&
       " processes. Time per sample: ",&
-      (end_time - start_time) / (no_samples * num_procs)," seconds."&
+      (end_time - start_time) / (no_samples * num_procs)," seconds.",&
       " Time per measurement: ",&
       (end_time - start_time) /&
       (no_samples * num_procs * no_measurements)," seconds."
 
-    ! These probably need a little more thought
-    ! and reducing!
-    ! write (*,'(a,i12.1,es18.9)') "Charge hops: total, acceptance rate: ",&
-    !   accepth, accepth / ((therm_sweeps + measurement_sweeps) * &
-    !   hop_ratio * L**2 * (num_procs * no_samples))
-    ! write (*,'(a,i12.1,es18.9)') "Plaquette update: total, acceptance rate: ",&
-    !   acceptr, acceptr / ((therm_sweeps + measurement_sweeps) * &
-    !   rot_ratio * L**2 * (num_procs * no_samples))
-    ! write (*,'(a,i12.1,es18.9)') "Harmonic update: total, acceptance rate: ",&
-    !   acceptg, acceptg / ((therm_sweeps + measurement_sweeps) * &
-    !   g_ratio * L**2 * 2 * (num_procs * no_samples))
-    ! write (*,'(a,a,6i12.1)') "Hops, creations, annihilations ",&
-    !   "(attempts, accepts): ",&
-    !   attempth, accepth, attemptc, acceptc, attempta, accepta
     write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
     accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
     write (*,'(a,2i12.1,es18.9)') "Rot.: total, attempts, rate: ",&

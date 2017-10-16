@@ -39,7 +39,7 @@ module common
   s_ab_rot, s_ab_irrot
 
   complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch,&
-  rho_k_m,rho_k_p
+  rho_k_m,rho_k_p, hw, fw
 
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file,&
   dir_st_file, dir_dist_file, sphe_sus_file, s_ab_file, s_perp_file,&

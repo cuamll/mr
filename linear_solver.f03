@@ -1,5 +1,6 @@
 ! Module containing everything we need for the linear solver
 ! to get the irrotational E-field part for a cubic lattice
+! it's not actually linear though tbh that's just a leftover name
 module linear_solver
   use common
   implicit none
@@ -26,18 +27,18 @@ module linear_solver
 
   if (have_lgf.eq.0) then
 
-    write (l_char,'(i2)') L
-    lgf_file = lgf_path//l_char
+    ! write (l_char,'(i2)') L
+    ! lgf_file = lgf_path//l_char
 
-    inquire(file=lgf_file, exist = lgf_there)
+    ! inquire(file=lgf_file, exist = lgf_there)
 
-    if (lgf_there) then
-      open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
-      read(30) lgf
-      close(30)
-    else
+    ! if (lgf_there) then
+    !   open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
+    !   read(30) lgf
+    !   close(30)
+    ! else
       call lgfcalc(lgf_file)
-    end if
+    ! end if
 
   end if
 
@@ -97,15 +98,6 @@ module linear_solver
   g0 = g0 / L**2
 
   nch=nch/L**2 ! bc we count nch once for each abc
-
-  !write (*,*) "ebar = ",ebar(1),ebar(2),ebar(3)
-  !write(*,*)
-  !write(*,*) "--- LINEAR SOLVER RESULTS: ---"
-  !write (*,*) 'sum of irrotational E_ij^2 =',u_tot
-  !write(*,*) "self-energy from lgf(0,0) * n charges = ",u_self
-  !write(*,*) 'interaction energy = ',u_int
-  !write (*,*) 'harmonic term in units of 1/L**3 (V*Ebar^2) = '&
-  !  &,L**3*sum(ebar**2)
 
   end subroutine linsol
 
@@ -172,10 +164,10 @@ module linear_solver
     write (*,*) "g(0) = ",g0
     write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
 
-    open(30, file=filename, status="new",&
-         action="write", access="stream", form="unformatted")
-    write(30) lgf
-    close(30)
+    ! open(30, file=filename, status="new",&
+    !      action="write", access="stream", form="unformatted")
+    ! write(30) lgf
+    ! close(30)
 
     have_lgf=1
 

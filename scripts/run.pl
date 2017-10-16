@@ -175,7 +175,7 @@ if ($dorun) {
             write_to_file($jsondb, "$parameters_json\n", "append");
 
             # generate job file
-            my $genjobfile = 1;
+            my $genjobfile = 0;
             if ($genjobfile) {
               my $email = q(zcapg55@ucl.ac.uk);
               my $vf = '960M';
@@ -210,7 +210,7 @@ exit 0
             } else {
 
               # run program
-              my $np = 2;
+              my $np = 1;
               my $mpi_args = '--bind-to none';
               my $verbose = '-v';
               my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
