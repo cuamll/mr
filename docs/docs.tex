@@ -58,4 +58,12 @@ Filenames are trimmed and basic quantities like $\beta$ calculated.
 
 \section*{\texttt{main.f03}}
 
+\section*{Things to improve}
+
+\begin{itemize}
+  \item The actual Monte Carlo updates could be easily parallelised with OpenMP \textendash{} since the algorithm is local, domain decomposition isn't particularly difficult.
+  \item The Fourier transforms could be massively faster by using any FFT tricks; mine are extremely naive and not optimised at all except for the OpenMP loop.
+  \item A portable way of reading in lattice Green's functions would be a slight upgrade for large systems, I think. Also, ensuring the LGF isn't deallocated and then recalculated between samples would be good, I need to check that.
+\end{itemize}
+
 \end{document}
