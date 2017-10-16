@@ -137,8 +137,10 @@ module update
 
         ! this is completely unnecessary in 2d, it's left over
         ! from the 3d version. could be removed.
-        mu1 = floor(2*rand())+1
-        mu2 = mod(mu1,2) + 1
+        ! mu1 = floor(2*rand())+1
+        ! mu2 = mod(mu1,2) + 1
+        mu1 = 1
+        mu2 = 2
 
         site = (/ int(rand() * L) + 1,&
                  &int(rand() * L) + 1 /)
@@ -152,19 +154,19 @@ module update
 
         ! if e.g. we picked xy, the next line does x -> neg(x)
         site(mu1) = neg(site(mu1))
-        eo4 = e_field(mu1,site(1),site(2))
+        eo4 = e_field(mu2,site(1),site(2))
         ! and now we need to put it back
         site(mu1) = pos(site(mu1))
 
         ! same for y
         site(mu2) = neg(site(mu2))
-        eo3 = e_field(mu2,site(1),site(2))
+        eo3 = e_field(mu1,site(1),site(2))
         site(mu2) = pos(site(mu2))
 
         en1 = eo1 + increment
         en2 = eo2 - increment
-        en3 = eo3 + increment
-        en4 = eo4 - increment
+        en3 = eo3 - increment
+        en4 = eo4 + increment
 
         old_e = 0.5 * eps_0 * lambda**2 *&
                 (eo1**2 + eo2**2 + eo3**2 + eo4**2)
