@@ -4,12 +4,12 @@ omp_threads 0
 no_samples 2
 do_corr F
 thermalisation_sweeps 25000
-measurement_sweeps 25000
+measurement_sweeps 100000
 sample_interval 1
 temperature 1.400
 lattice_spacing 1.0
 charge_value 6.283185307179586
-delta_max 1.1
+delta_max 1.566666666
 charges 0
 rng_seed 0
 hop_ratio 1.0

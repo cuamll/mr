@@ -151,10 +151,10 @@ program mr
 
     write (*,'(a,f10.3,a)') "Simulation finished. Time taken:",&
                             end_time-start_time,"seconds."
-    write (*,'(a,i4.1,a,i2.1,a,f10.3,a,f10.3,a)') "Total samples: ",&
+    write (*,'(a,i4.1,a,i2.1,a,f10.3,a,a,f10.3,a)') "Total samples: ",&
       no_samples * num_procs, " across ",num_procs,&
       " processes. Time per sample: ",&
-      (end_time - start_time) / (no_samples * num_procs)," seconds."&
+      (end_time - start_time) / (no_samples * num_procs)," seconds.",&
       " Time per measurement: ",&
       (end_time - start_time) /&
       (no_samples * num_procs * no_measurements)," seconds."

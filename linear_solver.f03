@@ -26,18 +26,18 @@ module linear_solver
 
   if (have_lgf.eq.0) then
 
-    write (l_char,'(i2)') L
-    lgf_file = lgf_path//l_char
+    ! write (l_char,'(i2)') L
+    ! lgf_file = lgf_path//l_char
 
-    inquire(file=lgf_file, exist = lgf_there)
+    ! inquire(file=lgf_file, exist = lgf_there)
 
-    if (lgf_there) then
-      open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
-      read(30) lgf
-      close(30)
-    else
+    ! if (lgf_there) then
+    !   open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
+    !   read(30) lgf
+    !   close(30)
+    ! else
       call lgfcalc(lgf_file)
-    end if
+    ! end if
 
   end if
 
@@ -169,13 +169,13 @@ module linear_solver
 
     g0 = g0 / L**2
 
-    write (*,*) "g(0) = ",g0
-    write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
+    !write (*,*) "g(0) = ",g0
+    !write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
 
-    open(30, file=filename, status="new",&
-         action="write", access="stream", form="unformatted")
-    write(30) lgf
-    close(30)
+    ! open(30, file=filename, status="new",&
+    !      action="write", access="stream", form="unformatted")
+    ! write(30) lgf
+    ! close(30)
 
     have_lgf=1
 

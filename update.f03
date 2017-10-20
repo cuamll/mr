@@ -138,11 +138,12 @@ module update
 
       end do ! end charge hop sweep
 
-      if (ebar(mu).gt.(g_thr).or.ebar(mu).lt.((-1)*g_thr)) then
-        glob = 1
-      else
-        glob = 0
-      end if
+      glob = 1
+      ! if (ebar(mu).gt.(g_thr).or.ebar(mu).lt.((-1)*g_thr)) then
+      !   glob = 1
+      ! else
+      !   glob = 0
+      ! end if
 
       mu = 0; increment = 0.0;
       u_tot = 0.0
