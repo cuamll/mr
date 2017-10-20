@@ -304,8 +304,8 @@ module input
           & Edit input file and try again."
         STOP
       end if
-      if (rot_delt.le.0.0) then
-        write(*,*) "Delta_max for rotational update must be > 0.&
+      if (rot_delt.lt.0.0) then
+        write(*,*) "Delta_max for rotational update must be >= 0.&
           & Edit input file and try again."
         STOP
       end if
@@ -351,6 +351,12 @@ module input
       !write (*,*) "q = ",q
       beta = 1.0 / temp
       g_thr = 1 / real(L)
+      if (rot_delt.eq.0) then
+        rot_delt = 1.1 * temp
+        if (verbose) then
+          write (*,*) "Delta_max read in as 0; being set to",rot_delt
+        end if
+      end if
 
       lattfile = trim(adjustl(lattfile_long))
       energy_file = trim(adjustl(en_long))
