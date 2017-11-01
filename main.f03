@@ -428,6 +428,8 @@ subroutine normalisations(num_procs)
   write (*,*) "Ebar_wind_sq_sum: ",ebar_wind_sq_sum(1),ebar_wind_sq_sum(2)
   write (*,*) "Ebar_wind susceptibility: ",ebar_wind_sus
   write (*,*) "Avg. charge density",rho_avg
+  write (*,*) "Avg. mu",mu_tot / &
+    ((denom + (no_samples * num_procs * therm_sweeps)) * L**2)
 
   open  (30, file=sphe_sus_file // '_MPI_allreduced')
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"

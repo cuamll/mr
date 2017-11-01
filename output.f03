@@ -141,35 +141,64 @@ module output
             kx = m + 1 + (bz*L)/2
           end if
 
-          s_perp(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
-                          ((-1)*kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
-                          ((-1)*ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
-                          (1 - ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
+          ! s_perp(i,j) = (1 - kx_float*kx_float*norm_k) *   real(s_ab(1,1,kx,ky))+&
+          !               ((-1)*kx_float*ky_float*norm_k) *  real(s_ab(1,2,kx,ky))+&
+          !               ((-1)*ky_float*kx_float*norm_k) *  real(s_ab(2,1,kx,ky))+&
+          !               (1 - ky_float*ky_float*norm_k) *   real(s_ab(2,2,kx,ky))
 
-          s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_irrot(1,1,kx,ky)+&
-                          ((-1)*kx_float*ky_float*norm_k) * s_ab_irrot(1,2,kx,ky)+&
-                          ((-1)*ky_float*kx_float*norm_k) * s_ab_irrot(2,1,kx,ky)+&
-                          (1 - ky_float*ky_float*norm_k) * s_ab_irrot(2,2,kx,ky)
+          ! s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) *  real(s_ab_irrot(1,1,kx,ky))+&
+          !                 ((-1)*kx_float*ky_float*norm_k) *     real(s_ab_irrot(1,2,kx,ky))+&
+          !                 ((-1)*ky_float*kx_float*norm_k) *     real(s_ab_irrot(2,1,kx,ky))+&
+          !                 (1 - ky_float*ky_float*norm_k) *      real(s_ab_irrot(2,2,kx,ky))
 
-          s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky)+&
-                          ((-1)*kx_float*ky_float*norm_k) * s_ab_rot(1,2,kx,ky)+&
-                          ((-1)*ky_float*kx_float*norm_k) * s_ab_rot(2,1,kx,ky)+&
-                          (1 - ky_float*ky_float*norm_k) * s_ab_rot(2,2,kx,ky)
+          ! s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * real(s_ab_rot(1,1,kx,ky))+&
+          !                 ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_rot(1,2,kx,ky))+&
+          !                 ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_rot(2,1,kx,ky))+&
+          !                 (1 - ky_float*ky_float*norm_k) *   real(s_ab_rot(2,2,kx,ky))
 
-          s_par(i,j) = (kx_float*kx_float*norm_k) * s_ab(1,1,kx,ky)+&
+          ! s_par(i,j) = (kx_float*kx_float*norm_k) *   real(s_ab(1,1,kx,ky))+&
+          !                (kx_float*ky_float*norm_k) * real(s_ab(1,2,kx,ky))+&
+          !                (ky_float*kx_float*norm_k) * real(s_ab(2,1,kx,ky))+&
+          !                (ky_float*ky_float*norm_k) * real(s_ab(2,2,kx,ky))
+
+          ! s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_irrot(1,1,kx,ky))+&
+          !                      (kx_float*ky_float*norm_k)*real(s_ab_irrot(1,2,kx,ky))+&
+          !                      (ky_float*kx_float*norm_k)*real(s_ab_irrot(2,1,kx,ky))+&
+          !                      (ky_float*ky_float*norm_k)*real(s_ab_irrot(2,2,kx,ky))
+
+          ! s_par_rot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_rot(1,1,kx,ky))+&
+          !                    (kx_float*ky_float*norm_k)*real(s_ab_rot(1,2,kx,ky))+&
+          !                    (ky_float*kx_float*norm_k)*real(s_ab_rot(2,1,kx,ky))+&
+          !                    (ky_float*ky_float*norm_k)*real(s_ab_rot(2,2,kx,ky))
+          s_perp(i,j) = real((1 - kx_float*kx_float*norm_k) *   s_ab(1,1,kx,ky)+&
+                        ((-1)*kx_float*ky_float*norm_k) *  s_ab(1,2,kx,ky)+&
+                        ((-1)*ky_float*kx_float*norm_k) *  s_ab(2,1,kx,ky)+&
+                        (1 - ky_float*ky_float*norm_k) *   s_ab(2,2,kx,ky))
+
+          s_perp_irrot(i,j) = real((1 - kx_float*kx_float*norm_k) *  s_ab_irrot(1,1,kx,ky)+&
+                          ((-1)*kx_float*ky_float*norm_k) *     s_ab_irrot(1,2,kx,ky)+&
+                          ((-1)*ky_float*kx_float*norm_k) *     s_ab_irrot(2,1,kx,ky)+&
+                          (1 - ky_float*ky_float*norm_k) *      s_ab_irrot(2,2,kx,ky))
+
+          s_perp_rot(i,j) = real((1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky)+&
+                          ((-1)*kx_float*ky_float*norm_k) *  s_ab_rot(1,2,kx,ky)+&
+                          ((-1)*ky_float*kx_float*norm_k) *  s_ab_rot(2,1,kx,ky)+&
+                          (1 - ky_float*ky_float*norm_k) *   s_ab_rot(2,2,kx,ky))
+
+          s_par(i,j) = real((kx_float*kx_float*norm_k) *   s_ab(1,1,kx,ky)+&
                          (kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
                          (ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
-                         (ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky)
+                         (ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky))
 
-          s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*s_ab_irrot(1,1,kx,ky)+&
+          s_par_irrot(i,j) = real((kx_float*kx_float*norm_k)*  s_ab_irrot(1,1,kx,ky)+&
                                (kx_float*ky_float*norm_k)*s_ab_irrot(1,2,kx,ky)+&
                                (ky_float*kx_float*norm_k)*s_ab_irrot(2,1,kx,ky)+&
-                               (ky_float*ky_float*norm_k)*s_ab_irrot(2,2,kx,ky)
+                               (ky_float*ky_float*norm_k)*s_ab_irrot(2,2,kx,ky))
 
-          s_par_rot(i,j) = (kx_float*kx_float*norm_k)*s_ab_rot(1,1,kx,ky)+&
+          s_par_rot(i,j) = real((kx_float*kx_float*norm_k)*  s_ab_rot(1,1,kx,ky)+&
                              (kx_float*ky_float*norm_k)*s_ab_rot(1,2,kx,ky)+&
                              (ky_float*kx_float*norm_k)*s_ab_rot(2,1,kx,ky)+&
-                             (ky_float*ky_float*norm_k)*s_ab_rot(2,2,kx,ky)
+                             (ky_float*ky_float*norm_k)*s_ab_rot(2,2,kx,ky))
 
         end do
       end do ! end p, m loops
@@ -245,10 +274,10 @@ module output
             write (17, field_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            s_ab_irrot(1,1,i,j),&
-            s_ab_irrot(1,2,i,j),&
-            s_ab_irrot(2,1,i,j),&
-            s_ab_irrot(2,2,i,j)
+            (s_ab_irrot(1,1,i,j)),&
+            (s_ab_irrot(1,2,i,j)),&
+            (s_ab_irrot(2,1,i,j)),&
+            (s_ab_irrot(2,2,i,j))
 
             write (19, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
@@ -258,10 +287,10 @@ module output
             write (20, field_format_string)&
             2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            s_ab_rot(1,1,i,j),&
-            s_ab_rot(1,2,i,j),&
-            s_ab_rot(2,1,i,j),&
-            s_ab_rot(2,2,i,j)
+            (s_ab_rot(1,1,i,j)),&
+            (s_ab_rot(1,2,i,j)),&
+            (s_ab_rot(2,1,i,j)),&
+            (s_ab_rot(2,2,i,j))
 
           end if
 

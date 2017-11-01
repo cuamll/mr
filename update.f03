@@ -25,6 +25,7 @@ module update
         site = (/ int(rand() * L) + 1,&
                   &int(rand() * L) + 1 /)
         mu = floor(2*rand())+1
+        mu_tot = mu_tot + mu
 
         ! check we're not doing anything weird with multiple charges
         if (abs(v(site(1),site(2))).gt.1) then
@@ -72,9 +73,6 @@ module update
         else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
           ! ANNIHILATION
           attempts(5) = attempts(5) + 1
-        else
-          ! write (6,'(a,7i3.1)') "SOME WEIRD SHIT GOT ACCEPTED: ",&
-          ! site(1), site(2), v1o, v2o, v1n, v2n, pm
         end if
 
         if (abs(v1n).le.1.and.abs(v2n).le.1) then
@@ -106,49 +104,13 @@ module update
             end if
           end if
 
-          ! else ! decrease field bond
-
-          !   eo = e_field(mu,site(1),site(2))
-          !   en = eo - increment
-          !   old_e = 0.5 * eps_0 * lambda**2 * eo**2
-          !   new_e = 0.5 * eps_0 * lambda**2 * en**2
-          !   delta_e = new_e - old_e
-        !   v1 = v(site(1),site(2)) + 1
-        !   ! get negative in the mu direction
-        !   site(mu) = neg(site(mu))
-        !   v2 = v(site(1),site(2)) - 1
-
-        !   if (abs(v1).le.1.and.abs(v2).le.1) then
-        !     if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-        !       ! site still pointing at neg(orig. site)
-        !       v(site(1),site(2)) = v2
-        !       site(mu) = pos(site(mu))
-        !       v(site(1),site(2)) = v1
-        !       e_field(mu,site(1),site(2)) = en
-        !       ebar(mu) = ebar(mu) + (increment / L**2)
-
-        !       accepth = accepth + 1
-        !       u_tot = u_tot + delta_e
-
-        !     end if
-        !   end if
-
-        ! end if ! end increase / decrease choice
-
       end do ! end charge hop sweep
 
       glob = 1
-      ! if (ebar(mu).gt.(g_thr).or.ebar(mu).lt.((-1)*g_thr)) then
-      !   glob = 1
-      ! else
-      !   glob = 0
-      ! end if
 
       mu = 0; increment = 0.0;
       u_tot = 0.0
       u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
-      !write (*,*) "charge density: ", (dble(sum(abs(v))) / L**2)
 
     end subroutine hop
 
@@ -174,8 +136,8 @@ module update
 
         ! this is completely unnecessary in 2d, it's left over
         ! from the 3d version. could be removed.
-        mu1 = 1
-        mu2 = 2
+        mu1 = floor(2 * rand()) + 1
+        mu2 = mod(mu1, 2) + 1
 
         site = (/ int(rand() * L) + 1,&
                  &int(rand() * L) + 1 /)
@@ -408,8 +370,8 @@ module update
             p = mod(s - 1, L) + 1
 
               ! different offsets for x,y,z
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-(1.0/2))*kx + &
-                      ((p-1)*ky)))
+              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
+                      ((p)*ky)))
 
               ! we want this for every step so we can
               ! average at the end to get field-field struc
@@ -417,8 +379,8 @@ module update
               mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
               e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m-1)*kx + &
-                      ((p-(1.0/2))*ky)))
+              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m)*kx + &
+                      ((neg(p)+(1.0/2))*ky)))
 
               e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
               mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
@@ -427,8 +389,8 @@ module update
               if (v(m,p).ne.0) then ! calculate <++ + +->!
 
                 ! FT of charge distribution
-                kdotx = ((-1)*imag*2*pi*(((m-1)*kx/(L*lambda)) + &
-                        ((p-1)*ky/(L*lambda))))
+                kdotx = ((-1)*imag*2*pi*(((m)*kx/(L*lambda)) + &
+                        ((p)*ky/(L*lambda))))
 
                 if (v(m,p).eq.-1) then
                   rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)

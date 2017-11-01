@@ -14,6 +14,7 @@ module common
   logical, public :: do_corr, verbose = .false.
 
   integer, public :: have_lgf = 0
+  integer(kind=ik), public :: mu_tot = 0
   integer, public :: glob = 0
   integer, public :: MPI_NEW_REAL, MPI_NEW_INT
   integer(kind=4), public :: seed, no_samples, no_threads, L, add_charges,&
@@ -35,7 +36,8 @@ module common
   real(kind=rk), dimension(:,:), allocatable, public :: v_avg, dir_struc
   real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg,&
   e_rot_avg, e_irrot_avg
-  real(kind=rk), dimension(:,:,:,:), allocatable, public :: s_ab,&
+
+  complex(kind=rk), dimension(:,:,:,:), allocatable, public :: s_ab,&
   s_ab_rot, s_ab_irrot
 
   complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch,&
