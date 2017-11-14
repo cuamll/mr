@@ -83,6 +83,8 @@ module update
             site(mu) = pos(site(mu))
             v(site(1),site(2)) = v1n
             e_field(mu,site(1),site(2)) = en
+            ! mnphi(mu,site(1),site(2)) = mnphi(mu,site(1),site(2)) +&
+            !                             pm * increment
             ebar(mu) = ebar(mu) + (pm * increment / L**2)
 
             u_tot = u_tot + delta_e
@@ -370,26 +372,50 @@ module update
             p = mod(s - 1, L) + 1
 
               ! different offsets for x,y,z
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
+              ! these first two kdotxs are for the newest commit
+              ! i.e. symmetric rotational, asymmetric irrotational
+              ! NEGATIVE FT
+              kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
                       ((p)*ky)))
 
-              ! we want this for every step so we can
-              ! average at the end to get field-field struc
+              ! POSITIVE FT
+              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((pos(m)-(1.0/2))*kx + &
+              !         (((p))*ky)))
+
               e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
               mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
               e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
-              kdotx = ((-1)*imag*(2*pi/(L*lambda))*((m)*kx + &
+              ! NEGATIVE FT
+              kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
                       ((neg(p)+(1.0/2))*ky)))
 
-              e_ky = e_ky + exp(kdotx)*e_field(2,m,p)
-              mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
+              ! POSITIVE FT
+              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
+              !         ((pos(p)-(1.0/2))*ky)))
+
+              e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p)
               e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
+              mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
+
+              ! these kdotxs are from previous commits i.e. asymmetric
+              ! rotational part and symmetric irrotational
+
+              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
+              !         ((neg(p))*ky)))
+              ! mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
+
+              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m))*kx + &
+              !         ((neg(p)+(1.0/2))*ky)))
+              ! mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
+
+              ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
+              !         ((p)*ky/(L*lambda))))
 
               if (v(m,p).ne.0) then ! calculate <++ + +->!
 
                 ! FT of charge distribution
-                kdotx = ((-1)*imag*2*pi*(((m)*kx/(L*lambda)) + &
+                kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
                         ((p)*ky/(L*lambda))))
 
                 if (v(m,p).eq.-1) then
@@ -449,6 +475,17 @@ module update
           rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
           ch_ch(i,j) = ch_ch(i,j) +&
                         (rho_k_p_temp * conjg(rho_k_m_temp))
+
+          if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
+            if (n.eq.1) then
+              open(49, file='imagpart.dat')
+            else
+              open(49, file='imagpart.dat', position='append')
+            end if
+            runtot = runtot + e_kx_temp*conjg(e_ky)
+            write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
+            close(49)
+          end if
 
           s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
           e_kx_temp*conjg(e_kx_temp)

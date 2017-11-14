@@ -27,7 +27,7 @@ module setup
     allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(lgf(L,L,L,L))
 
-    v_avg = 0.0; rho_avg = 0.0;
+    v_avg = 0.0; rho_avg = 0.0; runtot = 0.0
     e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0
     ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
     ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
