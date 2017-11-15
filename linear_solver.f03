@@ -119,7 +119,10 @@ module linear_solver
 
   subroutine lgfcalc(filename)
     character(6), intent(in) :: filename
+    ! real, dimension((L),(L)) :: lgf_twoindex
+    ! integer :: i,j
 
+    ! lgf_twoindex = 0.0
     g0 = 0.0
 
     do y=1,L
@@ -166,6 +169,24 @@ module linear_solver
 
             lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
 
+            !i = 0; j = 0
+
+            !i = abs(a - x)
+            !j = abs(b - y)
+
+            !!if (i.gt.(L/2)) then
+            !!  i=L-i
+            !!end if
+
+            !!if (j.gt.(L/2)) then
+            !!  j=L-j
+            !!end if
+
+            !i = i + 1
+            !j = j + 1
+
+            !lgf_twoindex(i,j) = lgf_twoindex(i,j) + lgf(a,b,x,y)
+
             if (a.eq.x.and.b.eq.y) then
               g0 = g0 + lgf(a,b,x,y)
             end if
@@ -174,6 +195,16 @@ module linear_solver
         end do ! end b loop
       end do ! end x loop
     end do ! end y loop
+
+    ! open(30,file="lgf_twoindex.dat")
+
+    ! do i=1,(L)
+    !   do j=1,(L)
+    !     write(30,'(2i4.2,f16.8)') i-1,j-1,lgf_twoindex(i,j)
+    !   end do
+    ! end do
+
+    ! close(30)
 
     g0 = g0 / L**2
 

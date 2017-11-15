@@ -351,8 +351,7 @@ module output
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
             field_struc(i,j)
 
-            write (14, '(2i4.2,6f12.8)')&
-            i,j,&
+            write (14, struc_format_string)&
             2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
             real(s_ab(1,1,i,j)),&
@@ -365,8 +364,7 @@ module output
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
             field_struc_irrot(i,j)
 
-            write (17, '(2i4.2,6f12.8)')&
-            i,j,&
+            write (17, struc_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
             real(s_ab_irrot(1,1,i,j)),&
@@ -379,8 +377,7 @@ module output
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
             field_struc_rot(i,j)
 
-            write (20, '(2i4.2,6f12.8)')&
-            i,j,&
+            write (20,struc_format_string)&
             2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
             real(s_ab_rot(1,1,i,j)),&

@@ -478,9 +478,9 @@ module update
 
           if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
             if (n.eq.1) then
-              open(49, file='imagpart.dat')
+              open(49, file=equil_file)
             else
-              open(49, file='imagpart.dat', position='append')
+              open(49, file=equil_file, position='append')
             end if
             runtot = runtot + e_kx_temp*conjg(e_ky)
             write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
