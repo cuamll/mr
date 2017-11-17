@@ -16,7 +16,7 @@ module common
   integer, public :: have_lgf = 0
   integer(kind=ik), public :: mu_tot = 0
   integer, public :: glob = 0
-  integer, public :: MPI_NEW_REAL, MPI_NEW_INT
+  integer, public :: MPI_NEW_INT, MPI_NEW_REAL, MPI_NEW_COMPLEX
   integer(kind=4), public :: seed, no_samples, no_threads, L, add_charges,&
   no_measurements, therm_sweeps, measurement_sweeps, sample_interval
   integer(kind=ik), dimension(5), public :: attempts, accepts

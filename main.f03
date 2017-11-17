@@ -20,8 +20,9 @@ program mr
   integer, dimension(8) :: values
 
   call MPI_Init(mpierr)
-  call MPI_TYPE_CREATE_F90_REAL(prec, expo, MPI_NEW_REAL, mpierr)
   call MPI_TYPE_CREATE_F90_INTEGER(prec, MPI_NEW_INT, mpierr)
+  call MPI_TYPE_CREATE_F90_REAL(prec, expo, MPI_NEW_REAL, mpierr)
+  call MPI_TYPE_CREATE_F90_COMPLEX(prec, expo, MPI_NEW_COMPLEX, mpierr)
 
   call MPI_Comm_rank(MPI_COMM_WORLD, rank, mpierr)
   call MPI_Comm_size(MPI_COMM_WORLD, num_procs, mpierr)
@@ -107,7 +108,7 @@ program mr
       write (*,'(a,i2.1,a,i2.1,a,i4.1,a,es18.9)') "Rank: ",rank,&
             " sample: ",k," seed: ",(rank * no_samples) + k - 1,&
             " energy: ",ener_tot_sum
-      write (*,'(a,f8.3,a)') "Time taken: ",(timings(5) - timings(1))," seconds."
+      write (*,'(a,f18.3,a)') "Time taken: ",(timings(5) - timings(1))," seconds."
       write (*,'(a,f8.3,a)') "Setup time: ",(timings(2) - timings(1))," seconds."
       write (*,'(a,f8.5,a)') "Time per therm sweep: "&
         &,(timings(3) - timings(2)) / therm_sweeps," seconds."
@@ -214,8 +215,6 @@ subroutine reductions(id)
   integer, intent(in) :: id
   integer :: mpierr
 
-  ! write (*,*) "PRE: rank", id, "e_tot_sum", ener_tot_sum
-
   if (id.eq.0) then
 
     call MPI_Reduce(MPI_IN_PLACE, accepts, 5, MPI_NEW_INT,&
@@ -284,26 +283,22 @@ subroutine reductions(id)
 
   end if
 
-  ! write (6,*) "POST: rank", id, "e_tot_sum", ener_tot_sum
-
-  ! write (6,*) "PRE: rank ",id, "sum(s_ab)",sum(s_ab)
-
   if (do_corr) then
 
     if (id.eq.0) then
 
-      call MPI_Reduce(MPI_IN_PLACE, s_ab, size(s_ab), MPI_NEW_REAL,&
+      call MPI_Reduce(MPI_IN_PLACE, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
                          MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, s_ab_rot, size(s_ab_rot),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, rho_k_m, size(rho_k_m),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, dir_struc, size(dir_struc),&
                          MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, dist_r, size(dist_r),&
@@ -321,18 +316,18 @@ subroutine reductions(id)
 
     else
 
-      call MPI_Reduce(s_ab, s_ab, size(s_ab), MPI_NEW_REAL,&
+      call MPI_Reduce(s_ab, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
                          MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(ch_ch, ch_ch, size(ch_ch),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(rho_k_p, rho_k_p, size(rho_k_p),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(rho_k_m, rho_k_m, size(rho_k_m),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(dir_struc, dir_struc, size(dir_struc),&
                          MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(dist_r, dist_r, size(dist_r),&
@@ -351,8 +346,6 @@ subroutine reductions(id)
     end if
 
   end if
-
-  ! write (6,*) "POST: rank ",id,"sum(s_ab)",sum(s_ab)
 
 end subroutine reductions
 

@@ -17,11 +17,14 @@ use Data::Dumper qw(Dumper);
 my $three_d = 0;
 my $dir;
 my $kz;
-my $palette = 'inferno.pal';
+my $palette = '~/.config/gnuplot/jet.pal';
 my @inputfiles;
 my @outputfiles;
 my @tempfiles;
 my @gnuplotargs;
+my @latexargs;
+my @dvipsargs;
+my @ps2pdfargs;
 my $input;
 $input = GetOptions ("d=s"=> \$dir,
                      "p=s"=> \$palette);
@@ -55,35 +58,36 @@ foreach my $file (@filenames) {
     $field_component = $2;
 
     if ($s_component =~ /xx/) {
-      $s_string = qq(S^{$s_component} - );
+      $s_string = qq(S^{$s_component});
     } elsif ($s_component =~ /perp/) {
-      $s_string = qq(S^{⟂} - );
+      $s_string = q(S^{\perp});
     } elsif ($s_component =~ /par/) {
-      $s_string = qq(S^{∥} - );
+      $s_string = q(S^{\parallel});
     } elsif ($s_component =~ /ab/) {
       # print "S^{/alpha /beta still there???}";
-      $s_string = qq(S^{/Symbol ab} - );
+      $s_string = q(S^{\alpha \beta});
     } else {
-      die "s_component is weird: $s_component $!\n";
+      die "s_component is wrong: $s_component $!\n";
     }
 
     if ($field_component =~ /total/) {
-      $field_string = qq(total);
+      $field_string = q(_{total});
     } elsif ($field_component =~ /irrot/) {
-      $field_string = qq(irrotational);
+      $field_string = qq(_{irrotational});
     } elsif ($field_component =~ /rot/) {
-      $field_string = qq(rotational);
+      $field_string = qq(_{rotational});
     } else {
       die "field_component is wrong: $field_component $!\n";
     }
 
     $linetitle = $s_string . $field_string;
+    print $linetitle;
   } elsif ($file =~ /s_([a-z]+)/) {
 
     if ($1 =~ /charge/) {
-      $linetitle = qq(g^{+-}(k));
+      $linetitle = q(g^{\pm}(k));
     } elsif ($1 =~ /direct/) {
-      $linetitle = qq(g^{+-}(r));
+      $linetitle = q(g^{\pm}(r));
     } else {
       die "File name doesn't match regex. $file $!\n";
     }
@@ -101,8 +105,8 @@ my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters
 
 my $basedir = File::Spec->curdir();
 my $plotpath = "$basedir/scripts/";
-my $plotsuffix = ".png";
-my $gnuplotscript = "$plotpath" . "heatmap.p";
+my $plotsuffix = ".tex";
+my $gnuplotscript = "$plotpath" . "heatmap_latex.gp";
 
 my $inpath = "$dir/";
 my $insuffix = ".dat";
@@ -146,7 +150,11 @@ for my $i (0..$#filenames) {
     push @gnuplotargs, qq(FILE='$tempfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette');
   } else {
 
-    push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette';);
+    # push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette';);
+    push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = ''; PALETTE = '$palette';);
+    push @latexargs, qq(latex -output-directory=$outpath $outputfiles[$i]);
+    push @dvipsargs, qq(dvips -o $outpath$filenames[$i].ps $outpath$filenames[$i].dvi);
+    push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outpath$filenames[$i].ps $outpath$filenames[$i].pdf);
 
     #if (index($inputfiles[$i],'s_direct') != -1) {
     #  push @gnuplotargs, qq( PITICS = 'N');
@@ -158,6 +166,9 @@ for my $i (0..$#filenames) {
 
   $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
   system($syscall);
+  system($latexargs[$i]);
+  system($dvipsargs[$i]);
+  system($ps2pdfargs[$i]);
 
   # delete the temp files
   unlink($tempfiles[$i]);
