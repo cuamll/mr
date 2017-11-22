@@ -39,22 +39,24 @@ Session.vim
 obj*
 mod*
 *temp*
-out*
+out/*
 .DS_Store
 *_backup
 test*
 michael*
 linso*
-mr_*
+mr*
 *_uncorr*
 *_rot*
 lattice.dat
 latts*
-revision*
+*.inc
 
 
 # LaTeX extras
 *.aux
+*.fls
+*_latexmk
 *.log
 *.bbl
 *.toc

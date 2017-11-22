@@ -11,19 +11,16 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
-use JSON::MaybeXS qw(encode_json decode_json);
 use Data::Dumper qw(Dumper);
 
 my $three_d = 0;
-my $dir;
-my $kz;
-my $palette = 'inferno.pal';
-my @inputfiles;
-my @outputfiles;
-my @tempfiles;
-my @gnuplotargs;
-my $input;
-$input = GetOptions ("d=s"=> \$dir,
+my $dir; my $kz;
+my $palette = '~/.config/gnuplot/jet.pal';
+my $addtitles = 1;
+my @inputfiles; my @outputfiles; my @tempfiles;
+my @gnuplotargs; my @latexargs; my @dvipsargs; my @ps2pdfargs;
+my $input = GetOptions ("d=s"=> \$dir,
+                     "t=i"=> \$addtitles,
                      "p=s"=> \$palette);
 
 if ($palette !~ /.*\.pal/) {
@@ -32,6 +29,11 @@ if ($palette !~ /.*\.pal/) {
 
 # we pass the absolute path to the timestamp directory. now to get parameters:
 my %parameters = get_parameters("$dir/input.in");
+
+my $steps = $parameters{no_samples} * $parameters{measurement_sweeps};
+my $meas = $steps / $parameters{sample_interval};
+my $steps_c = commify($steps);
+my $meas_c = commify($meas);
 
 my @filenames;
 foreach my $key (keys %parameters) {
@@ -46,73 +48,79 @@ foreach my $key (keys %parameters) {
 }
 my @titles;
 my $s_component; my $field_component; my $s_string; my $field_string;
-my $linetitle;
+my $linetitle; my $plottitle;
 
-foreach my $file (@filenames) {
+if ($addtitles) {
+  foreach my $file (@filenames) {
 
-  if ($file =~ /s_([a-z]+)_([a-z]+)/) {
-    $s_component = $1;
-    $field_component = $2;
+    if ($file =~ /s_([a-z]+)_([a-z]+)/) {
+      $s_component = $1;
+      $field_component = $2;
 
-    if ($s_component =~ /xx/) {
-      $s_string = qq(S^{$s_component} - );
-    } elsif ($s_component =~ /perp/) {
-      $s_string = qq(S^{⟂} - );
-    } elsif ($s_component =~ /par/) {
-      $s_string = qq(S^{∥} - );
-    } elsif ($s_component =~ /ab/) {
-      # print "S^{/alpha /beta still there???}";
-      $s_string = qq(S^{/Symbol ab} - );
+      if ($s_component =~ /xx/) {
+        $s_string = q($ S^{xx});
+      } elsif ($s_component =~ /perp/) {
+        $s_string = q($ S^{\perp});
+      } elsif ($s_component =~ /par/) {
+        $s_string = q($ S^{\parallel});
+      } elsif ($s_component =~ /ab/) {
+        # print "S^{/alpha /beta still there???}";
+        $s_string = q($ S^{\alpha \beta});
+      } else {
+        die "s_component is wrong: $s_component $!\n";
+      }
+
+      if ($field_component =~ /total/) {
+        $field_string = q(_{total} $);
+      } elsif ($field_component =~ /irrot/) {
+        $field_string = q(_{irrotational} $);
+      } elsif ($field_component =~ /rot/) {
+        $field_string = q(_{rotational} $);
+      } else {
+        die "field_component is wrong: $field_component $!\n";
+      }
+
+      $linetitle = $s_string . $field_string;
+
+    } elsif ($file =~ /s_([a-z]+)/) {
+
+      if ($1 =~ /charge/) {
+        $linetitle = q($ g^{\pm}(k) $);
+      } elsif ($1 =~ /direct/) {
+        $linetitle = q($ g^{\pm}(r) $);
+      } else {
+        die "File name doesn't match regex. $file $!\n";
+      }
+
     } else {
-      die "s_component is weird: $s_component $!\n";
+      die "File name doesn't match anything. $file $!\n";
     }
 
-    if ($field_component =~ /total/) {
-      $field_string = qq(total);
-    } elsif ($field_component =~ /irrot/) {
-      $field_string = qq(irrotational);
-    } elsif ($field_component =~ /rot/) {
-      $field_string = qq(rotational);
-    } else {
-      die "field_component is wrong: $field_component $!\n";
-    }
-
-    $linetitle = $s_string . $field_string;
-  } elsif ($file =~ /s_([a-z]+)/) {
-
-    if ($1 =~ /charge/) {
-      $linetitle = qq(g^{+-}(k));
-    } elsif ($1 =~ /direct/) {
-      $linetitle = qq(g^{+-}(r));
-    } else {
-      die "File name doesn't match regex. $file $!\n";
-    }
-
-  } else {
-    die "File name doesn't match anything. $file $!\n";
+    $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    push @titles, $plottitle;
   }
-
-  push @titles, $linetitle;
+} else {
+  push @titles, '';
 }
 
-my $meas = $parameters{measurement_sweeps} / $parameters{sample_interval};
+# works better for canonical
+# my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, charge value = $parameters{charge_value} * 2 {/Symbol p}.\n\n$meas measurements from $parameters{measurement_sweeps} MC steps.);
 
-my $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, charge value = $parameters{charge_value} * 2 {/Symbol p}.\n\n$meas measurements from $parameters{measurement_sweeps} MC steps.);
 
 my $basedir = File::Spec->curdir();
 my $plotpath = "$basedir/scripts/";
-my $plotsuffix = ".png";
-my $gnuplotscript = "$plotpath" . "heatmap.p";
+my $plotsuffix = ".tex";
+my $gnuplotscript = "$plotpath" . "heatmap_latex.gp";
 
 my $inpath = "$dir/";
 my $insuffix = ".dat";
-my $outpath = "$dir/plots/";
+my $outpath = "$dir/plots";
 my $tempsuffix = '.temp';
 
 for my $i (0..$#filenames) {
   push @inputfiles, $inpath . $filenames[$i] . $insuffix;
   push @tempfiles, $inpath . $filenames[$i] . $tempsuffix;
-  push @outputfiles, $outpath . $filenames[$i] . $plotsuffix;
+  push @outputfiles, $outpath . '/' . $filenames[$i] . $plotsuffix;
 
   # don't need any of this in 2d
   # in 3d, create temp files for each slice in kz
@@ -146,7 +154,11 @@ for my $i (0..$#filenames) {
     push @gnuplotargs, qq(FILE='$tempfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette');
   } else {
 
-    push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette';);
+    # push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$titles[$i]'; PALETTE = '$palette';);
+    push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$titles[$i]'; LINETITLE = ''; PALETTE = '$palette';);
+    push @latexargs, qq(latex -interaction=batchmode -output-directory=$outpath $outputfiles[$i]);
+    push @dvipsargs, qq(dvips -q -D10000 -o $outpath/$filenames[$i].ps $outpath/$filenames[$i].dvi);
+    push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outpath/$filenames[$i].ps $outpath/$filenames[$i].pdf);
 
     #if (index($inputfiles[$i],'s_direct') != -1) {
     #  push @gnuplotargs, qq( PITICS = 'N');
@@ -158,6 +170,9 @@ for my $i (0..$#filenames) {
 
   $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
   system($syscall);
+  system($latexargs[$i]);
+  system($dvipsargs[$i]);
+  system($ps2pdfargs[$i]);
 
   # delete the temp files
   unlink($tempfiles[$i]);
@@ -174,4 +189,10 @@ sub get_parameters {
 
   return %parameters;
 
+}
+
+sub commify {
+  local $_  = shift;
+  1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
+  return $_;
 }

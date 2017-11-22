@@ -5,9 +5,9 @@ module linear_solver
   implicit none
 
   integer, private :: a,b,c,x,y,z,kx,ky,kz,i,nch
-  real*8, private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,fkx,fky,fkz
-  real*8, private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
-  real*8, public :: u_tot, u_int, u_self, g_zero, g_z_sum
+  real(kind=8), private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,fkx,fky,fkz
+  real(kind=8), private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
+  real(kind=8), public :: u_int, u_self, g_zero, g_z_sum
   character(4) :: lgf_path = "lgf/"
   character(2) :: l_char
   character(6) :: lgf_file
@@ -26,18 +26,18 @@ module linear_solver
 
   if (have_lgf.eq.0) then
 
-    write (l_char,'(i2)') L
-    lgf_file = lgf_path//l_char
+    ! write (l_char,'(i2)') L
+    ! lgf_file = lgf_path//l_char
 
-    inquire(file=lgf_file, exist = lgf_there)
+    ! inquire(file=lgf_file, exist = lgf_there)
 
-    if (lgf_there) then
-      open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
-      read(30) lgf
-      close(30)
-    else
+    ! if (lgf_there) then
+    !   open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
+    !   read(30) lgf
+    !   close(30)
+    ! else
       call lgfcalc(lgf_file)
-    end if
+    ! end if
 
   end if
 
@@ -50,17 +50,31 @@ module linear_solver
         sum_x=0.0
         sum_y=0.0
 
+        !write (*,*) sum_x,sum_y,ebar(1),ebar(2),mnphi(1,a,b),mnphi(2,a,b)
           do y=1,L
             do x=1,L
 
+              if (a.eq.x.and.b.eq.y) then
+                g0 = g0 + lgf(a,b,x,y)
+              end if
+
               if (v(x,y).ne.0) then ! non-zero charge at (x,y,z)
+                !write (*,*) lgf(a,b,x,y)
 
                 charge = q * v(x,y)
                 nch = nch + 1
+
+                ! POSITIVE GRAD i.e. - \tilde{\nabla} \phi
                 sum_x = sum_x + charge * (-1)&
-                      * (lgf(a,b,x,y) - lgf(a,b,neg(x),y))
+                      * (lgf(a,b,pos(x),y) - lgf(a,b,x,y))
                 sum_y = sum_y + charge * (-1)&
-                      * (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
+                      * (lgf(a,b,x,pos(y)) - lgf(a,b,x,y))
+
+                ! NEGATIVE GRAD i.e. - \hat{\nabla} \phi
+                ! sum_x = sum_x + charge * (-1) *&
+                !       (lgf(a,b,x,y) - lgf(a,b,neg(x),y))
+                ! sum_y = sum_y + charge * (-1) *&
+                !       (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
                 if (v(a,b).ne.0) then
                   if (a.eq.x.and.b.eq.y) then
                     u_self = u_self + charge**2 * lgf(x,y,x,y)
@@ -79,6 +93,7 @@ module linear_solver
 
         ebar(1)=ebar(1)+mnphi(1,a,b)
         ebar(2)=ebar(2)+mnphi(2,a,b)
+        !write (*,*) sum_x,sum_y,ebar(1),ebar(2),mnphi(1,a,b),mnphi(2,a,b)
 
         u_tot=u_tot+0.5*(mnphi(1,a,b)**2&
               +mnphi(2,a,b)**2)
@@ -87,6 +102,7 @@ module linear_solver
   end do ! a do loop
 
   ebar = ebar / L**2
+  g0 = g0 / L**2
 
   nch=nch/L**2 ! bc we count nch once for each abc
 
@@ -103,7 +119,10 @@ module linear_solver
 
   subroutine lgfcalc(filename)
     character(6), intent(in) :: filename
+    ! real, dimension((L),(L)) :: lgf_twoindex
+    ! integer :: i,j
 
+    ! lgf_twoindex = 0.0
     g0 = 0.0
 
     do y=1,L
@@ -150,6 +169,24 @@ module linear_solver
 
             lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
 
+            !i = 0; j = 0
+
+            !i = abs(a - x)
+            !j = abs(b - y)
+
+            !!if (i.gt.(L/2)) then
+            !!  i=L-i
+            !!end if
+
+            !!if (j.gt.(L/2)) then
+            !!  j=L-j
+            !!end if
+
+            !i = i + 1
+            !j = j + 1
+
+            !lgf_twoindex(i,j) = lgf_twoindex(i,j) + lgf(a,b,x,y)
+
             if (a.eq.x.and.b.eq.y) then
               g0 = g0 + lgf(a,b,x,y)
             end if
@@ -159,14 +196,25 @@ module linear_solver
       end do ! end x loop
     end do ! end y loop
 
+    ! open(30,file="lgf_twoindex.dat")
+
+    ! do i=1,(L)
+    !   do j=1,(L)
+    !     write(30,'(2i4.2,f16.8)') i-1,j-1,lgf_twoindex(i,j)
+    !   end do
+    ! end do
+
+    ! close(30)
+
     g0 = g0 / L**2
 
-    write (*,*) "g(0) = ",g0
-    write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
-    
-    open(30, file=filename, status="new", action="write", access="stream", form="unformatted")
-    write(30) lgf
-    close(30)
+    !write (*,*) "g(0) = ",g0
+    !write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
+
+    ! open(30, file=filename, status="new",&
+    !      action="write", access="stream", form="unformatted")
+    ! write(30) lgf
+    ! close(30)
 
     have_lgf=1
 

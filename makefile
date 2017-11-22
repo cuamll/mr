@@ -1,9 +1,9 @@
 # maggs-rossetto makefile
-GF = gfortran
-EXECNAME = mr_test
+GF = mpif90
+EXECNAME = mr2d
 MOD_DIR = mod
 OBJ_DIR = obj
-CFLAGS = -J$(MOD_DIR)
+CFLAGS = -J$(MOD_DIR) -std=f2003 -fopenmp
 
 $(shell mkdir -p $(MOD_DIR))
 $(shell mkdir -p $(OBJ_DIR))
@@ -12,11 +12,12 @@ VPATH = $(MOD_DIR)
 
 # libraries in different directories on Mac
 UNAME = $(shell uname)
-REV = $(shell git rev-parse --short HEAD)
+RV = $(shell git rev-parse --short HEAD)
 
 DEBUG = 0
 ifeq ($(DEBUG), 1)
-	DEBUGFLAGS = -g -pg -fbacktrace -ffpe-trap=invalid,zero,underflow,denormal,overflow
+	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
+		     -ffpe-trap=invalid,zero,denormal,underflow,overflow
 else
 	DEBUGFLAGS = -O2
 endif
@@ -30,23 +31,25 @@ ifeq ($(UNAME), Linux)
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 
-SOURCES = common.f90\
-	  io.f90\
-	  linear_solver.f90\
-	  setup.f90
+SOURCES = common.f03\
+	  input.f03\
+	  output.f03\
+	  linear_solver.f03\
+	  setup.f03\
+	  update.f03
 
-OBJ_T1 = $(patsubst %.f90, %.o,$(SOURCES))
+OBJ_T1 = $(patsubst %.f03, %.o,$(SOURCES))
 OBJ_T2 = $(notdir $(OBJ_T1))
 OBJECTS = $(patsubst %.o, $(OBJ_DIR)/%.o,$(OBJ_T2))
-MOD_T1 = $(patsubst %.f90, %.mod,$(SOURCES))
+MOD_T1 = $(patsubst %.f03, %.mod,$(SOURCES))
 MOD_T2 = $(notdir $(MOD_T1))
 MODS = $(patsubst %.o, $(MOD_DIR)/%.o,$(MOD_T2))
 
 $(EXECNAME) : $(OBJECTS)
-	echo "character(len=7), parameter :: revision = '$(REV)'" > revision.inc
-	$(GF) $(CFLAGS)  $(LFLAGS) $(OBJECTS) main.f90 -o $(EXECNAME)
+	echo "character(len=7), parameter :: revision = '$(RV)'" > rev.inc
+	$(GF) $(CFLAGS)  $(LFLAGS) $(OBJECTS) main.f03 -o $(EXECNAME)
 
-$(OBJ_DIR)/%.o : %.f90
+$(OBJ_DIR)/%.o : %.f03
 	$(GF) $(CFLAGS) $(DEBUGFLAGS) -o $@ -c $<
 
 # add this if need be, can't be arsed to fuck around rn
