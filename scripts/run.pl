@@ -211,8 +211,9 @@ exit 0
           } else {
 
             # run program
-            my $np = 2;
-            my $mpi_args = '--bind-to none';
+            my $np = 1;
+            # my $mpi_args = '--bind-to none';
+            my $mpi_args = '';
             my $verbose = '-v';
             my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
             print "Running $progname with command $runcmd\n";
