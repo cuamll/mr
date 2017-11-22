@@ -71,11 +71,11 @@ if ($addtitles) {
       }
 
       if ($field_component =~ /total/) {
-        $field_string = q(_{total}$);
+        $field_string = q(_{total} $);
       } elsif ($field_component =~ /irrot/) {
-        $field_string = q(_{irrotational}$);
+        $field_string = q(_{irrotational} $);
       } elsif ($field_component =~ /rot/) {
-        $field_string = q(_{rotational}$);
+        $field_string = q(_{rotational} $);
       } else {
         die "field_component is wrong: $field_component $!\n";
       }
@@ -85,9 +85,9 @@ if ($addtitles) {
     } elsif ($file =~ /s_([a-z]+)/) {
 
       if ($1 =~ /charge/) {
-        $linetitle = q($g^{\pm}(k)$);
+        $linetitle = q($ g^{\pm}(k) $);
       } elsif ($1 =~ /direct/) {
-        $linetitle = q($g^{\pm}(r)$);
+        $linetitle = q($ g^{\pm}(r) $);
       } else {
         die "File name doesn't match regex. $file $!\n";
       }
