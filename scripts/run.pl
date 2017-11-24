@@ -131,7 +131,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
           # don't think i can call a function inside an array assignment
           # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
-          my @stamparray = ('T', $temperatures[$i],'gc_corr');
+          my @stamparray = ('T', $temperatures[$i],'chg', $charges[$l],'canon_no_corr');
           my $stamp = join('_', @stamparray);
           my $stampdir = "$outdir/$stamp";
           print "Creating directory $stampdir .\n";

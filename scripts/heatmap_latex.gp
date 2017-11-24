@@ -11,14 +11,14 @@ set bmargin at screen 0.85
 set lmargin at screen 0.15
 set rmargin at screen 0.85
 
-#if (PITICS eq "Y") {
-  set xtics pi
-  set ytics pi
-  set format x '%.0Pπ'
-  set format y '%.0Pπ'
-#} else {
-#  set xtics
-#  set ytics
-#}
+if (exists("PITICS")) {
+  set xtics pi;
+  set ytics pi;
+  set format x '%.0P';
+  set format y '%.0P'
+}
 
-plot FILE w image title LINETITLE
+# We have to add 0 to COLUMN, otherwise it's read as a string
+COLUMN = COLUMN + 0
+
+plot FILE u 1:2:COLUMN w image title LINETITLE
