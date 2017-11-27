@@ -313,8 +313,15 @@ module update
         ebar_dip(i) = dp
         ebar_wind(i) = np
 
+        avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
+        avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
+        avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
+
       end do
 
+      avg_field_total = avg_field_total / L**2
+      avg_field_rot = avg_field_rot / L**2
+      avg_field_irrot = avg_field_irrot / L**2
       ebar = ebar / L**2
       ebar_dip = ebar_dip / L**2
       ebar_wind = ebar_wind / L**2
@@ -486,6 +493,20 @@ module update
             write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
             close(49)
           end if
+
+          ! if ((i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)).or.&
+          ! (i.eq.(4).and.j.eq.(4)).or.&
+          ! (i.eq.((bz*L)-6).and.j.eq.((bz*L)-6))) then
+          !   if (n.eq.1) then
+          !     open(52, file='q_vec_data.dat')
+          !   else
+          !     open(52, file='q_vec_data.dat', position='append')
+          !   end if
+          !   write (52,'(i8.1,5f18.8)') n, (2*pi*kx)/(L*lambda),&
+          !                (2*pi*ky)/(L*lambda), real(e_kx_temp),&
+          !             real(mnphi_kx_temp), real(e_rot_kx_temp)
+          !   close(52)
+          ! end if
 
           s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
           e_kx_temp*conjg(e_kx_temp)

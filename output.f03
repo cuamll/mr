@@ -71,6 +71,12 @@ module output
 
     write (30,'(a)') "   # T, Chi_{Ebar}, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
     write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
+    write (30,'(a)') "# Avg. x-component: total, rot., irrot.:"
+    write (30, '(3f18.10)') avg_field_total(1), avg_field_rot(1),&
+                            avg_field_irrot(1)
+    write (30,'(a)') "# Avg. y-component: total, rot., irrot.:"
+    write (30, '(3f18.10)') avg_field_total(2), avg_field_rot(2),&
+                            avg_field_irrot(2)
 
     ! write (30,'(a)') "   # hop acceptance"
     ! write (30,'(2ES18.9)') temp,&
@@ -99,6 +105,12 @@ module output
       allocate(s_par_rot((sp*L)+1,(sp*L)+1))
       s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
       s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
+
+      ! renormalise s_ab tensors here: then it propagates through to
+      ! s_perp and s_par
+      s_ab = s_ab * L**2
+      s_ab_rot = s_ab_rot * L**2
+      s_ab_irrot = s_ab_irrot * L**2
 
       do p = (-L/2)*sp,(L/2)*sp
         do m = (-L/2)*sp,(L/2)*sp
@@ -312,6 +324,25 @@ module output
       ! s_par = s_par * L**2
       ! s_par_rot = s_par_rot * L**2
       ! s_par_irrot = s_par_irrot * L**2
+
+
+      open  (30, file=sphe_sus_file, position='append')
+      write (30, '(a)') "# S_ab integrals (* L**2)!"
+      write (30, '(a)') "# S_xx: total, rot, irrot"
+      write (30, '(3f18.10)') sum(real(s_ab(1,1,:,:))),&
+      sum(real(s_ab_rot(1,1,:,:))), sum(real(s_ab_irrot(1,1,:,:)))
+      write (30, '(a)') "# S_xy: total, rot, irrot"
+      write (30, '(3f18.10)') sum(real(s_ab(1,2,:,:))),&
+      sum(real(s_ab_rot(1,2,:,:))), sum(real(s_ab_irrot(1,2,:,:)))
+      write (30, '(a)') "# S_yx: total, rot, irrot"
+      write (30, '(3f18.10)') sum(real(s_ab(2,1,:,:))),&
+      sum(real(s_ab_rot(2,1,:,:))), sum(real(s_ab_irrot(2,1,:,:)))
+      write (30, '(a)') "# S_yy: total, rot, irrot"
+      write (30, '(3f18.10)') sum(real(s_ab(2,2,:,:))),&
+      sum(real(s_ab_rot(2,2,:,:))), sum(real(s_ab_irrot(2,2,:,:)))
+      write (30, '(a)') "# S_perp integrals: total, rot, irrot"
+      write (30, '(3f18.10)') sum(s_perp), sum(s_perp_rot), sum(s_perp_irrot)
+      close (30)
 
       !dist_r = dist_r / (no_measurements)
       do i = 1,ceiling( sqrt(float((3*((L/2)**2)))) * (1 / bin_size) )

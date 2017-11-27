@@ -247,6 +247,12 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, rho_avg, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_total, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_rot, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_irrot, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   else
 
@@ -279,6 +285,12 @@ subroutine reductions(id)
     call MPI_Reduce(ebar_wind_sq_sum, ebar_wind_sq_sum, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(rho_avg, rho_avg, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(avg_field_total, avg_field_total, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(avg_field_rot, avg_field_rot, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(avg_field_irrot, avg_field_irrot, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   end if
@@ -370,12 +382,14 @@ subroutine normalisations(num_procs)
   ener_tot_sq_sum = ener_tot_sq_sum / denom
   ener_rot_sq_sum = ener_rot_sq_sum / denom
   ener_irrot_sq_sum = ener_irrot_sq_sum / denom
+
   ebar_sum = ebar_sum / denom
   ebar_sq_sum = ebar_sq_sum / denom
   ebar_dip_sum = ebar_dip_sum / denom
   ebar_dip_sq_sum = ebar_dip_sq_sum / denom
   ebar_wind_sum = ebar_wind_sum / denom
   ebar_wind_sq_sum = ebar_wind_sq_sum / denom
+
   rho_k_p = rho_k_p / denom
   rho_k_m = rho_k_m / denom
   ch_ch = ch_ch / denom
@@ -385,11 +399,16 @@ subroutine normalisations(num_procs)
   dir_struc = dir_struc / denom
   dist_r = dist_r / denom
   bin_count = bin_count / denom
+
   e_tot_avg = e_tot_avg / denom
   e_rot_avg = e_rot_avg / denom
   e_irrot_avg = e_irrot_avg / denom
   v_avg = v_avg / denom
   rho_avg = rho_avg / denom
+  avg_field_total = avg_field_total / denom
+  avg_field_rot = avg_field_rot / denom
+  avg_field_irrot = avg_field_irrot / denom
+
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
   sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)
@@ -421,6 +440,10 @@ subroutine normalisations(num_procs)
   write (*,*) "Ebar_wind_sq_sum: ",ebar_wind_sq_sum(1),ebar_wind_sq_sum(2)
   write (*,*) "Ebar_wind susceptibility: ",ebar_wind_sus
   write (*,*) "Avg. charge density",rho_avg
+  write (*,*) "Avg. x-component: total, rot., irrot.:",avg_field_total(1),&
+  avg_field_rot(1), avg_field_irrot(1)
+  write (*,*) "Avg. y-component: total, rot., irrot.:",avg_field_total(2),&
+  avg_field_rot(2), avg_field_irrot(2)
   write (*,*) "Avg. mu",mu_tot / &
     ((denom + (no_samples * num_procs * therm_sweeps)) * L**2)
 
