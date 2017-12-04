@@ -139,7 +139,7 @@ for my $i (0..$#filenames) {
   }
 
   # if they're going in a document as a figure, might not want the titles
-  $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+  $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
   push @titles, $plottitle;
 
   # generate lists of input/output files and command-line arguments
@@ -167,7 +167,7 @@ for my $i (0..$#inputfiles) {
   }
 
   my $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
-  print "Plotting $outputfiles[$i]\n";
+  print "Plotting $outputfiles[$i] with column $columns[$i]\n";
   system($syscall);
   system($latexargs[$i]);
   system($dvipsargs[$i]);

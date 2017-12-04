@@ -100,6 +100,12 @@ module output
       s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
       s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
 
+      ! renormalise s_ab tensors here: then it propagates through to
+      ! s_perp and s_par
+      s_ab = s_ab * L**2
+      s_ab_rot = s_ab_rot * L**2
+      s_ab_irrot = s_ab_irrot * L**2
+
       do p = (-L/2)*sp,(L/2)*sp
         do m = (-L/2)*sp,(L/2)*sp
 
@@ -346,10 +352,10 @@ module output
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
             charge_struc(i,j)
 
-            write (13, struc_format_string)&
-            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            field_struc(i,j)
+            ! write (13, struc_format_string)&
+            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            ! field_struc(i,j)
 
             write (14, field_format_string)&
             2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
@@ -359,10 +365,10 @@ module output
             real(s_ab(2,1,i,j)),&
             real(s_ab(2,2,i,j))
 
-            write (16, struc_format_string)&
-            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            field_struc_irrot(i,j)
+            ! write (16, struc_format_string)&
+            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            ! field_struc_irrot(i,j)
 
             write (17, field_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
@@ -372,10 +378,10 @@ module output
             real(s_ab_irrot(2,1,i,j)),&
             real(s_ab_irrot(2,2,i,j))
 
-            write (19, struc_format_string)&
-            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            field_struc_rot(i,j)
+            ! write (19, struc_format_string)&
+            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            ! field_struc_rot(i,j)
 
             write (20,field_format_string)&
             2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
