@@ -231,7 +231,7 @@ exit 0
             my $plotfile = "$basedir/scripts/plot.pl";
             my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
             my $kz = 0;
-            my $palette = "~/.config/gnuplot/jet.pal";
+            my $palette = "~/.config/gnuplot/inferno.pal";
             #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
             my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
             system($plotcmd);

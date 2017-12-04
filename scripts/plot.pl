@@ -15,7 +15,7 @@ use Data::Dumper qw(Dumper);
 
 my $three_d = 0;
 my $dir; my $kz; my @columns;
-my $palette = '~/.config/gnuplot/jet.pal';
+my $palette = '~/.config/gnuplot/inferno.pal';
 my $addtitles = 1; my $keep_aux = 0;
 my @inputfiles; my @outputfiles; my @tempfiles;
 my @gnuplotargs; my @latexargs; my @dvipsargs; my @ps2pdfargs;
@@ -96,6 +96,13 @@ for my $i (0..$#filenames) {
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_yy_$field_component";
     push @columns, 6;
+
+    $linetitle = qq(\$ S^{xx}_{$field_component} + S^{yy}_{$field_component} \$ );
+    $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    push @titles, $plottitle;
+    push @inputfiles, $inpath . $filenames[$i] . $insuffix;
+    push @outputfiles, $outpath . '/' . "s_trace_$field_component";
+    push @columns, 7;
   }
 }
 
@@ -115,9 +122,8 @@ for my $i (0..$#filenames) {
       $s_string = qq(\$ S^{xx}_{$field_component} \$);
     } elsif ($s_component =~ /perp/) {
       $s_string = qq(\$ S^{\\perp}_{$field_component} \$);
-      $s_string = q($ S^{\perp});
     } elsif ($s_component =~ /par/) {
-      $s_string = qq(\$ S^{\\perp}_{$field_component} \$);
+      $s_string = qq(\$ S^{\\parallel}_{$field_component} \$);
     } else {
       die "s_component is wrong: $s_component $!\n";
     }
@@ -152,7 +158,7 @@ warn "Different number of titles and files!\n" unless @inputfiles == @outputfile
 
 for my $i (0..$#inputfiles) {
   push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]$plotsuffix'; COLUMN='$columns[$i]'; LINETITLE = ''; PALETTE = '$palette';);
-  push @latexargs, qq(latex -interaction=batchmode -output-directory=$outpath $outputfiles[$i]$plotsuffix);
+  push @latexargs, qq(latex -interaction=batchmode -output-directory=$outpath $outputfiles[$i]$plotsuffix > /dev/null);
   push @dvipsargs, qq(dvips -q -D10000 -o $outputfiles[$i].ps $outputfiles[$i].dvi);
   push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outputfiles[$i].ps $outputfiles[$i].pdf);
 
