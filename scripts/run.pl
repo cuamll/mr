@@ -131,7 +131,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
           # don't think i can call a function inside an array assignment
           # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
-          my @stamparray = ('T', $temperatures[$i],'chg', $charges[$l],'canon_no_corr');
+          my @stamparray = ('T', $temperatures[$i],'chg', $charges[$l],$comment);
           my $stamp = join('_', @stamparray);
           my $stampdir = "$outdir/$stamp";
           print "Creating directory $stampdir .\n";
@@ -231,7 +231,7 @@ exit 0
             my $plotfile = "$basedir/scripts/plot.pl";
             my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
             my $kz = 0;
-            my $palette = "~/.config/gnuplot/jet.pal";
+            my $palette = "~/.config/gnuplot/inferno.pal";
             #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
             my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
             system($plotcmd);

@@ -21,4 +21,5 @@ if (exists("PITICS")) {
 # We have to add 0 to COLUMN, otherwise it's read as a string
 COLUMN = COLUMN + 0
 
-plot FILE u 1:2:COLUMN w image title LINETITLE
+if (COLUMN==7) plot FILE u 1:2:($3 + $6) w image title LINETITLE; else \
+  plot FILE u 1:2:COLUMN w image title LINETITLE;
