@@ -48,22 +48,30 @@ module update
             attempts(1) = attempts(1) + 1
 
             ! get negative in the mu direction
-            site(mu) = neg(site(mu))
+            ! site(mu) = neg(site(mu))
+            ! eo = e_field(mu,site(1),site(2))
+            ! en = eo + increment
+            ! old_e = 0.5 * eps_0 * eo**2
+            ! new_e = 0.5 * eps_0 * en**2
+            ! delta_e = new_e - old_e
+
             eo = e_field(mu,site(1),site(2))
             en = eo + increment
             old_e = 0.5 * eps_0 * eo**2
             new_e = 0.5 * eps_0 * en**2
             delta_e = new_e - old_e
 
+            site(mu) = neg(site(mu))
+
             if (v(site(1),site(2)).eq.0) then
               if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
                 v(site(1),site(2)) = charge
-                e_field(mu,site(1),site(2)) = en
                 ebar(mu) = ebar(mu) + (increment / L**2)
 
                 ! go back to the original site and set the charge to 0
                 site(mu) = pos(site(mu))
+                e_field(mu,site(1),site(2)) = en
                 v(site(1),site(2)) = 0
 
                 accepts(1) = accepts(1) + 1
@@ -76,6 +84,7 @@ module update
 
             attempts(1) = attempts(1) + 1
 
+            site(mu) = pos(site(mu))
             eo = e_field(mu,site(1),site(2))
             en = eo - increment
             old_e = 0.5 * eps_0 * lambda**2 * eo**2
@@ -83,18 +92,17 @@ module update
             delta_e = new_e - old_e
 
             ! get pos in the mu direction
-            site(mu) = pos(site(mu))
 
             if (v(site(1),site(2)).eq.0) then
               if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
                 v(site(1),site(2)) = charge
+                e_field(mu,site(1),site(2)) = en
+                ebar(mu) = ebar(mu) - (increment / L**2)
 
                 ! go back to the original site and set the charge to 0
                 site(mu) = neg(site(mu))
                 v(site(1),site(2)) = 0
-                e_field(mu,site(1),site(2)) = en
-                ebar(mu) = ebar(mu) - (increment / L**2)
 
                 accepts(1) = accepts(1) + 1
                 u_tot = u_tot + delta_e

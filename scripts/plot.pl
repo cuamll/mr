@@ -46,6 +46,7 @@ my $steps = $parameters{no_samples} * $parameters{measurement_sweeps};
 my $meas = $steps / $parameters{sample_interval};
 my $steps_c = commify($steps);
 my $meas_c = commify($meas);
+my $chgen = lc $parameters{charge_generation};
 
 my @filenames;
 foreach my $key (keys %parameters) {
@@ -61,6 +62,9 @@ foreach my $key (keys %parameters) {
 
 my @titles;
 my $s_string; my $field_string; my $linetitle; my $plottitle;
+# $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+# my $chgen = lc $parameters{charge_generation};
+# $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
 
 # the s_ab_whatever files have four components; we want to plot each separately
 for my $i (0..$#filenames) {
@@ -70,35 +74,35 @@ for my $i (0..$#filenames) {
 
     # do each tensor component separately
     $linetitle = qq(\$ S^{xx}_{$field_component} \$ );
-    $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_xx_$field_component";
     push @columns, 3;
 
     $linetitle = qq(\$ S^{xy}_{$field_component} \$ );
-    $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_xy_$field_component";
     push @columns, 4;
 
     $linetitle = qq(\$ S^{yx}_{$field_component} \$ );
-    $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_yx_$field_component";
     push @columns, 5;
 
     $linetitle = qq(\$ S^{yy}_{$field_component} \$ );
-    $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_yy_$field_component";
     push @columns, 6;
 
     $linetitle = qq(\$ S^{xx}_{$field_component} + S^{yy}_{$field_component} \$ );
-    $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_trace_$field_component";
@@ -145,7 +149,7 @@ for my $i (0..$#filenames) {
   }
 
   # if they're going in a document as a figure, might not want the titles
-  $plottitle = qq(L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+  $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
   push @titles, $plottitle;
 
   # generate lists of input/output files and command-line arguments
