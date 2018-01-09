@@ -56,8 +56,8 @@ module setup
 
     do i = 1,L
       do k = 1,(L*bz)+1
-        fw(i,k) = prefac * i * (k - 1 - (bz*L/2))
-        hw(i,k) = prefac * (neg(i) + (1.0/2)) * (k - 1 - (bz*L/2))
+        fw(i,k) = prefac * i * (k - 1)
+        hw(i,k) = prefac * (neg(i) + (1.0/2)) * (k - 1)
       end do
     end do
 
