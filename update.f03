@@ -382,8 +382,9 @@ module update
               ! these first two kdotxs are for the newest commit
               ! i.e. symmetric rotational, asymmetric irrotational
               ! NEGATIVE FT
-              kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
-                      ((p)*ky)))
+              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
+              !         ((p)*ky)))
+              kdotx = hw(m,i) + fw(p,j)
 
               ! POSITIVE FT
               ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((pos(m)-(1.0/2))*kx + &
@@ -394,8 +395,9 @@ module update
               e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
               ! NEGATIVE FT
-              kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
-                      ((neg(p)+(1.0/2))*ky)))
+              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
+              !         ((neg(p)+(1.0/2))*ky)))
+              kdotx = fw(m,i) + hw(p,j)
 
               ! POSITIVE FT
               ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &

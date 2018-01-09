@@ -11,7 +11,10 @@ module setup
   subroutine initial_setup
     ! various things which can't be zeroed
     ! at the start of every sample
+    complex(kind=rk) :: prefac, imag
 
+    allocate(pos(L))
+    allocate(neg(L))
     allocate(v_avg(L,L))
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
@@ -26,6 +29,10 @@ module setup
     allocate(dist_r(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(lgf(L,L,L,L))
+    allocate(fw(L,(bz*L)+1))
+    allocate(hw(L,(bz*L)+1))
+
+    call PBCs
 
     v_avg = 0.0; rho_avg = 0.0; runtot = 0.0
     avg_field_total = 0.0; avg_field_rot = 0.0; avg_field_irrot = 0.0
@@ -44,17 +51,25 @@ module setup
     attempts(3) = (therm_sweeps + measurement_sweeps) *&
       no_samples * L**2 * g_ratio
 
+    imag = (0.0, 1.0)
+    prefac = (-1)*imag*((2*pi)/(L*lambda))
+
+    do i = 1,L
+      do k = 1,(L*bz)+1
+        fw(i,k) = prefac * i * (k - 1 - (bz*L/2))
+        hw(i,k) = prefac * (neg(i) + (1.0/2)) * (k - 1 - (bz*L/2))
+      end do
+    end do
+
   end subroutine initial_setup
 
   subroutine allocations
 
     allocate(v(L,L))
-    allocate(pos(L))
-    allocate(neg(L))
     allocate(e_field(2,L,L))
     allocate(mnphi(2,L,L))
 
-    v = 0; pos = 0; neg = 0
+    v = 0;
     ebar = 0.0;
     e_field = 0.0; mnphi = 0.0;
 
@@ -63,8 +78,6 @@ module setup
   subroutine deallocations
 
     deallocate(v)
-    deallocate(pos)
-    deallocate(neg)
     deallocate(e_field)
     deallocate(mnphi)
 
@@ -148,7 +161,6 @@ module setup
     call randinit(n)
     call allocations
     call latt_init
-    call PBCs
     call arrays_init
 
   end subroutine setup_wrapper
