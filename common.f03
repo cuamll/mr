@@ -1,5 +1,6 @@
 module common
   implicit none
+
   integer, public, parameter :: prec = 16
   integer, public, parameter :: expo = 50
   integer, public, parameter :: rk = selected_real_kind(prec, expo)
@@ -30,7 +31,8 @@ module common
   real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&
   ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg
   real(kind=rk), dimension(2), public :: ebar, ebar_dip, ebar_wind, ebar_sum,&
-  ebar_sq_sum, ebar_dip_sum, ebar_dip_sq_sum, ebar_wind_sum, ebar_wind_sq_sum
+  ebar_sq_sum, ebar_dip_sum, ebar_dip_sq_sum, ebar_wind_sum, ebar_wind_sq_sum,&
+  avg_field_total, avg_field_rot, avg_field_irrot
   real(kind=rk), dimension(:), allocatable, public :: dist_r
   real(kind=rk), dimension(:,:), allocatable, public :: v_avg, dir_struc
   real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg,&
@@ -40,7 +42,7 @@ module common
   s_ab_rot, s_ab_irrot
 
   complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch,&
-  rho_k_m,rho_k_p
+  rho_k_m,rho_k_p, fw, hw
   complex(kind=rk), public :: runtot
 
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file,&
@@ -48,7 +50,9 @@ module common
   field_charge_file, energy_file, sq_energy_file, e_field_file,&
   irrot_field_file, irrot_sab_file, irrot_sperp_file, rot_field_file,&
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
-  irrot_spar_file, avg_field_file, equil_file,charge_gen
+  irrot_spar_file, avg_field_file, equil_file
+
+  character(6) :: charge_gen
 
   save
 
