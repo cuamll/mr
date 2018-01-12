@@ -239,6 +239,7 @@ module update
     subroutine measure(step_number)
       use common
       use linear_solver
+      use fft_mod
       use omp_lib
       implicit none
       integer,intent(in) :: step_number
@@ -246,11 +247,14 @@ module update
       real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
       real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
       real(kind=8), dimension(2,L,L) :: e_rot
-      complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
-      complex(kind=rk) :: e_kx_temp, e_ky
-      complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
-      complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
-      complex(kind=rk) :: imag, kdotx
+      complex(kind=rk), dimension(L,L) :: rho_k_p_temp, rho_k_m_temp
+      complex(kind=rk), dimension(L,L) :: e_kx, e_ky
+      complex(kind=rk), dimension(L,L) :: mnphi_kx, mnphi_ky
+      complex(kind=rk), dimension(L,L) :: e_rot_kx, e_rot_ky
+      ! complex(kind=rk) :: imag, kdotx
+      ! complex(kind=rk) :: e_kx_temp, e_ky
+      ! complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
+      ! complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
 
       ! | --------------- SUBROUTINE MEASURE(STEP_NUMBER) --------------- |
       ! |                 "MEASURES" RELEVANT QUANTITIES                  |
@@ -265,10 +269,13 @@ module update
       ebar = 0.0; ebar_dip = 0.0; ebar_wind = 0.0; dp = 0.0; np = 0.0
       norm_k = 0.0; dist = 0.0
       rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
-      e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
-      e_rot_kx_temp = (0.0,0.0)
-      e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
-      kdotx = (0.0,0.0); imag = (0.0, 1.0)
+      ! e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
+      ! e_rot_kx_temp = (0.0,0.0)
+      ! e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
+      ! kdotx = (0.0,0.0); imag = (0.0, 1.0)
+      e_kx = (0.0, 0.0); e_ky = (0.0, 0.0);
+      mnphi_kx = (0.0, 0.0); mnphi_ky = (0.0, 0.0);
+      e_rot_kx = (0.0, 0.0); e_rot_ky = (0.0, 0.0);
 
       ! get irrotational part of field
       ! this way we can get decomposed parts along with total
@@ -344,9 +351,17 @@ module update
       if (do_corr) then
         n = step_number / sample_interval
 
-        !$omp parallel do num_threads(2)&
-        !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
-        !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
+        if (mod(n,100).eq.0) then
+          write (*,*) "n = ",n
+        end if
+
+        ! !$omp parallel do num_threads(2)&
+        ! !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
+        ! !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
+        ! !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
+        !$omp parallel do&
+        !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx,&
+        !$omp& mnphi_kx,e_rot_kx,e_ky,mnphi_ky,e_rot_ky,norm_k)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
         do omp_index = 1, L**2
 
@@ -360,158 +375,203 @@ module update
           kx = i + L
           ky = j + L
 
-          rho_k_p_temp = (0.0,0.0)
-          rho_k_m_temp = (0.0,0.0)
-          e_kx_temp = (0.0,0.0)
-          mnphi_kx_temp = (0.0,0.0)
-          e_rot_kx_temp = (0.0,0.0)
-          e_ky = (0.0,0.0)
-          mnphi_ky = (0.0,0.0)
-          e_rot_ky = (0.0,0.0)
-          kdotx = (0.0,0.0)
-          norm_k = 0.0
+          ! rho_k_p_temp = (0.0,0.0)
+          ! rho_k_m_temp = (0.0,0.0)
+          ! e_kx_temp = (0.0,0.0)
+          ! mnphi_kx_temp = (0.0,0.0)
+          ! e_rot_kx_temp = (0.0,0.0)
+          ! e_ky = (0.0,0.0)
+          ! mnphi_ky = (0.0,0.0)
+          ! e_rot_ky = (0.0,0.0)
+          ! kdotx = (0.0,0.0)
+          ! norm_k = 0.0
+          rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
+          e_kx = (0.0, 0.0); e_ky = (0.0, 0.0);
+          mnphi_kx = (0.0, 0.0); mnphi_ky = (0.0, 0.0);
+          e_rot_kx = (0.0, 0.0); e_rot_ky = (0.0, 0.0);
 
-          if (kx.eq.0.and.ky.eq.0) then
-            norm_k = 0.0
-          else
-            norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
-          end if
+          e_kx = cmplx(e_field(1,:,:),0.0_rk)
+          e_ky = cmplx(e_field(2,:,:),0.0_rk)
+          mnphi_kx = cmplx(mnphi(1,:,:),0.0_rk)
+          mnphi_ky = cmplx(mnphi(2,:,:),0.0_rk)
+          e_rot_kx = cmplx(e_rot(1,:,:),0.0_rk)
+          e_rot_ky = cmplx(e_rot(2,:,:),0.0_rk)
+          rho_k_p_temp = cmplx(v * merge(1.0_rk,0.0_rk,v>0),0.0_rk)
+          rho_k_m_temp = cmplx(v * merge(-1.0_rk,0.0_rk,v>0),0.0_rk)
 
-          do s = 1,L**2
-            m = ((s - 1) / L) + 1
-            p = mod(s - 1, L) + 1
+          ! write (*,'(a,i5.1)') "ARRAY: rho_k_p", n
+          ! flush(6)
+          call fft_2d_charges(rho_k_p_temp,L,L)
+          ! write (*,'(a,i5.1)') "ARRAY: rho_k_m", n
+          ! flush(6)
+          call fft_2d_charges(rho_k_m_temp,L,L)
 
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
-              !         ((p)*ky)))
-              kdotx = hw(m,i) + fw(p,j)
-
-              e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
-              mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
-              e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
-
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
-              !         ((neg(p)+(1.0/2))*ky)))
-              kdotx = fw(m,i) + hw(p,j)
-
-              e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p)
-              e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
-              mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
-
-              if (v(m,p).ne.0) then ! calculate <++ + +->!
-
-                ! FT of charge distribution
-                ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
-                !         ((p)*ky/(L*lambda))))
-                kdotx = fw(m,i) + fw(p,j)
-
-                if (v(m,p).eq.-1) then
-                  rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
-                end if
-
-                if (v(m,p).eq.1) then ! take away <++>
-                  rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
-                end if
-
-                ! --- real space correlation function ---
-
-                if (v(m,p).eq.1) then
-                  if (v(i,j).eq.-1) then
-
-                    x = abs(m - i)
-                    y = abs(p - j)
-
-                    if (x.gt.L/2) then
-                      x = L - x
-                    end if
-                    if (y.gt.L/2) then
-                      y = L - y
-                    end if
-
-                    x = x + 1
-                    y = y + 1
-
-                    dir_struc(x,y) = dir_struc(x,y) +&
-                            v(m,p) * v(i,j)
-                  end if ! neg charge at i,j
-                end if ! pos charge at m,p
-
-              end if ! end v != 0 check
-
-          end do ! s
+          ! write (*,'(a,i5.1)') "ARRAY: e_kx", n
+          ! flush(6)
+          call fft_2d_fields(e_kx,L,L,1)
+          ! write (*,'(a,i5.1)') "ARRAY: e_ky", n
+          ! flush(6)
+          call fft_2d_fields(e_ky,L,L,2)
+          ! write (*,'(a,i5.1)') "ARRAY: mnphi_kx", n
+          ! flush(6)
+          call fft_2d_fields(mnphi_kx,L,L,1)
+          ! write (*,'(a,i5.1)') "ARRAY: mnphi_ky", n
+          ! flush(6)
+          call fft_2d_fields(mnphi_ky,L,L,2)
+          ! write (*,'(a,i5.1)') "ARRAY: e_rot_kx", n
+          ! flush(6)
+          call fft_2d_fields(e_rot_kx,L,L,1)
+          ! write (*,'(a,i5.1)') "ARRAY: e_rot_ky", n
+          ! flush(6)
+          call fft_2d_fields(e_rot_ky,L,L,2)
 
           rho_k_p_temp = rho_k_p_temp / float(L**2)
           rho_k_m_temp = rho_k_m_temp / float(L**2)
-          e_kx_temp = e_kx_temp / float(L**2)
+          e_kx = e_kx / float(L**2)
           e_ky = e_ky / float(L**2)
-          mnphi_kx_temp = mnphi_kx_temp / float(L**2)
+          mnphi_kx = mnphi_kx / float(L**2)
           mnphi_ky = mnphi_ky / float(L**2)
-          e_rot_kx_temp = e_rot_kx_temp / float(L**2)
+          e_rot_kx = e_rot_kx / float(L**2)
           e_rot_ky = e_rot_ky / float(L**2)
 
-          rho_k_p(kx,ky) = rho_k_p(kx,ky) + rho_k_p_temp
-          rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp
+          rho_k_p(kx,ky) = rho_k_p(kx,ky) + sum(rho_k_p_temp)
+          rho_k_m(kx,ky) = rho_k_m(kx,ky) + sum(rho_k_m_temp)
           ch_ch(kx,ky) = ch_ch(kx,ky) +&
-                        (rho_k_p_temp * conjg(rho_k_m_temp))
+                        (sum(rho_k_p_temp * conjg(rho_k_m_temp)))
 
-          ! if (i.eq.1) then
-          !   rho_k_p(kx + L, ky) = rho_k_p(kx,ky)
-          !   rho_k_m(kx + L, ky) = rho_k_m(kx,ky)
-          !   ch_ch(kx + L, ky) = ch_ch(kx,ky)
+          s_ab(1,1,kx,ky) = s_ab(1,1,kx,ky) + sum(e_kx * e_kx)
+          s_ab(1,2,kx,ky) = s_ab(1,2,kx,ky) + sum(e_kx * e_ky)
+          s_ab(2,1,kx,ky) = s_ab(2,1,kx,ky) + sum(e_ky * e_kx)
+          s_ab(2,2,kx,ky) = s_ab(2,2,kx,ky) + sum(e_ky * e_ky)
+
+          s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) + sum(e_rot_kx * e_rot_kx)
+          s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) + sum(e_rot_kx * e_rot_ky)
+          s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) + sum(e_rot_ky * e_rot_kx)
+          s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) + sum(e_rot_ky * e_rot_ky)
+
+          s_ab_irrot(1,1,kx,ky) = s_ab_irrot(1,1,kx,ky) + sum(mnphi_kx * mnphi_kx)
+          s_ab_irrot(1,2,kx,ky) = s_ab_irrot(1,2,kx,ky) + sum(mnphi_kx * mnphi_ky)
+          s_ab_irrot(2,1,kx,ky) = s_ab_irrot(2,1,kx,ky) + sum(mnphi_ky * mnphi_kx)
+          s_ab_irrot(2,2,kx,ky) = s_ab_irrot(2,2,kx,ky) + sum(mnphi_ky * mnphi_ky)
+
+          ! if (kx.eq.0.and.ky.eq.0) then
+          !   norm_k = 0.0
+          ! else
+          !   norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
           ! end if
 
-          ! if (j.eq.1) then
-          !   rho_k_p(kx, ky + L) = rho_k_p(kx,ky)
-          !   rho_k_m(kx, ky + L) = rho_k_m(kx,ky)
-          !   ch_ch(kx, ky + L) = ch_ch(kx,ky)
-          ! end if
+          ! do s = 1,L**2
+          !   m = ((s - 1) / L) + 1
+          !   p = mod(s - 1, L) + 1
 
-          ! if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
-          !   if (n.eq.1) then
-          !     open(49, file=equil_file)
-          !   else
-          !     open(49, file=equil_file, position='append')
-          !   end if
-          !   runtot = runtot + e_kx_temp*conjg(e_ky)
-          !   write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
-          !   close(49)
-          ! end if
+          !   ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
+          !   !         ((p)*ky)))
+          !   kdotx = hw(m,i) + fw(p,j)
 
-          s_ab(1,1,kx,ky) = s_ab(1,1,kx,ky) +&
-          e_kx_temp*conjg(e_kx_temp)
-          s_ab(1,2,kx,ky) = s_ab(1,2,kx,ky) +&
-          e_kx_temp*conjg(e_ky)
-          s_ab(2,1,kx,ky) = s_ab(2,1,kx,ky) +&
-          e_ky*conjg(e_kx_temp)
-          s_ab(2,2,kx,ky) = s_ab(2,2,kx,ky) +&
-          e_ky*conjg(e_ky)
+          !   e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
+          !   mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
+          !   e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
-          s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
-          e_rot_kx_temp*conjg(e_rot_kx_temp)
-          s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
-          e_rot_kx_temp*conjg(e_rot_ky)
-          s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
-          e_rot_ky*conjg(e_rot_kx_temp)
-          s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
-          e_rot_ky*conjg(e_rot_ky)
+          !   ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
+          !   !         ((neg(p)+(1.0/2))*ky)))
+          !   kdotx = fw(m,i) + hw(p,j)
 
-          s_ab_irrot(1,1,kx,ky) = s_ab_irrot(1,1,kx,ky) +&
-          mnphi_kx_temp*conjg(mnphi_kx_temp)
-          s_ab_irrot(1,2,kx,ky) = s_ab_irrot(1,2,kx,ky) +&
-          mnphi_kx_temp*conjg(mnphi_ky)
-          s_ab_irrot(2,1,kx,ky) = s_ab_irrot(2,1,kx,ky) +&
-          mnphi_ky*conjg(mnphi_kx_temp)
-          s_ab_irrot(2,2,kx,ky) = s_ab_irrot(2,2,kx,ky) +&
-          mnphi_ky*conjg(mnphi_ky)
+          !   e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p)
+          !   e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
+          !   mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
+
+          !   if (v(m,p).ne.0) then ! calculate <++ + +->!
+
+          !     ! FT of charge distribution
+          !     ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
+          !     !         ((p)*ky/(L*lambda))))
+          !     kdotx = fw(m,i) + fw(p,j)
+
+          !     if (v(m,p).eq.-1) then
+          !       rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
+          !     end if
+
+          !     if (v(m,p).eq.1) then ! take away <++>
+          !       rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
+          !     end if
+
+          !     ! --- real space correlation function ---
+
+          !     if (v(m,p).eq.1) then
+          !       if (v(i,j).eq.-1) then
+
+          !         x = abs(m - i)
+          !         y = abs(p - j)
+
+          !         if (x.gt.L/2) then
+          !           x = L - x
+          !         end if
+          !         if (y.gt.L/2) then
+          !           y = L - y
+          !         end if
+
+          !         x = x + 1
+          !         y = y + 1
+
+          !         dir_struc(x,y) = dir_struc(x,y) +&
+          !                 v(m,p) * v(i,j)
+          !       end if ! neg charge at i,j
+          !     end if ! pos charge at m,p
+
+          !   end if ! end v != 0 check
+
+          ! end do ! s
+
+          ! rho_k_p_temp = rho_k_p_temp / float(L**2)
+          ! rho_k_m_temp = rho_k_m_temp / float(L**2)
+          ! e_kx_temp = e_kx_temp / float(L**2)
+          ! e_ky = e_ky / float(L**2)
+          ! mnphi_kx_temp = mnphi_kx_temp / float(L**2)
+          ! mnphi_ky = mnphi_ky / float(L**2)
+          ! e_rot_kx_temp = e_rot_kx_temp / float(L**2)
+          ! e_rot_ky = e_rot_ky / float(L**2)
+
+          ! rho_k_p(kx,ky) = rho_k_p(kx,ky) + rho_k_p_temp
+          ! rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp
+          ! ch_ch(kx,ky) = ch_ch(kx,ky) +&
+          !               (rho_k_p_temp * conjg(rho_k_m_temp))
+
+          ! s_ab(1,1,kx,ky) = s_ab(1,1,kx,ky) +&
+          ! e_kx_temp*conjg(e_kx_temp)
+          ! s_ab(1,2,kx,ky) = s_ab(1,2,kx,ky) +&
+          ! e_kx_temp*conjg(e_ky)
+          ! s_ab(2,1,kx,ky) = s_ab(2,1,kx,ky) +&
+          ! e_ky*conjg(e_kx_temp)
+          ! s_ab(2,2,kx,ky) = s_ab(2,2,kx,ky) +&
+          ! e_ky*conjg(e_ky)
+
+          ! s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
+          ! e_rot_kx_temp*conjg(e_rot_kx_temp)
+          ! s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
+          ! e_rot_kx_temp*conjg(e_rot_ky)
+          ! s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
+          ! e_rot_ky*conjg(e_rot_kx_temp)
+          ! s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
+          ! e_rot_ky*conjg(e_rot_ky)
+
+          ! s_ab_irrot(1,1,kx,ky) = s_ab_irrot(1,1,kx,ky) +&
+          ! mnphi_kx_temp*conjg(mnphi_kx_temp)
+          ! s_ab_irrot(1,2,kx,ky) = s_ab_irrot(1,2,kx,ky) +&
+          ! mnphi_kx_temp*conjg(mnphi_ky)
+          ! s_ab_irrot(2,1,kx,ky) = s_ab_irrot(2,1,kx,ky) +&
+          ! mnphi_ky*conjg(mnphi_kx_temp)
+          ! s_ab_irrot(2,2,kx,ky) = s_ab_irrot(2,2,kx,ky) +&
+          ! mnphi_ky*conjg(mnphi_ky)
 
           ! direct space one
-          if (i.le.L/2+1.and.j.le.L/2+1) then
+          ! if (i.le.L/2+1.and.j.le.L/2+1) then
 
-            dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
-            dist_bin = floor(dist / bin_size) + 1
-            dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
-            bin_count(dist_bin) = bin_count(dist_bin) + 1
+          !   dist = sqrt(dble((i - 1)**2 + (j - 1)**2))
+          !   dist_bin = floor(dist / bin_size) + 1
+          !   dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j)
+          !   bin_count(dist_bin) = bin_count(dist_bin) + 1
 
-          end if
+          ! end if
 
         end do ! end openmp_index loop
         !$omp end parallel do

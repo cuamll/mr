@@ -29,8 +29,8 @@ module setup
     allocate(dist_r(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(lgf(L,L,L,L))
-    allocate(fw(L,(bz*L)+1))
-    allocate(hw(L,(bz*L)+1))
+    allocate(fw(L,L))
+    allocate(hw(L,L))
 
     call PBCs
 
@@ -55,7 +55,7 @@ module setup
     prefac = (-1)*imag*((2*pi)/(L*lambda))
 
     do i = 1,L
-      do k = 1,(L*bz)+1
+      do k = 1,L
         fw(i,k) = prefac * i * (k - 1)
         hw(i,k) = prefac * (neg(i) + (1.0/2)) * (k - 1)
       end do

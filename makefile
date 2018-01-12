@@ -17,7 +17,9 @@ RV = $(shell git rev-parse --short HEAD)
 DEBUG = 0
 ifeq ($(DEBUG), 1)
 	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
-		     -ffpe-trap=invalid,zero,denormal,underflow,overflow
+		     -ffpe-trap=invalid
+	# DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
+	# 	     -ffpe-trap=invalid,zero,denormal,underflow,overflow
 else
 	DEBUGFLAGS = -O2
 endif
@@ -36,6 +38,7 @@ SOURCES = common.f03\
 	  output.f03\
 	  linear_solver.f03\
 	  setup.f03\
+	  fft.f03\
 	  update.f03
 
 OBJ_T1 = $(patsubst %.f03, %.o,$(SOURCES))

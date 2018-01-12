@@ -86,6 +86,15 @@ program mr
     end do
 
     if (verbose) then
+
+      if (rank.eq.0) then
+        call date_and_time(VALUES=values)
+
+        write (*,'(a24,I2.2,a1,I2.2,a1,I4.2,a1,I2.2,a1,I2.2,a1,I2.2)')&
+          &" Current date and time: ",values(3),"/",values(2),"/"&
+          &,values(1)," ",values(5),":",values(6),":",values(7)
+      end if
+
       write (*,'(a,i2.1,a,i2.1,a,i2.1)') "Proc. ", rank, " out of ",&
         num_procs," finished measurements for sample ",k
     end if
@@ -160,20 +169,6 @@ program mr
       (end_time - start_time) /&
       (no_samples * num_procs * no_measurements)," seconds."
 
-    ! These probably need a little more thought
-    ! and reducing!
-    ! write (*,'(a,i12.1,es18.9)') "Charge hops: total, acceptance rate: ",&
-    !   accepth, accepth / ((therm_sweeps + measurement_sweeps) * &
-    !   hop_ratio * L**2 * (num_procs * no_samples))
-    ! write (*,'(a,i12.1,es18.9)') "Plaquette update: total, acceptance rate: ",&
-    !   acceptr, acceptr / ((therm_sweeps + measurement_sweeps) * &
-    !   rot_ratio * L**2 * (num_procs * no_samples))
-    ! write (*,'(a,i12.1,es18.9)') "Harmonic update: total, acceptance rate: ",&
-    !   acceptg, acceptg / ((therm_sweeps + measurement_sweeps) * &
-    !   g_ratio * L**2 * 2 * (num_procs * no_samples))
-    ! write (*,'(a,a,6i12.1)') "Hops, creations, annihilations ",&
-    !   "(attempts, accepts): ",&
-    !   attempth, accepth, attemptc, acceptc, attempta, accepta
     write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
     accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
     write (*,'(a,2i12.1,es18.9)') "Rot.: total, attempts, rate: ",&
