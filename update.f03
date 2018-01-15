@@ -7,6 +7,44 @@ module update
 
   contains
 
+    subroutine harm_fluct(n)
+      use common
+      implicit none
+      integer, intent(in) :: n
+      integer :: i, mu
+      integer, dimension(2) :: site
+      real(kind=8) :: eo1, eo2, eo3, eo4, en1, en2, en3, en4,&
+      increment, old_e, new_e, delta_e, harm_fluct
+
+      ! --- HARMONIC FLUCTUATION UPDATE ---
+
+      ! just testing
+      harm_delt = rot_delt
+
+      do i = 1, n
+
+        ! pick at random from interval [-Delta_max, +Delta_max]
+        increment = 2 * harm_delt * (rand() - 0.5)
+
+        mu = floor(2 * rand()) + 1
+
+        eo1 = ebar(mu)
+
+        ! this is probably wrong?
+        delta_e = (lambda**2 * q) *&
+                  ((q / (2 * eps_0)) + (L * (ebar(mu) + increment)))
+
+        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+
+          ebar(mu) = ebar(mu) + increment
+          e_field(mu,:,:) = e_field(mu,:,:) + increment
+
+        end if ! end of Metropolis check
+
+      end do ! end rotational
+
+    end subroutine harm_fluct
+
     subroutine hop(n)
       implicit none
       integer, intent(in) :: n
