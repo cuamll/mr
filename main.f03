@@ -174,12 +174,17 @@ program mr
     ! write (*,'(a,a,6i12.1)') "Hops, creations, annihilations ",&
     !   "(attempts, accepts): ",&
     !   attempth, accepth, attemptc, acceptc, attempta, accepta
-    write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
-    accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+    if (add_charges.ne.0) then
+      write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
+      accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+    end if
     write (*,'(a,2i12.1,es18.9)') "Rot.: total, attempts, rate: ",&
     accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
     write (*,'(a,2i12.1,es18.9)') "Harm: total, attempts, rate: ",&
     accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
+    write (*,'(a,2i12.1,es18.9)') "# Harmonic fluctuations: &
+    &total, attempts, rate: ",&
+    accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
 
     ! canonical!
     ! write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
@@ -199,6 +204,8 @@ subroutine mc_sweep
   use common
   use update
   implicit none
+
+  call harm_fluct(int(L**2 * hop_ratio))
 
   call hop(int(L**2 * hop_ratio))
 

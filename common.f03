@@ -19,7 +19,7 @@ module common
   integer, public :: MPI_NEW_INT, MPI_NEW_REAL, MPI_NEW_COMPLEX
   integer(kind=4), public :: seed, no_samples, no_threads, L, add_charges,&
   no_measurements, therm_sweeps, measurement_sweeps, sample_interval
-  integer(kind=ik), dimension(5), public :: attempts, accepts
+  integer(kind=ik), dimension(6), public :: attempts, accepts
   integer(kind=ik), dimension(:), allocatable, public :: bin_count
   integer(kind=4), dimension(:), allocatable, public :: pos,neg
   integer(kind=4), dimension(:,:), allocatable, public :: v

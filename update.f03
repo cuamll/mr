@@ -12,36 +12,35 @@ module update
       implicit none
       integer, intent(in) :: n
       integer :: i, mu
-      integer, dimension(2) :: site
-      real(kind=8) :: eo1, eo2, eo3, eo4, en1, en2, en3, en4,&
-      increment, old_e, new_e, delta_e, harm_fluct
+      real(kind=8) :: increment, delta_e, harm_fluct
 
       ! --- HARMONIC FLUCTUATION UPDATE ---
 
       ! just testing
-      harm_delt = rot_delt
+      harm_delt = 0.5 * rot_delt
 
       do i = 1, n
 
         ! pick at random from interval [-Delta_max, +Delta_max]
-        increment = 2 * harm_delt * (rand() - 0.5)
+        increment = 2 * harm_fluct * (rand() - 0.5)
 
         mu = floor(2 * rand()) + 1
 
-        eo1 = ebar(mu)
+        ! expression for an arbitrary increment
+        delta_e = ((eps_0 * lambda**2) / 2.0) *&
+                  (L**2 * increment) * (increment + 2 * ebar(mu))
 
-        ! this is probably wrong?
-        delta_e = (lambda**2 * q) *&
-                  ((q / (2 * eps_0)) + (L * (ebar(mu) + increment)))
+        attempts(6) = attempts(6) + 1
 
         if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
+          accepts(6) = accepts(6) + 1
           ebar(mu) = ebar(mu) + increment
           e_field(mu,:,:) = e_field(mu,:,:) + increment
 
         end if ! end of Metropolis check
 
-      end do ! end rotational
+      end do ! i loop
 
     end subroutine harm_fluct
 

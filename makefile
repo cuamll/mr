@@ -14,7 +14,7 @@ VPATH = $(MOD_DIR)
 UNAME = $(shell uname)
 RV = $(shell git rev-parse --short HEAD)
 
-DEBUG = 1
+DEBUG = 0
 ifeq ($(DEBUG), 1)
 	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
 		     -ffpe-trap=invalid,zero,denormal,underflow,overflow
