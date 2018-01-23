@@ -38,23 +38,25 @@ Session.vim
 # This repo only
 obj*
 mod*
-out*
+*temp*
+out/*
 .DS_Store
 *_backup
 test*
 michael*
 linso*
-mr_*
+mr*
 *_uncorr*
 *_rot*
 lattice.dat
 latts*
-revision*
-*.png
+*.inc
 
 
 # LaTeX extras
 *.aux
+*.fls
+*_latexmk
 *.log
 *.bbl
 *.toc
