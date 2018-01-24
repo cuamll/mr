@@ -84,41 +84,10 @@ module setup
   end subroutine deallocations
 
   subroutine latt_init
-    integer, dimension(:,:), allocatable :: v_temp
-    logical :: read_lattfile = .false.
+      integer, dimension(:,:), allocatable :: v_temp
+      logical :: read_lattfile = .false.
 
-    n = 0
-
-    if (add_charges.ne.0) then
-
-      !write (*,*)
-      !write (*,'(a,I4.1,a)') "Adding ",add_charges," charges. Charge positions:"
-
-      do while (n.lt.add_charges)
-
-        ! pick a random position, check if there's a charge there
-        ! if so, pick again; if not, alternate pos/neg
-        i = int(rand() * L) + 1
-        j = int(rand() * L) + 1
-
-        if (v(i,j).ne.0) then
-          CYCLE
-        end if
-
-        if (modulo(n,2)==0) then
-          v(i,j) = 1
-        else
-          v(i,j) = -1
-        end if
-
-        n = n + 1
-
-        !write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,v(i,j)
-
-      end do
-
-    else ! add_charges = 0; read in lattice file
-
+      ! this is currently never true, but could come in handy
       if (read_lattfile) then
         allocate(v_temp(L,L))
 
@@ -131,13 +100,87 @@ module setup
 
         deallocate(v_temp)
         close(2)
-      else ! all zeroes
-        v = 0
+
       end if
 
-    end if
+      n = 0
 
-  end subroutine latt_init
+      if (charge_gen.eq."RANDOM") then
+
+        do while (n.lt.add_charges)
+
+          ! pick a random position, check if there's a charge there
+          ! if so, pick again; if not, alternate pos/neg
+          i = int(rand() * L) + 1
+          j = int(rand() * L) + 1
+
+          if (v(i,j).ne.0) then
+            CYCLE
+          end if
+
+          if (modulo(n,2)==0) then
+            v(i,j) = 1
+          else
+            v(i,j) = -1
+          end if
+
+          n = n + 1
+
+        end do
+
+      else if (charge_gen.eq."DIPOLE") then
+
+        do while (n.lt.add_charges)
+
+          i = int(rand() * L) + 1
+          j = int(rand() * L) + 1
+
+          if (v(i,j).ne.0) then
+            CYCLE
+          end if
+
+          ! choose between four orientations of a dipole
+          if (rand().lt.0.5) then
+            ! x-direction
+            if (v(neg(i),j).ne.0) then
+              CYCLE
+            end if
+
+            if (rand().lt.0.5) then
+              ! + -
+              v(neg(i),j) = +1
+              v(i,j) = -1
+            else
+              ! - +
+              v(neg(i),j) = -1
+              v(i,j) = +1
+            end if
+
+          else
+            ! y-direction
+            if (v(i,neg(j)).ne.0) then
+              CYCLE
+            end if
+
+            if (rand().lt.0.5) then
+              ! + -
+              v(i,neg(j)) = +1
+              v(i,j) = -1
+            else
+              ! - +
+              v(i,neg(j)) = -1
+              v(i,j) = +1
+            end if
+
+          end if
+
+          n = n + 2
+
+        end do
+
+      end if
+
+    end subroutine latt_init
 
   subroutine arrays_init
 

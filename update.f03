@@ -12,7 +12,7 @@ module update
       implicit none
       integer, intent(in) :: n
       integer :: i, mu
-      real(kind=8) :: increment, delta_e, harm_fluct
+      real(kind=8) :: increment, delta_e, harm_delt
 
       ! --- HARMONIC FLUCTUATION UPDATE ---
 
@@ -22,7 +22,7 @@ module update
       do i = 1, n
 
         ! pick at random from interval [-Delta_max, +Delta_max]
-        increment = 2 * harm_fluct * (rand() - 0.5)
+        increment = 2 * harm_delt * (rand() - 0.5)
 
         mu = floor(2 * rand()) + 1
 

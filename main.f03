@@ -205,7 +205,7 @@ subroutine mc_sweep
   use update
   implicit none
 
-  call harm_fluct(int(L**2 * hop_ratio))
+  ! call harm_fluct(int(L**2 * hop_ratio))
 
   call hop(int(L**2 * hop_ratio))
 
