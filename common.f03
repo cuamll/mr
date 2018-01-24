@@ -1,40 +1,63 @@
 module common
   implicit none
-  integer, public :: L,seed,accepth,acceptr,acceptg,add_charges,no_measurements
-  integer, public :: therm_sweeps,measurement_sweeps,sample_interval
-  real*8, public :: q, lambda, volume, temp, beta
-  real*8, public :: eps_0, bin_size, rot_delt
-  integer, dimension(:), allocatable, public :: pos,neg
-  integer, dimension(:,:,:), allocatable, public :: v
-  real*8, dimension(:), allocatable, public :: ebar, energy, sq_energy
-  real*8, dimension(:,:,:,:), allocatable, public :: e_field, mnphi
-  real*8, dimension(:,:,:,:), allocatable, public :: ch_ch,fe_fe
-  real*8, dimension(:,:,:,:), allocatable, public :: dir_struc_n
-  real*8, dimension(:,:,:,:,:,:), allocatable, public :: lgf, s_ab_n
-  complex*16, dimension(:,:,:,:), allocatable, public :: e_kx_t
-  complex*16, dimension(:,:,:,:), allocatable, public :: rho_k_m_t,rho_k_p_t
 
-    ! probably more things need to go here
-  character(len=99), public :: lattfile_long, en_long, sq_en_long
-  character(len=99), public :: e_field_long, arg_long, ch_st_l, fi_st_l
-  character(len=99), public :: s_ab_l, s_p_l, dir_st_l, dir_d_s_l, fe_ch_l
-  character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file
-  character(:), allocatable :: dir_st_file, dir_dist_file
-  character(:), allocatable :: s_ab_file, s_perp_file, field_charge_file
-  character(:), allocatable :: energy_file, sq_energy_file, e_field_file
+  integer, public, parameter :: prec = 16
+  integer, public, parameter :: expo = 50
+  integer, public, parameter :: rk = selected_real_kind(prec, expo)
+  integer, public, parameter :: ik = selected_int_kind(prec)
+  integer, public, parameter :: bz=2
+
+  real(kind=8), parameter, public :: pi=3.141592653589793
+  real(kind=8), parameter, public :: twopi=6.283185307179586
+  real(kind=8), parameter, public :: e=2.718281828459045
+
+  logical, public :: do_corr, verbose = .false.
 
   integer, public :: have_lgf = 0
-  integer, public, parameter :: bz=2
-  real*8, public :: rot_ratio, g_ratio, hop_ratio
-  real, parameter, public :: pi=3.141592653589793
-  real, parameter, public :: twopi=6.283185307179586
-  real, parameter, public :: e=2.718281828459045
+  integer(kind=ik), public :: mu_tot = 0
+  integer, public :: glob = 0
+  integer, public :: MPI_NEW_INT, MPI_NEW_REAL, MPI_NEW_COMPLEX
+  integer(kind=4), public :: seed, no_samples, no_threads, L, add_charges,&
+  no_measurements, therm_sweeps, measurement_sweeps, sample_interval
+  integer(kind=ik), dimension(5), public :: attempts, accepts
+  integer(kind=ik), dimension(:), allocatable, public :: bin_count
+  integer(kind=4), dimension(:), allocatable, public :: pos,neg
+  integer(kind=4), dimension(:,:,:), allocatable, public :: v
+
+  real(kind=8), public :: q, lambda, volume, temp, beta, u_tot, eps_0,&
+  bin_size, rot_delt, g0, rot_ratio, g_ratio, hop_ratio, g_thr
+  real(kind=8), dimension(:,:,:,:), allocatable, public :: e_field, mnphi
+  real(kind=8), dimension(:,:,:,:,:,:), allocatable, public :: lgf
+  real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&
+  ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg
+  real(kind=rk), dimension(3), public :: ebar, ebar_dip, ebar_wind, ebar_sum,&
+  ebar_sq_sum, ebar_dip_sum, ebar_dip_sq_sum, ebar_wind_sum, ebar_wind_sq_sum,&
+  avg_field_total, avg_field_rot, avg_field_irrot
+  real(kind=rk), dimension(:), allocatable, public :: dist_r
+  real(kind=rk), dimension(:,:,:), allocatable, public :: v_avg, dir_struc
+  real(kind=rk), dimension(:,:,:,:), allocatable, public :: e_tot_avg,&
+  e_rot_avg, e_irrot_avg
+
+  complex(kind=rk), public :: runtot
+  complex(kind=rk), dimension(:,:), allocatable, public :: fw, hw
+  complex(kind=rk), dimension(:,:,:), allocatable, public :: ch_ch,&
+  rho_k_m,rho_k_p
+  complex(kind=rk), dimension(:,:,:,:,:), allocatable, public :: s_ab,&
+  s_ab_rot, s_ab_irrot
+
+  character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file,&
+  dir_st_file, dir_dist_file, sphe_sus_file, s_ab_file, s_perp_file,&
+  field_charge_file, energy_file, sq_energy_file, e_field_file,&
+  irrot_field_file, irrot_sab_file, irrot_sperp_file, rot_field_file,&
+  rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
+  irrot_spar_file, avg_field_file, equil_file
+
   save
 
   contains
 
     subroutine PBCs
-      integer :: i
+      integer(kind=4) :: i
       do i=1,L
         pos(i)=mod(i,L)+1
         neg(i)=mod(i+L-2,L)+1
@@ -43,16 +66,16 @@ module common
     end subroutine PBCs
 
     function one_to_three(x) result(coord)
-      integer*8, intent(in) :: x
-      integer*8 :: coord(3)
+      integer(kind=4), intent(in) :: x
+      integer(kind=4) :: coord(3)
       coord(1) = (x - 1)/L**2 + 1
       coord(2) = modulo((x - 1)/L,L) + 1
       coord(3) = modulo(x - 1,L) + 1
     end function one_to_three
 
     function three_to_one(coord) result(x)
-      integer*8, intent(in) :: coord(3)
-      integer*8 :: x
+      integer(kind=4), intent(in) :: coord(3)
+      integer(kind=4) :: x
       x = (coord(1) - 1) * L**2 + (coord(2) - 1) * L + coord(3)
     end function three_to_one
 
@@ -82,7 +105,7 @@ module common
       IMPLICIT NONE
       INTEGER seed
       INTEGER ij,kl, i,j,k,l, ii,jj, m
-      REAL*8 s,t
+      REAL(KIND=8) s,t
       INTEGER Maxseed
       PARAMETER (Maxseed = 900000000)
       REAL u(97), c, cd, cm
@@ -118,7 +141,7 @@ module common
       i97 = 97
       j97 = 33
       RETURN
-      END
+      END SUBROUTINE randinit
 
 
 
@@ -147,6 +170,6 @@ module common
       IF( uni .LT. 0.0 ) uni = uni + 1.0
       rand = uni
       RETURN
-      END
+      END FUNCTION rand
 
 end module common
