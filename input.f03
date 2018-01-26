@@ -350,12 +350,13 @@ module input
       end if
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
-      eps_0 = 1.0 / L
+      eps_0 = 1.0 / lambda
+      ! eps_0 = 1.0 / L
       ! eps_0 = 1.0
       !q = 2 * pi * q
       !write (*,*) "q = ",q
       beta = 1.0 / temp
-      g_thr = 1 / real(L)
+      g_thr = 1 / real(L**2)
       if (rot_delt.eq.0) then
         rot_delt = 1.1 * temp
         if (verbose) then

@@ -39,6 +39,7 @@ module update
         ! grand canonical now
 
         ! charge = v(site(1),site(2),site(3))
+        ! increment = q / (eps_0 * L * lambda)
         increment = q / (eps_0 * lambda)
 
         if (rand().lt.0.5) then ! increase field bond
@@ -125,7 +126,11 @@ module update
 
       end do ! end charge hop sweep
 
-      glob = 1
+      if (ebar(1).gt.g_thr.or.ebar(2).gt.g_thr.or.ebar(3).gt.g_thr) then
+        glob = 0
+      else
+        glob = 0
+      end if
 
       mu = 0; increment = 0.0;
       u_tot = 0.0
@@ -151,7 +156,9 @@ module update
         site = (/ 0, 0, 0 /)
 
         ! pick at random from interval [-Delta_max, +Delta_max]
-        increment = 2 * rot_delt * (rand() - 0.5)
+        ! increment = 2 * (rot_delt / eps_0) * (rand() - 0.5)
+        increment = 2 * (rot_delt) * (rand() - 0.5)
+
 
         ! this is completely unnecessary in 2d, it's left over
         ! from the 3d version. could be removed.
@@ -189,7 +196,7 @@ module update
                 (en1**2 + en2**2 + en3**2 + en4**2)
         delta_e = new_e - old_e
 
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+        if ((delta_e.lt.0.0).or.(exp((-1.0*beta)*delta_e).gt.rand())) then
 
           e_field(mu1,site(1),site(2),site(3)) = en1
           e_field(mu2,site(1),site(2),site(3)) = en2

@@ -5,82 +5,211 @@
 # call with "perl plot.pl -l=L ..." etc. from scripts dir
 use strict;
 use warnings;
+use Env;
+use Cwd;
 use Getopt::Long;
-use File::Spec;
+use File::Path qw(make_path);
+use File::Copy;
+use File::Basename;
+use Data::Dumper qw(Dumper);
 
-my $length;
-my $meas;
-my $steps;
-my $chg;
-my $kz;
-my $fileprefix;
-my $outputpath;
-my @inputfiles;
-my @outputfiles;
-my @tempfiles;
-my @gnuplotargs;
-my $input;
-$input = GetOptions ("l=i"=> \$length,
-                     "m=i"=> \$meas,
-                     "s=s"=> \$steps,
-                     "c=i"=> \$chg,
-                     "k=i"=> \$kz,
-                     "fp=s"=> \$fileprefix,
-                     "o=s"=> \$outputpath);
-my $plottitle = "L = $length, $meas measurements from " .
-                "$steps MC steps, $chg charges";
+my $three_d = 0;
+my $dir; my $kz; my @columns;
+my $palette = '~/.config/gnuplot/inferno.pal';
+my $addtitles = 1; my $keep_aux = 0;
+my @inputfiles; my @outputfiles; my @tempfiles;
+my @gnuplotargs; my @latexargs; my @dvipsargs; my @ps2pdfargs;
+my $input = GetOptions ("d=s"=> \$dir,
+                     "t=i"=> \$addtitles,
+                     "k=i"=> \$keep_aux,
+                     "p=s"=> \$palette);
 
-# construct the input and output files to pass to gnuplot
-# call this script from $MR_DIR! so curdir() gives the base directory
-my @filenames = ('charge_struc',
-                 'alt_charge_struc',
-                 'field_struc',
-                 'alt_field_struc',
-                 'irrot_field_struc',
-                 's_perp',
-                 'alt_s_perp_total');
+if ($palette !~ /.*\.pal/) {
+  $palette = "$palette.pal";
+}
+
+# we pass the absolute path to the timestamp directory. now to get parameters:
+my %parameters = get_parameters("$dir/input.in");
 
 my $basedir = File::Spec->curdir();
-my $inpath = "$basedir/out/";
-my $insuffix = '.dat';
-my $tempsuffix = '.temp';
-my $plotpath = "$basedir/plots/";
-my $plotsuffix = ".png";
-my $gnuplotscript = "$plotpath" . "heatmap.p";
+my $plotpath = "$basedir/scripts/";
+my $plotsuffix = ".tex";
+my $gnuplotscript = "$plotpath" . "heatmap_latex.gp";
 
-# get the relevant lines of the plot files based on kz
-my $lowerbound = (((2 * $length) + 1)**2) * ($kz + $length);
-my $upperbound = $lowerbound + 1 + ((2 * $length) + 1)**2;
+my $inpath = "$dir/";
+my $insuffix = ".dat";
+my $outpath = "$dir/plots";
+make_path($outpath);
+my $tempsuffix = '.temp';
+
+my $steps = $parameters{no_samples} * $parameters{measurement_sweeps};
+my $meas = $steps / $parameters{sample_interval};
+my $steps_c = commify($steps);
+my $meas_c = commify($meas);
+my $chgen = lc $parameters{charge_generation};
+
+my @filenames;
+foreach my $key (keys %parameters) {
+  if ($key =~ /_file/) {
+    if ($parameters{$key} =~ /.*s_.*/) {
+      #if ($parameters{$key} !~ /.*s_ab.*/) {
+        (my $tempfile, my $tempdir, my $tempext) = fileparse($parameters{$key}, qr/\.[^.]*/);
+        push @filenames, $tempfile
+      #}
+    }
+  }
+}
+
+my @titles;
+my $s_string; my $field_string; my $linetitle; my $plottitle;
+# $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+# my $chgen = lc $parameters{charge_generation};
+# $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+
+# the s_ab_whatever files have four components; we want to plot each separately
+for my $i (0..$#filenames) {
+  my $file = $filenames[$i];
+  if ($file =~ /s_ab_([a-z]+)/) {
+    my $field_component = $1;
+
+    # do each tensor component separately
+    $linetitle = qq(\$ S^{xx}_{$field_component} \$ );
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    push @titles, $plottitle;
+    push @inputfiles, $inpath . $filenames[$i] . $insuffix;
+    push @outputfiles, $outpath . '/' . "s_xx_$field_component";
+    push @columns, 3;
+
+    $linetitle = qq(\$ S^{xy}_{$field_component} \$ );
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    push @titles, $plottitle;
+    push @inputfiles, $inpath . $filenames[$i] . $insuffix;
+    push @outputfiles, $outpath . '/' . "s_xy_$field_component";
+    push @columns, 4;
+
+    $linetitle = qq(\$ S^{yx}_{$field_component} \$ );
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    push @titles, $plottitle;
+    push @inputfiles, $inpath . $filenames[$i] . $insuffix;
+    push @outputfiles, $outpath . '/' . "s_yx_$field_component";
+    push @columns, 5;
+
+    $linetitle = qq(\$ S^{yy}_{$field_component} \$ );
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    push @titles, $plottitle;
+    push @inputfiles, $inpath . $filenames[$i] . $insuffix;
+    push @outputfiles, $outpath . '/' . "s_yy_$field_component";
+    push @columns, 6;
+
+    $linetitle = qq(\$ S^{xx}_{$field_component} + S^{yy}_{$field_component} \$ );
+    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    push @titles, $plottitle;
+    push @inputfiles, $inpath . $filenames[$i] . $insuffix;
+    push @outputfiles, $outpath . '/' . "s_trace_$field_component";
+    push @columns, 7;
+  }
+}
 
 for my $i (0..$#filenames) {
-  # run awk to create temp files
-  my $awkcall;
-  push @inputfiles, $inpath . $filenames[$i] . $insuffix;
-  push @tempfiles, $inpath . $filenames[$i] . $tempsuffix;
-  push @outputfiles, $outputpath . $filenames[$i] . $plotsuffix;
+  my $file = $filenames[$i];
 
-  $awkcall = qq[awk '{ if (NR>$lowerbound && NR<$upperbound) print \$1,\$2,\$4 }' $inputfiles[$i] > $tempfiles[$i]];
-  system($awkcall);
+  # already done these
+  if ($file =~ /s_ab_([a-z]+)/) {
+    next;
+  }
+
+  if ($file =~ /s_([a-z]+)_([a-z]+)/) {
+    my $s_component = $1;
+    my $field_component = $2;
+
+    if ($s_component =~ /xx/) {
+      $s_string = qq(\$ S^{xx}_{$field_component} \$);
+    } elsif ($s_component =~ /perp/) {
+      $s_string = qq(\$ S^{\\perp}_{$field_component} \$);
+    } elsif ($s_component =~ /par/) {
+      $s_string = qq(\$ S^{\\parallel}_{$field_component} \$);
+    } else {
+      die "s_component is wrong: $s_component $!\n";
+    }
+
+    $linetitle = $s_string;
+
+  } elsif ($file =~ /s_([a-z]+)/) {
+
+    if ($1 =~ /charge/) {
+      $linetitle = q($ g^{\pm}(k) $);
+    } elsif ($1 =~ /direct/) {
+      $linetitle = q($ g^{\pm}(r) $);
+    } else {
+      die "File name doesn't match regex. $file $!\n";
+    }
+
+  } else {
+    die "File name doesn't match anything. $file $!\n";
+  }
+
+  # if they're going in a document as a figure, might not want the titles
+  $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+  push @titles, $plottitle;
+
+  # generate lists of input/output files and command-line arguments
+  push @inputfiles, $inpath . $filenames[$i] . $insuffix;
+  push @outputfiles, $outpath . '/' . $filenames[$i];
+  push @columns, 3;
+}
+
+warn "Different number of titles and files!\n" unless @inputfiles == @outputfiles;
+
+for my $i (0..$#inputfiles) {
+  push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]$plotsuffix'; COLUMN='$columns[$i]'; LINETITLE = ''; PALETTE = '$palette';);
+  push @latexargs, qq(latex -interaction=batchmode -output-directory=$outpath $outputfiles[$i]$plotsuffix > /dev/null);
+  push @dvipsargs, qq(dvips -q -D10000 -o $outputfiles[$i].ps $outputfiles[$i].dvi);
+  push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outputfiles[$i].ps $outputfiles[$i].pdf);
+
+  if (index($inputfiles[$i],'s_direct') != -1) {
+    # $gnuplotargs[$i] .= qq( PITICS = 'N';);
+  } else {
+    $gnuplotargs[$i] .= qq( PITICS = 'Y';);
+  }
+
+  if ($addtitles) {
+    $gnuplotargs[$i] .= qq( PLOTTITLE = '$titles[$i]';);
+  }
+
+  my $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
+  print "Plotting $outputfiles[$i] with column $columns[$i]\n";
+  system($syscall);
+  system($latexargs[$i]);
+  system($dvipsargs[$i]);
+  system($ps2pdfargs[$i]);
+
+  if (!$keep_aux) {
+    unlink("$outputfiles[$i].log");
+    unlink("$outputfiles[$i].aux");
+    unlink("$outputfiles[$i].dvi");
+    unlink("$outputfiles[$i].ps");
+    unlink("$outputfiles[$i]-inc.eps");
+  }
 
 }
 
-my @linetitles = ("Charge-charge structure factor at k_z = $kz",
-                  "Charge-charge structure factor (read from unformatted file) at k_z = $kz",
-                  "Field-field structure factor at k_z = $kz",
-                  "Field-field structure factor (read from unformatted file) at k_z = $kz",
-                  "Field-field structure factor - irrotational - at k_z = $kz",
-                  "S_{⟂} at k_z = $kz",
-                  "S_{⟂} (read from unformatted file) at k_z = $kz");
+# warn "Different number of titles and files!\n" unless @titles == @filenames;
 
-warn "Different number of titles and files!\n" unless @linetitles == @filenames;
+sub get_parameters {
 
-for my $i (0..$#filenames) {
-  my $syscall;
-  push @gnuplotargs, qq(FILE='$tempfiles[$i]'; KZ = '$kz'; LSIZE = '$length'; OUTPUT='$outputfiles[$i]'; PLOTTITLE = '$plottitle'; LINETITLE = '$linetitles[$i]');
+  # get parameters from input file; add them to JSON file
+  my ($input) = @_;
+  open my $fh, '<:encoding(UTF-8)', "$input"
+    or die "Unable to open file:$!\n";
+  my %parameters = map { split /\s+/; } <$fh>;
+  close $fh;
 
-  $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
-  system($syscall);
+  return %parameters;
 
-  # delete the temp files
-  unlink($tempfiles[$i]);
+}
+
+sub commify {
+  local $_  = shift;
+  1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
+  return $_;
 }
