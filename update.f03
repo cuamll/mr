@@ -127,7 +127,7 @@ module update
       end do ! end charge hop sweep
 
       if (ebar(1).gt.g_thr.or.ebar(2).gt.g_thr.or.ebar(3).gt.g_thr) then
-        glob = 0
+        glob = 1
       else
         glob = 0
       end if
@@ -229,7 +229,7 @@ module update
 
       do i = 1, n
 
-        increment = (q) / (L**2 * eps_0 * lambda)
+        increment = (q) / (L**2 * eps_0)
 
         do mu = 1,3
 
@@ -239,10 +239,10 @@ module update
             pm1 = +1
           end if
 
-          delta_e = (lambda**3 * q) * ((q / (2 * eps_0 * L)) +&
-                    (pm1 * ebar(mu) / L**2))
-          ! delta_e = (lambda**3 * q) * (pm1 /(2 * L**2)) *&
-          !           ((2 * ebar(mu)) + (q * L * pm1 / eps_0))
+          ! delta_e = (lambda**3 * (q / L**2)) * ((q * L / (2 * eps_0)) +&
+          !           (pm1 * ebar(mu)))
+          delta_e = (lambda**3 * (q * L)) * ((q / (2 * L**2 * eps_0)) +&
+                    (pm1 * ebar(mu)))
 
           if ((delta_e.lt.0.0).or.((exp(-beta*delta_e).gt.rand())&
             .and.(exp(-beta*delta_e).gt.0.00000000001))) then

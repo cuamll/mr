@@ -106,6 +106,20 @@ make_path($logdir);
 my %parameters = get_parameters("$inputfile");
 # print Dumper %parameters;
 
+# ensures that none of the lists will be empty
+push @lengths, $parameters{L};
+push @temperatures, $parameters{temperature};
+push @charges, $parameters{charges};
+push @charge_values, $parameters{charge_value};
+push @spacings, $parameters{lattice_spacing};
+
+# ensures we don't waste time doing identical simulations
+@lengths = uniq(@lengths);
+@temperatures = uniq(@temperatures);
+@charges = uniq(@charges);
+@charge_values = uniq(@charge_values);
+@spacings = uniq(@spacings);
+
 # portably change relative path names into absolute ones
 my $progname = get_progname("EXEC");
 
@@ -131,7 +145,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
           # don't think i can call a function inside an array assignment
           # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
-          my @stamparray = ('T', $temperatures[$i],'chg', $charges[$l],$comment);
+          my @stamparray = ('T', $temperatures[$i],'L',$parameters{L},$comment);
           my $stamp = join('_', @stamparray);
           my $stampdir = "$outdir/$stamp";
           print "Creating directory $stampdir .\n";
@@ -333,4 +347,9 @@ sub write_to_file {
   close $fh_temp;
   return;
 
+}
+
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
 }
