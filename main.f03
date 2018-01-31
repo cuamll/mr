@@ -253,6 +253,12 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, avg_field_irrot, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_total, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_rot, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_irrot, 2, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   else
 
@@ -291,6 +297,12 @@ subroutine reductions(id)
     call MPI_Reduce(avg_field_rot, avg_field_rot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(avg_field_irrot, avg_field_irrot, 3, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(avg_field_sq_total, avg_field_sq_total, 3, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(avg_field_sq_rot, avg_field_sq_rot, 3, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(avg_field_sq_irrot, avg_field_sq_irrot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   end if
@@ -408,6 +420,9 @@ subroutine normalisations(num_procs)
   avg_field_total = avg_field_total / denom
   avg_field_rot = avg_field_rot / denom
   avg_field_irrot = avg_field_irrot / denom
+  avg_field_sq_total = avg_field_sq_total / denom
+  avg_field_sq_rot = avg_field_sq_rot / denom
+  avg_field_sq_irrot = avg_field_sq_irrot / denom
 
 
   sp_he_tot = L**3 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
@@ -449,6 +464,15 @@ subroutine normalisations(num_procs)
   avg_field_rot(2), avg_field_irrot(2)
   write (*,*) "Avg. z-component: total, rot., irrot.:",avg_field_total(3),&
   avg_field_rot(3), avg_field_irrot(3)
+  write (*,'(a)') "Avg. x-component^2: total, rot., irrot.:"
+  write (*,*) avg_field_sq_total(1), avg_field_sq_rot(1),&
+                          avg_field_sq_irrot(1)
+  write (*,'(a)') "Avg. y-component^2: total, rot., irrot.:"
+  write (*,*) avg_field_sq_total(2), avg_field_sq_rot(2),&
+                          avg_field_sq_irrot(2)
+  write (*,'(a)') "Avg. z-component^2: total, rot., irrot.:"
+  write (*,*) avg_field_sq_total(3), avg_field_sq_rot(3),&
+                          avg_field_sq_irrot(3)
   write (*,*) "Avg. mu",mu_tot / &
     ((denom + (no_samples * num_procs * therm_sweeps)) * L**3)
 
@@ -456,7 +480,7 @@ subroutine normalisations(num_procs)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
   write (30,'(4ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
   write (30,'(a)') "# Temp., Chi_Ebar, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
-  write (30,'(2ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
+  write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
   write (30,'(a)') "# Avg. charge density"
   write (30,'(ES18.9)') rho_avg
   close (30)

@@ -32,7 +32,8 @@ module common
   ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg
   real(kind=rk), dimension(3), public :: ebar, ebar_dip, ebar_wind, ebar_sum,&
   ebar_sq_sum, ebar_dip_sum, ebar_dip_sq_sum, ebar_wind_sum, ebar_wind_sq_sum,&
-  avg_field_total, avg_field_rot, avg_field_irrot
+  avg_field_total, avg_field_rot, avg_field_irrot,&
+  avg_field_sq_total, avg_field_sq_rot, avg_field_sq_irrot
   real(kind=rk), dimension(:), allocatable, public :: dist_r
   real(kind=rk), dimension(:,:,:), allocatable, public :: v_avg, dir_struc
   real(kind=rk), dimension(:,:,:,:), allocatable, public :: e_tot_avg,&

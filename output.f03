@@ -926,6 +926,15 @@ module output
     write (30,'(a)') "# Avg. z-component: total, rot., irrot.:"
     write (30, '(3f18.10)') avg_field_total(3), avg_field_rot(3),&
                             avg_field_irrot(3)
+    write (30,'(a)') "# Avg. x-component^2: total, rot., irrot.:"
+    write (30, '(3es18.10)') avg_field_sq_total(1), avg_field_sq_rot(1),&
+                            avg_field_sq_irrot(1)
+    write (30,'(a)') "# Avg. y-component^2: total, rot., irrot.:"
+    write (30, '(3es18.10)') avg_field_sq_total(2), avg_field_sq_rot(2),&
+                            avg_field_sq_irrot(2)
+    write (30,'(a)') "# Avg. z-component^2: total, rot., irrot.:"
+    write (30, '(3es18.10)') avg_field_sq_total(3), avg_field_sq_rot(3),&
+                            avg_field_sq_irrot(3)
 
     ! write (30,'(a)') "   # hop acceptance"
     ! write (30,'(2ES18.9)') temp,&

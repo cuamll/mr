@@ -346,6 +346,9 @@ module update
                            sum(abs(real(e_rot(i,:,:,:))))
         avg_field_irrot(i) = avg_field_irrot(i) +&
                              sum(abs(real(mnphi(i,:,:,:))))
+        avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
+        avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
+        avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
 
       end do
 
