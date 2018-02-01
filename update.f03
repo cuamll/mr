@@ -10,7 +10,7 @@ module update
     subroutine hop(n)
       implicit none
       integer, intent(in) :: n
-      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
+      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm,charge
       integer, dimension(3) :: site
       real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
 
@@ -36,93 +36,75 @@ module update
           stop
         end if
 
-        ! grand canonical now
+        ! pick a non-zero charge - canonical!
+        if (v(site(1),site(2),site(3)).ne.0) then
 
-        ! charge = v(site(1),site(2),site(3))
-        ! increment = q / (eps_0 * L * lambda)
-        increment = q / (eps_0 * lambda)
+          charge = v(site(1),site(2),site(3))
 
-        if (rand().lt.0.5) then ! increase field bond
-          pm = 1
-        else ! decrease field bond
-          pm = -1
-        end if
+          ! this takes care of sign issues when hopping
+          increment = q * charge / (eps_0 * lambda)
 
-        eo = e_field(mu,site(1),site(2),site(3))
-        en = eo + pm * increment
-        ! could insert eps_0 here???
-        old_e = 0.5 * eo**2
-        new_e = 0.5 * en**2
-        delta_e = new_e - old_e
+          if (rand().lt.0.5) then ! move it "negative"
 
-        ! adding to the field bond means charge moving "backwards"
-        ! current charges tell us if this is hop/creation/annihilation
-        v1o = v(site(1),site(2),site(3))
-        v1n = v(site(1),site(2),site(3)) - pm
-        ! we need negative in the mu direction
-        site(mu) = neg(site(mu))
-        v2o = v(site(1),site(2),site(3))
-        v2n = v(site(1),site(2),site(3)) + pm
+            attempts(1) = attempts(1) + 1
 
-        ! check we're not doing anything weird with multiple charges
-        if (abs(v(site(1),site(2),site(3))).gt.1) then
-          write (*,*) "Charge at ",site(1),site(2),site(3),&
-            " = ",v(site(1),site(2),site(3)),". Exiting."
-          write (*,*)
-          stop
-        end if
+            eo = e_field(mu,site(1),site(2),site(3))
+            en = eo + increment
+            old_e = 0.5 * eps_0 * eo**2
+            new_e = 0.5 * eps_0 * en**2
+            delta_e = new_e - old_e
 
+            site(mu) = neg(site(mu))
 
-        if ((v1o.eq.1.and.v2o.eq.0.and.pm.eq.1).or.&
-            (v1o.eq.-1.and.v2o.eq.0.and.pm.eq.-1).or.&
-            (v1o.eq.0.and.v2o.eq.1.and.pm.eq.-1).or.&
-            (v1o.eq.0.and.v2o.eq.-1.and.pm.eq.1)) then
-          ! HOP
-          attempts(1) = attempts(1) + 1
-        else if ((v1o.eq.0.and.v2o.eq.0)) then
-          ! CREATION
-          attempts(4) = attempts(4) + 1
-        else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
-          ! ANNIHILATION
-          attempts(5) = attempts(5) + 1
-        end if
+            if (v(site(1),site(2),site(3)).eq.0) then
+              if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-        ! write (*,'(a,4i2.1,4es18.9,4i3.1)') "PROPOSED", mu, site(1), site(2), site(3),&
-        !             eo, en, delta_e, exp((-1.0*beta)*delta_e), v1o, v1n, v2o, v2n
-        ! flush(6)
-        if (abs(v1n).le.1.and.abs(v2n).le.1) then
-          if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+                v(site(1),site(2),site(3)) = charge
+                ebar(mu) = ebar(mu) + (increment / L**3)
 
-            ! write (*,'(a,4i2.1,3es18.9,4i3.1)') "ACCEPTED", mu, site(1), site(2), site(3),&
-            !             eo, en, delta_e, v1o, v1n, v2o, v2n
-            ! flush(6)
-            ! site still pointing at neg(orig. site)
-            v(site(1),site(2),site(3)) = v2n
+                ! go back to the original site and set the charge to 0
+                site(mu) = pos(site(mu))
+                e_field(mu,site(1),site(2),site(3)) = en
+                v(site(1),site(2),site(3)) = 0
+
+                accepts(1) = accepts(1) + 1
+                u_tot = u_tot + delta_e
+
+                end if
+              end if
+
+          else ! move it "positive"
+
+            attempts(1) = attempts(1) + 1
+
             site(mu) = pos(site(mu))
-            v(site(1),site(2),site(3)) = v1n
-            e_field(mu,site(1),site(2),site(3)) = en
-            ! mnphi(mu,site(1),site(2),site(3)) = mnphi(mu,site(1),site(2),site(3)) +&
-            !                             pm * increment
-            ebar(mu) = ebar(mu) + (pm * increment / L**3)
+            eo = e_field(mu,site(1),site(2),site(3))
+            en = eo - increment
+            old_e = 0.5 * eps_0 * lambda**2 * eo**2
+            new_e = 0.5 * eps_0 * lambda**2 * en**2
+            delta_e = new_e - old_e
 
-            u_tot = u_tot + delta_e
+            ! get pos in the mu direction
 
-            if ((v1o.eq.1.and.v2o.eq.0.and.pm.eq.1).or.&
-                (v1o.eq.-1.and.v2o.eq.0.and.pm.eq.-1).or.&
-                (v1o.eq.0.and.v2o.eq.1.and.pm.eq.-1).or.&
-                (v1o.eq.0.and.v2o.eq.-1.and.pm.eq.1)) then
-              accepts(1) = accepts(1) + 1
-            else if ((v1o.eq.0.and.v2o.eq.0)) then
-              accepts(4) = accepts(4) + 1
-            else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
-              accepts(5) = accepts(5) + 1
-            else
-              write (6,'(a,7i3.1)') "SOME WEIRD SHIT GOT ACCEPTED: ",&
-              site(1), site(2), v1o, v2o, v1n, v2n, pm
+            if (v(site(1),site(2),site(3)).eq.0) then
+              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
+
+                v(site(1),site(2),site(3)) = charge
+                e_field(mu,site(1),site(2),site(3)) = en
+                ebar(mu) = ebar(mu) - (increment / L**3)
+
+                ! go back to the original site and set the charge to 0
+                site(mu) = neg(site(mu))
+                v(site(1),site(2),site(3)) = 0
+
+                accepts(1) = accepts(1) + 1
+                u_tot = u_tot + delta_e
+
+              end if
             end if
 
-            end if
-          end if
+          end if ! end "positive" / "negative" choice
+        end if ! end charge.ne.0 block
 
       end do ! end charge hop sweep
 

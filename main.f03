@@ -476,13 +476,17 @@ subroutine normalisations(num_procs)
   write (*,*) "Avg. mu",mu_tot / &
     ((denom + (no_samples * num_procs * therm_sweeps)) * L**3)
 
-  open  (30, file=sphe_sus_file // '_MPI_allreduced')
+  open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
   write (30,'(4ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
   write (30,'(a)') "# Temp., Chi_Ebar, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
   write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
   write (30,'(a)') "# Avg. charge density"
-  write (30,'(ES18.9)') rho_avg
+  write (30,'(2ES18.9)') temp, rho_avg
+  write (30,'(a)') "# Temp, avg_e_tot, avg_e_rot, avg_e_irrot"
+  write (30,'(4ES18.9)') temp, ener_tot_sum, ener_rot_sum, ener_irrot_sum
+  write (30,'(a)') "# Temp, avg_e_tot^2, avg_e_rot^2, avg_e_irrot^2"
+  write (30,'(4ES18.9)') temp,ener_tot_sq_sum,ener_rot_sq_sum,ener_irrot_sq_sum
   close (30)
 
 end subroutine normalisations

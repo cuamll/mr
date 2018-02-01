@@ -53,6 +53,8 @@ module common
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
   irrot_spar_file, avg_field_file, equil_file
 
+  character(6) :: charge_gen
+
   save
 
   contains

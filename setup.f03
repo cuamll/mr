@@ -87,54 +87,120 @@ module setup
     integer, dimension(:,:), allocatable :: v_temp
     logical :: read_lattfile = .false.
 
+    ! this is currently never true, but could come in handy
+    if (read_lattfile) then
+      allocate(v_temp(L,L**2))
+
+      open(unit = 2, file = lattfile)
+      read(2,*)((v_temp(i,j),j = 1,L),i = 1,L**2)
+
+      ! 2,3,1 makes x,y,z correspond with what you expect from the file
+      ! doesn't actually make any difference so long as you're consistent
+      v  =  reshape(v_temp, (/ L,L,L /), ORDER  =  (/ 2,3,1 /))
+
+      deallocate(v_temp)
+      close(2)
+    end if
+
     n = 0
 
     if (add_charges.ne.0) then
 
-      !write (*,*)
-      !write (*,'(a,I4.1,a)') "Adding ",add_charges," charges. Charge positions:"
+      if (charge_gen.eq."RANDOM") then
 
-      do while (n.lt.add_charges)
+        do while (n.lt.add_charges)
 
-        ! pick a random position, check if there's a charge there
-        ! if so, pick again; if not, alternate pos/neg
-        i = int(rand() * L) + 1
-        j = int(rand() * L) + 1
+          ! pick a random position, check if there's a charge there
+          ! if so, pick again; if not, alternate pos/neg
+          i = int(rand() * L) + 1
+          j = int(rand() * L) + 1
+          k = int(rand() * L) + 1
 
-        if (v(i,j,k).ne.0) then
-          CYCLE
-        end if
+          if (v(i,j,k).ne.0) then
+            CYCLE
+          end if
 
-        if (modulo(n,2)==0) then
-          v(i,j,k) = 1
-        else
-          v(i,j,k) = -1
-        end if
+          if (modulo(n,2)==0) then
+            v(i,j,k) = 1
+          else
+            v(i,j,k) = -1
+          end if
 
-        n = n + 1
+          n = n + 1
 
-        !write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,v(i,j)
+        end do
 
-      end do
+      else if (charge_gen.eq."DIPOLE") then
 
-    else ! add_charges = 0; read in lattice file
+        do while (n.lt.add_charges)
 
-      if (read_lattfile) then
-        allocate(v_temp(L,L**2))
+          i = int(rand() * L) + 1
+          j = int(rand() * L) + 1
+          k = int(rand() * L) + 1
 
-        open(unit = 2, file = lattfile)
-        read(2,*)((v_temp(i,j),j = 1,L),i = 1,L**2)
+          if (v(i,j,k).ne.0) then
+            CYCLE
+          end if
 
-        ! 2,3,1 makes x,y,z correspond with what you expect from the file
-        ! doesn't actually make any difference so long as you're consistent
-        v  =  reshape(v_temp, (/ L,L,L /), ORDER  =  (/ 2,3,1 /))
+          ! choose between four orientations of a dipole
+          if (floor(3*rand()).eq.0) then
+            ! x-direction
+            if (v(neg(i),j,k).ne.0) then
+              CYCLE
+            end if
 
-        deallocate(v_temp)
-        close(2)
-      else ! all zeroes
-        v = 0
+            if (rand().lt.0.5) then
+              ! + -
+              v(neg(i),j,k) = +1
+              v(i,j,k) = -1
+            else
+              ! - +
+              v(neg(i),j,k) = -1
+              v(i,j,k) = +1
+            end if
+
+          else if (floor(3*rand()).eq.1) then
+            ! y-direction
+            if (v(i,neg(j),k).ne.0) then
+              CYCLE
+            end if
+
+            if (rand().lt.0.5) then
+              ! + -
+              v(i,neg(j),k) = +1
+              v(i,j,k) = -1
+            else
+              ! - +
+              v(i,neg(j),k) = -1
+              v(i,j,k) = +1
+            end if
+
+          else if (floor(3*rand()).eq.2) then
+            ! z-direction
+            if (v(i,j,neg(k)).ne.0) then
+              CYCLE
+            end if
+
+            if (rand().lt.0.5) then
+              ! + -
+              v(i,j,neg(k)) = +1
+              v(i,j,k) = -1
+            else
+              ! - +
+              v(i,j,neg(k)) = -1
+              v(i,j,k) = +1
+            end if
+
+          else
+            CYCLE
+
+          end if
+
+          n = n + 2
+
+        end do
+
       end if
-
     end if
 
   end subroutine latt_init
