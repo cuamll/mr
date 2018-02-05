@@ -365,11 +365,19 @@ module update
         avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
         avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
 
+        avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
+        avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
+        avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
+
+
       end do
 
       avg_field_total = avg_field_total / L**2
       avg_field_rot = avg_field_rot / L**2
       avg_field_irrot = avg_field_irrot / L**2
+      avg_field_sq_total = avg_field_sq_total/ L**2
+      avg_field_sq_rot   = avg_field_sq_rot/ L**2
+      avg_field_sq_irrot = avg_field_sq_irrot/ L**2
       ebar = ebar / L**2
       ebar_dip = ebar_dip / L**2
       ebar_wind = ebar_wind / L**2
