@@ -108,7 +108,9 @@ module update
 
       end do ! end charge hop sweep
 
-      if (ebar(1).gt.g_thr.or.ebar(2).gt.g_thr.or.ebar(3).gt.g_thr) then
+      if (abs(ebar(1)).gt.g_thr.or.&
+         &abs(ebar(2)).gt.g_thr.or.&
+         &abs(ebar(3)).gt.g_thr) then
         glob = 1
       else
         glob = 0
@@ -116,7 +118,7 @@ module update
 
       mu = 0; increment = 0.0;
       u_tot = 0.0
-      u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
+      u_tot = 0.5 * eps_0 * lambda**3 * sum(e_field * e_field)
 
     end subroutine hop
 
@@ -481,8 +483,8 @@ module update
 
           end do ! s
 
-          rho_k_p_temp = rho_k_p_temp / float(L**2)
-          rho_k_m_temp = rho_k_m_temp / float(L**2)
+          rho_k_p_temp = rho_k_p_temp / float(L**3)
+          rho_k_m_temp = rho_k_m_temp / float(L**3)
           e_kx = e_kx / float(L**3)
           e_ky = e_ky / float(L**3)
           e_kz = e_kz / float(L**3)
@@ -497,29 +499,6 @@ module update
           rho_k_m(kx,ky,kz) = rho_k_m(kx,ky,kz) + rho_k_m_temp
           ch_ch(kx,ky,kz) = ch_ch(kx,ky,kz) +&
                         (rho_k_p_temp * conjg(rho_k_m_temp))
-
-          ! if (i.eq.1) then
-          !   rho_k_p(kx + L, ky) = rho_k_p(kx,ky)
-          !   rho_k_m(kx + L, ky) = rho_k_m(kx,ky)
-          !   ch_ch(kx + L, ky) = ch_ch(kx,ky)
-          ! end if
-
-          ! if (j.eq.1) then
-          !   rho_k_p(kx, ky + L) = rho_k_p(kx,ky)
-          !   rho_k_m(kx, ky + L) = rho_k_m(kx,ky)
-          !   ch_ch(kx, ky + L) = ch_ch(kx,ky)
-          ! end if
-
-          ! if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
-          !   if (n.eq.1) then
-          !     open(49, file=equil_file)
-          !   else
-          !     open(49, file=equil_file, position='append')
-          !   end if
-          !   runtot = runtot + e_kx_temp*conjg(e_ky)
-          !   write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
-          !   close(49)
-          ! end if
 
           s_ab(1,1,kx,ky,kz) = s_ab(1,1,kx,ky,kz) +&
           e_kx*conjg(e_kx)

@@ -910,47 +910,47 @@ module output
     write(*,'(a)') "<|(E^bar)^2|> - <|E^bar|>^2"
     write (*,*) L**3 * beta * (sum(ebar_sq_sum) - (sum(ebar_sum))**2)
 
-    open  (30, file=sphe_sus_file)
-    write (30,'(a)') "   # Specific heat: total, rot., irrot."
-    write (30,'(4ES18.9)') temp,&
-    sp_he_tot, sp_he_rot, sp_he_irrot
+    ! open  (30, file=sphe_sus_file)
+    ! write (30,'(a)') "   # Specific heat: total, rot., irrot."
+    ! write (30,'(4ES18.9)') temp,&
+    ! sp_he_tot, sp_he_rot, sp_he_irrot
 
-    write (30,'(a)') "   # T, Chi_{Ebar}, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
-    write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
-    write (30,'(a)') "# Avg. x-component: total, rot., irrot.:"
-    write (30, '(3f18.10)') avg_field_total(1), avg_field_rot(1),&
-                            avg_field_irrot(1)
-    write (30,'(a)') "# Avg. y-component: total, rot., irrot.:"
-    write (30, '(3f18.10)') avg_field_total(2), avg_field_rot(2),&
-                            avg_field_irrot(2)
-    write (30,'(a)') "# Avg. z-component: total, rot., irrot.:"
-    write (30, '(3f18.10)') avg_field_total(3), avg_field_rot(3),&
-                            avg_field_irrot(3)
-    write (30,'(a)') "# Avg. x-component^2: total, rot., irrot.:"
-    write (30, '(3es18.10)') avg_field_sq_total(1), avg_field_sq_rot(1),&
-                            avg_field_sq_irrot(1)
-    write (30,'(a)') "# Avg. y-component^2: total, rot., irrot.:"
-    write (30, '(3es18.10)') avg_field_sq_total(2), avg_field_sq_rot(2),&
-                            avg_field_sq_irrot(2)
-    write (30,'(a)') "# Avg. z-component^2: total, rot., irrot.:"
-    write (30, '(3es18.10)') avg_field_sq_total(3), avg_field_sq_rot(3),&
-                            avg_field_sq_irrot(3)
+    ! write (30,'(a)') "   # T, Chi_{Ebar}, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
+    ! write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
+    ! write (30,'(a)') "# Avg. x-component: total, rot., irrot.:"
+    ! write (30, '(3f18.10)') avg_field_total(1), avg_field_rot(1),&
+    !                         avg_field_irrot(1)
+    ! write (30,'(a)') "# Avg. y-component: total, rot., irrot.:"
+    ! write (30, '(3f18.10)') avg_field_total(2), avg_field_rot(2),&
+    !                         avg_field_irrot(2)
+    ! write (30,'(a)') "# Avg. z-component: total, rot., irrot.:"
+    ! write (30, '(3f18.10)') avg_field_total(3), avg_field_rot(3),&
+    !                         avg_field_irrot(3)
+    ! write (30,'(a)') "# Avg. x-component^2: total, rot., irrot.:"
+    ! write (30, '(3es18.10)') avg_field_sq_total(1), avg_field_sq_rot(1),&
+    !                         avg_field_sq_irrot(1)
+    ! write (30,'(a)') "# Avg. y-component^2: total, rot., irrot.:"
+    ! write (30, '(3es18.10)') avg_field_sq_total(2), avg_field_sq_rot(2),&
+    !                         avg_field_sq_irrot(2)
+    ! write (30,'(a)') "# Avg. z-component^2: total, rot., irrot.:"
+    ! write (30, '(3es18.10)') avg_field_sq_total(3), avg_field_sq_rot(3),&
+    !                         avg_field_sq_irrot(3)
 
-    ! write (30,'(a)') "   # hop acceptance"
-    ! write (30,'(2ES18.9)') temp,&
-    ! (dble(accepts(1)) / dble(attempts(1)))
-    write (30,'(a,2i12.1,es18.9)') "# Hops: total, attempts, rate: ",&
-    accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
-    write (30,'(a,2i12.1,es18.9)') "# Rot.: total, attempts, rate: ",&
-    accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
-    write (30,'(a,2i12.1,es18.9)') "# Harm: total, attempts, rate: ",&
-    accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
-    write (30,'(a,2i12.1,es18.9)') "# Creations: total, attempts, rate: ",&
-    accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-    write (30,'(a,2i12.1,es18.9)') "# Annihilations: total, attempts, rate: ",&
-    accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+    ! ! write (30,'(a)') "   # hop acceptance"
+    ! ! write (30,'(2ES18.9)') temp,&
+    ! ! (dble(accepts(1)) / dble(attempts(1)))
+    ! write (30,'(a,2i12.1,es18.9)') "# Hops: total, attempts, rate: ",&
+    ! accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+    ! write (30,'(a,2i12.1,es18.9)') "# Rot.: total, attempts, rate: ",&
+    ! accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
+    ! write (30,'(a,2i12.1,es18.9)') "# Harm: total, attempts, rate: ",&
+    ! accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
+    ! write (30,'(a,2i12.1,es18.9)') "# Creations: total, attempts, rate: ",&
+    ! accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+    ! write (30,'(a,2i12.1,es18.9)') "# Annihilations: total, attempts, rate: ",&
+    ! accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
 
-    close(30)
+    ! close(30)
 
     if (do_corr) then
       ! we can calculate s_perp up to wherever

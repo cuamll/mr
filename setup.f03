@@ -203,6 +203,13 @@ module setup
       end if
     end if
 
+    do i=1,L
+      write (*,'(a,i3.1)') "i = ",i
+      do j = 1,L
+        write (*,'(100i3.1)') v(i,j,:)
+      end do
+    end do
+
   end subroutine latt_init
 
   subroutine arrays_init

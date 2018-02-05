@@ -487,6 +487,30 @@ subroutine normalisations(num_procs)
   write (30,'(4ES18.9)') temp, ener_tot_sum, ener_rot_sum, ener_irrot_sum
   write (30,'(a)') "# Temp, avg_e_tot^2, avg_e_rot^2, avg_e_irrot^2"
   write (30,'(4ES18.9)') temp,ener_tot_sq_sum,ener_rot_sq_sum,ener_irrot_sq_sum
+  write (30,'(a)') "# Temp, avg_field_tot, avg_field_rot, avg_field_irrot"
+  write (30,*) temp, sum(avg_field_total)/3, sum(avg_field_rot)/3,&
+  sum(avg_field_irrot)/3
+  write (30,'(a)') "# Temp, avg_field^2_tot, avg_field^2_rot, avg_field^2_irrot"
+  write (30,*) temp, sum(avg_field_sq_total)/3,&
+  sum(avg_field_sq_rot)/3, sum(avg_field_sq_irrot)/3
+  write (30,*) "# Temp, chi(total field)", temp,&
+  L**3 * beta * (sum(avg_field_sq_total) - sum(avg_field_total)**2)
+  write (30,*) "# Temp, chi(rot field)", temp,&
+  L**3 * beta * (sum(avg_field_sq_rot) - sum(avg_field_rot)**2)
+  write (30,*) "# Temp, chi(irrot field)", temp,&
+  L**3 * beta * (sum(avg_field_sq_irrot) - sum(avg_field_irrot)**2)
+  write (30,*) "Ebar_sum: ",ebar_sum(1),ebar_sum(2),ebar_sum(3)
+  write (30,*) "Ebar_sq_sum: ",ebar_sq_sum(1),ebar_sq_sum(2),ebar_sq_sum(3)
+  write (30,*) "Ebar susceptibility: ",ebar_sus
+  write (30,*) "Ebar_dip_sum: ",ebar_dip_sum(1),ebar_dip_sum(2),ebar_dip_sum(3)
+  write (30,*) "Ebar_dip_sq_sum: ",ebar_dip_sq_sum(1),ebar_dip_sq_sum(2),&
+                                   &ebar_dip_sq_sum(3)
+  write (30,*) "Ebar_dip susceptibility: ",ebar_dip_sus
+  write (30,*) "Ebar_wind_sum: ",ebar_wind_sum(1),ebar_wind_sum(2),&
+                                 &ebar_wind_sum(3)
+  write (30,*) "Ebar_wind_sq_sum: ",ebar_wind_sq_sum(1),ebar_wind_sq_sum(2),&
+                                   &ebar_wind_sq_sum(3)
+  write (30,*) "Ebar_wind susceptibility: ",ebar_wind_sus
   close (30)
 
 end subroutine normalisations
