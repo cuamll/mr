@@ -228,7 +228,7 @@ exit 0
             my $np = 1;
             # my $mpi_args = '--bind-to none';
             my $mpi_args = '';
-            my $verbose = '-v';
+            my $verbose = '';
             my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
             print "Running $progname with command $runcmd\n";
             if ($dorun) {

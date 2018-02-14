@@ -339,6 +339,9 @@ module update
       avg_field_total = avg_field_total / L**3
       avg_field_rot = avg_field_rot / L**3
       avg_field_irrot = avg_field_irrot / L**3
+      avg_field_sq_total = avg_field_sq_total / L**3
+      avg_field_sq_rot   = avg_field_sq_rot / L**3
+      avg_field_sq_irrot = avg_field_sq_irrot / L**3
       ebar = ebar / L**3
       ebar_dip = ebar_dip / L**3
       ebar_wind = ebar_wind / L**3
