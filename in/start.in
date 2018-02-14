@@ -5,7 +5,7 @@ do_corr F
 thermalisation_sweeps 100000
 measurement_sweeps 500000
 sample_interval 10
-temperature 10000.000
+temperature 1.500
 lattice_spacing 1.0
 charge_value 6.283185307179586
 delta_max 0
@@ -15,6 +15,7 @@ hop_ratio 1.0
 rot_ratio 1.0
 harmonic_ratio 1.0
 bin_size 1.0
+charge_generation DIPOLE
 direct_space_structure_factor_file    out/s_direct.dat
 direct_space_g(r)_file                out/dir_dist.dat
 charge_structure_factor_file          out/s_charge.dat

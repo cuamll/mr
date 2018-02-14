@@ -7,6 +7,43 @@ module update
 
   contains
 
+    subroutine harm_fluct(n)
+      use common
+      implicit none
+      integer, intent(in) :: n
+      integer :: i, mu
+      real(kind=8) :: increment, delta_e, harm_delt
+
+      ! --- HARMONIC FLUCTUATION UPDATE ---
+
+      ! just testing
+      harm_delt = 0.5 * rot_delt
+
+      do i = 1, n
+
+        ! pick at random from interval [-Delta_max, +Delta_max]
+        increment = 2 * harm_delt * (rand() - 0.5)
+
+        mu = floor(2 * rand()) + 1
+
+        ! expression for an arbitrary increment
+        delta_e = ((eps_0 * lambda**2) / 2.0) *&
+                  (L**2 * increment) * (increment + 2 * ebar(mu))
+
+        attempts(6) = attempts(6) + 1
+
+        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+
+          accepts(6) = accepts(6) + 1
+          ebar(mu) = ebar(mu) + increment
+          e_field(mu,:,:) = e_field(mu,:,:) + increment
+
+        end if ! end of Metropolis check
+
+      end do ! i loop
+
+    end subroutine harm_fluct
+
     subroutine hop(n)
       implicit none
       integer, intent(in) :: n
@@ -316,9 +353,11 @@ module update
         avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
         avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
         avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
+
         avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
         avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
         avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
+
 
       end do
 
@@ -354,12 +393,17 @@ module update
         !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
         !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
-        do omp_index = 1, ((L*bz)+1)**2
+        do omp_index = 1, L**2
 
-          i = ((omp_index - 1) / ((L*bz)+1)) + 1
-          j = mod(omp_index - 1, ((L*bz)+1)) + 1
-          kx = i - 1 - bz*(L/2)
-          ky = j - 1 - bz*(L/2)
+          i = ((omp_index - 1) / (L)) + 1
+          j = mod(omp_index - 1, (L)) + 1
+
+          ! repurposing these as the s_ab indices at the end:
+          ! we're gonna fill up the positive half of those arrays
+          ! and then use symmetry properties to fill the rest at the end.
+          ! k_mu = 0 point is at s_ab array index L + 1
+          kx = i + L
+          ky = j + L
 
           rho_k_p_temp = (0.0,0.0)
           rho_k_m_temp = (0.0,0.0)
@@ -379,57 +423,31 @@ module update
           end if
 
           do s = 1,L**2
-          !do m = 1,L
-          !  do p = 1,L
             m = ((s - 1) / L) + 1
             p = mod(s - 1, L) + 1
 
-              ! different offsets for x,y,z
-              ! these first two kdotxs are for the newest commit
-              ! i.e. symmetric rotational, asymmetric irrotational
-              ! NEGATIVE FT
-              kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
-                      ((p)*ky)))
-
-              ! POSITIVE FT
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((pos(m)-(1.0/2))*kx + &
-              !         (((p))*ky)))
+              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
+              !         ((p)*ky)))
+              kdotx = hw(m,i) + fw(p,j)
 
               e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
               mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
               e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
-              ! NEGATIVE FT
-              kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
-                      ((neg(p)+(1.0/2))*ky)))
-
-              ! POSITIVE FT
               ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
-              !         ((pos(p)-(1.0/2))*ky)))
+              !         ((neg(p)+(1.0/2))*ky)))
+              kdotx = fw(m,i) + hw(p,j)
 
               e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p)
               e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
               mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
 
-              ! these kdotxs are from previous commits i.e. asymmetric
-              ! rotational part and symmetric irrotational
-
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
-              !         ((neg(p))*ky)))
-              ! mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
-
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m))*kx + &
-              !         ((neg(p)+(1.0/2))*ky)))
-              ! mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
-
-              ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
-              !         ((p)*ky/(L*lambda))))
-
               if (v(m,p).ne.0) then ! calculate <++ + +->!
 
                 ! FT of charge distribution
-                kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
-                        ((p)*ky/(L*lambda))))
+                ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
+                !         ((p)*ky/(L*lambda))))
+                kdotx = fw(m,i) + fw(p,j)
 
                 if (v(m,p).eq.-1) then
                   rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
@@ -441,38 +459,29 @@ module update
 
                 ! --- real space correlation function ---
 
-                if (kx.gt.0.and.kx.le.L.and.&
-                    ky.gt.0.and.ky.le.L) then
+                if (v(m,p).eq.1) then
+                  if (v(i,j).eq.-1) then
 
-                  ! this should sort it out. kx ky kz here are
-                  ! the "r"s, m p s are the "zeros"
-                  ! we want to do rho_+(0) rho_-(r)
-                  if (v(m,p).eq.1) then
-                    if (v(kx,ky).eq.-1) then
+                    x = abs(m - i)
+                    y = abs(p - j)
 
-                      x = abs(m - kx)
-                      y = abs(p - ky)
+                    if (x.gt.L/2) then
+                      x = L - x
+                    end if
+                    if (y.gt.L/2) then
+                      y = L - y
+                    end if
 
-                      if (x.gt.L/2) then
-                        x = L - x
-                      end if
-                      if (y.gt.L/2) then
-                        y = L - y
-                      end if
+                    x = x + 1
+                    y = y + 1
 
-                      x = x + 1
-                      y = y + 1
-
-                      dir_struc(x,y) = dir_struc(x,y) +&
-                              v(m,p) * v(kx,ky)
-                    end if ! neg charge at kx,ky,kz
-                  end if ! pos charge at m,p,s
-                end if ! kx, ky, kz < L
+                    dir_struc(x,y) = dir_struc(x,y) +&
+                            v(m,p) * v(i,j)
+                  end if ! neg charge at i,j
+                end if ! pos charge at m,p
 
               end if ! end v != 0 check
 
-          !  end do
-          !end do ! m,p blocks
           end do ! s
 
           rho_k_p_temp = rho_k_p_temp / float(L**2)
@@ -484,66 +493,62 @@ module update
           e_rot_kx_temp = e_rot_kx_temp / float(L**2)
           e_rot_ky = e_rot_ky / float(L**2)
 
-          rho_k_p(i,j) = rho_k_p(i,j) + rho_k_p_temp
-          rho_k_m(i,j) = rho_k_m(i,j) + rho_k_m_temp
-          ch_ch(i,j) = ch_ch(i,j) +&
+          rho_k_p(kx,ky) = rho_k_p(kx,ky) + rho_k_p_temp
+          rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp
+          ch_ch(kx,ky) = ch_ch(kx,ky) +&
                         (rho_k_p_temp * conjg(rho_k_m_temp))
 
-          if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
-            if (n.eq.1) then
-              open(49, file=equil_file)
-            else
-              open(49, file=equil_file, position='append')
-            end if
-            runtot = runtot + e_kx_temp*conjg(e_ky)
-            write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
-            close(49)
-          end if
-
-          ! if ((i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)).or.&
-          ! (i.eq.(4).and.j.eq.(4)).or.&
-          ! (i.eq.((bz*L)-6).and.j.eq.((bz*L)-6))) then
-          !   if (n.eq.1) then
-          !     open(52, file='q_vec_data.dat')
-          !   else
-          !     open(52, file='q_vec_data.dat', position='append')
-          !   end if
-          !   write (52,'(i8.1,5f18.8)') n, (2*pi*kx)/(L*lambda),&
-          !                (2*pi*ky)/(L*lambda), real(e_kx_temp),&
-          !             real(mnphi_kx_temp), real(e_rot_kx_temp)
-          !   close(52)
+          ! if (i.eq.1) then
+          !   rho_k_p(kx + L, ky) = rho_k_p(kx,ky)
+          !   rho_k_m(kx + L, ky) = rho_k_m(kx,ky)
+          !   ch_ch(kx + L, ky) = ch_ch(kx,ky)
           ! end if
 
-          s_ab(1,1,i,j) = s_ab(1,1,i,j) +&
+          ! if (j.eq.1) then
+          !   rho_k_p(kx, ky + L) = rho_k_p(kx,ky)
+          !   rho_k_m(kx, ky + L) = rho_k_m(kx,ky)
+          !   ch_ch(kx, ky + L) = ch_ch(kx,ky)
+          ! end if
+
+          ! if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
+          !   if (n.eq.1) then
+          !     open(49, file=equil_file)
+          !   else
+          !     open(49, file=equil_file, position='append')
+          !   end if
+          !   runtot = runtot + e_kx_temp*conjg(e_ky)
+          !   write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
+          !   close(49)
+          ! end if
+
+          s_ab(1,1,kx,ky) = s_ab(1,1,kx,ky) +&
           e_kx_temp*conjg(e_kx_temp)
-          s_ab(1,2,i,j) = s_ab(1,2,i,j) +&
+          s_ab(1,2,kx,ky) = s_ab(1,2,kx,ky) +&
           e_kx_temp*conjg(e_ky)
-          s_ab(2,1,i,j) = s_ab(2,1,i,j) +&
+          s_ab(2,1,kx,ky) = s_ab(2,1,kx,ky) +&
           e_ky*conjg(e_kx_temp)
-          s_ab(2,2,i,j) = s_ab(2,2,i,j) +&
+          s_ab(2,2,kx,ky) = s_ab(2,2,kx,ky) +&
           e_ky*conjg(e_ky)
 
-          !write(*,*) i,j,s_ab_rot(1,1,i,j),e_rot_kx_temp
-          s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i,j) +&
+          s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
           e_rot_kx_temp*conjg(e_rot_kx_temp)
-          s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i,j) +&
+          s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
           e_rot_kx_temp*conjg(e_rot_ky)
-          s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i,j) +&
+          s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
           e_rot_ky*conjg(e_rot_kx_temp)
-          s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i,j) +&
+          s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
           e_rot_ky*conjg(e_rot_ky)
 
-          s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i,j) +&
+          s_ab_irrot(1,1,kx,ky) = s_ab_irrot(1,1,kx,ky) +&
           mnphi_kx_temp*conjg(mnphi_kx_temp)
-          s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i,j) +&
+          s_ab_irrot(1,2,kx,ky) = s_ab_irrot(1,2,kx,ky) +&
           mnphi_kx_temp*conjg(mnphi_ky)
-          s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i,j) +&
+          s_ab_irrot(2,1,kx,ky) = s_ab_irrot(2,1,kx,ky) +&
           mnphi_ky*conjg(mnphi_kx_temp)
-          s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i,j) +&
+          s_ab_irrot(2,2,kx,ky) = s_ab_irrot(2,2,kx,ky) +&
           mnphi_ky*conjg(mnphi_ky)
 
           ! direct space one
-          ! write (*,*) i,j,(i.le.L/2+1.and.j.le.L/2+1)
           if (i.le.L/2+1.and.j.le.L/2+1) then
 
             dist = sqrt(dble((i - 1)**2 + (j - 1)**2))

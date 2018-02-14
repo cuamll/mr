@@ -11,7 +11,10 @@ module setup
   subroutine initial_setup
     ! various things which can't be zeroed
     ! at the start of every sample
+    complex(kind=rk) :: prefac, imag
 
+    allocate(pos(L))
+    allocate(neg(L))
     allocate(v_avg(L,L))
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
@@ -26,6 +29,10 @@ module setup
     allocate(dist_r(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
     allocate(lgf(L,L,L,L))
+    allocate(fw(L,(bz*L)+1))
+    allocate(hw(L,(bz*L)+1))
+
+    call PBCs
 
     v_avg = 0.0; rho_avg = 0.0; runtot = 0.0
     avg_field_total = 0.0; avg_field_rot = 0.0; avg_field_irrot = 0.0
@@ -44,17 +51,25 @@ module setup
     attempts(3) = (therm_sweeps + measurement_sweeps) *&
       no_samples * L**2 * g_ratio
 
+    imag = (0.0, 1.0)
+    prefac = (-1)*imag*((2*pi)/(L*lambda))
+
+    do i = 1,L
+      do k = 1,(L*bz)+1
+        fw(i,k) = prefac * i * (k - 1)
+        hw(i,k) = prefac * (neg(i) + (1.0/2)) * (k - 1)
+      end do
+    end do
+
   end subroutine initial_setup
 
   subroutine allocations
 
     allocate(v(L,L))
-    allocate(pos(L))
-    allocate(neg(L))
     allocate(e_field(2,L,L))
     allocate(mnphi(2,L,L))
 
-    v = 0; pos = 0; neg = 0
+    v = 0;
     ebar = 0.0;
     e_field = 0.0; mnphi = 0.0;
 
@@ -63,49 +78,16 @@ module setup
   subroutine deallocations
 
     deallocate(v)
-    deallocate(pos)
-    deallocate(neg)
     deallocate(e_field)
     deallocate(mnphi)
 
   end subroutine deallocations
 
   subroutine latt_init
-    integer, dimension(:,:), allocatable :: v_temp
-    logical :: read_lattfile = .false.
+      integer, dimension(:,:), allocatable :: v_temp
+      logical :: read_lattfile = .false.
 
-    n = 0
-
-    if (add_charges.ne.0) then
-
-      !write (*,*)
-      !write (*,'(a,I4.1,a)') "Adding ",add_charges," charges. Charge positions:"
-
-      do while (n.lt.add_charges)
-
-        ! pick a random position, check if there's a charge there
-        ! if so, pick again; if not, alternate pos/neg
-        i = int(rand() * L) + 1
-        j = int(rand() * L) + 1
-
-        if (v(i,j).ne.0) then
-          CYCLE
-        end if
-
-        if (modulo(n,2)==0) then
-          v(i,j) = 1
-        else
-          v(i,j) = -1
-        end if
-
-        n = n + 1
-
-        !write (*,'(I4.1,a2,I3.1,I3.1,I3.1,I3.1)') n,": ",i,j,v(i,j)
-
-      end do
-
-    else ! add_charges = 0; read in lattice file
-
+      ! this is currently never true, but could come in handy
       if (read_lattfile) then
         allocate(v_temp(L,L))
 
@@ -118,13 +100,87 @@ module setup
 
         deallocate(v_temp)
         close(2)
-      else ! all zeroes
-        v = 0
+
       end if
 
-    end if
+      n = 0
 
-  end subroutine latt_init
+      if (charge_gen.eq."RANDOM") then
+
+        do while (n.lt.add_charges)
+
+          ! pick a random position, check if there's a charge there
+          ! if so, pick again; if not, alternate pos/neg
+          i = int(rand() * L) + 1
+          j = int(rand() * L) + 1
+
+          if (v(i,j).ne.0) then
+            CYCLE
+          end if
+
+          if (modulo(n,2)==0) then
+            v(i,j) = 1
+          else
+            v(i,j) = -1
+          end if
+
+          n = n + 1
+
+        end do
+
+      else if (charge_gen.eq."DIPOLE") then
+
+        do while (n.lt.add_charges)
+
+          i = int(rand() * L) + 1
+          j = int(rand() * L) + 1
+
+          if (v(i,j).ne.0) then
+            CYCLE
+          end if
+
+          ! choose between four orientations of a dipole
+          if (rand().lt.0.5) then
+            ! x-direction
+            if (v(neg(i),j).ne.0) then
+              CYCLE
+            end if
+
+            if (rand().lt.0.5) then
+              ! + -
+              v(neg(i),j) = +1
+              v(i,j) = -1
+            else
+              ! - +
+              v(neg(i),j) = -1
+              v(i,j) = +1
+            end if
+
+          else
+            ! y-direction
+            if (v(i,neg(j)).ne.0) then
+              CYCLE
+            end if
+
+            if (rand().lt.0.5) then
+              ! + -
+              v(i,neg(j)) = +1
+              v(i,j) = -1
+            else
+              ! - +
+              v(i,neg(j)) = -1
+              v(i,j) = +1
+            end if
+
+          end if
+
+          n = n + 2
+
+        end do
+
+      end if
+
+    end subroutine latt_init
 
   subroutine arrays_init
 
@@ -148,7 +204,6 @@ module setup
     call randinit(n)
     call allocations
     call latt_init
-    call PBCs
     call arrays_init
 
   end subroutine setup_wrapper

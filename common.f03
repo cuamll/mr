@@ -19,7 +19,7 @@ module common
   integer, public :: MPI_NEW_INT, MPI_NEW_REAL, MPI_NEW_COMPLEX
   integer(kind=4), public :: seed, no_samples, no_threads, L, add_charges,&
   no_measurements, therm_sweeps, measurement_sweeps, sample_interval
-  integer(kind=ik), dimension(5), public :: attempts, accepts
+  integer(kind=ik), dimension(6), public :: attempts, accepts
   integer(kind=ik), dimension(:), allocatable, public :: bin_count
   integer(kind=4), dimension(:), allocatable, public :: pos,neg
   integer(kind=4), dimension(:,:), allocatable, public :: v
@@ -43,7 +43,7 @@ module common
   s_ab_rot, s_ab_irrot
 
   complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch,&
-  rho_k_m,rho_k_p
+  rho_k_m,rho_k_p, fw, hw
   complex(kind=rk), public :: runtot
 
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file,&
@@ -52,6 +52,8 @@ module common
   irrot_field_file, irrot_sab_file, irrot_sperp_file, rot_field_file,&
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
   irrot_spar_file, avg_field_file, equil_file
+
+  character(6) :: charge_gen
 
   save
 

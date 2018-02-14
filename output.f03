@@ -6,9 +6,415 @@ module output
 
   subroutine write_output
 
+    call fix_arrays
     call calc_correlations
 
   end subroutine write_output
+
+  subroutine fix_arrays
+    use common
+    implicit none
+    integer :: i, j
+    
+    ! very long and extremely disgusting way of filling up the arrays
+    ! so we can then calculate other correlation functions easily.
+    ! probably won't work yet. also can probably be simplified a lot
+
+    do i = 1,L
+      do j = 1,L
+
+        if (i.eq.1.and.j.eq.1) then
+
+          ! charge-charge ones
+          rho_k_p(1,1) = rho_k_p(L+1,L+1)
+          rho_k_m(1,1) = rho_k_m(L+1,L+1)
+          rho_k_p(L+1,1) = rho_k_p(L+1,L+1)
+          rho_k_m(L+1,1) = rho_k_m(L+1,L+1)
+          rho_k_p((bz*L)+1,1) = rho_k_p(L+1,L+1)
+          rho_k_m((bz*L)+1,1) = rho_k_m(L+1,L+1)
+          rho_k_p(1,L+1) = rho_k_p(L+1,L+1)
+          rho_k_m(1,L+1) = rho_k_m(L+1,L+1)
+          rho_k_p(1,(bz*L)+1) = rho_k_p(L+1,L+1)
+          rho_k_m(1,(bz*L)+1) = rho_k_m(L+1,L+1)
+          rho_k_p((bz*L)+1,L+1) = rho_k_p(L+1,L+1)
+          rho_k_m((bz*L)+1,L+1) = rho_k_m(L+1,L+1)
+          rho_k_p(L+1,(bz*L)+1) = rho_k_p(L+1,L+1)
+          rho_k_m(L+1,(bz*L)+1) = rho_k_m(L+1,L+1)
+          rho_k_p((bz*L)+1,(bz*L)+1) = rho_k_p(L+1,L+1)
+          rho_k_m((bz*L)+1,(bz*L)+1) = rho_k_m(L+1,L+1)
+
+          ! s_ab
+          s_ab(1,1,1,1)                 = s_ab(1,1,L+1,L+1)
+          s_ab(1,1,L+1,1)               = s_ab(1,1,L+1,L+1)
+          s_ab(1,1,(bz*L)+1,1)          = s_ab(1,1,L+1,L+1)
+          s_ab(1,1,1,L+1)               = s_ab(1,1,L+1,L+1)
+          s_ab(1,1,1,(bz*L)+1)          = s_ab(1,1,L+1,L+1)
+          s_ab(1,1,(bz*L)+1,L+1)        = s_ab(1,1,L+1,L+1)
+          s_ab(1,1,L+1,(bz*L)+1)        = s_ab(1,1,L+1,L+1)
+          s_ab(1,1,(bz*L)+1,(bz*L)+1)   = s_ab(1,1,L+1,L+1)
+
+          s_ab(1,2,1,1)                 = (-1) * s_ab(1,2,L+1,L+1)
+          s_ab(1,2,L+1,1)               = (-1) * s_ab(1,2,L+1,L+1)
+          s_ab(1,2,(bz*L)+1,1)          = (-1) * s_ab(1,2,L+1,L+1)
+          s_ab(1,2,1,L+1)               = (-1) * s_ab(1,2,L+1,L+1)
+          s_ab(1,2,1,(bz*L)+1)          = (-1) * s_ab(1,2,L+1,L+1)
+          s_ab(1,2,(bz*L)+1,L+1)        = (-1) * s_ab(1,2,L+1,L+1)
+          s_ab(1,2,L+1,(bz*L)+1)        = (-1) * s_ab(1,2,L+1,L+1)
+          s_ab(1,2,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab(1,2,L+1,L+1)
+
+          s_ab(2,1,1,1)                 = (-1) * s_ab(2,1,L+1,L+1)
+          s_ab(2,1,L+1,1)               = (-1) * s_ab(2,1,L+1,L+1)
+          s_ab(2,1,(bz*L)+1,1)          = (-1) * s_ab(2,1,L+1,L+1)
+          s_ab(2,1,1,L+1)               = (-1) * s_ab(2,1,L+1,L+1)
+          s_ab(2,1,1,(bz*L)+1)          = (-1) * s_ab(2,1,L+1,L+1)
+          s_ab(2,1,(bz*L)+1,L+1)        = (-1) * s_ab(2,1,L+1,L+1)
+          s_ab(2,1,L+1,(bz*L)+1)        = (-1) * s_ab(2,1,L+1,L+1)
+          s_ab(2,1,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab(2,1,L+1,L+1)
+
+          s_ab(2,2,1,1)                 = s_ab(2,2,L+1,L+1)
+          s_ab(2,2,L+1,1)               = s_ab(2,2,L+1,L+1)
+          s_ab(2,2,(bz*L)+1,1)          = s_ab(2,2,L+1,L+1)
+          s_ab(2,2,1,L+1)               = s_ab(2,2,L+1,L+1)
+          s_ab(2,2,1,(bz*L)+1)          = s_ab(2,2,L+1,L+1)
+          s_ab(2,2,(bz*L)+1,L+1)        = s_ab(2,2,L+1,L+1)
+          s_ab(2,2,L+1,(bz*L)+1)        = s_ab(2,2,L+1,L+1)
+          s_ab(2,2,(bz*L)+1,(bz*L)+1)   = s_ab(2,2,L+1,L+1)
+
+          ! s_ab_rot
+
+          s_ab_rot(1,1,1,1)                 = s_ab_rot(1,1,L+1,L+1)
+          s_ab_rot(1,1,L+1,1)               = s_ab_rot(1,1,L+1,L+1)
+          s_ab_rot(1,1,(bz*L)+1,1)          = s_ab_rot(1,1,L+1,L+1)
+          s_ab_rot(1,1,1,L+1)               = s_ab_rot(1,1,L+1,L+1)
+          s_ab_rot(1,1,1,(bz*L)+1)          = s_ab_rot(1,1,L+1,L+1)
+          s_ab_rot(1,1,(bz*L)+1,L+1)        = s_ab_rot(1,1,L+1,L+1)
+          s_ab_rot(1,1,L+1,(bz*L)+1)        = s_ab_rot(1,1,L+1,L+1)
+          s_ab_rot(1,1,(bz*L)+1,(bz*L)+1)   = s_ab_rot(1,1,L+1,L+1)
+
+          s_ab_rot(1,2,1,1)                 = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,L+1,1)               = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,(bz*L)+1,1)          = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,1,L+1)               = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,1,(bz*L)+1)          = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,(bz*L)+1,L+1)        = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,L+1,(bz*L)+1)        = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab_rot(1,2,L+1,L+1)
+
+          s_ab_rot(2,1,1,1)                 = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,L+1,1)               = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,(bz*L)+1,1)          = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,1,L+1)               = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,1,(bz*L)+1)          = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,(bz*L)+1,L+1)        = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,L+1,(bz*L)+1)        = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab_rot(2,1,L+1,L+1)
+
+          s_ab_rot(2,2,1,1)                 = s_ab_rot(2,2,L+1,L+1)
+          s_ab_rot(2,2,L+1,1)               = s_ab_rot(2,2,L+1,L+1)
+          s_ab_rot(2,2,(bz*L)+1,1)          = s_ab_rot(2,2,L+1,L+1)
+          s_ab_rot(2,2,1,L+1)               = s_ab_rot(2,2,L+1,L+1)
+          s_ab_rot(2,2,1,(bz*L)+1)          = s_ab_rot(2,2,L+1,L+1)
+          s_ab_rot(2,2,(bz*L)+1,L+1)        = s_ab_rot(2,2,L+1,L+1)
+          s_ab_rot(2,2,L+1,(bz*L)+1)        = s_ab_rot(2,2,L+1,L+1)
+          s_ab_rot(2,2,(bz*L)+1,(bz*L)+1)   = s_ab_rot(2,2,L+1,L+1)
+
+          ! s_ab_irrot
+
+          s_ab_irrot(1,1,1,1)                 = s_ab_irrot(1,1,L+1,L+1)
+          s_ab_irrot(1,1,L+1,1)               = s_ab_irrot(1,1,L+1,L+1)
+          s_ab_irrot(1,1,(bz*L)+1,1)          = s_ab_irrot(1,1,L+1,L+1)
+          s_ab_irrot(1,1,1,L+1)               = s_ab_irrot(1,1,L+1,L+1)
+          s_ab_irrot(1,1,1,(bz*L)+1)          = s_ab_irrot(1,1,L+1,L+1)
+          s_ab_irrot(1,1,(bz*L)+1,L+1)        = s_ab_irrot(1,1,L+1,L+1)
+          s_ab_irrot(1,1,L+1,(bz*L)+1)        = s_ab_irrot(1,1,L+1,L+1)
+          s_ab_irrot(1,1,(bz*L)+1,(bz*L)+1)   = s_ab_irrot(1,1,L+1,L+1)
+
+          s_ab_irrot(1,2,1,1)                 = (-1) * s_ab_irrot(1,2,L+1,L+1)
+          s_ab_irrot(1,2,L+1,1)               = (-1) * s_ab_irrot(1,2,L+1,L+1)
+          s_ab_irrot(1,2,(bz*L)+1,1)          = (-1) * s_ab_irrot(1,2,L+1,L+1)
+          s_ab_irrot(1,2,1,L+1)               = (-1) * s_ab_irrot(1,2,L+1,L+1)
+          s_ab_irrot(1,2,1,(bz*L)+1)          = (-1) * s_ab_irrot(1,2,L+1,L+1)
+          s_ab_irrot(1,2,(bz*L)+1,L+1)        = (-1) * s_ab_irrot(1,2,L+1,L+1)
+          s_ab_irrot(1,2,L+1,(bz*L)+1)        = (-1) * s_ab_irrot(1,2,L+1,L+1)
+          s_ab_irrot(1,2,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab_irrot(1,2,L+1,L+1)
+
+          s_ab_irrot(2,1,1,1)                 = (-1) * s_ab_irrot(2,1,L+1,L+1)
+          s_ab_irrot(2,1,L+1,1)               = (-1) * s_ab_irrot(2,1,L+1,L+1)
+          s_ab_irrot(2,1,(bz*L)+1,1)          = (-1) * s_ab_irrot(2,1,L+1,L+1)
+          s_ab_irrot(2,1,1,L+1)               = (-1) * s_ab_irrot(2,1,L+1,L+1)
+          s_ab_irrot(2,1,1,(bz*L)+1)          = (-1) * s_ab_irrot(2,1,L+1,L+1)
+          s_ab_irrot(2,1,(bz*L)+1,L+1)        = (-1) * s_ab_irrot(2,1,L+1,L+1)
+          s_ab_irrot(2,1,L+1,(bz*L)+1)        = (-1) * s_ab_irrot(2,1,L+1,L+1)
+          s_ab_irrot(2,1,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab_irrot(2,1,L+1,L+1)
+
+          s_ab_irrot(2,2,1,1)                 = s_ab_irrot(2,2,L+1,L+1)
+          s_ab_irrot(2,2,L+1,1)               = s_ab_irrot(2,2,L+1,L+1)
+          s_ab_irrot(2,2,(bz*L)+1,1)          = s_ab_irrot(2,2,L+1,L+1)
+          s_ab_irrot(2,2,1,L+1)               = s_ab_irrot(2,2,L+1,L+1)
+          s_ab_irrot(2,2,1,(bz*L)+1)          = s_ab_irrot(2,2,L+1,L+1)
+          s_ab_irrot(2,2,(bz*L)+1,L+1)        = s_ab_irrot(2,2,L+1,L+1)
+          s_ab_irrot(2,2,L+1,(bz*L)+1)        = s_ab_irrot(2,2,L+1,L+1)
+          s_ab_irrot(2,2,(bz*L)+1,(bz*L)+1)   = s_ab_irrot(2,2,L+1,L+1)
+
+        else if (i.eq.1.and.j.gt.1) then
+
+          rho_k_p(i,j) = rho_k_p(i+L,j+L)
+          rho_k_m(i,j) = rho_k_m(i+L,j+L)
+          ch_ch(i,j) = ch_ch(i+L,j+L)
+
+          rho_k_p(i+L,j) = rho_k_p(i+L,j+L)
+          rho_k_m(i+L,j) = rho_k_m(i+L,j+L)
+          ch_ch(i+L,j) = ch_ch(i+L,j+L)
+
+          rho_k_p(i+2*L,j) = rho_k_p(i+L,j+L)
+          rho_k_m(i+2*L,j) = rho_k_m(i+L,j+L)
+          ch_ch(i+2*L,j) = ch_ch(i+L,j+L)
+
+          rho_k_p(i,j+L) = rho_k_p(i+L,j+L)
+          rho_k_m(i,j+L) = rho_k_m(i+L,j+L)
+          ch_ch(i,j+L) = ch_ch(i+L,j+L)
+
+          rho_k_p(i+2*L,j+L) = rho_k_p(i+L,j+L)
+          rho_k_m(i+2*L,j+L) = rho_k_m(i+L,j+L)
+          ch_ch(i+2*L,j+L) = ch_ch(i+L,j+L)
+
+          ! s_ab
+          s_ab(1,1,i,j) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i,j) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i,j) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i,j) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i+L,j) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i+L,j) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i+L,j) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i+L,j) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i+2*L,j) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i+2*L,j) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i+2*L,j) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i+2*L,j) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i,j+L) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i,j+L) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i,j+L) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i,j+L) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i+2*L,j+L) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i+2*L,j+L) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i+2*L,j+L) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i+2*L,j+L) = s_ab(2,2,i+L,j+L)
+
+          ! s_ab_rot
+          s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i,j) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i+L,j) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i+L,j) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i+2*L,j) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i+2*L,j) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+2*L,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i+2*L,j) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i,j+L) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+L) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i,j+L) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i+2*L,j+L) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i+2*L,j+L) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+2*L,j+L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i+2*L,j+L) = s_ab_rot(2,2,i+L,j+L)
+
+          ! s_ab_irrot
+          s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i,j) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i,j) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i+L,j) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i+L,j) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i+L,j) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i+L,j) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i+2*L,j) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i+2*L,j) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i+2*L,j) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i+2*L,j) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i,j+L) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i,j+L) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i,j+L) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i,j+L) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i+2*L,j+L) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i+2*L,j+L) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i+2*L,j+L) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i+2*L,j+L) = s_ab_irrot(2,2,i+L,j+L)
+
+        else if (j.eq.1.and.i.gt.1) then
+
+          rho_k_p(i,j) = rho_k_p(i+L,j+L)
+          rho_k_m(i,j) = rho_k_m(i+L,j+L)
+          ch_ch(i,j) = ch_ch(i+L,j+L)
+
+          rho_k_p(i,j+L) = rho_k_p(i+L,j+L)
+          rho_k_m(i,j+L) = rho_k_m(i+L,j+L)
+          ch_ch(i,j+L) = ch_ch(i+L,j+L)
+
+          rho_k_p(i,j+2*L) = rho_k_p(i+L,j+L)
+          rho_k_m(i,j+2*L) = rho_k_m(i+L,j+L)
+          ch_ch(i,j+2*L) = ch_ch(i+L,j+L)
+
+          rho_k_p(i+L,j) = rho_k_p(i+L,j+L)
+          rho_k_m(i+L,j) = rho_k_m(i+L,j+L)
+          ch_ch(i+L,j) = ch_ch(i+L,j+L)
+
+          rho_k_p(i+L,j+2*L) = rho_k_p(i+L,j+L)
+          rho_k_m(i+L,j+2*L) = rho_k_m(i+L,j+L)
+          ch_ch(i+L,j+2*L) = ch_ch(i+L,j+L)
+
+          ! s_ab
+          s_ab(1,1,i,j) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i,j) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i,j) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i,j) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i,j+L) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i,j+L) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i,j+L) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i,j+L) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i,j+2*L) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i,j+2*L) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i,j+2*L) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i,j+2*L) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i+L,j) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i+L,j) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i+L,j) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i+L,j) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i+L,j+2*L) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i+L,j+2*L) = -1 * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i+L,j+2*L) = -1 * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i+L,j+2*L) = s_ab(2,2,i+L,j+L)
+
+          ! s_ab_rot
+          s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i,j) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i,j+L) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+L) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i,j+L) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i,j+2*L) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+2*L) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+2*L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i,j+2*L) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i+L,j) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i+L,j) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i+L,j+2*L) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j+2*L) = -1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j+2*L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i+L,j+2*L) = s_ab_rot(2,2,i+L,j+L)
+
+          ! s_ab_irrot
+          s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i,j) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i,j) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i,j+L) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i,j+L) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i,j+L) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i,j+L) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i,j+2*L) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i,j+2*L) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i,j+2*L) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i,j+2*L) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i+L,j) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i+L,j) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i+L,j) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i+L,j) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i+L,j+2*L) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i+L,j+2*L) = -1 * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i+L,j+2*L) = -1 * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i+L,j+2*L) = s_ab_irrot(2,2,i+L,j+L)
+
+        else
+
+          rho_k_p(i,j) = rho_k_p(i+L,j+L)
+          rho_k_m(i,j) = rho_k_m(i+L,j+L)
+          ch_ch(i,j) = ch_ch(i+L,j+L)
+
+          s_ab(1,1,i,j) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i,j) = s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i,j) = s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i,j) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i+L,j) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i+L,j) = (-1) * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i+L,j) = (-1) * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i+L,j) = s_ab(2,2,i+L,j+L)
+
+          s_ab(1,1,i,j+L) = s_ab(1,1,i+L,j+L)
+          s_ab(1,2,i,j+L) = (-1) * s_ab(1,2,i+L,j+L)
+          s_ab(2,1,i,j+L) = (-1) * s_ab(2,1,i+L,j+L)
+          s_ab(2,2,i,j+L) = s_ab(2,2,i+L,j+L)
+
+          ! s_ab_rot
+          s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i,j) = s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j) = s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i+L,j) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j) = (-1) * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j) = (-1) * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i+L,j) = s_ab_rot(2,2,i+L,j+L)
+
+          s_ab_rot(1,1,i,j+L) = s_ab_rot(1,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+L) = (-1) * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+L) = (-1) * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(2,2,i,j+L) = s_ab_rot(2,2,i+L,j+L)
+
+          ! s_ab_irrot
+          s_ab_irrot(1,1,i,j) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i,j) = s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i,j) = s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i,j) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i+L,j) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i+L,j) = (-1) * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i+L,j) = (-1) * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i+L,j) = s_ab_irrot(2,2,i+L,j+L)
+
+          s_ab_irrot(1,1,i,j+L) = s_ab_irrot(1,1,i+L,j+L)
+          s_ab_irrot(1,2,i,j+L) = (-1) * s_ab_irrot(1,2,i+L,j+L)
+          s_ab_irrot(2,1,i,j+L) = (-1) * s_ab_irrot(2,1,i+L,j+L)
+          s_ab_irrot(2,2,i,j+L) = s_ab_irrot(2,2,i+L,j+L)
+
+        end if
+
+      end do
+    end do
+
+  end subroutine fix_arrays
 
   subroutine calc_correlations
     use common
@@ -64,35 +470,40 @@ module output
     write (*,*) L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
     - (ebar_sum(1)**2 + ebar_sum(2)**2))
 
-    open  (30, file=sphe_sus_file)
-    write (30,'(a)') "   # Specific heat: total, rot., irrot."
-    write (30,'(4ES18.9)') temp,&
-    sp_he_tot, sp_he_rot, sp_he_irrot
+    ! open  (30, file=sphe_sus_file)
+    ! write (30,'(a)') "   # Specific heat: total, rot., irrot."
+    ! write (30,'(4ES18.9)') temp,&
+    ! sp_he_tot, sp_he_rot, sp_he_irrot
 
-    write (30,'(a)') "   # T, Chi_{Ebar}, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
-    write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
-    write (30,'(a)') "# Avg. x-component: total, rot., irrot.:"
-    write (30, '(3f18.10)') avg_field_total(1), avg_field_rot(1),&
-                            avg_field_irrot(1)
-    write (30,'(a)') "# Avg. y-component: total, rot., irrot.:"
-    write (30, '(3f18.10)') avg_field_total(2), avg_field_rot(2),&
-                            avg_field_irrot(2)
+    ! write (30,'(a)') "   # T, Chi_{Ebar}, Chi_{Ebar_dip}, Chi_{Ebar_wind}"
+    ! write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
+    ! write (30,'(a)') "# Avg. x-component: total, rot., irrot.:"
+    ! write (30, '(3f18.10)') avg_field_total(1), avg_field_rot(1),&
+    !                         avg_field_irrot(1)
+    ! write (30,'(a)') "# Avg. y-component: total, rot., irrot.:"
+    ! write (30, '(3f18.10)') avg_field_total(2), avg_field_rot(2),&
+    !                         avg_field_irrot(2)
 
     ! write (30,'(a)') "   # hop acceptance"
     ! write (30,'(2ES18.9)') temp,&
     ! (dble(accepts(1)) / dble(attempts(1)))
-    write (30,'(a,2i12.1,es18.9)') "# Hops: total, attempts, rate: ",&
-    accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
-    write (30,'(a,2i12.1,es18.9)') "# Rot.: total, attempts, rate: ",&
-    accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
-    write (30,'(a,2i12.1,es18.9)') "# Harm: total, attempts, rate: ",&
-    accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
-    write (30,'(a,2i12.1,es18.9)') "# Creations: total, attempts, rate: ",&
-    accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-    write (30,'(a,2i12.1,es18.9)') "# Annihilations: total, attempts, rate: ",&
-    accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+    ! if (add_charges.ne.0) then
+    !   write (30,'(a,2i12.1,es18.9)') "# Hops: total, attempts, rate: ",&
+    !   accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+    ! end if
+    ! write (30,'(a,2i12.1,es18.9)') "# Rot.: total, attempts, rate: ",&
+    ! accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
+    ! write (30,'(a,2i12.1,es18.9)') "# Harm: total, attempts, rate: ",&
+    ! accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
+    ! ! write (30,'(a,2i12.1,es18.9)') "# Creations: total, attempts, rate: ",&
+    ! ! accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+    ! ! write (30,'(a,2i12.1,es18.9)') "# Annihilations: total, attempts, rate: ",&
+    ! ! accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+    ! write (30,'(a,2i12.1,es18.9)') "# Harmonic fluctuations: &
+    ! &total, attempts, rate: ",&
+    ! accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
 
-    close(30)
+    ! close(30)
 
     if (do_corr) then
       ! we can calculate s_perp up to wherever
@@ -136,22 +547,6 @@ module output
           else
             norm_k = 1.0/(kx_float**2 + ky_float**2)
           end if
-
-          ! move back to somewhere we already know about
-          ! this is probably not right yet.
-          ! but i know something needs doing here
-          ! s_ab should be periodic in 2pi so mod should be fine
-
-          ! if (abs(p).gt.(L/2)*bz) then
-          !   ky = modulo(p,(bz*L)/2) + 1 + (bz*L)/2
-          ! else
-          !   ky = p + 1 + (bz*L)/2
-          ! end if
-          ! if (abs(m).gt.(L/2)*bz) then
-          !   kx = modulo(m,(bz*L)/2) + 1 + (bz*L)/2
-          ! else
-          !   kx = m + 1 + (bz*L)/2
-          ! end if
 
           if (abs(p).gt.(L)*bz) then
             ky = modulo(p,(bz*L)) + 1 + (bz*L)
@@ -198,40 +593,6 @@ module output
             kx = m + 1 + (bz*(L/2))
           end if
 
-          !if (p.lt.(-1*(bz*(L/2)))) then
-          !  ky = p
-          !  do while (ky.lt.(-1*(bz*(L/2))))
-          !    ky = ky + bz*(L/2)
-          !  end do
-          !  ! array index
-          !  ky = ky + 1 + bz*(L/2)
-          !else if (p.gt.(bz*(L/2))) then
-          !  ky = p
-          !  do while (ky.gt.bz*(L/2))
-          !    ky = ky - bz*(L/2)
-          !  end do
-          !  ky = ky + 1 + bz*(L/2)
-          !else
-          !  ky = p + 1 + (bz*(L/2))
-          !end if
-
-          !if (m.lt.(-1*(bz*(L/2)))) then
-          !  kx = m
-          !  do while (kx.lt.(-1*(bz*(L/2))))
-          !    kx = kx + bz*(L/2)
-          !  end do
-          !  ! array index
-          !  kx = kx + 1 + bz*(L/2)
-          !else if (m.gt.(bz*(L/2))) then
-          !  kx = m
-          !  do while (kx.gt.bz*(L/2))
-          !    kx = kx - bz*(L/2)
-          !  end do
-          !  kx = kx + 1 + bz*(L/2)
-          !else
-          !  kx = m + 1 + (bz*(L/2))
-          !end if
-
           s_perp(i,j) = (1 - kx_float*kx_float*norm_k) *   real(s_ab(1,1,kx,ky))+&
                         ((-1)*kx_float*ky_float*norm_k) *  real(s_ab(1,2,kx,ky))+&
                         ((-1)*ky_float*kx_float*norm_k) *  real(s_ab(2,1,kx,ky))+&
@@ -262,69 +623,22 @@ module output
                              (ky_float*kx_float*norm_k)*real(s_ab_rot(2,1,kx,ky))+&
                              (ky_float*ky_float*norm_k)*real(s_ab_rot(2,2,kx,ky))
 
-          ! write(*,'(6i4.2,5f18.8)') p,m,kx,ky,i,j,&
-          ! real(s_ab(1,1,kx,ky)),real(s_ab(1,2,kx,ky)),&
-          ! real(s_ab(2,1,kx,ky)),real(s_ab(2,2,kx,ky)),&
-          ! s_perp(i,j)
-
-          ! s_perp(i,j) = real((1 - kx_float*kx_float*norm_k) *   s_ab(1,1,kx,ky)+&
-          !               ((-1)*kx_float*ky_float*norm_k) *  s_ab(1,2,kx,ky)+&
-          !               ((-1)*ky_float*kx_float*norm_k) *  s_ab(2,1,kx,ky)+&
-          !               (1 - ky_float*ky_float*norm_k) *   s_ab(2,2,kx,ky))
-
-          ! s_perp_irrot(i,j) = real((1 - kx_float*kx_float*norm_k) *  s_ab_irrot(1,1,kx,ky)+&
-          !                 ((-1)*kx_float*ky_float*norm_k) *     s_ab_irrot(1,2,kx,ky)+&
-          !                 ((-1)*ky_float*kx_float*norm_k) *     s_ab_irrot(2,1,kx,ky)+&
-          !                 (1 - ky_float*ky_float*norm_k) *      s_ab_irrot(2,2,kx,ky))
-
-          ! s_perp_rot(i,j) = real((1 - kx_float*kx_float*norm_k) * s_ab_rot(1,1,kx,ky)+&
-          !                 ((-1)*kx_float*ky_float*norm_k) *  s_ab_rot(1,2,kx,ky)+&
-          !                 ((-1)*ky_float*kx_float*norm_k) *  s_ab_rot(2,1,kx,ky)+&
-          !                 (1 - ky_float*ky_float*norm_k) *   s_ab_rot(2,2,kx,ky))
-
-          ! s_par(i,j) = real((kx_float*kx_float*norm_k) *   s_ab(1,1,kx,ky)+&
-          !                (kx_float*ky_float*norm_k) * s_ab(1,2,kx,ky)+&
-          !                (ky_float*kx_float*norm_k) * s_ab(2,1,kx,ky)+&
-          !                (ky_float*ky_float*norm_k) * s_ab(2,2,kx,ky))
-
-          ! s_par_irrot(i,j) = real((kx_float*kx_float*norm_k)*  s_ab_irrot(1,1,kx,ky)+&
-          !                      (kx_float*ky_float*norm_k)*s_ab_irrot(1,2,kx,ky)+&
-          !                      (ky_float*kx_float*norm_k)*s_ab_irrot(2,1,kx,ky)+&
-          !                      (ky_float*ky_float*norm_k)*s_ab_irrot(2,2,kx,ky))
-
-          ! s_par_rot(i,j) = real((kx_float*kx_float*norm_k)*  s_ab_rot(1,1,kx,ky)+&
-          !                    (kx_float*ky_float*norm_k)*s_ab_rot(1,2,kx,ky)+&
-          !                    (ky_float*kx_float*norm_k)*s_ab_rot(2,1,kx,ky)+&
-          !                    (ky_float*ky_float*norm_k)*s_ab_rot(2,2,kx,ky))
-
         end do
       end do ! end p, m loops
 
       open(unit=10, file=dir_st_file)
       open(unit=11, file=dir_dist_file)
       open(unit=12, file=charge_st_file)
-      open(unit=13, file=field_st_file)
       open(unit=14, file=s_ab_file)
       open(unit=15, file=s_perp_file)
-      open(unit=16, file=irrot_field_file)
       open(unit=17, file=irrot_sab_file)
       open(unit=18, file=irrot_sperp_file)
-      open(unit=19, file=rot_field_file)
       open(unit=20, file=rot_sab_file)
       open(unit=21, file=rot_sperp_file)
       open(unit=22, file=spar_file)
       open(unit=23, file=irrot_spar_file)
       open(unit=24, file=rot_spar_file)
       open(unit=25, file=avg_field_file)
-
-      ! possible normalisation thing, not sure yet
-      ! s_perp = s_perp * L**2
-      ! s_perp_rot = s_perp_rot * L**2
-      ! s_perp_irrot = s_perp_irrot * L**2
-      ! s_par = s_par * L**2
-      ! s_par_rot = s_par_rot * L**2
-      ! s_par_irrot = s_par_irrot * L**2
-
 
       open  (30, file=sphe_sus_file, position='append')
       write (30, '(a)') "# S_ab integrals (* L**2)!"
@@ -377,11 +691,6 @@ module output
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
             charge_struc(i,j)
 
-            ! write (13, struc_format_string)&
-            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            ! field_struc(i,j)
-
             write (14, field_format_string)&
             2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
@@ -390,11 +699,6 @@ module output
             real(s_ab(2,1,i,j)),&
             real(s_ab(2,2,i,j))
 
-            ! write (16, struc_format_string)&
-            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            ! field_struc_irrot(i,j)
-
             write (17, field_format_string)&
             2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
             2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
@@ -402,11 +706,6 @@ module output
             real(s_ab_irrot(1,2,i,j)),&
             real(s_ab_irrot(2,1,i,j)),&
             real(s_ab_irrot(2,2,i,j))
-
-            ! write (19, struc_format_string)&
-            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            ! field_struc_rot(i,j)
 
             write (20,field_format_string)&
             2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
@@ -453,13 +752,10 @@ module output
 
       close(10)
       close(12)
-      close(13)
       close(14)
       close(15)
-      close(16)
       close(17)
       close(18)
-      close(19)
       close(20)
       close(21)
       close(22)
