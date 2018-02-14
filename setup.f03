@@ -16,6 +16,7 @@ module setup
     allocate(pos(L))
     allocate(neg(L))
     allocate(v_avg(L,L))
+
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
     allocate(e_irrot_avg(2,L,L))
@@ -31,6 +32,10 @@ module setup
     allocate(lgf(L,L,L,L))
     allocate(fw(L,(bz*L)+1))
     allocate(hw(L,(bz*L)+1))
+
+    allocate(theta(L,L))
+    allocate(top_x(L,L))
+    allocate(top_y(L,L))
 
     call PBCs
 
@@ -107,6 +112,14 @@ module setup
 
       if (charge_gen.eq."RANDOM") then
 
+        do i = 1, L
+          do j = 1, L
+            theta(i,j) = pi * (rand() -0.5)
+          end do
+        end do
+
+        n = 0
+
         do while (n.lt.add_charges)
 
           ! pick a random position, check if there's a charge there
@@ -130,6 +143,11 @@ module setup
 
       else if (charge_gen.eq."DIPOLE") then
 
+        do i = 1, L
+          do j = 1, L
+            theta(i,j) = 0.0
+          end do
+        end do
         do while (n.lt.add_charges)
 
           i = int(rand() * L) + 1

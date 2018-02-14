@@ -26,6 +26,7 @@ module common
 
   real(kind=8), public :: q, lambda, volume, temp, beta, u_tot, eps_0,&
   bin_size, rot_delt, g0, rot_ratio, g_ratio, hop_ratio, g_thr
+  real(kind=8), dimension(:,:), allocatable, public :: theta, top_x, top_y
   real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
   real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
   real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&

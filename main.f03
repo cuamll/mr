@@ -207,13 +207,16 @@ subroutine mc_sweep
 
   ! call harm_fluct(int(L**2 * hop_ratio))
 
-  call hop(int(L**2 * hop_ratio))
+  ! this already does L^2 attempts, holdover from Michael's code
+  call markov_chain_HXY
 
-  call rot(int(L**2 * rot_ratio))
+  ! call hop(int(L**2 * hop_ratio))
 
-  if (glob.eq.1) then
-    call harm(int(L**2 * g_ratio))
-  end if
+  ! call rot(int(L**2 * rot_ratio))
+
+  ! if (glob.eq.1) then
+  !   call harm(int(L**2 * g_ratio))
+  ! end if
 
 end subroutine mc_sweep
 
