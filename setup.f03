@@ -33,13 +33,9 @@ module setup
     allocate(fw(L,(bz*L)+1))
     allocate(hw(L,(bz*L)+1))
 
-    allocate(theta(L,L))
-    allocate(top_x(L,L))
-    allocate(top_y(L,L))
-
     call PBCs
 
-    v_avg = 0.0; rho_avg = 0.0; runtot = 0.0
+    v_avg = 0.0; rho_avg = 0.0; runtot = 0.0;
     avg_field_total = 0.0; avg_field_rot = 0.0; avg_field_irrot = 0.0
     e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0
     ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
@@ -73,6 +69,11 @@ module setup
     allocate(v(L,L))
     allocate(e_field(2,L,L))
     allocate(mnphi(2,L,L))
+    allocate(theta(L,L))
+    allocate(top_x(L,L))
+    allocate(top_y(L,L))
+
+    top_x = 0.0; top_y = 0.0; theta = 0.0
 
     v = 0;
     ebar = 0.0;
@@ -85,6 +86,9 @@ module setup
     deallocate(v)
     deallocate(e_field)
     deallocate(mnphi)
+    deallocate(theta)
+    deallocate(top_x)
+    deallocate(top_y)
 
   end subroutine deallocations
 
@@ -143,6 +147,7 @@ module setup
 
       else if (charge_gen.eq."DIPOLE") then
 
+        ! ferromagnetic, i guess
         do i = 1, L
           do j = 1, L
             theta(i,j) = 0.0

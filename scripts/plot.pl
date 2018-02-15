@@ -42,7 +42,7 @@ my $outpath = "$dir/plots";
 make_path($outpath);
 my $tempsuffix = '.temp';
 
-my $mpi_np = 32;
+my $mpi_np = 1;
 my $steps = $mpi_np * $parameters{no_samples} * $parameters{measurement_sweeps};
 my $meas = $steps / $parameters{sample_interval};
 my $steps_c = commify($steps);
@@ -121,6 +121,10 @@ for my $i (0..$#filenames) {
   if ($file =~ /s_([a-z]+)_([a-z]+)/) {
     my $s_component = $1;
     my $field_component = $2;
+
+    if ($field_component =~ /rot/) {
+      $field_component = qq(\\theta \\theta);
+    }
 
     if ($s_component =~ /xx/) {
       $s_string = qq(\$ S^{xx}_{$field_component} \$);

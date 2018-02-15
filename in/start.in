@@ -19,15 +19,12 @@ charge_generation RANDOM
 direct_space_structure_factor_file    out/s_direct.dat
 direct_space_g(r)_file                out/dir_dist.dat
 charge_structure_factor_file          out/s_charge.dat
-total_field_structure_factor_file     out/s_xx_total.dat
 total_s^(alpha_beta)_file             out/s_ab_total.dat
 total_s_(perp)_file                   out/s_perp_total.dat
 total_s_(par)_file                    out/s_par_total.dat
-irrot_field_structure_factor_file     out/s_xx_irrot.dat
 irrot_s^(alpha_beta)_file             out/s_ab_irrot.dat
 irrot_s_(perp)_file                   out/s_perp_irrot.dat
 irrot_s_(par)_file                    out/s_par_irrot.dat
-rot_field_structure_factor_file       out/s_xx_rot.dat
 rot_s^(alpha_beta)_file               out/s_ab_rot.dat
 rot_s_(perp)_file                     out/s_perp_rot.dat
 rot_s_(par)_file                      out/s_par_rot.dat

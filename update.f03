@@ -15,76 +15,6 @@ module update
      real(kind=8) :: top1old, top2old, top3old, top4old,&
             top1new, top2new, top3new, top4new
 
-     do n = 1, L**2
-        i = int(rand() * L) + 1
-        j = int(rand() * L) + 1
-
-        thetaOld = theta(i,j)
-        ! deltaTheta = 2. * proposalInterval * (rand() - 0.5)
-        deltaTheta = 2. * rot_delt * (rand() - 0.5)
-        thetaNew = thetaOld + deltaTheta
-        if (thetaNew .le. -pi) then
-           thetaNew = thetaNew + twopi
-        else if (thetaNew .gt. pi) then
-           thetaNew = thetaNew - twopi
-        end if
-
-        ! CALL OLD EMERGENT FIELD
-
-        top1old = top_x(i,j)
-        top2old = top_y(i,j)
-        top3old = top_x(i,pos(j))
-        top4old = top_y(pos(i),j)
-
-        ! PROPOSED EMERGENT FIELD
-
-        top1new = theta(i,pos(j)) - thetanew
-        if (top1new .gt. pi) then
-           top1new = top1new - twopi
-        else if (top1new .le. -pi) then
-           top1new = top1new + twopi
-        end if
-
-        top2new = - (theta(pos(i),j) - thetanew)
-        if (top2new .gt. pi) then
-           top2new = top2new-twopi
-        else if (top2new .le. -pi) then
-           top2new = top2new + twopi
-        end if
-
-        top3new = thetanew - theta(i,neg(j))
-        if (top3new .gt. pi) then
-           top3new = top3new - twopi
-        else if (top3new .le. -pi) then
-           top3new = top3new + twopi
-        end if
-
-        top4new = - (thetanew - theta(neg(i),j))
-        if (top4new .gt. pi) then
-           top4new = top4new - twopi
-        else if (top4new .le. -pi) then
-           top4new = top4new + twopi
-        end if
-
-        ! METROPOLIS FILTER
-
-        Uold = 0.5 * (top1old**2 + top2old**2 + top3old**2 + top4old**2)
-        Unew = 0.5 * (top1new**2 + top2new**2 + top3new**2 + top4new**2)
-        deltaU = Unew - Uold
-
-        attempts(6) = attempts(6) + 1
-
-        if ((deltaU .lt. 0.0) .or. (exp(- beta * deltaU) .gt. rand())) then
-           theta(i,j) = thetaNew
-           top_x(i,j) = top1new
-           top_y(i,j) = top2new
-           top_x(i,pos(j)) = top3new
-           top_y(pos(i),j) = top4new
-           ! uses same place as harm_fluct from below; not a problem atm
-           accepts(6) = accepts(6) + 1
-        end if
-     end do
-
      ! OPPOSITE GRADIENT DIRECTION
      ! do n = 1, L**2
      !    i = int(rand() * L) + 1
@@ -109,28 +39,28 @@ module update
 
      !    ! PROPOSED EMERGENT FIELD
 
-     !    top1new = thetanew - theta(i,neg(j))
+     !    top1new = theta(i,pos(j)) - thetanew
      !    if (top1new .gt. pi) then
      !       top1new = top1new - twopi
      !    else if (top1new .le. -pi) then
      !       top1new = top1new + twopi
      !    end if
 
-     !    top2new = - (thetanew - theta(neg(i),j))
+     !    top2new = - (theta(pos(i),j) - thetanew)
      !    if (top2new .gt. pi) then
      !       top2new = top2new-twopi
      !    else if (top2new .le. -pi) then
      !       top2new = top2new + twopi
      !    end if
 
-     !    top3new = theta(i,pos(j)) - thetanew
+     !    top3new = thetanew - theta(i,neg(j))
      !    if (top3new .gt. pi) then
      !       top3new = top3new - twopi
      !    else if (top3new .le. -pi) then
      !       top3new = top3new + twopi
      !    end if
 
-     !    top4new = - (theta(pos(i),j) - thetanew)
+     !    top4new = - (thetanew - theta(neg(i),j))
      !    if (top4new .gt. pi) then
      !       top4new = top4new - twopi
      !    else if (top4new .le. -pi) then
@@ -155,6 +85,77 @@ module update
      !       accepts(6) = accepts(6) + 1
      !    end if
      ! end do
+
+     ! ORIGINAL GRADIENT DIRECTION
+     do n = 1, L**2
+        i = int(rand() * L) + 1
+        j = int(rand() * L) + 1
+
+        thetaOld = theta(i,j)
+        ! deltaTheta = 2. * proposalInterval * (rand() - 0.5)
+        deltaTheta = 2. * rot_delt * (rand() - 0.5)
+        thetaNew = thetaOld + deltaTheta
+        if (thetaNew .le. -pi) then
+           thetaNew = thetaNew + twopi
+        else if (thetaNew .gt. pi) then
+           thetaNew = thetaNew - twopi
+        end if
+
+        ! CALL OLD EMERGENT FIELD
+
+        top1old = top_x(i,j)
+        top2old = top_y(i,j)
+        top3old = top_x(i,pos(j))
+        top4old = top_y(pos(i),j)
+
+        ! PROPOSED EMERGENT FIELD
+
+        top1new = thetanew - theta(i,neg(j))
+        if (top1new .gt. pi) then
+           top1new = top1new - twopi
+        else if (top1new .le. -pi) then
+           top1new = top1new + twopi
+        end if
+
+        top2new = - (thetanew - theta(neg(i),j))
+        if (top2new .gt. pi) then
+           top2new = top2new-twopi
+        else if (top2new .le. -pi) then
+           top2new = top2new + twopi
+        end if
+
+        top3new = theta(i,pos(j)) - thetanew
+        if (top3new .gt. pi) then
+           top3new = top3new - twopi
+        else if (top3new .le. -pi) then
+           top3new = top3new + twopi
+        end if
+
+        top4new = - (theta(pos(i),j) - thetanew)
+        if (top4new .gt. pi) then
+           top4new = top4new - twopi
+        else if (top4new .le. -pi) then
+           top4new = top4new + twopi
+        end if
+
+        ! METROPOLIS FILTER
+
+        Uold = 0.5 * eps_0 * (top1old**2 + top2old**2 + top3old**2 + top4old**2)
+        Unew = 0.5 * eps_0 * (top1new**2 + top2new**2 + top3new**2 + top4new**2)
+        deltaU = Unew - Uold
+
+        attempts(6) = attempts(6) + 1
+
+        if ((deltaU .lt. 0.0) .or. (exp(- beta * deltaU) .gt. rand())) then
+           theta(i,j) = thetaNew
+           top_x(i,j) = top1new
+           top_y(i,j) = top2new
+           top_x(i,pos(j)) = top3new
+           top_y(pos(i),j) = top4new
+           ! uses same place as harm_fluct from below; not a problem atm
+           accepts(6) = accepts(6) + 1
+        end if
+     end do
 
      return
     end subroutine markov_chain_HXY
@@ -434,9 +435,11 @@ module update
       integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
       real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
       real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
+      real(kind=8) :: theta_x, theta_y
       real(kind=8), dimension(2,L,L) :: e_rot
       complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
       complex(kind=rk) :: e_kx_temp, e_ky
+      complex(kind=rk) :: theta_kx, theta_ky
       complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
       complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
       complex(kind=rk) :: imag, kdotx
@@ -546,7 +549,8 @@ module update
 
         !$omp parallel do num_threads(2)&
         !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
-        !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
+        !$omp& mnphi_kx_temp,e_rot_kx_temp,theta_x,theta_y,&
+        !$omp& theta_kx,theta_ky,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
         do omp_index = 1, L**2
 
@@ -560,16 +564,15 @@ module update
           kx = i + L
           ky = j + L
 
-          rho_k_p_temp = (0.0,0.0)
-          rho_k_m_temp = (0.0,0.0)
-          e_kx_temp = (0.0,0.0)
-          mnphi_kx_temp = (0.0,0.0)
-          e_rot_kx_temp = (0.0,0.0)
-          e_ky = (0.0,0.0)
-          mnphi_ky = (0.0,0.0)
-          e_rot_ky = (0.0,0.0)
-          kdotx = (0.0,0.0)
+          rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
+          mnphi_kx_temp = (0.0,0.0); mnphi_ky = (0.0,0.0)
+          e_rot_kx_temp = (0.0,0.0); e_rot_ky = (0.0,0.0)
           norm_k = 0.0
+
+          e_kx_temp = (0.0,0.0); e_ky = (0.0,0.0)
+          kdotx = (0.0,0.0)
+          theta_x = 0.0; theta_y = 0.0
+          theta_kx = (0.0,0.0); theta_ky = (0.0,0.0)
 
           if (kx.eq.0.and.ky.eq.0) then
             norm_k = 0.0
@@ -583,7 +586,8 @@ module update
 
               ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
               !         ((p)*ky)))
-              kdotx = hw(m,i) + fw(p,j)
+              ! kdotx = hw(m,i) + fw(p,j)
+              kdotx = fw(m,i) + hw(p,j)
 
               ! e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
               ! mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
@@ -592,7 +596,8 @@ module update
 
               ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
               !         ((neg(p)+(1.0/2))*ky)))
-              kdotx = fw(m,i) + hw(p,j)
+              ! kdotx = fw(m,i) + hw(p,j)
+              kdotx = hw(m,i) + fw(p,j)
 
               ! e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p)
               ! e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
@@ -604,9 +609,12 @@ module update
               !   ! FT of charge distribution
               !   ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
               !   !         ((p)*ky/(L*lambda))))
-              !   kdotx = fw(m,i) + fw(p,j)
-
-              !   if (v(m,p).eq.-1) then
+              kdotx = fw(m,i) + fw(p,j)
+              theta_x = cos(theta(m,p))
+              theta_y = sin(theta(m,p))
+              theta_kx = theta_kx + exp(kdotx) * theta_x
+              theta_ky = theta_ky + exp(kdotx) * theta_y
+               
               !     rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
               !   end if
 
@@ -645,6 +653,8 @@ module update
           ! rho_k_m_temp = rho_k_m_temp / float(L**2)
           e_kx_temp = e_kx_temp / float(L**2)
           e_ky = e_ky / float(L**2)
+          theta_kx = theta_kx / float(L**2)
+          theta_ky = theta_ky / float(L**2)
           ! mnphi_kx_temp = mnphi_kx_temp / float(L**2)
           ! mnphi_ky = mnphi_ky / float(L**2)
           ! e_rot_kx_temp = e_rot_kx_temp / float(L**2)
@@ -686,6 +696,15 @@ module update
           e_ky*conjg(e_kx_temp)
           s_ab(2,2,kx,ky) = s_ab(2,2,kx,ky) +&
           e_ky*conjg(e_ky)
+
+          s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
+          theta_kx*conjg(theta_kx)
+          s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
+          theta_kx*conjg(theta_ky)
+          s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
+          theta_ky*conjg(theta_kx)
+          s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
+          theta_ky*conjg(theta_ky)
 
           ! s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
           ! e_rot_kx_temp*conjg(e_rot_kx_temp)
