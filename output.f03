@@ -91,23 +91,23 @@ module output
           s_ab_rot(1,1,L+1,(bz*L)+1)        = s_ab_rot(1,1,L+1,L+1)
           s_ab_rot(1,1,(bz*L)+1,(bz*L)+1)   = s_ab_rot(1,1,L+1,L+1)
 
-          s_ab_rot(1,2,1,1)                 = (-1) * s_ab_rot(1,2,L+1,L+1)
-          s_ab_rot(1,2,L+1,1)               = (-1) * s_ab_rot(1,2,L+1,L+1)
-          s_ab_rot(1,2,(bz*L)+1,1)          = (-1) * s_ab_rot(1,2,L+1,L+1)
-          s_ab_rot(1,2,1,L+1)               = (-1) * s_ab_rot(1,2,L+1,L+1)
-          s_ab_rot(1,2,1,(bz*L)+1)          = (-1) * s_ab_rot(1,2,L+1,L+1)
-          s_ab_rot(1,2,(bz*L)+1,L+1)        = (-1) * s_ab_rot(1,2,L+1,L+1)
-          s_ab_rot(1,2,L+1,(bz*L)+1)        = (-1) * s_ab_rot(1,2,L+1,L+1)
-          s_ab_rot(1,2,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,1,1)                 = (+1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,L+1,1)               = (+1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,(bz*L)+1,1)          = (+1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,1,L+1)               = (+1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,1,(bz*L)+1)          = (+1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,(bz*L)+1,L+1)        = (+1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,L+1,(bz*L)+1)        = (+1) * s_ab_rot(1,2,L+1,L+1)
+          s_ab_rot(1,2,(bz*L)+1,(bz*L)+1)   = (+1) * s_ab_rot(1,2,L+1,L+1)
 
-          s_ab_rot(2,1,1,1)                 = (-1) * s_ab_rot(2,1,L+1,L+1)
-          s_ab_rot(2,1,L+1,1)               = (-1) * s_ab_rot(2,1,L+1,L+1)
-          s_ab_rot(2,1,(bz*L)+1,1)          = (-1) * s_ab_rot(2,1,L+1,L+1)
-          s_ab_rot(2,1,1,L+1)               = (-1) * s_ab_rot(2,1,L+1,L+1)
-          s_ab_rot(2,1,1,(bz*L)+1)          = (-1) * s_ab_rot(2,1,L+1,L+1)
-          s_ab_rot(2,1,(bz*L)+1,L+1)        = (-1) * s_ab_rot(2,1,L+1,L+1)
-          s_ab_rot(2,1,L+1,(bz*L)+1)        = (-1) * s_ab_rot(2,1,L+1,L+1)
-          s_ab_rot(2,1,(bz*L)+1,(bz*L)+1)   = (-1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,1,1)                 = (+1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,L+1,1)               = (+1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,(bz*L)+1,1)          = (+1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,1,L+1)               = (+1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,1,(bz*L)+1)          = (+1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,(bz*L)+1,L+1)        = (+1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,L+1,(bz*L)+1)        = (+1) * s_ab_rot(2,1,L+1,L+1)
+          s_ab_rot(2,1,(bz*L)+1,(bz*L)+1)   = (+1) * s_ab_rot(2,1,L+1,L+1)
 
           s_ab_rot(2,2,1,1)                 = s_ab_rot(2,2,L+1,L+1)
           s_ab_rot(2,2,L+1,1)               = s_ab_rot(2,2,L+1,L+1)
@@ -206,28 +206,28 @@ module output
 
           ! s_ab_rot
           s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i,j) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i,j) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i+L,j) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i+L,j) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i+L,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i+L,j) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i+2*L,j) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i+2*L,j) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i+2*L,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i+2*L,j) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+2*L,j) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i+2*L,j) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i,j+L) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i,j+L) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i,j+L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+L) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+L) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i,j+L) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i+2*L,j+L) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i+2*L,j+L) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i+2*L,j+L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i+2*L,j+L) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+2*L,j+L) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i+2*L,j+L) = s_ab_rot(2,2,i+L,j+L)
 
           ! s_ab_irrot
@@ -306,28 +306,28 @@ module output
 
           ! s_ab_rot
           s_ab_rot(1,1,i,j) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i,j) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i,j) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i,j+L) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i,j+L) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i,j+L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+L) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+L) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i,j+L) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i,j+2*L) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i,j+2*L) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i,j+2*L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+2*L) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+2*L) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i,j+2*L) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i+L,j) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i+L,j) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i+L,j) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i+L,j) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i+L,j+2*L) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i+L,j+2*L) = -1 * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i+L,j+2*L) = -1 * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j+2*L) = +1 * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j+2*L) = +1 * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i+L,j+2*L) = s_ab_rot(2,2,i+L,j+L)
 
           ! s_ab_irrot
@@ -384,13 +384,13 @@ module output
           s_ab_rot(2,2,i,j) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i+L,j) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i+L,j) = (-1) * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i+L,j) = (-1) * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i+L,j) = (+1) * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i+L,j) = (+1) * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i+L,j) = s_ab_rot(2,2,i+L,j+L)
 
           s_ab_rot(1,1,i,j+L) = s_ab_rot(1,1,i+L,j+L)
-          s_ab_rot(1,2,i,j+L) = (-1) * s_ab_rot(1,2,i+L,j+L)
-          s_ab_rot(2,1,i,j+L) = (-1) * s_ab_rot(2,1,i+L,j+L)
+          s_ab_rot(1,2,i,j+L) = (+1) * s_ab_rot(1,2,i+L,j+L)
+          s_ab_rot(2,1,i,j+L) = (+1) * s_ab_rot(2,1,i+L,j+L)
           s_ab_rot(2,2,i,j+L) = s_ab_rot(2,2,i+L,j+L)
 
           ! s_ab_irrot

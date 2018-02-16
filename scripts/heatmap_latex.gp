@@ -18,6 +18,10 @@ if (exists("PITICS")) {
   set format y '%.0P'
 }
 
+if (exists("LOG")) {
+  set logscale cb
+}
+
 # We have to add 0 to COLUMN, otherwise it's read as a string
 COLUMN = COLUMN + 0
 
