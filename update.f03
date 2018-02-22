@@ -547,7 +547,7 @@ module update
       if (do_corr) then
         n = step_number / sample_interval
 
-        !$omp parallel do num_threads(2)&
+        !$omp parallel do&
         !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
         !$omp& mnphi_kx_temp,e_rot_kx_temp,theta_x,theta_y,&
         !$omp& theta_kx,theta_ky,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
