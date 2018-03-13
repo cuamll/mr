@@ -9,7 +9,7 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
-use JSON::MaybeXS qw(encode_json decode_json);
+# use JSON::MaybeXS qw(encode_json decode_json);
 use Data::Dumper qw(Dumper);
 
 my $row;
@@ -137,7 +137,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
           print "Creating directory $stampdir .\n";
           make_path($stampdir);
           $parameters{stamp} = "$stamp";
-          my $parameters_json = create_json(%parameters);
+          # my $parameters_json = create_json(%parameters);
 
           if ($doplots) {
             print "Creating directory $stampdir/plots .\n";
@@ -168,10 +168,10 @@ for( my $i = 0; $i < @temperatures; $i++) {
           }
           close $fh;
 
-          write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
-          # keep a list of every run and its parameters
-          my $jsondb = "$logdir/db.json";
-          write_to_file($jsondb, "$parameters_json\n", "append");
+          # write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
+          # # keep a list of every run and its parameters
+          # my $jsondb = "$logdir/db.json";
+          # write_to_file($jsondb, "$parameters_json\n", "append");
 
           # generate job file
           my $genjobfile = 0;
@@ -306,14 +306,14 @@ sub get_parameters {
 
 }
 
-sub create_json {
+# sub create_json {
 
-  # print "\ncreate_json\n";
-  my %input = @_;
-  my $json = encode_json[%input];
-  return $json;
+#   # print "\ncreate_json\n";
+#   my %input = @_;
+#   my $json = encode_json[%input];
+#   return $json;
 
-}
+# }
 
 sub write_to_file {
 
