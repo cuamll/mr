@@ -1259,7 +1259,7 @@ module output
       sum(real(chi_ab_rot(1,2,:,:,:))), sum(real(chi_ab_irrot(1,2,:,:,:)))
       write (30, '(a)') "# Chi_xz: total, rot, irrot"
       write (30, '(3f20.8)') sum(real(chi_ab(1,3,:,:,:))),&
-      sum(real(chi_ab_rot(1,3,:,:,:))), sum(real(chi_ab_irrot(1,2,:,:,:)))
+      sum(real(chi_ab_rot(1,3,:,:,:))), sum(real(chi_ab_irrot(1,3,:,:,:)))
       write (30, '(a)') "# Chi_yx: total, rot, irrot"
       write (30, '(3f20.8)') sum(real(chi_ab(2,1,:,:,:))),&
       sum(real(chi_ab_rot(2,1,:,:,:))), sum(real(chi_ab_irrot(2,1,:,:,:)))
@@ -1271,7 +1271,7 @@ module output
       sum(real(chi_ab_rot(2,3,:,:,:))), sum(real(chi_ab_irrot(2,3,:,:,:)))
       write (30, '(a)') "# Chi_zx: total, rot, irrot"
       write (30, '(3f20.8)') sum(real(chi_ab(3,1,:,:,:))),&
-      sum(real(chi_ab_rot(3,1,:,:,:))), sum(real(chi_ab_irrot(2,1,:,:,:)))
+      sum(real(chi_ab_rot(3,1,:,:,:))), sum(real(chi_ab_irrot(3,1,:,:,:)))
       write (30, '(a)') "# Chi_zy: total, rot, irrot"
       write (30, '(3f20.8)') sum(real(chi_ab(3,2,:,:,:))),&
       sum(real(chi_ab_rot(3,2,:,:,:))), sum(real(chi_ab_irrot(3,2,:,:,:)))
