@@ -871,6 +871,8 @@ module output
     s_par_irrot, s_par_rot
     real(kind=rk), dimension((bz*L)+1,(bz*L)+1,(bz*L)+1) :: charge_struc,&
     field_struc, field_struc_irrot, field_struc_rot
+    real(kind=rk), dimension(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1) :: chi_ab,&
+    chi_ab_rot, chi_ab_irrot
     character(100) :: struc_format_string, field_format_string,&
     vertex_format, avg_field_format,dir_format_string, dir_dist_format_string
 
@@ -969,6 +971,10 @@ module output
       s_ab = s_ab * L**3
       s_ab_rot = s_ab_rot * L**3
       s_ab_irrot = s_ab_irrot * L**3
+
+      chi_ab = s_ab / temp
+      chi_ab_rot = s_ab_rot / temp
+      chi_ab_irrot = s_ab_irrot / temp
 
       do s = (-L/2)*sp,(L/2)*sp
         do p = (-L/2)*sp,(L/2)*sp
@@ -1198,6 +1204,9 @@ module output
       open(unit=10, file=dir_st_file)
       open(unit=11, file=dir_dist_file)
       open(unit=25, file=avg_field_file)
+      open(unit=26, file=chi_ab_file)
+      open(unit=27, file=rot_chi_ab_file)
+      open(unit=28, file=irrot_chi_ab_file)
 
       ! possible normalisation thing, not sure yet
       ! s_perp = s_perp * L**2
@@ -1211,34 +1220,66 @@ module output
       open  (30, file=sphe_sus_file, position='append')
       write (30, '(a)') "# S_ab integrals (* L**2)!"
       write (30, '(a)') "# S_xx: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(1,1,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(1,1,:,:,:))),&
       sum(real(s_ab_rot(1,1,:,:,:))), sum(real(s_ab_irrot(1,1,:,:,:)))
       write (30, '(a)') "# S_xy: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(1,2,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(1,2,:,:,:))),&
       sum(real(s_ab_rot(1,2,:,:,:))), sum(real(s_ab_irrot(1,2,:,:,:)))
       write (30, '(a)') "# S_xz: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(1,3,:,:,:))),&
-      sum(real(s_ab_rot(1,2,:,:,:))), sum(real(s_ab_irrot(1,2,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab(1,3,:,:,:))),&
+      sum(real(s_ab_rot(1,3,:,:,:))), sum(real(s_ab_irrot(1,2,:,:,:)))
       write (30, '(a)') "# S_yx: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(2,1,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(2,1,:,:,:))),&
       sum(real(s_ab_rot(2,1,:,:,:))), sum(real(s_ab_irrot(2,1,:,:,:)))
       write (30, '(a)') "# S_yy: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(2,2,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(2,2,:,:,:))),&
       sum(real(s_ab_rot(2,2,:,:,:))), sum(real(s_ab_irrot(2,2,:,:,:)))
       write (30, '(a)') "# S_yz: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(2,3,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(2,3,:,:,:))),&
       sum(real(s_ab_rot(2,3,:,:,:))), sum(real(s_ab_irrot(2,3,:,:,:)))
       write (30, '(a)') "# S_zx: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(3,1,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(3,1,:,:,:))),&
       sum(real(s_ab_rot(3,1,:,:,:))), sum(real(s_ab_irrot(2,1,:,:,:)))
       write (30, '(a)') "# S_zy: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(3,2,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(3,2,:,:,:))),&
       sum(real(s_ab_rot(3,2,:,:,:))), sum(real(s_ab_irrot(3,2,:,:,:)))
       write (30, '(a)') "# S_zz: total, rot, irrot"
-      write (30, '(3f18.10)') sum(real(s_ab(3,3,:,:,:))),&
+      write (30, '(3f20.8)') sum(real(s_ab(3,3,:,:,:))),&
       sum(real(s_ab_rot(3,3,:,:,:))), sum(real(s_ab_irrot(3,3,:,:,:)))
       write (30, '(a)') "# S_perp integrals: total, rot, irrot"
-      write (30, '(3f18.10)') sum(s_perp), sum(s_perp_rot), sum(s_perp_irrot)
+      write (30, '(3f20.8)') sum(s_perp), sum(s_perp_rot), sum(s_perp_irrot)
+
+
+      write (30, '(a)') "# Chi_ab integrals (s_ab / temp)!"
+      write (30, '(a)') "# Chi_xx: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(1,1,:,:,:))),&
+      sum(real(chi_ab_rot(1,1,:,:,:))), sum(real(chi_ab_irrot(1,1,:,:,:)))
+      write (30, '(a)') "# Chi_xy: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(1,2,:,:,:))),&
+      sum(real(chi_ab_rot(1,2,:,:,:))), sum(real(chi_ab_irrot(1,2,:,:,:)))
+      write (30, '(a)') "# Chi_xz: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(1,3,:,:,:))),&
+      sum(real(chi_ab_rot(1,3,:,:,:))), sum(real(chi_ab_irrot(1,2,:,:,:)))
+      write (30, '(a)') "# Chi_yx: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(2,1,:,:,:))),&
+      sum(real(chi_ab_rot(2,1,:,:,:))), sum(real(chi_ab_irrot(2,1,:,:,:)))
+      write (30, '(a)') "# Chi_yy: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(2,2,:,:,:))),&
+      sum(real(chi_ab_rot(2,2,:,:,:))), sum(real(chi_ab_irrot(2,2,:,:,:)))
+      write (30, '(a)') "# Chi_yz: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(2,3,:,:,:))),&
+      sum(real(chi_ab_rot(2,3,:,:,:))), sum(real(chi_ab_irrot(2,3,:,:,:)))
+      write (30, '(a)') "# Chi_zx: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(3,1,:,:,:))),&
+      sum(real(chi_ab_rot(3,1,:,:,:))), sum(real(chi_ab_irrot(2,1,:,:,:)))
+      write (30, '(a)') "# Chi_zy: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(3,2,:,:,:))),&
+      sum(real(chi_ab_rot(3,2,:,:,:))), sum(real(chi_ab_irrot(3,2,:,:,:)))
+      write (30, '(a)') "# Chi_zz: total, rot, irrot"
+      write (30, '(3f20.8)') sum(real(chi_ab(3,3,:,:,:))),&
+      sum(real(chi_ab_rot(3,3,:,:,:))), sum(real(chi_ab_irrot(3,3,:,:,:)))
+      ! write (30, '(a)') "# Chi_perp integrals: total, rot, irrot"
+      ! write (30, '(3f20.8)') sum(chi_perp), sum(chi_perp_rot), sum(chi_perp_irrot)
       close (30)
 
       !dist_r = dist_r / (no_measurements)
@@ -1295,6 +1336,20 @@ module output
               real(s_ab(3,2,i,j,k)),&
               real(s_ab(3,3,i,j,k))
 
+              write (26, field_format_string)&
+              2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+              2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+              2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
+              real(chi_ab(1,1,i,j,k)),&
+              real(chi_ab(1,2,i,j,k)),&
+              real(chi_ab(1,3,i,j,k)),&
+              real(chi_ab(2,1,i,j,k)),&
+              real(chi_ab(2,2,i,j,k)),&
+              real(chi_ab(2,3,i,j,k)),&
+              real(chi_ab(3,1,i,j,k)),&
+              real(chi_ab(3,2,i,j,k)),&
+              real(chi_ab(3,3,i,j,k))
+
               ! write (16, struc_format_string)&
               ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
               ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
@@ -1314,6 +1369,20 @@ module output
               real(s_ab_irrot(3,2,i,j,k)),&
               real(s_ab_irrot(3,3,i,j,k))
 
+              write (27, field_format_string)&
+              2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+              2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+              2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
+              real(chi_ab_irrot(1,1,i,j,k)),&
+              real(chi_ab_irrot(1,2,i,j,k)),&
+              real(chi_ab_irrot(1,3,i,j,k)),&
+              real(chi_ab_irrot(2,1,i,j,k)),&
+              real(chi_ab_irrot(2,2,i,j,k)),&
+              real(chi_ab_irrot(2,3,i,j,k)),&
+              real(chi_ab_irrot(3,1,i,j,k)),&
+              real(chi_ab_irrot(3,2,i,j,k)),&
+              real(chi_ab_irrot(3,3,i,j,k))
+
               ! write (19, struc_format_string)&
               ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
               ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
@@ -1332,6 +1401,20 @@ module output
               real(s_ab_rot(3,1,i,j,k)),&
               real(s_ab_rot(3,2,i,j,k)),&
               real(s_ab_rot(3,3,i,j,k))
+
+              write (28, field_format_string)&
+              2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+              2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+              2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
+              real(chi_ab_rot(1,1,i,j,k)),&
+              real(chi_ab_rot(1,2,i,j,k)),&
+              real(chi_ab_rot(1,3,i,j,k)),&
+              real(chi_ab_rot(2,1,i,j,k)),&
+              real(chi_ab_rot(2,2,i,j,k)),&
+              real(chi_ab_rot(2,3,i,j,k)),&
+              real(chi_ab_rot(3,1,i,j,k)),&
+              real(chi_ab_rot(3,2,i,j,k)),&
+              real(chi_ab_rot(3,3,i,j,k))
 
             end if
 
@@ -1389,6 +1472,10 @@ module output
       close(22)
       close(23)
       close(24)
+      close(25)
+      close(26)
+      close(27)
+      close(28)
 
       deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
       deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);

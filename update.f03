@@ -342,6 +342,10 @@ module update
         ebar_dip(i) = dp
         ebar_wind(i) = np
 
+        ! put harmonic term in with irrotational, following Michael's notation
+        ! e_rot(i,:,:,:) = e_rot(i,:,:,:) - (ebar(i) / L**3)
+        ! mnphi(i,:,:,:) = mnphi(i,:,:,:) + (ebar(i) / L**3)
+
         avg_field_total(i) = avg_field_total(i) +&
                              sum(abs(real(e_field(i,:,:,:))))
         avg_field_rot(i) = avg_field_rot(i) +&
@@ -387,6 +391,8 @@ module update
 
       if (do_corr) then
         n = step_number / sample_interval
+
+        !write (*,*) "Measurement",n
 
         !$omp parallel do &
         !$omp& private(i,j,k,m,p,s,kx,ky,kz,rho_k_p_temp,rho_k_m_temp,e_kx,&
@@ -533,16 +539,16 @@ module update
           !   ch_ch(kx, ky + L) = ch_ch(kx,ky)
           ! end if
 
-          ! if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
-          !   if (n.eq.1) then
-          !     open(49, file=equil_file)
-          !   else
-          !     open(49, file=equil_file, position='append')
-          !   end if
-          !   runtot = runtot + e_kx_temp*conjg(e_ky)
-          !   write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
-          !   close(49)
-          ! end if
+          if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
+            if (n.eq.1) then
+              open(49, file=equil_file)
+            else
+              open(49, file=equil_file, position='append')
+            end if
+            runtot = runtot + e_kx*conjg(e_ky)
+            write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
+            close(49)
+          end if
 
           s_ab(1,1,kx,ky,kz) = s_ab(1,1,kx,ky,kz) +&
           e_kx*conjg(e_kx)

@@ -1,14 +1,14 @@
 L 8
 omp_threads 0
 no_samples 1
-do_corr F
+do_corr T
 thermalisation_sweeps 100000
-measurement_sweeps 500000
+measurement_sweeps 250000
 sample_interval 10
 temperature 1000000.000
 lattice_spacing 1.0
 charge_value 6.283185307179586
-delta_max 0
+delta_max 1000.000
 charges 0
 rng_seed 0
 hop_ratio 1.0
@@ -31,3 +31,6 @@ irrot_s_(par)_file                    out/s_par_irrot.dat
 rot_s^(alpha_beta)_file               out/s_ab_rot.dat
 rot_s_(perp)_file                     out/s_perp_rot.dat
 rot_s_(par)_file                      out/s_par_rot.dat
+total_chi^(alpha_beta)_file           out/chi_ab_total.dat
+irrot_chi^(alpha_beta)_file           out/chi_ab_irrot.dat
+rot_chi^(alpha_beta)_file             out/chi_ab_rot.dat
