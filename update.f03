@@ -510,17 +510,18 @@ module update
 
           end do ! s
 
-          rho_k_p_temp = rho_k_p_temp / float(L**2)
-          rho_k_m_temp = rho_k_m_temp / float(L**2)
-          e_kx = e_kx / float(L**3)
-          e_ky = e_ky / float(L**3)
-          e_kz = e_kz / float(L**3)
-          mnphi_kx = mnphi_kx / float(L**3)
-          mnphi_ky = mnphi_ky / float(L**3)
-          mnphi_kz = mnphi_kz / float(L**3)
-          e_rot_kx = e_rot_kx / float(L**3)
-          e_rot_ky = e_rot_ky / float(L**3)
-          e_rot_kz = e_rot_kz / float(L**3)
+          rho_k_p_temp = rho_k_p_temp / float(L**3)
+          rho_k_m_temp = rho_k_m_temp / float(L**3)
+          ! try 3*L**3 instead of L**3 bc there are 3N field links
+          e_kx = e_kx / float(3 * L**3)
+          e_ky = e_ky / float(3 * L**3)
+          e_kz = e_kz / float(3 * L**3)
+          mnphi_kx = mnphi_kx / float(3 * L**3)
+          mnphi_ky = mnphi_ky / float(3 * L**3)
+          mnphi_kz = mnphi_kz / float(3 * L**3)
+          e_rot_kx = e_rot_kx / float(3 * L**3)
+          e_rot_ky = e_rot_ky / float(3 * L**3)
+          e_rot_kz = e_rot_kz / float(3 * L**3)
 
           rho_k_p(kx,ky,kz) = rho_k_p(kx,ky,kz) + rho_k_p_temp
           rho_k_m(kx,ky,kz) = rho_k_m(kx,ky,kz) + rho_k_m_temp
