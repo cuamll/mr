@@ -74,6 +74,11 @@ program mr
       call mc_sweep
     end do
 
+    if (verbose) then
+      write (*,'(a,i2.1,a,i3.1,a)') "Proc. ", rank,&
+        " finished thermalisation sweeps for sample ",k,"."
+    end if
+
     call cpu_time(timings(3))
 
     do i = 1,measurement_sweeps

@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 input_file = 'T_1.650_l64_sweep/s_ab_total.dat'
 s_ab_output_file = 'T_1.650_l64_sweep/s_ab_total_eig.dat'
 chi_output_file = 'T_1.650_l64_sweep/chi_ab_total_eig.dat'
@@ -33,9 +32,18 @@ for i in range(len(s_ab_tot)):
     # to ensure none of the principal axes blow up later
     s_ab_inv[i] = np.linalg.inv(s_ab_tot[i])
     chi_inv[i] = np.linalg.inv(chi_tot[i])
-    s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
+    # s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
     s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
     chi_eigvals[i], chi_eigvecs[i] = np.linalg.eig(np.linalg.inv(chi_tot[i]))
+    
+print "All s_ab eigvals positive? " + str(np.all(s_ab_eigvals >= 0.0))
+print "All chi_ab eigvals positive? " + str(np.all(chi_eigvals >= 0.0))
+
+if not np.all(s_ab_eigvals >= 0.0):
+    print "Negative eigenvalue of s_ab_inv at",np.where(s_ab_eigvals >= 0.0)
+
+if not np.all(chi_eigvals >= 0.0):
+    print "Negative eigenvalue of chi_inv at",np.where(chi_eigvals >= 0.0)
 
 np.savetxt(s_ab_output_file, np.concatenate((kvals,s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1))
 np.savetxt(chi_output_file, np.concatenate((kvals,chi_eigvals,chi_eigvecs.reshape((-1,d**2))),axis=1))
@@ -45,20 +53,20 @@ test = 4300
 print s_ab_inv[test,:,:]
 
 if d == 2:
-    # def quadric(x, y, a, b):
-    #     return x**2 / a + y**2 / b - 1
-    def quadric(x, y, a, b, c):
-        return x**2 / a + y**2 / b + (2 * x * y) / c - 1
+    def quadric(x, y, a, b):
+        return x**2 / a + y**2 / b - 1
+    # def quadric(x, y, a, b, c):
+    #     return x**2 / a + y**2 / b + (2 * x * y) / c - 1
 
     kv = kvals[test]
     kv_str = r' $ q = ' + str(kv) + r' $'
     xlist = np.linspace(-3.0,3.0,400)
     ylist = np.linspace(-3.0,3.0,400)
     X, Y = np.meshgrid(xlist,ylist)
-    C = quadric(X, Y, s_ab_inv[test,0,0], s_ab_inv[test,1,1], s_ab_inv[test,0,1])
-    C2 = quadric(X, Y, chi_inv[test,0,0], chi_inv[test,1,1], chi_inv[test,0,1])
-    # C = quadric(X, Y, s_ab_eigvals[test,0], s_ab_eigvals[test,1])
-    # C2 = quadric(X, Y, chi_eigvals[test,0], chi_eigvals[test,1])
+    # C = quadric(X, Y, s_ab_inv[test,0,0], s_ab_inv[test,1,1], s_ab_inv[test,0,1])
+    # C2 = quadric(X, Y, chi_inv[test,0,0], chi_inv[test,1,1], chi_inv[test,0,1])
+    C = quadric(X, Y, s_ab_eigvals[test,0], s_ab_eigvals[test,1])
+    C2 = quadric(X, Y, chi_eigvals[test,0], chi_eigvals[test,1])
     fig, axes = plt.subplots(2, figsize=(4, 10))
     axes[0].contour(X, Y, C, levels=[0])
     axes[0].grid()
