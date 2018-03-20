@@ -194,6 +194,21 @@ module input
             if (verbose) then
               write (*,*) 'Total S^(α β) file name: ',s_ab_l
             end if
+          case ('total_chi^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) cab_l
+            if (verbose) then
+              write (*,*) 'Total Chi^(α β) file name: ',cab_l
+            end if
+          case ('rot_chi^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) r_cab_l
+            if (verbose) then
+              write (*,*) 'Rotational Chi^(α β) file name: ',r_cab_l
+            end if
+          case ('irrot_chi^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) ir_cab_l
+            if (verbose) then
+              write (*,*) 'Irrotational Chi^(α β) file name: ',ir_cab_l
+            end if
           case ('total_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
             if (verbose) then
@@ -386,6 +401,9 @@ module input
       avg_field_file = trim(adjustl(av_fe_l))
       sphe_sus_file = trim(adjustl(sp_su_l))
       equil_file = trim(adjustl(eq_l))
+      chi_ab_file = trim(adjustl(cab_l))
+      rot_chi_ab_file = trim(adjustl(r_cab_l))
+      irrot_chi_ab_file = trim(adjustl(ir_cab_l))
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg
