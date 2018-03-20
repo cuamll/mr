@@ -497,12 +497,12 @@ module update
 
           rho_k_p_temp = rho_k_p_temp / float(L**2)
           rho_k_m_temp = rho_k_m_temp / float(L**2)
-          e_kx_temp = e_kx_temp / float(L**2)
-          e_ky = e_ky / float(L**2)
-          mnphi_kx_temp = mnphi_kx_temp / float(L**2)
-          mnphi_ky = mnphi_ky / float(L**2)
-          e_rot_kx_temp = e_rot_kx_temp / float(L**2)
-          e_rot_ky = e_rot_ky / float(L**2)
+          e_kx_temp =     e_kx_temp     / float(2 * L**2)
+          mnphi_kx_temp = mnphi_kx_temp / float(2 * L**2)
+          e_rot_kx_temp = e_rot_kx_temp / float(2 * L**2)
+          e_ky =      e_ky      / float(2 * L**2)
+          mnphi_ky =  mnphi_ky  / float(2 * L**2)
+          e_rot_ky =  e_rot_ky  / float(2 * L**2)
 
           rho_k_p(kx,ky) = rho_k_p(kx,ky) + rho_k_p_temp
           rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp

@@ -521,9 +521,9 @@ module output
 
       ! renormalise s_ab tensors here: then it propagates through to
       ! s_perp and s_par
-      s_ab = s_ab * L**2
-      s_ab_rot = s_ab_rot * L**2
-      s_ab_irrot = s_ab_irrot * L**2
+      s_ab = s_ab * 2 * L**2
+      s_ab_rot = s_ab_rot * 2 * L**2
+      s_ab_irrot = s_ab_irrot * 2 * L**2
 
       chi_ab = s_ab / temp
       chi_ab_rot = s_ab_rot / temp
