@@ -16,7 +16,8 @@ module input
     character(len=200) :: lattfile_long, en_long, sq_en_long,&
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
-    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l
+    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, c_ab_l,&
+    r_cab_l, ir_cab_l
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -193,6 +194,21 @@ module input
             read(buffer, '(a)', iostat=ios) s_ab_l
             if (verbose) then
               write (*,*) 'Total S^(α β) file name: ',s_ab_l
+            end if
+          case ('total_chi^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) c_ab_l
+            if (verbose) then
+              write (*,*) 'Total chi^(α β) file name: ',c_ab_l
+            end if
+          case ('rot_chi^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) r_cab_l
+            if (verbose) then
+              write (*,*) 'Rotational chi^(α β) file name: ',r_cab_l
+            end if
+          case ('irrot_chi^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) ir_cab_l
+            if (verbose) then
+              write (*,*) 'Irrotational chi^(α β) file name: ',ir_cab_l
             end if
           case ('total_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
@@ -386,6 +402,9 @@ module input
       avg_field_file = trim(adjustl(av_fe_l))
       sphe_sus_file = trim(adjustl(sp_su_l))
       equil_file = trim(adjustl(eq_l))
+      chi_ab_file = trim(adjustl(c_ab_l))
+      rot_chi_ab_file = trim(adjustl(r_cab_l))
+      irrot_chi_ab_file = trim(adjustl(ir_cab_l))
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg
