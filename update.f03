@@ -350,9 +350,9 @@ module update
         ebar_dip(i) = dp
         ebar_wind(i) = np
 
-        avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
-        avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
-        avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
+        avg_field_total(i) = avg_field_total(i) + sum((real(e_field(i,:,:))))
+        avg_field_rot(i) = avg_field_rot(i) + sum((real(e_rot(i,:,:))))
+        avg_field_irrot(i) = avg_field_irrot(i) + sum((real(mnphi(i,:,:))))
 
         avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
         avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2

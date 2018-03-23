@@ -373,10 +373,17 @@ module input
       beta = 1.0 / temp
       g_thr = 1 / real(L)
       if (rot_delt.eq.0) then
-        rot_delt = 1.1 * temp
+
+        if (temp.gt.10.0) then
+          rot_delt = sqrt(temp)
+        else
+          rot_delt = 1.1 * temp
+        end if
+
         if (verbose) then
           write (*,*) "Delta_max read in as 0; being set to",rot_delt
         end if
+
       end if
 
       lattfile = trim(adjustl(lattfile_long))
