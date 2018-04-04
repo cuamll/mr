@@ -2,7 +2,7 @@ module input
   use common
   implicit none
   logical, private :: start_file_there
-  character :: corr_char
+  character :: corr_char, canon_char
   character(len=100), private :: label, buffer, verb_arg
   integer :: posit
   integer :: ios = 0
@@ -84,6 +84,11 @@ module input
             read(buffer, '(a)', iostat=ios) corr_char
             if (verbose) then
               write (*,*) 'Calculate correlations? ',corr_char
+            end if
+          case ('canon')
+            read(buffer, '(a)', iostat=ios) canon_char
+            if (verbose) then
+              write (*,*) 'Canonical? ',canon_char
             end if
           case ('thermalisation_sweeps')
             read(buffer, '(I10.1)', iostat=ios) therm_sweeps
@@ -368,6 +373,11 @@ module input
         do_corr = .true.
       else
         do_corr = .false.
+      end if
+      if (canon_char.eq.'T'.or.canon_char.eq.'Y') then
+        canon = .true.
+      else
+        canon = .false.
       end if
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?

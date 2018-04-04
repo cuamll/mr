@@ -44,7 +44,7 @@ module update
 
     end subroutine harm_fluct
 
-    subroutine hop(n)
+    subroutine hop_canonical(n)
       implicit none
       integer, intent(in) :: n
       integer :: i,j,mu,charge,v1o,v2o,v1n,v2n,pm
@@ -161,6 +161,127 @@ module update
       mu = 0; increment = 0.0;
       u_tot = 0.0
       u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
+
+    end subroutine hop_canonical
+
+    subroutine hop_grand_canonical(n)
+      implicit none
+      integer, intent(in) :: n
+      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
+      integer, dimension(2) :: site
+      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
+
+      ! --- CHARGE HOP UPDATE ---
+
+      do i = 1, n
+
+        ! NOTE TO SELF: this whole procedure assumes
+        ! single-valued charges only.
+
+        ! pick a random site and random component, x or y
+        site = (/ int(rand() * L) + 1,&
+                  &int(rand() * L) + 1 /)
+        mu = floor(2*rand())+1
+        mu_tot = mu_tot + mu
+
+        ! check we're not doing anything weird with multiple charges
+        if (abs(v(site(1),site(2))).gt.1) then
+          write (*,*) "Charge at ",site(1),site(2),&
+            " = ",v(site(1),site(2)),". Exiting."
+          write (*,*)
+          stop
+        end if
+
+        ! grand canonical now
+
+        ! charge = v(site(1),site(2))
+        increment = q / (eps_0 * lambda)
+
+        if (rand().lt.0.5) then ! increase field bond
+          pm = 1
+        else ! decrease field bond
+          pm = -1
+        end if
+
+        eo = e_field(mu,site(1),site(2))
+        en = eo + pm * increment
+        old_e = 0.5 * eps_0 * eo**2
+        new_e = 0.5 * eps_0 * en**2
+        delta_e = new_e - old_e
+
+        ! adding to the field bond means charge moving "backwards"
+        ! current charges tell us if this is hop/creation/annihilation
+        v1o = v(site(1),site(2))
+        v1n = v(site(1),site(2)) - pm
+        ! we need negative in the mu direction
+        site(mu) = neg(site(mu))
+        v2o = v(site(1),site(2))
+        v2n = v(site(1),site(2)) + pm
+
+        if ((v1o.eq.1.and.v2o.eq.0.and.pm.eq.1).or.&
+            (v1o.eq.-1.and.v2o.eq.0.and.pm.eq.-1).or.&
+            (v1o.eq.0.and.v2o.eq.1.and.pm.eq.-1).or.&
+            (v1o.eq.0.and.v2o.eq.-1.and.pm.eq.1)) then
+          ! HOP
+          attempts(1) = attempts(1) + 1
+        else if ((v1o.eq.0.and.v2o.eq.0)) then
+          ! CREATION
+          attempts(4) = attempts(4) + 1
+        else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
+          ! ANNIHILATION
+          attempts(5) = attempts(5) + 1
+        end if
+
+        if (abs(v1n).le.1.and.abs(v2n).le.1) then
+          if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+
+            ! site still pointing at neg(orig. site)
+            v(site(1),site(2)) = v2n
+            site(mu) = pos(site(mu))
+            v(site(1),site(2)) = v1n
+            e_field(mu,site(1),site(2)) = en
+            ! mnphi(mu,site(1),site(2)) = mnphi(mu,site(1),site(2)) +&
+            !                             pm * increment
+            ebar(mu) = ebar(mu) + (pm * increment / L**2)
+
+            u_tot = u_tot + delta_e
+
+            if ((v1o.eq.1.and.v2o.eq.0.and.pm.eq.1).or.&
+                (v1o.eq.-1.and.v2o.eq.0.and.pm.eq.-1).or.&
+                (v1o.eq.0.and.v2o.eq.1.and.pm.eq.-1).or.&
+                (v1o.eq.0.and.v2o.eq.-1.and.pm.eq.1)) then
+              accepts(1) = accepts(1) + 1
+            else if ((v1o.eq.0.and.v2o.eq.0)) then
+              accepts(4) = accepts(4) + 1
+            else if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
+              accepts(5) = accepts(5) + 1
+            else
+              write (6,'(a,7i3.1)') "SOME WEIRD SHIT GOT ACCEPTED: ",&
+              site(1), site(2), v1o, v2o, v1n, v2n, pm
+            end if
+
+            end if
+          end if
+
+      end do ! end charge hop sweep
+
+      glob = 1
+
+      mu = 0; increment = 0.0;
+      u_tot = 0.0
+      u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
+
+    end subroutine hop_grand_canonical
+
+    subroutine hop(n)
+      implicit none
+      integer, intent(in) :: n
+
+      if (canon) then
+        call hop_canonical(n)
+      else
+        call hop_grand_canonical(n)
+      end if
 
     end subroutine hop
 

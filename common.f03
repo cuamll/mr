@@ -11,7 +11,7 @@ module common
   real(kind=8), parameter, public :: twopi=6.283185307179586
   real(kind=8), parameter, public :: e=2.718281828459045
 
-  logical, public :: do_corr, verbose = .false.
+  logical, public :: do_corr = .false., verbose = .false., canon = .false.
 
   integer, public :: have_lgf = 0
   integer(kind=ik), public :: mu_tot = 0
