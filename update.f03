@@ -44,127 +44,8 @@ module update
 
     end subroutine harm_fluct
 
-    subroutine hop_canonical(n)
-      implicit none
-      integer, intent(in) :: n
-      integer :: i,j,mu,charge,v1o,v2o,v1n,v2n,pm
-      integer, dimension(2) :: site
-      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
 
-      ! --- CHARGE HOP UPDATE ---
-
-      do i = 1, n
-
-        ! NOTE TO SELF: this whole procedure assumes
-        ! single-valued charges only.
-
-        ! pick a random site and random component, x or y
-        site = (/ int(rand() * L) + 1,&
-                  &int(rand() * L) + 1 /)
-        mu = floor(2*rand())+1
-        mu_tot = mu_tot + mu
-
-        ! check we're not doing anything weird with multiple charges
-        if (abs(v(site(1),site(2))).gt.1) then
-          write (*,*) "Charge at ",site(1),site(2),&
-            " = ",v(site(1),site(2)),". Exiting."
-          write (*,*)
-          stop
-        end if
-
-        ! pick a non-zero charge - canonical!
-        if (v(site(1),site(2)).ne.0) then
-
-          charge = v(site(1),site(2))
-
-          ! this takes care of sign issues when hopping
-          increment = q * charge / (eps_0 * lambda)
-
-          if (rand().lt.0.5) then ! move it "negative"
-
-            attempts(1) = attempts(1) + 1
-
-            ! get negative in the mu direction
-            ! site(mu) = neg(site(mu))
-            ! eo = e_field(mu,site(1),site(2))
-            ! en = eo + increment
-            ! old_e = 0.5 * eps_0 * eo**2
-            ! new_e = 0.5 * eps_0 * en**2
-            ! delta_e = new_e - old_e
-
-            eo = e_field(mu,site(1),site(2))
-            en = eo + increment
-            old_e = 0.5 * eps_0 * eo**2
-            new_e = 0.5 * eps_0 * en**2
-            delta_e = new_e - old_e
-
-            site(mu) = neg(site(mu))
-
-            if (v(site(1),site(2)).eq.0) then
-              if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-                v(site(1),site(2)) = charge
-                ebar(mu) = ebar(mu) + (increment / L**2)
-
-                ! go back to the original site and set the charge to 0
-                site(mu) = pos(site(mu))
-                e_field(mu,site(1),site(2)) = en
-                v(site(1),site(2)) = 0
-
-                accepts(1) = accepts(1) + 1
-                u_tot = u_tot + delta_e
-
-                end if
-              end if
-
-          else ! move it "positive"
-
-            attempts(1) = attempts(1) + 1
-
-            site(mu) = pos(site(mu))
-            eo = e_field(mu,site(1),site(2))
-            en = eo - increment
-            old_e = 0.5 * eps_0 * lambda**2 * eo**2
-            new_e = 0.5 * eps_0 * lambda**2 * en**2
-            delta_e = new_e - old_e
-
-            ! get pos in the mu direction
-
-            if (v(site(1),site(2)).eq.0) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-                v(site(1),site(2)) = charge
-                e_field(mu,site(1),site(2)) = en
-                ebar(mu) = ebar(mu) - (increment / L**2)
-
-                ! go back to the original site and set the charge to 0
-                site(mu) = neg(site(mu))
-                v(site(1),site(2)) = 0
-
-                accepts(1) = accepts(1) + 1
-                u_tot = u_tot + delta_e
-
-              end if
-            end if
-
-          end if ! end "positive" / "negative" choice
-        end if ! end charge.ne.0 block
-
-      end do ! end charge hop sweep
-
-      ! if (ebar(mu).gt.(g_thr).or.ebar(mu).lt.((-1)*g_thr)) then
-        glob = 1
-      ! else
-        ! glob = 0
-      ! end if
-
-      mu = 0; increment = 0.0;
-      u_tot = 0.0
-      u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
-
-    end subroutine hop_canonical
-
-    subroutine hop_grand_canonical(n)
+    subroutine hop(n)
       implicit none
       integer, intent(in) :: n
       integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
@@ -272,18 +153,6 @@ module update
       u_tot = 0.5 * eps_0 * lambda**2 * sum(e_field * e_field)
 
     end subroutine hop_grand_canonical
-
-    subroutine hop(n)
-      implicit none
-      integer, intent(in) :: n
-
-      if (canon) then
-        call hop_canonical(n)
-      else
-        call hop_grand_canonical(n)
-      end if
-
-    end subroutine hop
 
     subroutine rot(n)
       use common
@@ -482,9 +351,9 @@ module update
         ebar_dip(i) = dp
         ebar_wind(i) = np
 
-        avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
-        avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
-        avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
+        avg_field_total(i) = avg_field_total(i) + sum((real(e_field(i,:,:))))
+        avg_field_rot(i) = avg_field_rot(i) + sum((real(e_rot(i,:,:))))
+        avg_field_irrot(i) = avg_field_irrot(i) + sum((real(mnphi(i,:,:))))
 
         avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
         avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2

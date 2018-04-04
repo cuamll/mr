@@ -390,15 +390,16 @@ module input
 
       if (rot_delt.eq.0) then
 
-        if (temp.lt.10.0) then
-          rot_delt = 1.1 * temp
-        else
+        if (temp.gt.10.0) then
           rot_delt = sqrt(temp)
+        else
+          rot_delt = 1.1 * temp
         end if
 
         if (verbose) then
           write (*,*) "Delta_max read in as 0; being set to",rot_delt
         end if
+
       end if
 
       lattfile = trim(adjustl(lattfile_long))
@@ -434,7 +435,6 @@ module input
           & or DIPOLE. Edit input file and try again."
         STOP
       end if
-
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg

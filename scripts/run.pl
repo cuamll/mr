@@ -9,7 +9,10 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
+<<<<<<< HEAD
 # use JSON::MaybeXS qw(encode_json decode_json);
+=======
+>>>>>>> cf8cb34a73c17712392b2e458aba60b8f5c1ffbe
 use Data::Dumper qw(Dumper);
 
 my $row;
@@ -146,12 +149,16 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
           # don't think i can call a function inside an array assignment
           # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
+<<<<<<< HEAD
           if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
             @stamparray = ('ce','T', $temperatures[$i],'chg', $charges[$l],$comment);
           } else {
             # gonna want to add core-energy in here probably
             @stamparray = ('gce','T', $temperatures[$i],$comment);
           }
+=======
+          my @stamparray = ('T', $temperatures[$i],'L',$parameters{L},$comment);
+>>>>>>> cf8cb34a73c17712392b2e458aba60b8f5c1ffbe
           my $stamp = join('_', @stamparray);
           my $stampdir = "$outdir/$stamp";
           print "Creating directory $stampdir .\n";

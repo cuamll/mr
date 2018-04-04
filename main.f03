@@ -165,6 +165,20 @@ program mr
       (end_time - start_time) /&
       (no_samples * num_procs * no_measurements)," seconds."
 
+    ! These probably need a little more thought
+    ! and reducing!
+    ! write (*,'(a,i12.1,es18.9)') "Charge hops: total, acceptance rate: ",&
+    !   accepth, accepth / ((therm_sweeps + measurement_sweeps) * &
+    !   hop_ratio * L**2 * (num_procs * no_samples))
+    ! write (*,'(a,i12.1,es18.9)') "Plaquette update: total, acceptance rate: ",&
+    !   acceptr, acceptr / ((therm_sweeps + measurement_sweeps) * &
+    !   rot_ratio * L**2 * (num_procs * no_samples))
+    ! write (*,'(a,i12.1,es18.9)') "Harmonic update: total, acceptance rate: ",&
+    !   acceptg, acceptg / ((therm_sweeps + measurement_sweeps) * &
+    !   g_ratio * L**2 * 2 * (num_procs * no_samples))
+    ! write (*,'(a,a,6i12.1)') "Hops, creations, annihilations ",&
+    !   "(attempts, accepts): ",&
+    !   attempth, accepth, attemptc, acceptc, attempta, accepta
     if (add_charges.ne.0) then
       write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
       accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
@@ -179,12 +193,10 @@ program mr
     ! &total, attempts, rate: ",&
     ! accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
 
-    if (.not. canon) then
-      write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
-      accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-      write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
-      accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
-    end if
+    write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+    accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+    write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
+    accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
 
   end if
 
