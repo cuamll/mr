@@ -167,7 +167,7 @@ module update
     subroutine hop_grand_canonical(n)
       implicit none
       integer, intent(in) :: n
-      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
+      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm, old_u_core, new_u_core
       integer, dimension(2) :: site
       real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
 
@@ -205,9 +205,6 @@ module update
 
         eo = e_field(mu,site(1),site(2))
         en = eo + pm * increment
-        old_e = 0.5 * eps_0 * eo**2
-        new_e = 0.5 * eps_0 * en**2
-        delta_e = new_e - old_e
 
         ! adding to the field bond means charge moving "backwards"
         ! current charges tell us if this is hop/creation/annihilation
@@ -231,6 +228,14 @@ module update
           ! ANNIHILATION
           attempts(5) = attempts(5) + 1
         end if
+
+        ! actually we only need the difference in core energies, really
+        old_u_core = (abs(v1o) + abs(v2o)) * e_c * q**2
+        new_u_core = (abs(v1n) + abs(v2n)) * e_c * q**2
+
+        old_e = 0.5 * eps_0 * (eo**2 + old_u_core)
+        new_e = 0.5 * eps_0 * (en**2 + new_u_core)
+        delta_e = new_e - old_e
 
         if (abs(v1n).le.1.and.abs(v2n).le.1) then
           if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then

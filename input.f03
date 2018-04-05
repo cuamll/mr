@@ -120,6 +120,11 @@ module input
             if (verbose) then
               write (*,*) 'Charge value: ',q
             end if
+          case ('e_c')
+            read(buffer, '(F16.1)', iostat=ios) e_c
+            if (verbose) then
+              write (*,*) 'Core energy constant: ',e_c
+            end if
           case ('delta_max')
             read(buffer, '(F10.1)', iostat=ios) rot_delt
             if (verbose) then

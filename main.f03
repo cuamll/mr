@@ -165,7 +165,7 @@ program mr
       (end_time - start_time) /&
       (no_samples * num_procs * no_measurements)," seconds."
 
-    if (add_charges.ne.0) then
+    if ((.not.canon).or.(add_charges.ne.0)) then
       write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
       accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
     end if
