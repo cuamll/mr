@@ -3,7 +3,7 @@ module input
   implicit none
   logical, private :: start_file_there
   character :: corr_char, canon_char
-  character(len=100), private :: label, buffer, verb_arg
+  character(len=200), private :: label, buffer, verb_arg
   integer :: posit
   integer :: ios = 0
   integer :: line = 0
