@@ -2,8 +2,8 @@ module input
   use common
   implicit none
   logical, private :: start_file_there
-  character :: corr_char
-  character(len=100), private :: label, buffer, verb_arg
+  character :: corr_char, canon_char
+  character(len=200), private :: label, buffer, verb_arg
   integer :: posit
   integer :: ios = 0
   integer :: line = 0
@@ -85,6 +85,11 @@ module input
             if (verbose) then
               write (*,*) 'Calculate correlations? ',corr_char
             end if
+          case ('canon')
+            read(buffer, '(a)', iostat=ios) canon_char
+            if (verbose) then
+              write (*,*) 'Canonical? ',canon_char
+            end if
           case ('thermalisation_sweeps')
             read(buffer, '(I10.1)', iostat=ios) therm_sweeps
             if (verbose) then
@@ -104,6 +109,11 @@ module input
             read(buffer, '(F10.1)', iostat=ios) temp
             if (verbose) then
               write (*,*) 'Temperature: ',temp
+            end if
+          case ('core_energy')
+            read(buffer, '(F10.1)', iostat=ios) e_c
+            if (verbose) then
+              write (*,*) 'Core energy constant: ',e_c
             end if
           case ('lattice_spacing')
             read(buffer, '(F10.1)', iostat=ios) lambda
@@ -369,6 +379,14 @@ module input
       else
         do_corr = .false.
       end if
+
+
+      if (canon_char.eq.'T'.or.canon_char.eq.'Y') then
+        canon = .true.
+      else
+        canon = .false.
+      end if
+
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
       eps_0 = 1.0 / lambda
@@ -380,18 +398,17 @@ module input
       g_thr = 1 / real(L**2)
 
       if (rot_delt.eq.0) then
--       rot_delt = 1.1 * temp
-+
-+       if (temp.lt.10.0) then
-+         rot_delt = 1.1 * temp
-+       else
-+         rot_delt = sqrt(temp)
-+       end if
-+
+ 
+        if (temp.lt.10.0) then
+          rot_delt = 1.1 * temp
+        else
+          rot_delt = sqrt(temp)
+        end if
+ 
         if (verbose) then
           write (*,*) "Delta_max read in as 0; being set to",rot_delt
         end if
-+
+ 
       end if
 
       lattfile = trim(adjustl(lattfile_long))

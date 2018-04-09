@@ -11,7 +11,7 @@ module common
   real(kind=8), parameter, public :: twopi=6.283185307179586
   real(kind=8), parameter, public :: e=2.718281828459045
 
-  logical, public :: do_corr, verbose = .false.
+  logical, public :: do_corr = .false., canon = .false., verbose = .false.
 
   integer, public :: have_lgf = 0
   integer(kind=ik), public :: mu_tot = 0
@@ -25,7 +25,7 @@ module common
   integer(kind=4), dimension(:,:,:), allocatable, public :: v
 
   real(kind=8), public :: q, lambda, volume, temp, beta, u_tot, eps_0,&
-  bin_size, rot_delt, g0, rot_ratio, g_ratio, hop_ratio, g_thr
+  bin_size, rot_delt, g0, rot_ratio, g_ratio, hop_ratio, g_thr, e_c
   real(kind=8), dimension(:,:,:,:), allocatable, public :: e_field, mnphi
   real(kind=8), dimension(:,:,:,:,:,:), allocatable, public :: lgf
   real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&
