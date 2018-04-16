@@ -10,7 +10,7 @@ temperature 1.000
 lattice_spacing 1.0
 charge_value 6.283185307179586
 delta_max 0
-charges 16
+charges 4
 e_c -0.000
 charge_generation DIPOLE
 rng_seed 0
