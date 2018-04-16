@@ -88,6 +88,10 @@ program mr
         call measure(i)
       end if
 
+      if (mod(i, 100000).eq.0) then
+        call snapshot(i)
+      end if
+
     end do
 
     if (verbose) then
