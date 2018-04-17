@@ -95,15 +95,20 @@ module linear_solver
         mnphi(1,a,b)=sum_x
         mnphi(2,a,b)=sum_y
 
-        ebar(1)=ebar(1)+mnphi(1,a,b)
-        ebar(2)=ebar(2)+mnphi(2,a,b)
+        ! ebar(1)=ebar(1)+mnphi(1,a,b)
+        ! ebar(2)=ebar(2)+mnphi(2,a,b)
         !write (*,*) sum_x,sum_y,ebar(1),ebar(2),mnphi(1,a,b),mnphi(2,a,b)
 
-        u_tot=u_tot+0.5*(mnphi(1,a,b)**2&
-              +mnphi(2,a,b)**2)
+        ! u_tot=u_tot+0.5*(mnphi(1,a,b)**2&
+        !       +mnphi(2,a,b)**2)
 
     end do ! b do loop
   end do ! a do loop
+
+  mnphi = -1.0 * mnphi
+  ebar(1) = sum(mnphi(1,:,:))
+  ebar(2) = sum(mnphi(2,:,:))
+  u_tot = 0.5 * eps_0 * lambda**2 * sum(mnphi*mnphi)
 
   ebar = ebar / L**2
   g0 = g0 / L**2

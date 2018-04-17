@@ -84,6 +84,8 @@ module update
 
             attempts(1) = attempts(1) + 1
 
+            ! -----------------
+            ! OLD WAY - TESTING
             ! get negative in the mu direction
             ! site(mu) = neg(site(mu))
             ! eo = e_field(mu,site(1),site(2))
@@ -92,17 +94,20 @@ module update
             ! new_e = 0.5 * eps_0 * en**2
             ! delta_e = new_e - old_e
 
+            ! -----------------
+            ! NEW WAY - THOUGHT THIS WAS RIGHT
             eo = e_field(mu,site(1),site(2))
             en = eo + increment
-            old_e = 0.5 * eps_0 * eo**2
-            new_e = 0.5 * eps_0 * en**2
+            old_e = 0.5 * eps_0 * lambda**2 * eo**2
+            new_e = 0.5 * eps_0 * lambda**2 * en**2
             delta_e = new_e - old_e
-
             site(mu) = neg(site(mu))
 
             if (v(site(1),site(2)).eq.0) then
               if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
+                ! -----------------
+                ! NEW WAY - THOUGHT THIS WAS RIGHT
                 v(site(1),site(2)) = charge
                 ebar(mu) = ebar(mu) + (increment / L**2)
 
@@ -110,6 +115,16 @@ module update
                 site(mu) = pos(site(mu))
                 e_field(mu,site(1),site(2)) = en
                 v(site(1),site(2)) = 0
+
+                ! -----------------
+                ! OLD WAY - TESTING
+                ! v(site(1),site(2)) = charge
+                ! e_field(mu,site(1),site(2)) = en
+                ! ebar(mu) = ebar(mu) + (increment / L**2)
+
+                ! ! go back to the original site and set the charge to 0
+                ! site(mu) = pos(site(mu))
+                ! v(site(1),site(2)) = 0
 
                 accepts(1) = accepts(1) + 1
                 u_tot = u_tot + delta_e
@@ -121,6 +136,8 @@ module update
 
             attempts(1) = attempts(1) + 1
 
+            ! -----------------
+            ! NEW WAY - THOUGHT THIS WAS RIGHT
             site(mu) = pos(site(mu))
             eo = e_field(mu,site(1),site(2))
             en = eo - increment
@@ -128,11 +145,32 @@ module update
             new_e = 0.5 * eps_0 * lambda**2 * en**2
             delta_e = new_e - old_e
 
+            ! -----------------
+            ! OLD WAY - TESTING
+            ! eo = e_field(mu,site(1),site(2))
+            ! en = eo - increment
+            ! old_e = 0.5 * eps_0 * lambda**2 * eo**2
+            ! new_e = 0.5 * eps_0 * lambda**2 * en**2
+            ! delta_e = new_e - old_e
+            ! site(mu) = pos(site(mu))
+
             ! get pos in the mu direction
 
             if (v(site(1),site(2)).eq.0) then
               if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
+                ! ---------------------
+                ! OLD WAY - TESTING
+                ! v(site(1),site(2)) = charge
+                ! ! go back to the original site and set the charge to 0
+                ! site(mu) = neg(site(mu))
+
+                ! v(site(1),site(2)) = 0
+                ! e_field(mu,site(1),site(2)) = en
+                ! ebar(mu) = ebar(mu) - (increment / L**2)
+
+                ! ---------------------
+                ! NEW WAY - THOUGHT THIS WAS RIGHT
                 v(site(1),site(2)) = charge
                 e_field(mu,site(1),site(2)) = en
                 ebar(mu) = ebar(mu) - (increment / L**2)
@@ -245,8 +283,6 @@ module update
             site(mu) = pos(site(mu))
             v(site(1),site(2)) = v1n
             e_field(mu,site(1),site(2)) = en
-            ! mnphi(mu,site(1),site(2)) = mnphi(mu,site(1),site(2)) +&
-            !                             pm * increment
             ebar(mu) = ebar(mu) + (pm * increment / L**2)
 
             u_tot = u_tot + delta_e
@@ -447,7 +483,7 @@ module update
       ! get irrotational part of field
       ! this way we can get decomposed parts along with total
       call linsol
-      e_rot = e_field - mnphi
+      e_rot = e_field + mnphi
 
       e_tot_avg =           e_tot_avg + e_field
       e_rot_avg =           e_rot_avg + e_rot
