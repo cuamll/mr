@@ -19,6 +19,9 @@ my $input;
 my $help = '';
 my $doplots = 1;
 my $dorun = 1;
+my $docontour = 1;
+my $doquiver = 1;
+my $arrow_width = 0.002;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
 my $comment = '';
@@ -35,6 +38,8 @@ my @stamparray = '';
 $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
                      "run=i"=> \$dorun,
+                     "contour=i"=> \$docontour,
+                     "quiver=i"=> \$doquiver,
                      "lengths=s"=> \@lengths,
                      "temperatures=s"=> \@temperatures,
                      "charges=s"=> \@charges,
@@ -270,6 +275,19 @@ for( my $i = 0; $i < @temperatures; $i++) {
               my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
               system($plotcmd);
             }
+
+            if ($docontour) {
+              my $contourfile = "$basedir/scripts/s_perp_contours.py";
+              my $contourcmd = qq[python $contourfile $stampdir $parameters{L}];
+              system($contourcmd);
+            }
+
+            if ($doquiver) {
+              my $quiverfile = "$basedir/scripts/quiver.py";
+              my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width];
+              system($quivercmd);
+            }
+            
           }
         }
       }

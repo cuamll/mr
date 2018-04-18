@@ -5,6 +5,7 @@ import colormaps as cm
 # currently stuck with system python 2.7 so ugly mkdir
 import errno
 import os
+import argparse
 
 def mkdir_p(path):
     try:
@@ -15,16 +16,22 @@ def mkdir_p(path):
         else:
             raise
 
-indir = 'T_1.525_l64_sweep/'
+parser = argparse.ArgumentParser()
+parser.add_argument("directory", help="Directory containing field snapshots. Don't add the / at the end!")
+parser.add_argument("length",type=int, help="System size L")
+args = parser.parse_args()
+indir = args.directory
+length = args.length
+
+d = 2
+sp = 8
+sep = '/'
 filename = 's_perp_total'
 suffix = '.dat'
-input_file = indir + filename + suffix
-outdir = indir + 'contour_plots/'
+input_file = indir + sep + filename + suffix
+outdir = indir + sep + 'contour_plots/'
 mkdir_p(outdir)
 # os.makedirs(outdir, exist_ok=True) # python > 3.2
-d = 2
-length = 64
-sp = 8
 s_p_raw = np.loadtxt(input_file)
 kvals = s_p_raw[:,0:d]
 kvals = np.unique(kvals)
@@ -110,7 +117,7 @@ for i in range(-1*(sp/2) + 1, (sp/2)):
 
 # we can print out tot_ana_int and inspect it like s_perp_total
 # just can't figure out the syntax rn
-tot_ana_int = tot_ana_int.reshape((np.sqrt(len(tot_ana_int)),np.sqrt(len(tot_ana_int))))
-fig, axes = plt.subplots()
-axes.imshow(tot_ana_int, interpolation = 'bicubic', cmap=cm.viridis)
-plt.show()
+# tot_ana_int = tot_ana_int.reshape((np.sqrt(len(tot_ana_int)),np.sqrt(len(tot_ana_int))))
+# fig, axes = plt.subplots()
+# axes.imshow(tot_ana_int, interpolation = 'bicubic', cmap=cm.viridis)
+# plt.show()
