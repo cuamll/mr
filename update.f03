@@ -205,13 +205,17 @@ module update
     subroutine hop_grand_canonical(n)
       implicit none
       integer, intent(in) :: n
-      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm, old_u_core, new_u_core
+      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
       integer, dimension(2) :: site
-      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
+      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment,&
+                      old_u_core, new_u_core
 
       ! --- CHARGE HOP UPDATE ---
 
       do i = 1, n
+
+        eo = 0.0; en = 0.0; old_e = 0.0; new_e = 0.0; delta_e = 0.0;
+        increment = 0.0; old_u_core = 0.0; new_u_core = 0.0
 
         ! NOTE TO SELF: this whole procedure assumes
         ! single-valued charges only.
@@ -271,8 +275,8 @@ module update
         old_u_core = (abs(v1o) + abs(v2o)) * e_c * q**2
         new_u_core = (abs(v1n) + abs(v2n)) * e_c * q**2
 
-        old_e = 0.5 * eps_0 * (eo**2 + old_u_core)
-        new_e = 0.5 * eps_0 * (en**2 + new_u_core)
+        old_e = 0.5 * eps_0 * lambda**2 * (eo**2 + old_u_core)
+        new_e = 0.5 * eps_0 * lambda**2 * (en**2 + new_u_core)
         delta_e = new_e - old_e
 
         if (abs(v1n).le.1.and.abs(v2n).le.1) then

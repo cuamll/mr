@@ -4,12 +4,11 @@ no_samples 2
 do_corr T
 canon F
 thermalisation_sweeps 500000
-measurement_sweeps 500000
+measurement_sweeps 250000
 sample_interval 10
-temperature 1.500
+temperature 0.0500
 lattice_spacing 1.0
 charge_value 1.000
-!charge_value 6.283185307179586
 delta_max 0
 charges 0
 e_c -0.000
