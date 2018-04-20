@@ -275,8 +275,8 @@ module update
         old_u_core = (abs(v1o) + abs(v2o)) * e_c * q**2
         new_u_core = (abs(v1n) + abs(v2n)) * e_c * q**2
 
-        old_e = 0.5 * eps_0 * lambda**2 * (eo**2 + old_u_core)
-        new_e = 0.5 * eps_0 * lambda**2 * (en**2 + new_u_core)
+        old_e = (0.5 * eps_0 * lambda**2 * eo**2) + old_u_core
+        new_e = (0.5 * eps_0 * lambda**2 * en**2) + new_u_core
         delta_e = new_e - old_e
 
         if (abs(v1n).le.1.and.abs(v2n).le.1) then

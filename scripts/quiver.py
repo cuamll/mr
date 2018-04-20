@@ -40,11 +40,11 @@ neg_y = []
 
 for i in range(len(c_raw)):
     if (c_raw[i,2] > 0.001):
-        print c_raw[i,0], c_raw[i,1], c_raw[i,2]
+        # print c_raw[i,0], c_raw[i,1], c_raw[i,2]
         pos_x.append(c_raw[i,0])
         pos_y.append(c_raw[i,1])
     elif (c_raw[i,2] < -0.001):
-        print c_raw[i,0], c_raw[i,1], c_raw[i,2]
+        # print c_raw[i,0], c_raw[i,1], c_raw[i,2]
         neg_x.append(c_raw[i,0])
         neg_y.append(c_raw[i,1])
 
