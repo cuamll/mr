@@ -178,6 +178,20 @@ module setup
 
         end do
 
+      ! should change the variable really so the L doesn't get cut off
+      else if (charge_gen.eq."CRYSTA") then
+
+        add_charges = L**2
+        do i = 1,L**2
+
+          k =((i - 1)/L) + 1
+          j = modulo(i - 1, L) + 1
+          write(6,*) i,k,j, (2*mod(i,2) - 1)
+          ! flush(6)
+          v(k,j) = 2*mod(i, 2) - 1
+
+        end do
+
       end if
 
     end subroutine latt_init

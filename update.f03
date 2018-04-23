@@ -319,6 +319,7 @@ module update
     end subroutine hop_grand_canonical
 
     subroutine hop(n)
+      use common
       implicit none
       integer, intent(in) :: n
 
@@ -566,8 +567,8 @@ module update
       if (do_corr) then
         n = step_number / sample_interval
 
-        !$omp parallel do num_threads(2)&
-        !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
+        !$omp parallel do&
+        !$omp& private(i,j,m,p,s,x,y,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
         !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
         do omp_index = 1, L**2
@@ -649,11 +650,15 @@ module update
                       y = L - y
                     end if
 
+                    ! write (*,*) step_number,v(m,p),v(i,j),m,i,p,j,x,y
+                    ! flush(6)
+                    ! read(*,*)
                     x = x + 1
                     y = y + 1
 
                     dir_struc(x,y) = dir_struc(x,y) +&
                             v(m,p) * v(i,j)
+
                   end if ! neg charge at i,j
                 end if ! pos charge at m,p
 

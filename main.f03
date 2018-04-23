@@ -170,8 +170,15 @@ program mr
       (no_samples * num_procs * no_measurements)," seconds."
 
     if ((.not.canon).or.(add_charges.ne.0)) then
-      write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
-      accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+
+      if (attempts(1).gt.0) then
+        write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
+        accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+      else 
+        write (*,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
+        accepts(1), attempts(1)
+      end if
+      
     end if
     write (*,'(a,2i12.1,es18.9)') "Rot.: total, attempts, rate: ",&
     accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
@@ -183,12 +190,26 @@ program mr
     ! &total, attempts, rate: ",&
     ! accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
 
-    if (.not. canon) then
-      write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
-      accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-      write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
-      accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+    if (.not.canon) then
+
+      if (attempts(4).gt.0) then
+        write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+        accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+      else 
+        write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+        accepts(4), attempts(4)
+      end if
+
+      if (attempts(5).gt.0) then
+        write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
+        accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+      else
+        write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
+        accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+      end if
+
     end if
+
 
   end if
 
@@ -465,8 +486,15 @@ subroutine normalisations(num_procs)
   write (30,*) "Ebar_wind susceptibility: ",ebar_wind_sus
   write (30,*) "E_{eff}^{-1}: ",1 - 0.5*ebar_sus
   if ((.not.canon).or.(add_charges.ne.0)) then
-    write (30,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
-    accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+
+    if (attempts(1).gt.0) then
+      write (30,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
+      accepts(1), attempts(1), dble(accepts(1)) / dble(attempts(1))
+    else 
+      write (30,'(a,2i12.1,es18.9)') "Hops: total, attempts, rate: ",&
+      accepts(1), attempts(1)
+    end if
+    
   end if
   write (30,'(a,2i12.1,es18.9)') "Rot.: total, attempts, rate: ",&
   accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
@@ -478,11 +506,24 @@ subroutine normalisations(num_procs)
   ! &total, attempts, rate: ",&
   ! accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
 
-  if (.not. canon) then
-    write (30,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
-    accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-    write (30,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
-    accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+  if (.not.canon) then
+
+    if (attempts(4).gt.0) then
+      write (30,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+      accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
+    else 
+      write (30,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+      accepts(4), attempts(4)
+    end if
+
+    if (attempts(5).gt.0) then
+      write (30,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
+      accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+    else
+      write (30,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
+      accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+    end if
+
   end if
 
   close (30)

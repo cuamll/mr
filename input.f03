@@ -434,9 +434,9 @@ module input
       rot_chi_ab_file = trim(adjustl(r_cab_l))
       irrot_chi_ab_file = trim(adjustl(ir_cab_l))
 
-      if (charge_gen.ne."RANDOM".and.charge_gen.ne."DIPOLE") then
-        write(*,*) "Charge generation method should be either RANDOM&
-          & or DIPOLE. Edit input file and try again."
+      if (charge_gen.ne."RANDOM".and.charge_gen.ne."DIPOLE".and.charge_gen.ne."CRYSTA") then
+        write(*,*) "Charge generation method should be either RANDOM,&
+          & DIPOLE, or CRYSTAL. Edit input file and try again."
         STOP
       end if
 
