@@ -35,8 +35,8 @@ endif
 
 SOURCES = common.f03\
 	  input.f03\
-	  output.f03\
 	  linear_solver.f03\
+	  output.f03\
 	  setup.f03\
 	  update.f03
 
