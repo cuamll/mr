@@ -386,8 +386,8 @@ module input
       end if
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
-      ! eps_0 = 1.0 / L
-      eps_0 = 1.0
+      eps_0 = 1.0 / (2*pi)
+      ! eps_0 = 1.0
       !q = 2 * pi * q
       !write (*,*) "q = ",q
       beta = 1.0 / temp
