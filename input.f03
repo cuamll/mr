@@ -372,7 +372,7 @@ module input
       end if
 
       ! set up other variables, allocations etc.
-      volume = lambda**2
+      volume = lambda**3
       no_measurements = measurement_sweeps / sample_interval
       if (corr_char.eq.'T'.or.corr_char.eq.'Y') then
         do_corr = .true.
@@ -389,7 +389,8 @@ module input
 
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
-      eps_0 = 1.0 / lambda
+      ! eps_0 = 1.0 / (2 * pi * lambda)
+      eps_0 = 1.0 / (lambda)
       ! eps_0 = 1.0 / L
       ! eps_0 = 1.0
       !q = 2 * pi * q

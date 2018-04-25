@@ -114,6 +114,12 @@ module linear_solver
     end do ! b do loop
   end do ! c do loop
 
+  mnphi = -1.0 * mnphi
+  ebar(1) = sum(mnphi(1,:,:,:))
+  ebar(2) = sum(mnphi(2,:,:,:))
+  ebar(3) = sum(mnphi(3,:,:,:))
+  u_tot = 0.5 * eps_0 * lambda**2 * sum(mnphi*mnphi)
+
   ebar = ebar / L**3
   g0 = g0 / L**3
 

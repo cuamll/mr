@@ -4,6 +4,83 @@ module output
 
   contains
 
+  subroutine snapshot(n)
+    use common
+    use linear_solver
+    implicit none
+    integer, intent(in) :: n
+    integer :: i, j, k
+    character(len=20) :: nsl
+    character(len=200) :: tfl, ifl, rfl, cfl
+    character(:), allocatable :: tot_file, irrot_file, rot_file, charge_file, ns
+    real(kind=8), dimension(3,L,L,L) :: e_rot
+
+    ! these snapshots are designed to be plotted using matplotlib's built-in
+    ! quiver plots; the documentation for them is available online
+    ! take an integer as input; this will be the current step number,
+    ! just in case we want to take multiple snapshots
+
+    ! construct file name base: cast step number to string
+    write(nsl, '(i20.1)') n
+    ns = trim(adjustl(nsl))
+    tfl = e_field_file // '_' // ns // '_total.dat'
+    ifl = e_field_file // '_' // ns // '_irrot.dat'
+    rfl = e_field_file // '_' // ns // '_rot.dat'
+    cfl = e_field_file // '_' // ns // '_charges.dat'
+    tot_file = trim(adjustl(tfl))
+    irrot_file = trim(adjustl(ifl))
+    rot_file = trim(adjustl(rfl))
+    charge_file = trim(adjustl(cfl))
+    ! make sure we have a current Helmholtz decomposition
+    call linsol
+    e_rot = e_field - mnphi
+
+    open(unit=10, file=tot_file)
+    open(unit=11, file=irrot_file)
+    open(unit=12, file=rot_file)
+    open(unit=13, file=charge_file)
+
+    do i = 1, L
+      do j = 1, L
+        do k = 1, L
+
+          ! x component
+          write (10,'(4f16.12)')  real(i + 0.5), real(j), real(k),&
+                                  e_field(1,i,j,k), 0.0, 0.0
+          write (11,'(4f16.12)')  real(i + 0.5), real(j), real(k),&
+                                  mnphi(1,i,j,k), 0.0, 0.0
+          write (12,'(4f16.12)')  real(i + 0.5), real(j), real(k),&
+                                  e_rot(1,i,j,k), 0.0, 0.0
+          ! y component
+          write (10,'(4f16.12)')  real(i), real(j + 0.5), real(k),&
+                                  0.0, e_field(2,i,j,k), 0.0
+          write (11,'(4f16.12)')  real(i), real(j + 0.5), real(k),&
+                                  0.0, mnphi(2,i,j,k), 0.0
+          write (12,'(4f16.12)')  real(i), real(j + 0.5), real(k),&
+                                  0.0, e_rot(2,i,j,k), 0.0
+
+          ! z-component
+          write (10,'(4f16.12)')  real(i), real(j), real(k + 0.5),&
+                                  0.0, 0.0, e_field(3,i,j,k)
+          write (11,'(4f16.12)')  real(i), real(j), real(k + 0.5),&
+                                  0.0, 0.0, mnphi(3,i,j,k)
+          write (12,'(4f16.12)')  real(i), real(j), real(k + 0.5),&
+                                  0.0, 0.0, e_rot(3,i,j,k)
+
+          ! charges
+          write (13,'(2f16.12, i3.1)') real(i), real(j), real(k), v(i,j,k)
+
+        end do
+      end do
+    end do
+
+    close(10)
+    close(11)
+    close(12)
+    close(13)
+
+  end subroutine snapshot
+
   subroutine write_output
 
     call fix_arrays

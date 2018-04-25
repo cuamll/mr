@@ -200,7 +200,24 @@ module setup
 
         end do
 
+      ! should change the variable really so the L doesn't get cut off
+      else if (charge_gen.eq."CRYSTA") then
+
+        add_charges = L**2
+
+        do n = 1,L**3
+
+          i = ((n - 1) / (L**2)) + 1
+          j = mod(((n - 1) / (L)), L) + 1
+          k = mod(n - 1, (L)) + 1
+          write(6,*) i,k,j, (2*mod(i,2) - 1)
+          flush(6)
+          v(i,j,k) = 2*mod(n, 2) - 1
+
+        end do
+        
       end if
+
     end if
 
     ! do i=1,L

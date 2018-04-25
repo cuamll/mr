@@ -125,9 +125,10 @@ module update
     subroutine hop_grand_canonical(n)
       implicit none
       integer, intent(in) :: n
-      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm, old_u_core, new_u_core
+      integer :: i,j,mu,v1o,v2o,v1n,v2n,pm
       integer, dimension(3) :: site
-      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment
+      real(kind=8) :: eo, en, old_e, new_e, delta_e, increment,&
+                      &old_u_core, new_u_core
 
       ! --- CHARGE HOP UPDATE ---
 
@@ -177,8 +178,8 @@ module update
 
         old_u_core = (abs(v1o) + abs(v2o)) * e_c * q**2
         new_u_core = (abs(v1n) + abs(v2n)) * e_c * q**2
-        old_e = 0.5 * eps_0 * (old_u_core + eo**2)
-        new_e = 0.5 * eps_0 * (new_u_core + en**2)
+        old_e = (0.5 * eps_0 * lambda**3 * eo**2) + old_u_core
+        new_e = (0.5 * eps_0 * lambda**3 * en**2) + new_u_core
         delta_e = new_e - old_e
 
         ! check we're not doing anything weird with multiple charges
@@ -515,10 +516,10 @@ module update
       if (do_corr) then
         n = step_number / sample_interval
 
-        !$omp parallel do &
-        !$omp& private(i,j,k,m,p,s,kx,ky,kz,rho_k_p_temp,rho_k_m_temp,e_kx,&
-        !$omp& mnphi_kx,e_rot_kx,e_ky,mnphi_ky,e_rot_ky,&
-        !$omp& e_kz,mnphi_kz,e_rot_kz,norm_k,kdotx,x,y,z)&
+        !$omp parallel do&
+        !$omp& private(i,j,k,m,p,s,kx,ky,kz,x,y,z,rho_k_p_temp,rho_k_m_temp,&
+        !$omp& e_kx,mnphi_kx,e_rot_kx,e_ky,mnphi_ky,e_rot_ky,&
+        !$omp& e_kz,mnphi_kz,e_rot_kz,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
         do omp_index = 1, L**3
 

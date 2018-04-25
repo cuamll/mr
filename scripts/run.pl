@@ -9,6 +9,7 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
+# use JSON::MaybeXS qw(encode_json decode_json);
 use Data::Dumper qw(Dumper);
 
 my $row;
@@ -18,14 +19,17 @@ my $input;
 my $help = '';
 my $doplots = 1;
 my $dorun = 1;
+my $docontour = 1;
+my $doquiver = 1;
+my $arrow_width = 0.002;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
 my $comment = '';
 my @lengths = '';
 my @temperatures = '';
 my @charges = '';
-my @core_energies = '';
 my @charge_values = '';
+my @core_energies = '';
 my @spacings = '';
 my @params_temp = '';
 my @stamparray = '';
@@ -34,10 +38,13 @@ my @stamparray = '';
 $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
                      "run=i"=> \$dorun,
+                     "contour=i"=> \$docontour,
+                     "quiver=i"=> \$doquiver,
                      "lengths=s"=> \@lengths,
                      "temperatures=s"=> \@temperatures,
                      "charges=s"=> \@charges,
                      "charge_values=s"=> \@charge_values,
+                     "core_energies=s"=> \@core_energies,
                      "spacings=s"=> \@spacings,
                      "input_file=s"=> \$inputfile,
                      "comment=s"=> \$comment);
@@ -54,11 +61,13 @@ my $helpstring = "Run script for Maggs-Rossetto code. Options:
 
   --charge_values  or -ch = comma-separated list of charge values. Specifying will cause the script to run once using each charge value given (i.e. changing the strength of Coulomb interactions, basically). If a list is given here, the temperature in the input file will be ignored.
 
+  --core_energies  or -cor = comma-separated list of charge values. Specifying will cause the script to run once using each charge value given (i.e. changing the strength of Coulomb interactions, basically). If a list is given here, the temperature in the input file will be ignored.
+
   --spacings or -s = comma-separated list of spacings. Specifying will cause the script to run once using each spacing given. Here for completeness really. If a list is given here, the temperature in the input file will be ignored.
 
   --input_file or -i = \$filename: Give input file name. Default is \$PWD/in/start.in.
 
-  --comment or -co = \$string: Add a comment to the JSON string I output with each run. I basically use this as a memory aid.
+  --comment or -com = \$string: Add a comment to the JSON string I output with each run. I basically use this as a memory aid.
   ";
 
 if ($help || !$input) {
@@ -116,16 +125,16 @@ my %parameters = get_parameters("$inputfile");
 push @lengths, $parameters{L};
 push @temperatures, $parameters{temperature};
 push @charges, $parameters{charges};
-push @core_energies, $parameters{e_c};
 push @charge_values, $parameters{charge_value};
+push @core_energies, $parameters{e_c};
 push @spacings, $parameters{lattice_spacing};
 
 # ensures we don't waste time doing identical simulations
 @lengths = uniq(@lengths);
 @temperatures = uniq(@temperatures);
 @charges = uniq(@charges);
-@core_energies = uniq(@core_energies);
 @charge_values = uniq(@charge_values);
+@core_energies = uniq(@core_energies);
 @spacings = uniq(@spacings);
 
 # portably change relative path names into absolute ones
@@ -156,17 +165,18 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
             # don't think i can call a function inside an array assignment
             # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
-            # my @stamparray = ('T', $temperatures[$i],'L',$parameters{L},$comment);
             if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
-               @stamparray = ('ce','T', $temperatures[$i],'chg', $charges[$l],$comment);
+              @stamparray = ('ce','T', $temperatures[$i],'chg', $charges[$l],$comment);
             } else {
-               @stamparray = ('gce','T', $temperatures[$i],'e_c',$core_energies[$n],$comment);
+              # gonna want to add core-energy in here probably
+              @stamparray = ('gce','T', $temperatures[$i],'e_c',$core_energies[$n],$comment);
             }
             my $stamp = join('_', @stamparray);
             my $stampdir = "$outdir/$stamp";
             print "Creating directory $stampdir .\n";
             make_path($stampdir);
             $parameters{stamp} = "$stamp";
+            # my $parameters_json = create_json(%parameters);
 
             if ($doplots) {
               print "Creating directory $stampdir/plots .\n";
@@ -196,6 +206,11 @@ for( my $i = 0; $i < @temperatures; $i++) {
               }
             }
             close $fh;
+
+            # write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
+            # # keep a list of every run and its parameters
+            # my $jsondb = "$logdir/db.json";
+            # write_to_file($jsondb, "$parameters_json\n", "append");
 
             # generate job file
             my $genjobfile = 0;
@@ -238,7 +253,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
               my $np = 1;
               # my $mpi_args = '--bind-to none';
               my $mpi_args = '';
-              my $verbose = '';
+              my $verbose = '-v';
               my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
               print "Running $progname with command $runcmd\n";
               if ($dorun) {
@@ -261,6 +276,18 @@ for( my $i = 0; $i < @temperatures; $i++) {
               system($plotcmd);
             }
 
+            if ($docontour) {
+              my $contourfile = "$basedir/scripts/s_perp_contours.py";
+              my $contourcmd = qq[python $contourfile $stampdir $parameters{L}];
+              system($contourcmd);
+            }
+
+            if ($doquiver) {
+              my $quiverfile = "$basedir/scripts/quiver.py";
+              my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width];
+              system($quivercmd);
+            }
+            
           }
         }
       }
@@ -331,6 +358,15 @@ sub get_parameters {
   return %parameters;
 
 }
+
+# sub create_json {
+
+#   # print "\ncreate_json\n";
+#   my %input = @_;
+#   my $json = encode_json[%input];
+#   return $json;
+
+# }
 
 sub write_to_file {
 
