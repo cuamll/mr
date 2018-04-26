@@ -4,14 +4,14 @@ no_samples 4
 do_corr T
 canon F
 thermalisation_sweeps 500000
-measurement_sweeps 500000
+measurement_sweeps 250000
 sample_interval 10
-temperature 0.1500
+temperature 1000.000
 lattice_spacing 1.0
 charge_value 1.000
 delta_max 0
 charges 0
-e_c -0.5000
+e_c -0.0000
 charge_generation DIPOLE
 rng_seed 0
 hop_ratio 1.0
@@ -19,6 +19,7 @@ rot_ratio 1.0
 harmonic_ratio 1.0
 bin_size 1.0
 average_field_file                    out/avg_fields.dat
+windings_file                         out/windings.dat
 electric_field_file                   out/snapshot
 sphe_sus_file                         out/sphe_sus.dat
 equil_file                            out/equil_check.dat

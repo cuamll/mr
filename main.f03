@@ -341,6 +341,8 @@ subroutine reductions(id)
                          MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, bin_count, size(bin_count),&
                          MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, windings, size(windings), MPI_NEW_REAL,&
+                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
     else
 
@@ -418,6 +420,7 @@ subroutine normalisations(num_procs)
   e_irrot_avg = e_irrot_avg / denom
   v_avg = v_avg / denom
   rho_avg = rho_avg / denom
+  windings = windings / denom
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
   sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)
@@ -451,6 +454,10 @@ subroutine normalisations(num_procs)
   write (*,*) "Avg. charge density",rho_avg
   write (*,*) "Avg. mu",mu_tot / &
     ((denom + (no_samples * num_procs * therm_sweeps)) * L**2)
+  write (*,*) "Avg. windings: ",sum(windings(1,:))/no_measurements,&
+    sum(windings(2,:))/no_measurements
+  write (*,*) "Avg. windings^2: ",sum(windings(1,:)**2)/no_measurements,&
+    sum(windings(2,:)**2)/no_measurements
 
   open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"

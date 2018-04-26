@@ -16,6 +16,7 @@ module setup
     allocate(pos(L))
     allocate(neg(L))
     allocate(v_avg(L,L))
+    allocate(windings(2,no_measurements))
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
     allocate(e_irrot_avg(2,L,L))
@@ -44,7 +45,7 @@ module setup
     s_ab = (0.0,0.0); s_ab_rot = (0.0,0.0); s_ab_irrot = (0.0,0.0);
     ch_ch = (0.0,0.0); rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0); lgf = 0.0
     dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
-    attempts = 0; accepts = 0
+    attempts = 0; accepts = 0; windings = 0.0
     ! we know in advance how many rot. and harm. attempts we'll make
     attempts(2) = (therm_sweeps + measurement_sweeps) *&
       no_samples * L**2 * rot_ratio

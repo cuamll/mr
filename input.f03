@@ -17,7 +17,7 @@ module input
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
     r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, ch_g, c_ab_l,&
-    r_cab_l, ir_cab_l
+    r_cab_l, ir_cab_l, wf_l
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -164,6 +164,11 @@ module input
             read(buffer, '(a)', iostat=ios) lattfile_long
             if (verbose) then
               write (*,*) 'Lattice file name: ',lattfile_long
+            end if
+          case ('windings_file')
+            read(buffer, '(a)', iostat=ios) wf_l
+            if (verbose) then
+              write (*,*) 'Windings file name: ',wf_l
             end if
           case ('energy_file')
             read(buffer, '(a)', iostat=ios) en_long
@@ -433,6 +438,7 @@ module input
       chi_ab_file = trim(adjustl(c_ab_l))
       rot_chi_ab_file = trim(adjustl(r_cab_l))
       irrot_chi_ab_file = trim(adjustl(ir_cab_l))
+      windings_file = trim(adjustl(wf_l))
 
       if (charge_gen.ne."RANDOM".and.charge_gen.ne."DIPOLE".and.charge_gen.ne."CRYSTA") then
         write(*,*) "Charge generation method should be either RANDOM,&
