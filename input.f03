@@ -17,7 +17,7 @@ module input
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
     r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, cab_l,&
-    r_cab_l, ir_cab_l, ch_g
+    r_cab_l, ir_cab_l, ch_g, wf_l, wsq_l
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -159,6 +159,16 @@ module input
             read(buffer, '(F10.1)', iostat=ios) bin_size
             if (verbose) then
               write (*,*) 'Bin size for real space corr.: ',bin_size
+            end if
+          case ('windings_file')
+            read(buffer, '(a)', iostat=ios) wf_l
+            if (verbose) then
+              write (*,*) 'Lattice file name: ',wf_l
+            end if
+          case ('windings_sq_file')
+            read(buffer, '(a)', iostat=ios) wsq_l
+            if (verbose) then
+              write (*,*) 'Lattice file name: ',wsq_l
             end if
           case ('lattice_file')
             read(buffer, '(a)', iostat=ios) lattfile_long
@@ -439,6 +449,8 @@ module input
       chi_ab_file = trim(adjustl(cab_l))
       rot_chi_ab_file = trim(adjustl(r_cab_l))
       irrot_chi_ab_file = trim(adjustl(ir_cab_l))
+      windings_file = trim(adjustl(wf_l))
+      windings_sq_file = trim(adjustl(wsq_l))
 
       if (charge_gen.ne."RANDOM"&
           .and.charge_gen.ne."DIPOLE"&

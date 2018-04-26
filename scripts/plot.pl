@@ -145,7 +145,8 @@ for my $i (0..$#filenames) {
     }
 
   } else {
-    die "File name doesn't match anything. $file $!\n";
+    print "File name doesn't match anything. $file $!\n";
+    next;
   }
 
   # if they're going in a document as a figure, might not want the titles

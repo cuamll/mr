@@ -387,6 +387,10 @@ subroutine reductions(id)
                          MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(bin_count, bin_count, size(bin_count),&
                          MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(windings, windings, size(windings),&
+                         MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(windings_sq, windings_sq, size(windings_sq),&
+                         MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
     end if
 
@@ -422,6 +426,8 @@ subroutine normalisations(num_procs)
   ebar_dip_sq_sum = ebar_dip_sq_sum / denom
   ebar_wind_sum = ebar_wind_sum / denom
   ebar_wind_sq_sum = ebar_wind_sq_sum / denom
+  windings = windings / denom
+  windings_sq = windings_sq / denom
 
   rho_k_p = rho_k_p / denom
   rho_k_m = rho_k_m / denom
@@ -496,6 +502,10 @@ subroutine normalisations(num_procs)
                           avg_field_sq_irrot(3)
   write (*,*) "Avg. mu",mu_tot / &
     ((denom + (no_samples * num_procs * therm_sweeps)) * L**3)
+  write (*,*) "Avg. windings: ", sum(windings(1,:)),&
+    sum(windings(2,:)),sum(windings(3,:))
+  write (*,*) "Avg. windings^2: ", sum(windings_sq(1,:)),&
+    sum(windings_sq(2,:)),sum(windings_sq(3,:))
 
   open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
@@ -533,6 +543,10 @@ subroutine normalisations(num_procs)
                                    &ebar_wind_sq_sum(3)
   write (30,*) "Ebar_wind susceptibility: ",ebar_wind_sus
   write (30,*) "E_{eff}^{-1}: ",1 - 0.5*ebar_sus
+  write (*,*) "Avg. windings: ", sum(windings(1,:)),&
+    sum(windings(2,:)),sum(windings(3,:))
+  write (*,*) "Avg. windings^2: ", sum(windings_sq(1,:)),&
+    sum(windings_sq(2,:)),sum(windings_sq(3,:))
 
   if ((.not.canon).or.(add_charges.ne.0)) then
 

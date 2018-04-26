@@ -420,6 +420,7 @@ module update
       e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
       e_kz = (0.0,0.0); mnphi_kz = (0.0,0.0); e_rot_kz = (0.0,0.0)
       kdotx = (0.0,0.0); imag = (0.0, 1.0)
+      n = step_number / sample_interval
 
       ! get irrotational part of field
       ! this way we can get decomposed parts along with total
@@ -453,13 +454,21 @@ module update
         dp = ebar(i)
         np = 0
 
-        if (ebar(i).gt.((q * dble(L)) / 2)) then
-          dp = dp - (q * dble(L))
-          np = ebar(i) - dp
-        else if (ebar(i).le.((-1.0 * q * dble(L)) / 2)) then
-          dp = dp + (q * dble(L))
-          np = ebar(i) - dp
-        end if
+        do while (abs(dp).gt.((q * dble(L)) / (2 * eps_0)))
+
+          if (dp.gt.((q * dble(L)) / (2 * eps_0))) then
+            windings(i,n) = windings(i,n) + 1
+            dp = dp - (q * dble(L) / eps_0)
+          else if (dp.le.((-1.0 * q * dble(L)) / (2 * eps_0))) then
+            windings(i,n) = windings(i,n) - 1
+            dp = dp + (q * dble(L) / eps_0)
+          end if
+
+        end do
+
+        windings_sq(i,n) = windings(i,n)**2
+
+        np = ebar(i) - dp
 
         ebar_dip(i) = dp
         ebar_wind(i) = np
@@ -514,7 +523,6 @@ module update
       ebar_wind_sq_sum(3) = ebar_wind_sq_sum(3) + (ebar_wind(3) * ebar_wind(3))
 
       if (do_corr) then
-        n = step_number / sample_interval
 
         !$omp parallel do&
         !$omp& private(i,j,k,m,p,s,kx,ky,kz,x,y,z,rho_k_p_temp,rho_k_m_temp,&

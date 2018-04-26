@@ -1285,6 +1285,8 @@ module output
       open(unit=26, file=chi_ab_file)
       open(unit=27, file=rot_chi_ab_file)
       open(unit=28, file=irrot_chi_ab_file)
+      open(unit=38, file=windings_file)
+      open(unit=39, file=windings_sq_file)
 
       ! possible normalisation thing, not sure yet
       ! s_perp = s_perp * L**2
@@ -1366,7 +1368,14 @@ module output
         i * bin_size, bin_count(i), abs(dist_r(i))
       end do
 
+      do i = 1,no_measurements
+        write (38,*) windings(1,i), windings(2,i), windings(3,i)
+        write (39,*) windings_sq(1,i), windings_sq(2,i), windings_sq(3,i)
+      end do
+
       close(11)
+      close(38)
+      close(39)
 
       do i = 1,sp*(L) + 1
         do j = 1,sp*(L) + 1
