@@ -710,7 +710,7 @@ module output
       open(unit=26, file=chi_ab_file)
       open(unit=27, file=irrot_chi_ab_file)
       open(unit=28, file=rot_chi_ab_file)
-      open(unit=38, file='windings.dat')
+      open(unit=38, file=windings_file)
 
       open  (30, file=sphe_sus_file, position='append')
       write (30, '(a)') "# S_ab integrals (* L**2)!"

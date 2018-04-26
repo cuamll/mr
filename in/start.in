@@ -6,7 +6,7 @@ canon F
 thermalisation_sweeps 500000
 measurement_sweeps 250000
 sample_interval 10
-temperature 1000.000
+temperature 0.200
 lattice_spacing 1.0
 charge_value 1.000
 delta_max 0
