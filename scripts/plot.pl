@@ -147,7 +147,8 @@ for my $i (0..$#filenames) {
     } elsif ($1 =~ /direct/) {
       $linetitle = q($ g^{\pm}(r) $);
     } else {
-      die "File name doesn't match regex. $file $!\n";
+      print "File name doesn't match regex. $file $!\n";
+      next;
     }
 
   } else {

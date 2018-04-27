@@ -531,6 +531,8 @@ module update
 
         end do
 
+        windings_sq(i,n) = windings(i,n)**2
+
         np = ebar(i) - dp
 
         ebar_dip(i) = dp

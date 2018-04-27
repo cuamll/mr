@@ -583,9 +583,12 @@ module output
 
       ! renormalise s_ab tensors here: then it propagates through to
       ! s_perp and s_par
-      s_ab = s_ab * 2 * L**2
-      s_ab_rot = s_ab_rot * 2 * L**2
-      s_ab_irrot = s_ab_irrot * 2 * L**2
+      ! s_ab = s_ab * 2 * L**2
+      ! s_ab_rot = s_ab_rot * 2 * L**2
+      ! s_ab_irrot = s_ab_irrot * 2 * L**2
+      s_ab = s_ab * L**2
+      s_ab_rot = s_ab_rot * L**2
+      s_ab_irrot = s_ab_irrot * L**2
 
       chi_ab = s_ab / temp
       chi_ab_rot = s_ab_rot / temp
@@ -711,6 +714,7 @@ module output
       open(unit=27, file=irrot_chi_ab_file)
       open(unit=28, file=rot_chi_ab_file)
       open(unit=38, file=windings_file)
+      open(unit=39, file=windings_sq_file)
 
       open  (30, file=sphe_sus_file, position='append')
       write (30, '(a)') "# S_ab integrals (* L**2)!"
@@ -751,10 +755,12 @@ module output
 
       do i = 1,no_measurements
         write(38,*) windings(1,i), windings(2,i)
+        write(39,*) windings_sq(1,i), windings_sq(2,i)
       end do
 
       close(11)
       close(38)
+      close(39)
 
       do i = 1,sp*(L) + 1
         do j = 1,sp*(L) + 1
