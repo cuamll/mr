@@ -1046,9 +1046,12 @@ module output
       ! renormalise s_ab tensors here: then it propagates through to
       ! s_perp and s_par
       ! Try 3 * L**3 here since there are 3N field links
-      s_ab = s_ab * 3 * L**3
-      s_ab_rot = s_ab_rot * 3 * L**3
-      s_ab_irrot = s_ab_irrot * 3 * L**3
+      ! s_ab = s_ab * 3 * L**3
+      ! s_ab_rot = s_ab_rot * 3 * L**3
+      ! s_ab_irrot = s_ab_irrot * 3 * L**3
+      s_ab = s_ab * L**3
+      s_ab_rot = s_ab_rot * L**3
+      s_ab_irrot = s_ab_irrot * L**3
 
       chi_ab = s_ab / temp
       chi_ab_rot = s_ab_rot / temp
