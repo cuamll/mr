@@ -280,6 +280,10 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_irrot, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, windings, size(windings), MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, windings_sq, size(windings_sq), MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   else
 
@@ -325,6 +329,10 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(avg_field_sq_irrot, avg_field_sq_irrot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(windings, windings, size(windings),&
+                       MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(windings_sq, windings_sq, size(windings_sq),&
+                       MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   end if
 
@@ -386,10 +394,6 @@ subroutine reductions(id)
       call MPI_Reduce(e_irrot_avg, e_irrot_avg, size(e_irrot_avg),&
                          MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(bin_count, bin_count, size(bin_count),&
-                         MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(windings, windings, size(windings),&
-                         MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(windings_sq, windings_sq, size(windings_sq),&
                          MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
     end if
