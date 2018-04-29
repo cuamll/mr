@@ -16,7 +16,8 @@ module input
     character(len=200) :: lattfile_long, en_long, sq_en_long,&
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
-    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l
+    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, w_l, w_sq_l,&
+    sp_th_l, spa_th_l, cab_l, r_cab_l, ir_cab_l, th_cab_l, sab_th_l
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -209,6 +210,11 @@ module input
             if (verbose) then
               write (*,*) 'Irrotational Chi^(α β) file name: ',ir_cab_l
             end if
+          case ('theta_chi^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) th_cab_l
+            if (verbose) then
+              write (*,*) 'Theta Chi^(α β) file name: ',th_cab_l
+            end if
           case ('total_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
             if (verbose) then
@@ -218,6 +224,21 @@ module input
             read(buffer, '(a)', iostat=ios) spa_l
             if (verbose) then
               write (*,*) 'Total S_(//) file name: ',spa_l
+            end if
+          case ('theta_s_(perp)_file')
+            read(buffer, '(a)', iostat=ios) sp_th_l
+            if (verbose) then
+              write (*,*) 'Theta S_(⊥) file name: ',sp_th_l
+            end if
+          case ('theta_s_(par)_file')
+            read(buffer, '(a)', iostat=ios) spa_th_l
+            if (verbose) then
+              write (*,*) 'Theta S_(//) file name: ',spa_th_l
+            end if
+          case ('theta_s^(alpha_beta)_file')
+            read(buffer, '(a)', iostat=ios) sab_th_l
+            if (verbose) then
+              write (*,*) 'Theta S^(α β) file name: ',sab_th_l
             end if
           case ('irrot_field_structure_factor_file')
             read(buffer, '(a)', iostat=ios) ir_fe_l
@@ -278,6 +299,16 @@ module input
             read(buffer, '(a)', iostat=ios) eq_l
             if (verbose) then
               write (*,*) 'Raw file name for equilibriation check: ',eq_l
+            end if
+          case ('windings_file')
+            read(buffer, '(a)', iostat=ios) w_l
+            if (verbose) then
+              write (*,*) 'Windings file: ',w_l
+            end if
+          case ('windings_sq_file')
+            read(buffer, '(a)', iostat=ios) w_sq_l
+            if (verbose) then
+              write (*,*) 'Windings^2 file: ',w_sq_l
             end if
           case default
             write (*,*) 'Skipping invalid label at line ',line
@@ -387,11 +418,14 @@ module input
       charge_st_file = trim(adjustl(ch_st_l))
       field_st_file = trim(adjustl(fi_st_l))
       s_ab_file = trim(adjustl(s_ab_l))
+      theta_sab_file = trim(adjustl(sab_th_l))
       s_perp_file = trim(adjustl(s_p_l))
       spar_file = trim(adjustl(spa_l))
       irrot_field_file = trim(adjustl(ir_fe_l))
       irrot_sab_file = trim(adjustl(ir_sab_l))
       irrot_sperp_file = trim(adjustl(ir_sp_l))
+      theta_sperp_file = trim(adjustl(sp_th_l))
+      theta_spar_file = trim(adjustl(spa_th_l))
       irrot_spar_file = trim(adjustl(ir_spa_l))
       rot_field_file = trim(adjustl(r_fe_l))
       rot_sab_file = trim(adjustl(r_sab_l))
@@ -404,6 +438,9 @@ module input
       chi_ab_file = trim(adjustl(cab_l))
       rot_chi_ab_file = trim(adjustl(r_cab_l))
       irrot_chi_ab_file = trim(adjustl(ir_cab_l))
+      theta_chi_ab_file = trim(adjustl(th_cab_l))
+      windings_file = trim(adjustl(w_l))
+      windings_sq_file = trim(adjustl(w_sq_l))
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg

@@ -111,6 +111,9 @@ module update
         ! PROPOSED EMERGENT FIELD
 
         top1new = thetanew - theta(i,neg(j))
+
+        ! here is where i should be figuring out the charge logic
+        ! in order to do the helmholtz decomposition
         if (top1new .gt. pi) then
            top1new = top1new - twopi
         else if (top1new .le. -pi) then
@@ -435,7 +438,7 @@ module update
       integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
       real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
       real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
-      real(kind=8) :: theta_x, theta_y
+      real(kind=8) :: theta_x, theta_y, vert_sum
       real(kind=8), dimension(2,L,L) :: e_rot
       complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
       complex(kind=rk) :: e_kx_temp, e_ky
@@ -455,39 +458,59 @@ module update
       ! | --------------------------------------------------------------- |
 
       ebar = 0.0; ebar_dip = 0.0; ebar_wind = 0.0; dp = 0.0; np = 0.0
-      norm_k = 0.0; dist = 0.0
+      norm_k = 0.0; dist = 0.0; vert_sum = 0.0
       rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
       e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
-      e_rot_kx_temp = (0.0,0.0)
+      e_rot_kx_temp = (0.0,0.0); e_rot = 0.0
       e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
       kdotx = (0.0,0.0); imag = (0.0, 1.0)
+      n = step_number / sample_interval
 
-      ! get irrotational part of field
-      ! this way we can get decomposed parts along with total
-      ! call linsol
-      ! e_rot = e_field - mnphi
+      ! this is all *incredibly ugly* and needs a lot of refactoring
+      ! my bad
 
-      ! e_tot_avg =           e_tot_avg + e_field
-      ! e_rot_avg =           e_rot_avg + e_rot
-      ! e_irrot_avg =         e_irrot_avg + mnphi
-      ! v_avg =               v_avg + float(v)
-      ! rho_avg =             rho_avg + (dble(sum(abs(v))) / L**2)
-      ! ener_tot =            0.5 * lambda**2 * eps_0 * sum(e_field * e_field)
-      ! ener_rot =            0.5 * lambda**2 * eps_0 * sum(e_rot * e_rot)
-      ! ener_irrot =          0.5 * lambda**2 * eps_0 * sum(mnphi * mnphi)
-      ener_tot =            0.5 * lambda**2 * eps_0 * sum(top_x**2 + top_y**2)
-      ener_tot =            ener_tot / L**2
-      ! ener_rot =            ener_rot / L**2
-      ! ener_irrot =          ener_irrot / L**2
-      ener_tot_sq =         ener_tot**2
-      ! ener_rot_sq =         ener_rot**2
-      ! ener_irrot_sq =       ener_irrot**2
-      ener_tot_sum =        ener_tot_sum + ener_tot
-      ! ener_rot_sum =        ener_rot_sum + ener_rot
-      ! ener_irrot_sum =      ener_irrot_sum + ener_irrot
-      ener_tot_sq_sum =     ener_tot_sq_sum + ener_tot_sq
-      ! ener_rot_sq_sum =     ener_rot_sq_sum + ener_rot_sq
-      ! ener_irrot_sq_sum =   ener_irrot_sq_sum + ener_irrot_sq
+      ! the sum of emergent fields around a given lattice site
+      ! tells us whether there's a vortex there or not:
+      ! we need to know this to Helmholtz decompose the field properly
+      ! it looks like this:
+      !                         |
+      !                       - . -
+      !                         |
+      ! with the charge located at the point (i + 1/2, j + 1/2)
+      ! since in the code I take the spins to be located on lattice points.
+
+
+      do i = 1,L
+        do j = 1,L
+
+          ! vert_sum = top_x(i,j) + top_y(i,j) - top_x(neg(i),j) - top_y(i,neg(j))
+          vert_sum = top_x(pos(i),j) + top_y(i,pos(j)) - top_x(i,j) - top_y(i,j)
+          vert_sum = vert_sum / q
+
+          if (vert_sum.gt.1.999.or.vert_sum.lt.-1.999) then
+            write (*,*) n,i,j,vert_sum
+          end if
+
+          ! this is basically what Michael's code did; looks weird to me
+          ! if (vert_sum.gt.0.999.and.vert_sum.lt.1.01) then
+          !   v(i,j) = 1
+          ! else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.01) then
+          !   v(i,j) = -1
+          ! end if
+
+          ! doing it like this instead, we'll see what it looks like 
+          if (vert_sum.gt.0.999.and.vert_sum.lt.1.999) then
+            v(i,j) = 1
+          else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.999) then
+            v(i,j) = -1
+          end if
+
+        end do
+      end do
+
+      call linsol
+      e_rot(1,:,:) = top_x + mnphi(1,:,:)
+      e_rot(2,:,:) = top_y + mnphi(2,:,:)
 
       ebar(1) = sum(top_x(:,:))
       ebar(2) = sum(top_y(:,:))
@@ -497,34 +520,27 @@ module update
         dp = ebar(i)
         np = 0
 
-        if (ebar(i).gt.((q * dble(L)) / 2)) then
-          dp = dp - (q * dble(L))
-          np = ebar(i) - dp
-        else if (ebar(i).le.((-1.0 * q * dble(L)) / 2)) then
-          dp = dp + (q * dble(L))
-          np = ebar(i) - dp
-        end if
+        do while (abs(dp).gt.((q * dble(L)) / (2 * eps_0)))
+
+          if (dp.gt.((q * dble(L)) / (2 * eps_0))) then
+            windings(i,n) = windings(i,n) + 1
+            dp = dp - (q * dble(L) / eps_0)
+          else if (dp.le.((-1.0 * q * dble(L)) / (2 * eps_0))) then
+            windings(i,n) = windings(i,n) - 1
+            dp = dp + (q * dble(L) / eps_0)
+          end if
+
+        end do
+
+        windings_sq(i,n) = windings(i,n)**2
+
+        np = ebar(i) - dp
 
         ebar_dip(i) = dp
         ebar_wind(i) = np
 
-        ! avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
-        ! avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
-        ! avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
-
-        ! avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
-        ! avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
-        ! avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
-
-
       end do
 
-      ! avg_field_total = avg_field_total / L**2
-      ! avg_field_rot = avg_field_rot / L**2
-      ! avg_field_irrot = avg_field_irrot / L**2
-      ! avg_field_sq_total = avg_field_sq_total/ L**2
-      ! avg_field_sq_rot   = avg_field_sq_rot/ L**2
-      ! avg_field_sq_irrot = avg_field_sq_irrot/ L**2
       ebar = ebar / L**2
       ebar_dip = ebar_dip / L**2
       ebar_wind = ebar_wind / L**2
@@ -544,8 +560,57 @@ module update
       ebar_wind_sq_sum(1) = ebar_wind_sq_sum(1) + (ebar_wind(1) * ebar_wind(1))
       ebar_wind_sq_sum(2) = ebar_wind_sq_sum(2) + (ebar_wind(2) * ebar_wind(2))
 
+      ! try subtracting ebar here
+      ! do i = 1,L
+      !   do j = 1,L
+      !     e_rot(1,i,j) = e_rot(1,i,j) - ebar(1)
+      !     e_rot(2,i,j) = e_rot(2,i,j) - ebar(2)
+      !   end do
+      ! end do
+
+      do i = 1,2
+
+        avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
+        avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
+        avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
+
+        avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
+        avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
+        avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
+
+      end do
+
+      avg_field_total = avg_field_total / L**2
+      avg_field_rot = avg_field_rot / L**2
+      avg_field_irrot = avg_field_irrot / L**2
+      avg_field_sq_total = avg_field_sq_total/ L**2
+      avg_field_sq_rot   = avg_field_sq_rot/ L**2
+      avg_field_sq_irrot = avg_field_sq_irrot/ L**2
+
+      e_tot_avg(1,:,:) = e_tot_avg(1,:,:) + top_x
+      e_tot_avg(2,:,:) = e_tot_avg(2,:,:) + top_y
+      e_rot_avg =           e_rot_avg + e_rot
+      e_irrot_avg =         e_irrot_avg + mnphi
+      v_avg =               v_avg + float(v)
+      rho_avg =             rho_avg + (dble(sum(abs(v))) / L**2)
+      ! ener_tot =            0.5 * lambda**2 * eps_0 * sum(e_field * e_field)
+      ener_tot =            0.5 * lambda**2 * eps_0 * sum(top_x**2 + top_y**2)
+      ener_rot =            0.5 * lambda**2 * eps_0 * sum(e_rot * e_rot)
+      ener_irrot =          0.5 * lambda**2 * eps_0 * sum(mnphi * mnphi)
+      ener_tot =            ener_tot / L**2
+      ener_rot =            ener_rot / L**2
+      ener_irrot =          ener_irrot / L**2
+      ener_tot_sq =         ener_tot**2
+      ener_rot_sq =         ener_rot**2
+      ener_irrot_sq =       ener_irrot**2
+      ener_tot_sum =        ener_tot_sum + ener_tot
+      ener_rot_sum =        ener_rot_sum + ener_rot
+      ener_irrot_sum =      ener_irrot_sum + ener_irrot
+      ener_tot_sq_sum =     ener_tot_sq_sum + ener_tot_sq
+      ener_rot_sq_sum =     ener_rot_sq_sum + ener_rot_sq
+      ener_irrot_sq_sum =   ener_irrot_sq_sum + ener_irrot_sq
+
       if (do_corr) then
-        n = step_number / sample_interval
 
         !$omp parallel do&
         !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
@@ -584,43 +649,39 @@ module update
             m = ((s - 1) / L) + 1
             p = mod(s - 1, L) + 1
 
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
-              !         ((p)*ky)))
-              ! kdotx = hw(m,i) + fw(p,j)
               kdotx = fw(m,i) + hw(p,j)
 
               ! e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
-              ! mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
-              ! e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
               e_kx_temp = e_kx_temp + exp(kdotx)*top_x(m,p)
+              mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
+              e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
 
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
-              !         ((neg(p)+(1.0/2))*ky)))
-              ! kdotx = fw(m,i) + hw(p,j)
               kdotx = hw(m,i) + fw(p,j)
 
               ! e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p)
-              ! e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
-              ! mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
+              e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p)
+              mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p)
               e_ky = e_ky + exp(kdotx)*top_y(m,p)
 
-              ! if (v(m,p).ne.0) then ! calculate <++ + +->!
-
-              !   ! FT of charge distribution
-              !   ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
-              !   !         ((p)*ky/(L*lambda))))
               kdotx = fw(m,i) + fw(p,j)
               theta_x = cos(theta(m,p))
               theta_y = sin(theta(m,p))
               theta_kx = theta_kx + exp(kdotx) * theta_x
               theta_ky = theta_ky + exp(kdotx) * theta_y
-               
-              !     rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
-              !   end if
 
-              !   if (v(m,p).eq.1) then ! take away <++>
-              !     rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
-              !   end if
+              if (v(m,p).ne.0) then ! calculate <++ + +->!
+
+                kdotx = hw(m,i) + hw(p,j)
+               
+                if (v(m,p).eq.-1) then
+                  rho_k_m_temp = rho_k_m_temp + q * v(m,p) * exp(kdotx)
+                end if
+
+                if (v(m,p).eq.1) then ! take away <++>
+                  rho_k_p_temp = rho_k_p_temp + q * v(m,p) * exp(kdotx)
+                end if
+
+              end if
 
               !   ! --- real space correlation function ---
 
@@ -649,21 +710,21 @@ module update
 
           end do ! s
 
-          ! rho_k_p_temp = rho_k_p_temp / float(L**2)
-          ! rho_k_m_temp = rho_k_m_temp / float(L**2)
+          rho_k_p_temp = rho_k_p_temp / float(L**2)
+          rho_k_m_temp = rho_k_m_temp / float(L**2)
           e_kx_temp = e_kx_temp / float(L**2)
           e_ky = e_ky / float(L**2)
           theta_kx = theta_kx / float(L**2)
           theta_ky = theta_ky / float(L**2)
-          ! mnphi_kx_temp = mnphi_kx_temp / float(L**2)
-          ! mnphi_ky = mnphi_ky / float(L**2)
-          ! e_rot_kx_temp = e_rot_kx_temp / float(L**2)
-          ! e_rot_ky = e_rot_ky / float(L**2)
+          mnphi_kx_temp = mnphi_kx_temp / float(L**2)
+          mnphi_ky = mnphi_ky / float(L**2)
+          e_rot_kx_temp = e_rot_kx_temp / float(L**2)
+          e_rot_ky = e_rot_ky / float(L**2)
 
-          ! rho_k_p(kx,ky) = rho_k_p(kx,ky) + rho_k_p_temp
-          ! rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp
-          ! ch_ch(kx,ky) = ch_ch(kx,ky) +&
-          !               (rho_k_p_temp * conjg(rho_k_m_temp))
+          rho_k_p(kx,ky) = rho_k_p(kx,ky) + rho_k_p_temp
+          rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp
+          ch_ch(kx,ky) = ch_ch(kx,ky) +&
+                        (rho_k_p_temp * conjg(rho_k_m_temp))
 
           ! if (i.eq.1) then
           !   rho_k_p(kx + L, ky) = rho_k_p(kx,ky)
@@ -697,32 +758,32 @@ module update
           s_ab(2,2,kx,ky) = s_ab(2,2,kx,ky) +&
           e_ky*conjg(e_ky)
 
-          s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
+          s_ab_theta(1,1,kx,ky) = s_ab_theta(1,1,kx,ky) +&
           theta_kx*conjg(theta_kx)
-          s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
+          s_ab_theta(1,2,kx,ky) = s_ab_theta(1,2,kx,ky) +&
           theta_kx*conjg(theta_ky)
-          s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
+          s_ab_theta(2,1,kx,ky) = s_ab_theta(2,1,kx,ky) +&
           theta_ky*conjg(theta_kx)
-          s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
+          s_ab_theta(2,2,kx,ky) = s_ab_theta(2,2,kx,ky) +&
           theta_ky*conjg(theta_ky)
 
-          ! s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
-          ! e_rot_kx_temp*conjg(e_rot_kx_temp)
-          ! s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
-          ! e_rot_kx_temp*conjg(e_rot_ky)
-          ! s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
-          ! e_rot_ky*conjg(e_rot_kx_temp)
-          ! s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
-          ! e_rot_ky*conjg(e_rot_ky)
+          s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
+          e_rot_kx_temp*conjg(e_rot_kx_temp)
+          s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
+          e_rot_kx_temp*conjg(e_rot_ky)
+          s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
+          e_rot_ky*conjg(e_rot_kx_temp)
+          s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
+          e_rot_ky*conjg(e_rot_ky)
 
-          ! s_ab_irrot(1,1,kx,ky) = s_ab_irrot(1,1,kx,ky) +&
-          ! mnphi_kx_temp*conjg(mnphi_kx_temp)
-          ! s_ab_irrot(1,2,kx,ky) = s_ab_irrot(1,2,kx,ky) +&
-          ! mnphi_kx_temp*conjg(mnphi_ky)
-          ! s_ab_irrot(2,1,kx,ky) = s_ab_irrot(2,1,kx,ky) +&
-          ! mnphi_ky*conjg(mnphi_kx_temp)
-          ! s_ab_irrot(2,2,kx,ky) = s_ab_irrot(2,2,kx,ky) +&
-          ! mnphi_ky*conjg(mnphi_ky)
+          s_ab_irrot(1,1,kx,ky) = s_ab_irrot(1,1,kx,ky) +&
+          mnphi_kx_temp*conjg(mnphi_kx_temp)
+          s_ab_irrot(1,2,kx,ky) = s_ab_irrot(1,2,kx,ky) +&
+          mnphi_kx_temp*conjg(mnphi_ky)
+          s_ab_irrot(2,1,kx,ky) = s_ab_irrot(2,1,kx,ky) +&
+          mnphi_ky*conjg(mnphi_kx_temp)
+          s_ab_irrot(2,2,kx,ky) = s_ab_irrot(2,2,kx,ky) +&
+          mnphi_ky*conjg(mnphi_ky)
 
           ! direct space one
           ! if (i.le.L/2+1.and.j.le.L/2+1) then

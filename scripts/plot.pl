@@ -42,11 +42,11 @@ my $outpath = "$dir/plots";
 make_path($outpath);
 my $tempsuffix = '.temp';
 
-my $mpi_np = 1;
-my $steps = $mpi_np * $parameters{no_samples} * $parameters{measurement_sweeps};
+my $steps = $parameters{no_samples} * $parameters{measurement_sweeps};
 my $meas = $steps / $parameters{sample_interval};
 my $steps_c = commify($steps);
 my $meas_c = commify($meas);
+my $chgen = lc $parameters{charge_generation};
 
 my @filenames;
 foreach my $key (keys %parameters) {
@@ -65,6 +65,13 @@ my $s_string; my $field_string; my $linetitle; my $plottitle;
 # $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
 # my $chgen = lc $parameters{charge_generation};
 # $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+my $plottitle_base;
+$plottitle_base = qq(HXY: L = $parameters{L}, T = $parameters{temperature}, );
+# if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
+#   $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen),);
+# } else {
+#   $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$,);
+# }
 
 # the s_ab_whatever files have four components; we want to plot each separately
 for my $i (0..$#filenames) {
@@ -74,35 +81,35 @@ for my $i (0..$#filenames) {
 
     # do each tensor component separately
     $linetitle = qq(\$ S^{xx}_{$field_component} \$ );
-    $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_xx_$field_component";
     push @columns, 3;
 
     $linetitle = qq(\$ S^{xy}_{$field_component} \$ );
-    $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_xy_$field_component";
     push @columns, 4;
 
     $linetitle = qq(\$ S^{yx}_{$field_component} \$ );
-    $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_yx_$field_component";
     push @columns, 5;
 
     $linetitle = qq(\$ S^{yy}_{$field_component} \$ );
-    $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_yy_$field_component";
     push @columns, 6;
 
     $linetitle = qq(\$ S^{xx}_{$field_component} + S^{yy}_{$field_component} \$ );
-    $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_trace_$field_component";
@@ -121,10 +128,6 @@ for my $i (0..$#filenames) {
   if ($file =~ /s_([a-z]+)_([a-z]+)/) {
     my $s_component = $1;
     my $field_component = $2;
-
-    if ($field_component =~ /rot/) {
-      $field_component = qq(\\theta \\theta);
-    }
 
     if ($s_component =~ /xx/) {
       $s_string = qq(\$ S^{xx}_{$field_component} \$);
@@ -145,15 +148,17 @@ for my $i (0..$#filenames) {
     } elsif ($1 =~ /direct/) {
       $linetitle = q($ g^{\pm}(r) $);
     } else {
-      die "File name doesn't match regex. $file $!\n";
+      print "File name doesn't match regex. $file $!\n";
+      next;
     }
 
   } else {
-    die "File name doesn't match anything. $file $!\n";
+    print "File name doesn't match anything. $file $!\n";
+    next;
   }
 
   # if they're going in a document as a figure, might not want the titles
-  $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+  $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
   push @titles, $plottitle;
 
   # generate lists of input/output files and command-line arguments
@@ -168,7 +173,7 @@ for my $i (0..$#inputfiles) {
   push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]$plotsuffix'; COLUMN='$columns[$i]'; LINETITLE = ''; PALETTE = '$palette';);
   push @latexargs, qq(latex -interaction=batchmode -output-directory=$outpath $outputfiles[$i]$plotsuffix > /dev/null);
   push @dvipsargs, qq(dvips -q -D10000 -o $outputfiles[$i].ps $outputfiles[$i].dvi);
-  push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outputfiles[$i].ps $outputfiles[$i].pdf);
+  push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outputfiles[$i].ps $outputfiles[$i].pdf 2> /dev/null);
 
   if (index($inputfiles[$i],'s_direct') != -1) {
     # $gnuplotargs[$i] .= qq( PITICS = 'N';);

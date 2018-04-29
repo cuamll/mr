@@ -9,7 +9,7 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
-use JSON::MaybeXS qw(encode_json decode_json);
+# use JSON::MaybeXS qw(encode_json decode_json);
 use Data::Dumper qw(Dumper);
 
 my $row;
@@ -19,6 +19,9 @@ my $input;
 my $help = '';
 my $doplots = 1;
 my $dorun = 1;
+my $docontour = 1;
+my $doquiver = 1;
+my $arrow_width = 0.002;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
 my $comment = '';
@@ -26,17 +29,22 @@ my @lengths = '';
 my @temperatures = '';
 my @charges = '';
 my @charge_values = '';
+my @core_energies = '';
 my @spacings = '';
 my @params_temp = '';
+my @stamparray = '';
 
 # Get command line options; they all have (hopefully) sensible defaults
 $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
                      "run=i"=> \$dorun,
+                     "contour=i"=> \$docontour,
+                     "quiver=i"=> \$doquiver,
                      "lengths=s"=> \@lengths,
                      "temperatures=s"=> \@temperatures,
                      "charges=s"=> \@charges,
                      "charge_values=s"=> \@charge_values,
+                     "core_energies=s"=> \@core_energies,
                      "spacings=s"=> \@spacings,
                      "input_file=s"=> \$inputfile,
                      "comment=s"=> \$comment);
@@ -53,11 +61,13 @@ my $helpstring = "Run script for Maggs-Rossetto code. Options:
 
   --charge_values  or -ch = comma-separated list of charge values. Specifying will cause the script to run once using each charge value given (i.e. changing the strength of Coulomb interactions, basically). If a list is given here, the temperature in the input file will be ignored.
 
+  --core_energies  or -cor = comma-separated list of charge values. Specifying will cause the script to run once using each charge value given (i.e. changing the strength of Coulomb interactions, basically). If a list is given here, the temperature in the input file will be ignored.
+
   --spacings or -s = comma-separated list of spacings. Specifying will cause the script to run once using each spacing given. Here for completeness really. If a list is given here, the temperature in the input file will be ignored.
 
   --input_file or -i = \$filename: Give input file name. Default is \$PWD/in/start.in.
 
-  --comment or -co = \$string: Add a comment to the JSON string I output with each run. I basically use this as a memory aid.
+  --comment or -com = \$string: Add a comment to the JSON string I output with each run. I basically use this as a memory aid.
   ";
 
 if ($help || !$input) {
@@ -106,6 +116,20 @@ make_path($logdir);
 my %parameters = get_parameters("$inputfile");
 # print Dumper %parameters;
 
+# ensures that none of the lists will be empty
+push @lengths, $parameters{L};
+push @temperatures, $parameters{temperature};
+push @charges, $parameters{charges};
+push @charge_values, $parameters{charge_value};
+push @spacings, $parameters{lattice_spacing};
+
+# ensures we don't waste time doing identical simulations
+@lengths = uniq(@lengths);
+@temperatures = uniq(@temperatures);
+@charges = uniq(@charges);
+@charge_values = uniq(@charge_values);
+@spacings = uniq(@spacings);
+
 # portably change relative path names into absolute ones
 my $progname = get_progname("EXEC");
 
@@ -116,71 +140,72 @@ for( my $i = 0; $i < @temperatures; $i++) {
       for( my $l = 0; $l < @charges; $l++) {
         for( my $m = 0; $m < @lengths; $m++) {
 
-          $parameters{temperature} = $temperatures[$i];
-          $parameters{charge_value} = $charge_values[$j];
-          $parameters{lattice_spacing} = $spacings[$k];
-          $parameters{charges} = $charges[$l];
-          $parameters{L} = $lengths[$m];
-          print "New temperature: $parameters{temperature}\n";
-          print "New number of charges: $parameters{charges}\n";
-          print "New charge value: $parameters{charge_value}\n";
-          print "New lattice spacing $parameters{lattice_spacing}\n";
-          print "New system size $parameters{L}\n";
+            $parameters{temperature} = $temperatures[$i];
+            $parameters{charge_value} = $charge_values[$j];
+            $parameters{lattice_spacing} = $spacings[$k];
+            $parameters{charges} = $charges[$l];
+            $parameters{L} = $lengths[$m];
+            print "New temperature: $parameters{temperature}\n";
+            print "New number of charges: $parameters{charges}\n";
+            print "New charge value: $parameters{charge_value}\n";
+            print "New lattice spacing $parameters{lattice_spacing}\n";
+            print "New system size $parameters{L}\n";
 
-          my $timestamp = get_timestamp();
+            my $timestamp = get_timestamp();
 
-          # don't think i can call a function inside an array assignment
-          # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
-          my @stamparray = ('T', $temperatures[$i],$comment);
-          my $stamp = join('_', @stamparray);
-          my $stampdir = "$outdir/$stamp";
-          print "Creating directory $stampdir .\n";
-          make_path($stampdir);
-          $parameters{stamp} = "$stamp";
-          my $parameters_json = create_json(%parameters);
+            # don't think i can call a function inside an array assignment
+            # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
+            # gonna want to add core-energy in here probably
+            @stamparray = ('hxy','T', $temperatures[$i],$comment);
+            my $stamp = join('_', @stamparray);
+            my $stampdir = "$outdir/$stamp";
+            print "Creating directory $stampdir .\n";
+            make_path($stampdir);
+            $parameters{stamp} = "$stamp";
+            # my $parameters_json = create_json(%parameters);
 
-          if ($doplots) {
-            print "Creating directory $stampdir/plots .\n";
-            make_path("$stampdir/plots");
-          }
-
-          my $logfile = "$logdir/$stamp.log";
-
-          foreach (keys %parameters) {
-            if ($_ =~ /_file/) {
-              my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
-              $parameters{$_} = "$stampdir/$fnm$suff";
+            if ($doplots) {
+              print "Creating directory $stampdir/plots .\n";
+              make_path("$stampdir/plots");
             }
-          }
 
-          $tempinputfile = "$basedir/$stamp.temp";
+            my $logfile = "$logdir/$stamp.log";
 
-          open($fh, '>:encoding(UTF-8)', $tempinputfile)
-            or die "Unable to create temporary input file:$!\n";
-          print "Creating temporary input file at $tempinputfile\n";
-
-          for my $key (keys %parameters) {
-            if ($key !~ /comment/) {
-              if ($key !~ /stamp/) {
-                print $fh "$key $parameters{$key}\n";
+            foreach (keys %parameters) {
+              if ($_ =~ /_file/) {
+                my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
+                $parameters{$_} = "$stampdir/$fnm$suff";
               }
             }
-          }
-          close $fh;
 
-          write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
-          # keep a list of every run and its parameters
-          my $jsondb = "$logdir/db.json";
-          write_to_file($jsondb, "$parameters_json\n", "append");
+            $tempinputfile = "$basedir/$stamp.temp";
 
-          # generate job file
-          my $genjobfile = 0;
-          if ($genjobfile) {
-            my $email = q(zcapg55@ucl.ac.uk);
-            my $vf = '960M';
-            my $pe = '32';
-            my $jobname = "mr_T_$parameters{temperature}_L_$parameters{L}_canon";
-            my $jobfilecontent = qq(
+            open($fh, '>:encoding(UTF-8)', $tempinputfile)
+              or die "Unable to create temporary input file:$!\n";
+            print "Creating temporary input file at $tempinputfile\n";
+
+            for my $key (keys %parameters) {
+              if ($key !~ /comment/) {
+                if ($key !~ /stamp/) {
+                  print $fh "$key $parameters{$key}\n";
+                }
+              }
+            }
+            close $fh;
+
+            # write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
+            # # keep a list of every run and its parameters
+            # my $jsondb = "$logdir/db.json";
+            # write_to_file($jsondb, "$parameters_json\n", "append");
+
+            # generate job file
+            my $genjobfile = 0;
+            if ($genjobfile) {
+              my $email = q(zcapg55@ucl.ac.uk);
+              my $vf = '960M';
+              my $pe = '32';
+              my $jobname = "mr_T_$parameters{temperature}_L_$parameters{L}_canon";
+              my $jobfilecontent = qq(
 #!/bin/bash -f
 # ------------------------------
 #\$ \-M $email
@@ -199,43 +224,56 @@ echo "in \${IPWD}."
 mpirun --mca btl ^openib --mca mtl ^psm --n \${NSLOTS} $basedir/$progname -v $tempinputfile
 exit 0
 );
-            my $jobfilename = "$basedir/$stamp.job";
-            write_to_file($jobfilename, $jobfilecontent, "write");
+              my $jobfilename = "$basedir/$stamp.job";
+              write_to_file($jobfilename, $jobfilecontent, "write");
 
-            my $runcmd = qq(qsub -q 32-32.q $jobfilename);
-            print "Running $progname with command $runcmd\n";
-            if ($dorun) {
-              system($runcmd);
+              my $runcmd = qq(qsub -q 32-32.q $jobfilename);
+              print "Running $progname with command $runcmd\n";
+              if ($dorun) {
+                system($runcmd);
+              }
+
+            } else {
+
+              # run program
+              my $np = 1;
+              # my $mpi_args = '--bind-to none';
+              my $mpi_args = '';
+              my $verbose = '-v';
+              my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
+              print "Running $progname with command $runcmd\n";
+              if ($dorun) {
+                system($runcmd);
+              }
+
+            } # end of job file???
+
+            copy($tempinputfile, "$stampdir/input.in");
+            # unlink($tempinputfile);
+
+            # then gnuplot
+            if ($doplots) {
+              my $plotfile = "$basedir/scripts/plot.pl";
+              my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
+              my $kz = 0;
+              my $palette = "~/.config/gnuplot/inferno.pal";
+              #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
+              my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
+              system($plotcmd);
             }
 
-          } else {
-
-            # run program
-            my $np = 1;
-            # my $mpi_args = '--bind-to none';
-            my $mpi_args = '';
-            my $verbose = '-v';
-            my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
-            print "Running $progname with command $runcmd\n";
-            if ($dorun) {
-              system($runcmd);
+            if ($docontour) {
+              my $contourfile = "$basedir/scripts/s_perp_contours.py";
+              my $contourcmd = qq[python $contourfile $stampdir $parameters{L}];
+              system($contourcmd);
             }
 
-          } # end of job file???
-
-          copy($tempinputfile, "$stampdir/input.in");
-          # unlink($tempinputfile);
-
-          # then gnuplot
-          if ($doplots) {
-            my $plotfile = "$basedir/scripts/plot.pl";
-            my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
-            my $kz = 0;
-            my $palette = "~/.config/gnuplot/inferno.pal";
-            #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
-            my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
-            system($plotcmd);
-          }
+            if ($doquiver) {
+              my $quiverfile = "$basedir/scripts/quiver.py";
+              my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width];
+              system($quivercmd);
+            }
+            
         }
       }
     }
@@ -306,14 +344,14 @@ sub get_parameters {
 
 }
 
-sub create_json {
+# sub create_json {
 
-  # print "\ncreate_json\n";
-  my %input = @_;
-  my $json = encode_json[%input];
-  return $json;
+#   # print "\ncreate_json\n";
+#   my %input = @_;
+#   my $json = encode_json[%input];
+#   return $json;
 
-}
+# }
 
 sub write_to_file {
 
@@ -333,4 +371,9 @@ sub write_to_file {
   close $fh_temp;
   return;
 
+}
+
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
 }

@@ -36,12 +36,13 @@ module common
   avg_field_total, avg_field_rot, avg_field_irrot,&
   avg_field_sq_total, avg_field_sq_rot, avg_field_sq_irrot
   real(kind=rk), dimension(:), allocatable, public :: dist_r
-  real(kind=rk), dimension(:,:), allocatable, public :: v_avg, dir_struc
+  real(kind=rk), dimension(:,:), allocatable, public :: v_avg, dir_struc,&
+  windings, windings_sq
   real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg,&
   e_rot_avg, e_irrot_avg
 
   complex(kind=rk), dimension(:,:,:,:), allocatable, public :: s_ab,&
-  s_ab_rot, s_ab_irrot
+  s_ab_rot, s_ab_irrot, s_ab_theta
 
   complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch,&
   rho_k_m,rho_k_p, fw, hw
@@ -52,7 +53,9 @@ module common
   field_charge_file, energy_file, sq_energy_file, e_field_file,&
   irrot_field_file, irrot_sab_file, irrot_sperp_file, rot_field_file,&
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
-  irrot_spar_file, avg_field_file, equil_file
+  chi_ab_file, rot_chi_ab_file, irrot_chi_ab_file, theta_chi_ab_file,&
+  irrot_spar_file, avg_field_file, equil_file, windings_file, windings_sq_file,&
+  theta_sperp_file, theta_spar_file, theta_sab_file
 
   character(6) :: charge_gen
 

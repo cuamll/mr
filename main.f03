@@ -305,6 +305,8 @@ subroutine reductions(id)
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, s_ab_theta, size(s_ab_theta),&
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p),&
@@ -333,6 +335,8 @@ subroutine reductions(id)
       call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot),&
+                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(s_ab_theta, s_ab_theta, size(s_ab_theta),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(ch_ch, ch_ch, size(ch_ch),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -393,6 +397,7 @@ subroutine normalisations(num_procs)
   ch_ch = ch_ch / denom
   s_ab = s_ab / denom
   s_ab_irrot = s_ab_irrot / denom
+  s_ab_theta = s_ab_theta / denom
   s_ab_rot = s_ab_rot / denom
   dir_struc = dir_struc / denom
   dist_r = dist_r / denom

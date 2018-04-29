@@ -20,9 +20,12 @@ module setup
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
     allocate(e_irrot_avg(2,L,L))
+    allocate(windings(2,no_measurements))
+    allocate(windings_sq(2,no_measurements))
     allocate(s_ab(2,2,(bz*L)+1,(bz*L)+1))
     allocate(s_ab_rot(2,2,(bz*L)+1,(bz*L)+1))
     allocate(s_ab_irrot(2,2,(bz*L)+1,(bz*L)+1))
+    allocate(s_ab_theta(2,2,(bz*L)+1,(bz*L)+1))
     allocate(ch_ch((bz*L)+1,(bz*L)+1))
     allocate(rho_k_m((bz*L)+1,(bz*L)+1))
     allocate(rho_k_p((bz*L)+1,(bz*L)+1))
@@ -36,6 +39,7 @@ module setup
     call PBCs
 
     v_avg = 0.0; rho_avg = 0.0; runtot = 0.0;
+    windings = 0.0; windings_sq = 0.0
     avg_field_total = 0.0; avg_field_rot = 0.0; avg_field_irrot = 0.0
     e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0
     ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
@@ -43,6 +47,7 @@ module setup
     ebar_sum = 0.0; ebar_sq_sum = 0.0; ebar_dip_sum = 0.0;
     ebar_dip_sq_sum = 0.0; ebar_wind_sum = 0.0; ebar_wind_sq_sum = 0.0;
     s_ab = (0.0,0.0); s_ab_rot = (0.0,0.0); s_ab_irrot = (0.0,0.0);
+    s_ab_theta = (0.0,0.0)
     ch_ch = (0.0,0.0); rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0); lgf = 0.0
     dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
     attempts = 0; accepts = 0
