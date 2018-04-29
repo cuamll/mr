@@ -127,28 +127,28 @@ module setup
           end do
         end do
 
-        n = 0
+        ! n = 0
 
-        do while (n.lt.add_charges)
+        ! do while (n.lt.add_charges)
 
-          ! pick a random position, check if there's a charge there
-          ! if so, pick again; if not, alternate pos/neg
-          i = int(rand() * L) + 1
-          j = int(rand() * L) + 1
+        !   ! pick a random position, check if there's a charge there
+        !   ! if so, pick again; if not, alternate pos/neg
+        !   i = int(rand() * L) + 1
+        !   j = int(rand() * L) + 1
 
-          if (v(i,j).ne.0) then
-            CYCLE
-          end if
+        !   if (v(i,j).ne.0) then
+        !     CYCLE
+        !   end if
 
-          if (modulo(n,2)==0) then
-            v(i,j) = 1
-          else
-            v(i,j) = -1
-          end if
+        !   if (modulo(n,2)==0) then
+        !     v(i,j) = 1
+        !   else
+        !     v(i,j) = -1
+        !   end if
 
-          n = n + 1
+        !   n = n + 1
 
-        end do
+        ! end do
 
       else if (charge_gen.eq."DIPOLE") then
 
@@ -158,53 +158,53 @@ module setup
             theta(i,j) = 0.0
           end do
         end do
-        do while (n.lt.add_charges)
+        ! do while (n.lt.add_charges)
 
-          i = int(rand() * L) + 1
-          j = int(rand() * L) + 1
+          ! i = int(rand() * L) + 1
+          ! j = int(rand() * L) + 1
 
-          if (v(i,j).ne.0) then
-            CYCLE
-          end if
+          ! if (v(i,j).ne.0) then
+          !   CYCLE
+          ! end if
 
-          ! choose between four orientations of a dipole
-          if (rand().lt.0.5) then
-            ! x-direction
-            if (v(neg(i),j).ne.0) then
-              CYCLE
-            end if
+          ! ! choose between four orientations of a dipole
+          ! if (rand().lt.0.5) then
+          !   ! x-direction
+          !   if (v(neg(i),j).ne.0) then
+          !     CYCLE
+          !   end if
 
-            if (rand().lt.0.5) then
-              ! + -
-              v(neg(i),j) = +1
-              v(i,j) = -1
-            else
-              ! - +
-              v(neg(i),j) = -1
-              v(i,j) = +1
-            end if
+          !   if (rand().lt.0.5) then
+          !     ! + -
+          !     v(neg(i),j) = +1
+          !     v(i,j) = -1
+          !   else
+          !     ! - +
+          !     v(neg(i),j) = -1
+          !     v(i,j) = +1
+          !   end if
 
-          else
-            ! y-direction
-            if (v(i,neg(j)).ne.0) then
-              CYCLE
-            end if
+          ! else
+          !   ! y-direction
+          !   if (v(i,neg(j)).ne.0) then
+          !     CYCLE
+          !   end if
 
-            if (rand().lt.0.5) then
-              ! + -
-              v(i,neg(j)) = +1
-              v(i,j) = -1
-            else
-              ! - +
-              v(i,neg(j)) = -1
-              v(i,j) = +1
-            end if
+          !   if (rand().lt.0.5) then
+          !     ! + -
+          !     v(i,neg(j)) = +1
+          !     v(i,j) = -1
+          !   else
+          !     ! - +
+          !     v(i,neg(j)) = -1
+          !     v(i,j) = +1
+          !   end if
 
-          end if
+          ! end if
 
-          n = n + 2
+          ! n = n + 2
 
-        end do
+        ! end do
 
       end if
 

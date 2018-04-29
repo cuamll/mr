@@ -55,7 +55,7 @@ module common
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
   chi_ab_file, rot_chi_ab_file, irrot_chi_ab_file, theta_chi_ab_file,&
   irrot_spar_file, avg_field_file, equil_file, windings_file, windings_sq_file,&
-  theta_sperp_file, theta_spar_file, theta_sab_file
+  theta_sperp_file, theta_spar_file, theta_sab_file, snapshot_file
 
   character(6) :: charge_gen
 

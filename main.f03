@@ -83,6 +83,10 @@ program mr
         call measure(i)
       end if
 
+      if (i.eq.1000) then
+        call snapshot(i)
+      end if
+
     end do
 
     if (verbose) then

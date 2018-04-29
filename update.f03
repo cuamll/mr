@@ -438,13 +438,13 @@ module update
       integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
       real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
       real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
-      real(kind=8) :: theta_x, theta_y, vert_sum
+      real(kind=8) :: theta_x, theta_y, vert_sum, diff
       real(kind=8), dimension(2,L,L) :: e_rot
       complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
-      complex(kind=rk) :: e_kx_temp, e_ky
+      complex(kind=rk) :: e_kx, e_ky
       complex(kind=rk) :: theta_kx, theta_ky
-      complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
-      complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
+      complex(kind=rk) :: mnphi_kx, mnphi_ky
+      complex(kind=rk) :: e_rot_kx, e_rot_ky
       complex(kind=rk) :: imag, kdotx
 
       ! | --------------- SUBROUTINE MEASURE(STEP_NUMBER) --------------- |
@@ -460,8 +460,8 @@ module update
       ebar = 0.0; ebar_dip = 0.0; ebar_wind = 0.0; dp = 0.0; np = 0.0
       norm_k = 0.0; dist = 0.0; vert_sum = 0.0
       rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
-      e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
-      e_rot_kx_temp = (0.0,0.0); e_rot = 0.0
+      e_kx = (0.0,0.0); mnphi_kx = (0.0,0.0)
+      e_rot_kx = (0.0,0.0); e_rot = 0.0
       e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
       kdotx = (0.0,0.0); imag = (0.0, 1.0)
       n = step_number / sample_interval
@@ -479,12 +479,37 @@ module update
       ! with the charge located at the point (i + 1/2, j + 1/2)
       ! since in the code I take the spins to be located on lattice points.
 
-
       do i = 1,L
         do j = 1,L
 
-          ! vert_sum = top_x(i,j) + top_y(i,j) - top_x(neg(i),j) - top_y(i,neg(j))
-          vert_sum = top_x(pos(i),j) + top_y(i,pos(j)) - top_x(i,j) - top_y(i,j)
+          ! michael's code measures top_x and top_y again
+          ! so i guess we should too
+          diff = (theta(i,j) - theta(i,neg(j)))
+          if (diff.gt.q/2) then
+            do while (diff.gt.q/2)
+              diff = diff - q
+            end do
+          else if (diff.le.-1.0*q/2) then
+            do while (diff.le.-1.0*q/2)
+              diff = diff + q
+            end do
+          end if
+          diff = top_x(i,j)
+
+          diff = -1.0*(theta(i,j) - theta(neg(i),j))
+          if (diff.gt.q/2) then
+            do while (diff.gt.q/2)
+              diff = diff - q
+            end do
+          else if (diff.le.-1.0*q/2) then
+            do while (diff.le.-1.0*q/2)
+              diff = diff + q
+            end do
+          end if
+          diff = top_y(i,j)
+
+          vert_sum = top_x(i,j) + top_y(i,j) - top_x(neg(i),j) - top_y(i,neg(j))
+          ! vert_sum = top_x(pos(i),j) + top_y(i,pos(j)) - top_x(i,j) - top_y(i,j)
           vert_sum = vert_sum / q
 
           if (vert_sum.gt.1.999.or.vert_sum.lt.-1.999) then
@@ -509,8 +534,8 @@ module update
       end do
 
       call linsol
-      e_rot(1,:,:) = top_x + mnphi(1,:,:)
-      e_rot(2,:,:) = top_y + mnphi(2,:,:)
+      e_rot(1,:,:) = top_x - mnphi(1,:,:)
+      e_rot(2,:,:) = top_y - mnphi(2,:,:)
 
       ebar(1) = sum(top_x(:,:))
       ebar(2) = sum(top_y(:,:))
@@ -565,14 +590,16 @@ module update
       !   do j = 1,L
       !     e_rot(1,i,j) = e_rot(1,i,j) - ebar(1)
       !     e_rot(2,i,j) = e_rot(2,i,j) - ebar(2)
+      !     mnphi(1,i,j) = mnphi(1,i,j) + ebar(1)
+      !     mnphi(2,i,j) = mnphi(2,i,j) + ebar(2)
       !   end do
       ! end do
 
       do i = 1,2
 
-        avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
-        avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
-        avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
+        avg_field_total(i) = avg_field_total(i) + sum(real(e_field(i,:,:)))
+        avg_field_rot(i) = avg_field_rot(i) + sum(real(e_rot(i,:,:)))
+        avg_field_irrot(i) = avg_field_irrot(i) + sum(real(mnphi(i,:,:)))
 
         avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
         avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
@@ -613,8 +640,8 @@ module update
       if (do_corr) then
 
         !$omp parallel do&
-        !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
-        !$omp& mnphi_kx_temp,e_rot_kx_temp,theta_x,theta_y,&
+        !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx,&
+        !$omp& mnphi_kx,e_rot_kx,theta_x,theta_y,&
         !$omp& theta_kx,theta_ky,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
         do omp_index = 1, L**2
@@ -630,11 +657,11 @@ module update
           ky = j + L
 
           rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
-          mnphi_kx_temp = (0.0,0.0); mnphi_ky = (0.0,0.0)
-          e_rot_kx_temp = (0.0,0.0); e_rot_ky = (0.0,0.0)
+          mnphi_kx = (0.0,0.0); mnphi_ky = (0.0,0.0)
+          e_rot_kx = (0.0,0.0); e_rot_ky = (0.0,0.0)
           norm_k = 0.0
 
-          e_kx_temp = (0.0,0.0); e_ky = (0.0,0.0)
+          e_kx = (0.0,0.0); e_ky = (0.0,0.0)
           kdotx = (0.0,0.0)
           theta_x = 0.0; theta_y = 0.0
           theta_kx = (0.0,0.0); theta_ky = (0.0,0.0)
@@ -652,9 +679,9 @@ module update
               kdotx = fw(m,i) + hw(p,j)
 
               ! e_kx_temp = e_kx_temp + exp(kdotx)*e_field(1,m,p)
-              e_kx_temp = e_kx_temp + exp(kdotx)*top_x(m,p)
-              mnphi_kx_temp = mnphi_kx_temp + exp(kdotx)*mnphi(1,m,p)
-              e_rot_kx_temp = e_rot_kx_temp + exp(kdotx)*e_rot(1,m,p)
+              e_kx = e_kx + exp(kdotx)*top_x(m,p)
+              mnphi_kx = mnphi_kx + exp(kdotx)*mnphi(1,m,p)
+              e_rot_kx = e_rot_kx + exp(kdotx)*e_rot(1,m,p)
 
               kdotx = hw(m,i) + fw(p,j)
 
@@ -712,14 +739,14 @@ module update
 
           rho_k_p_temp = rho_k_p_temp / float(L**2)
           rho_k_m_temp = rho_k_m_temp / float(L**2)
-          e_kx_temp = e_kx_temp / float(L**2)
-          e_ky = e_ky / float(L**2)
-          theta_kx = theta_kx / float(L**2)
-          theta_ky = theta_ky / float(L**2)
-          mnphi_kx_temp = mnphi_kx_temp / float(L**2)
-          mnphi_ky = mnphi_ky / float(L**2)
-          e_rot_kx_temp = e_rot_kx_temp / float(L**2)
-          e_rot_ky = e_rot_ky / float(L**2)
+          e_kx         = e_kx / float(2 * L**2)
+          e_ky         = e_ky / float(2 * L**2)
+          theta_kx     = theta_kx / float(2 * L**2)
+          theta_ky     = theta_ky / float(2 * L**2)
+          mnphi_kx     = mnphi_kx / float(2 * L**2)
+          mnphi_ky     = mnphi_ky / float(2 * L**2)
+          e_rot_kx     = e_rot_kx / float(2 * L**2)
+          e_rot_ky     = e_rot_ky / float(2 * L**2)
 
           rho_k_p(kx,ky) = rho_k_p(kx,ky) + rho_k_p_temp
           rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp
@@ -750,11 +777,11 @@ module update
           ! end if
 
           s_ab(1,1,kx,ky) = s_ab(1,1,kx,ky) +&
-          e_kx_temp*conjg(e_kx_temp)
+          e_kx*conjg(e_kx)
           s_ab(1,2,kx,ky) = s_ab(1,2,kx,ky) +&
-          e_kx_temp*conjg(e_ky)
+          e_kx*conjg(e_ky)
           s_ab(2,1,kx,ky) = s_ab(2,1,kx,ky) +&
-          e_ky*conjg(e_kx_temp)
+          e_ky*conjg(e_kx)
           s_ab(2,2,kx,ky) = s_ab(2,2,kx,ky) +&
           e_ky*conjg(e_ky)
 
@@ -768,20 +795,20 @@ module update
           theta_ky*conjg(theta_ky)
 
           s_ab_rot(1,1,kx,ky) = s_ab_rot(1,1,kx,ky) +&
-          e_rot_kx_temp*conjg(e_rot_kx_temp)
+          e_rot_kx*conjg(e_rot_kx)
           s_ab_rot(1,2,kx,ky) = s_ab_rot(1,2,kx,ky) +&
-          e_rot_kx_temp*conjg(e_rot_ky)
+          e_rot_kx*conjg(e_rot_ky)
           s_ab_rot(2,1,kx,ky) = s_ab_rot(2,1,kx,ky) +&
-          e_rot_ky*conjg(e_rot_kx_temp)
+          e_rot_ky*conjg(e_rot_kx)
           s_ab_rot(2,2,kx,ky) = s_ab_rot(2,2,kx,ky) +&
           e_rot_ky*conjg(e_rot_ky)
 
           s_ab_irrot(1,1,kx,ky) = s_ab_irrot(1,1,kx,ky) +&
-          mnphi_kx_temp*conjg(mnphi_kx_temp)
+          mnphi_kx*conjg(mnphi_kx)
           s_ab_irrot(1,2,kx,ky) = s_ab_irrot(1,2,kx,ky) +&
-          mnphi_kx_temp*conjg(mnphi_ky)
+          mnphi_kx*conjg(mnphi_ky)
           s_ab_irrot(2,1,kx,ky) = s_ab_irrot(2,1,kx,ky) +&
-          mnphi_ky*conjg(mnphi_kx_temp)
+          mnphi_ky*conjg(mnphi_kx)
           s_ab_irrot(2,2,kx,ky) = s_ab_irrot(2,2,kx,ky) +&
           mnphi_ky*conjg(mnphi_ky)
 

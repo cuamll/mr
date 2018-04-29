@@ -3,7 +3,7 @@ module input
   implicit none
   logical, private :: start_file_there
   character :: corr_char
-  character(len=100), private :: label, buffer, verb_arg
+  character(len=200), private :: label, buffer, verb_arg
   integer :: posit
   integer :: ios = 0
   integer :: line = 0
@@ -17,7 +17,7 @@ module input
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
     r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, w_l, w_sq_l,&
-    sp_th_l, spa_th_l, cab_l, r_cab_l, ir_cab_l, th_cab_l, sab_th_l
+    sp_th_l, spa_th_l, cab_l, r_cab_l, ir_cab_l, th_cab_l, sab_th_l, sna_l
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -160,10 +160,20 @@ module input
             if (verbose) then
               write (*,*) 'Energy file name: ',en_long
             end if
+          case ('snapshot_file')
+            read(buffer, '(a)', iostat=ios) sna_l
+            if (verbose) then
+              write (*,*) 'Snapshot base file name: ',sna_l
+            end if
           case ('squared_energy_file')
             read(buffer, '(a)', iostat=ios) sq_en_long
             if (verbose) then
               write (*,*) 'Squared energy file name: ',sq_en_long
+            end if
+          case ('charge_generation')
+            read(buffer, '(a)', iostat=ios) charge_gen
+            if (verbose) then
+              write (*,*) 'Charge generation: ',charge_gen
             end if
           case ('electric_field_file')
             read(buffer, '(a)', iostat=ios) e_field_long
@@ -441,6 +451,7 @@ module input
       theta_chi_ab_file = trim(adjustl(th_cab_l))
       windings_file = trim(adjustl(w_l))
       windings_sq_file = trim(adjustl(w_sq_l))
+      snapshot_file = trim(adjustl(sna_l))
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg
