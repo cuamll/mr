@@ -486,56 +486,60 @@ module update
           ! so i guess we should too
           diff = (theta(i,j) - theta(i,neg(j)))
           if (diff.gt.q/2) then
-            do while (diff.gt.q/2)
+            ! do while (diff.gt.q/2)
               diff = diff - q
-            end do
+            ! end do
           else if (diff.le.-1.0*q/2) then
-            do while (diff.le.-1.0*q/2)
+            ! do while (diff.le.-1.0*q/2)
               diff = diff + q
-            end do
+            ! end do
           end if
-          diff = top_x(i,j)
+          ! diff = top_x(i,j)
+          top_x(i,j) = diff
 
           diff = -1.0*(theta(i,j) - theta(neg(i),j))
           if (diff.gt.q/2) then
-            do while (diff.gt.q/2)
+            ! do while (diff.gt.q/2)
               diff = diff - q
-            end do
+            ! end do
           else if (diff.le.-1.0*q/2) then
-            do while (diff.le.-1.0*q/2)
+            ! do while (diff.le.-1.0*q/2)
               diff = diff + q
-            end do
+            ! end do
           end if
-          diff = top_y(i,j)
+          ! diff = top_y(i,j)
+          top_y(i,j) = diff
 
+          ! vert_sum = top_x(i,j) - top_y(i,j) + top_x(pos(i),j) - top_y(i,pos(j))
           vert_sum = top_x(i,j) + top_y(i,j) - top_x(neg(i),j) - top_y(i,neg(j))
-          ! vert_sum = top_x(pos(i),j) + top_y(i,pos(j)) - top_x(i,j) - top_y(i,j)
           vert_sum = vert_sum / q
 
-          if (vert_sum.gt.1.999.or.vert_sum.lt.-1.999) then
+          if (vert_sum.gt.1.001.or.vert_sum.lt.-1.001) then
             write (*,*) n,i,j,vert_sum
           end if
 
           ! this is basically what Michael's code did; looks weird to me
-          ! if (vert_sum.gt.0.999.and.vert_sum.lt.1.01) then
-          !   v(i,j) = 1
-          ! else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.01) then
-          !   v(i,j) = -1
-          ! end if
+          if (vert_sum.gt.0.999.and.vert_sum.lt.1.001) then
+            v(i,j) = 1
+          else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.001) then
+            v(i,j) = -1
+          else
+            v(i,j) = 0
+          end if
 
           ! doing it like this instead, we'll see what it looks like 
-          if (vert_sum.gt.0.999.and.vert_sum.lt.1.999) then
-            v(i,j) = 1
-          else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.999) then
-            v(i,j) = -1
-          end if
+          ! if (vert_sum.gt.0.999.and.vert_sum.lt.1.999) then
+          !   v(i,j) = 1
+          ! else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.999) then
+          !   v(i,j) = -1
+          ! end if
 
         end do
       end do
 
       call linsol
-      e_rot(1,:,:) = top_x - mnphi(1,:,:)
-      e_rot(2,:,:) = top_y - mnphi(2,:,:)
+      e_rot(1,:,:) = top_x + mnphi(1,:,:)
+      e_rot(2,:,:) = top_y + mnphi(2,:,:)
 
       ebar(1) = sum(top_x(:,:))
       ebar(2) = sum(top_y(:,:))

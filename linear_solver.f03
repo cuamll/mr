@@ -64,17 +64,20 @@ module linear_solver
                 charge = q * v(x,y)
                 nch = nch + 1
 
-                ! POSITIVE GRAD i.e. - \tilde{\nabla} \phi
-                sum_x = sum_x + charge * (+1)&
-                      * (lgf(a,b,pos(x),y) - lgf(a,b,x,y))
-                sum_y = sum_y + charge * (+1)&
-                      * (lgf(a,b,x,pos(y)) - lgf(a,b,x,y))
+                ! we do the minus part of - \nabla \phi outside of the loop
+                ! there was a reason for doing that but I've forgotten it
 
-                ! NEGATIVE GRAD i.e. - \hat{\nabla} \phi
-                ! sum_x = sum_x + charge * (+1) *&
-                !       (lgf(a,b,x,y) - lgf(a,b,neg(x),y))
-                ! sum_y = sum_y + charge * (+1) *&
-                !       (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
+                ! POSITIVE GRAD i.e. \tilde{\nabla} \phi
+                ! sum_x = sum_x + charge * (+1)&
+                !       * (lgf(a,b,pos(x),y) - lgf(a,b,x,y))
+                ! sum_y = sum_y + charge * (+1)&
+                !       * (lgf(a,b,x,pos(y)) - lgf(a,b,x,y))
+
+                ! NEGATIVE GRAD i.e. \hat{\nabla} \phi
+                sum_x = sum_x + charge * (+1) *&
+                      (lgf(a,b,x,y) - lgf(a,b,neg(x),y))
+                sum_y = sum_y + charge * (+1) *&
+                      (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
 
                 if (v(a,b).ne.0) then
                   if (a.eq.x.and.b.eq.y) then
