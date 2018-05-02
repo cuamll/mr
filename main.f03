@@ -249,6 +249,8 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sq_sum, 1, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, eps_hxy, 1, MPI_NEW_REAL,&
+                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_sum, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_sq_sum, 2, MPI_NEW_REAL,&
@@ -281,6 +283,8 @@ subroutine reductions(id)
     call MPI_Reduce(ener_rot_sq_sum, ener_rot_sq_sum, 1, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_irrot_sq_sum, ener_irrot_sq_sum, 1, MPI_NEW_REAL,&
+                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(eps_hxy, eps_hxy, 1, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_sum, ebar_sum, 2, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -411,6 +415,7 @@ subroutine normalisations(num_procs)
   e_irrot_avg = e_irrot_avg / denom
   v_avg = v_avg / denom
   rho_avg = rho_avg / denom
+  eps_hxy = eps_hxy / denom
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
   sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)
@@ -444,6 +449,7 @@ subroutine normalisations(num_procs)
   write (*,*) "Avg. charge density",rho_avg
   write (*,*) "Avg. mu",mu_tot / &
     ((denom + (no_samples * num_procs * therm_sweeps)) * L**2)
+  write (*,*) "(e_0^H)^(-1) (cut-off = 100)",eps_hxy
 
   open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
@@ -477,6 +483,7 @@ subroutine normalisations(num_procs)
   write (30,*) "Ebar_wind_sum: ",ebar_wind_sum(1),ebar_wind_sum(2)
   write (30,*) "Ebar_wind_sq_sum: ",ebar_wind_sq_sum(1),ebar_wind_sq_sum(2)
   write (30,*) "Ebar_wind susceptibility: ",ebar_wind_sus
+  write (30,*) "(e_0^H)^(-1) (cut-off = 100)",eps_hxy
   close (30)
 
 

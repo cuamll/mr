@@ -30,7 +30,7 @@ module common
   real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
   real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
   real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&
-  ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg
+  ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg, eps_hxy
   real(kind=rk), dimension(2), public :: ebar, ebar_dip, ebar_wind, ebar_sum,&
   ebar_sq_sum, ebar_dip_sum, ebar_dip_sq_sum, ebar_wind_sum, ebar_wind_sq_sum,&
   avg_field_total, avg_field_rot, avg_field_irrot,&

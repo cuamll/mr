@@ -15,77 +15,6 @@ module update
      real(kind=8) :: top1old, top2old, top3old, top4old,&
             top1new, top2new, top3new, top4new
 
-     ! OPPOSITE GRADIENT DIRECTION
-     ! do n = 1, L**2
-     !    i = int(rand() * L) + 1
-     !    j = int(rand() * L) + 1
-
-     !    thetaOld = theta(i,j)
-     !    ! deltaTheta = 2. * proposalInterval * (rand() - 0.5)
-     !    deltaTheta = 2. * rot_delt * (rand() - 0.5)
-     !    thetaNew = thetaOld + deltaTheta
-     !    if (thetaNew .le. -pi) then
-     !       thetaNew = thetaNew + twopi
-     !    else if (thetaNew .gt. pi) then
-     !       thetaNew = thetaNew - twopi
-     !    end if
-
-     !    ! CALL OLD EMERGENT FIELD
-
-     !    top1old = top_x(i,j)
-     !    top2old = top_y(i,j)
-     !    top3old = top_x(i,pos(j))
-     !    top4old = top_y(pos(i),j)
-
-     !    ! PROPOSED EMERGENT FIELD
-
-     !    top1new = theta(i,pos(j)) - thetanew
-     !    if (top1new .gt. pi) then
-     !       top1new = top1new - twopi
-     !    else if (top1new .le. -pi) then
-     !       top1new = top1new + twopi
-     !    end if
-
-     !    top2new = - (theta(pos(i),j) - thetanew)
-     !    if (top2new .gt. pi) then
-     !       top2new = top2new-twopi
-     !    else if (top2new .le. -pi) then
-     !       top2new = top2new + twopi
-     !    end if
-
-     !    top3new = thetanew - theta(i,neg(j))
-     !    if (top3new .gt. pi) then
-     !       top3new = top3new - twopi
-     !    else if (top3new .le. -pi) then
-     !       top3new = top3new + twopi
-     !    end if
-
-     !    top4new = - (thetanew - theta(neg(i),j))
-     !    if (top4new .gt. pi) then
-     !       top4new = top4new - twopi
-     !    else if (top4new .le. -pi) then
-     !       top4new = top4new + twopi
-     !    end if
-
-     !    ! METROPOLIS FILTER
-
-     !    Uold = 0.5 * (top1old**2 + top2old**2 + top3old**2 + top4old**2)
-     !    Unew = 0.5 * (top1new**2 + top2new**2 + top3new**2 + top4new**2)
-     !    deltaU = Unew - Uold
-
-     !    attempts(6) = attempts(6) + 1
-
-     !    if ((deltaU .lt. 0.0) .or. (exp(- beta * deltaU) .gt. rand())) then
-     !       theta(i,j) = thetaNew
-     !       top_x(i,j) = top1new
-     !       top_y(i,j) = top2new
-     !       top_x(i,pos(j)) = top3new
-     !       top_y(pos(i),j) = top4new
-     !       ! uses same place as harm_fluct from below; not a problem atm
-     !       accepts(6) = accepts(6) + 1
-     !    end if
-     ! end do
-
      ! ORIGINAL GRADIENT DIRECTION
      do n = 1, L**2
         i = int(rand() * L) + 1
@@ -435,10 +364,10 @@ module update
       use omp_lib
       implicit none
       integer,intent(in) :: step_number
-      integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
+      integer :: omp_index,i,j,k,kmax,n,kx,ky,m,p,s,x,y,dist_bin
       real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
       real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
-      real(kind=8) :: theta_x, theta_y, vert_sum, diff
+      real(kind=8) :: theta_x, theta_y, vert_sum, diff, cos_k
       real(kind=8), dimension(2,L,L) :: e_rot
       complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
       complex(kind=rk) :: e_kx, e_ky
@@ -465,6 +394,7 @@ module update
       e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
       kdotx = (0.0,0.0); imag = (0.0, 1.0)
       n = step_number / sample_interval
+      kmax = 100
 
       ! this is all *incredibly ugly* and needs a lot of refactoring
       ! my bad
@@ -485,27 +415,27 @@ module update
           ! michael's code measures top_x and top_y again
           ! so i guess we should too
           diff = (theta(i,j) - theta(i,neg(j)))
-          if (diff.gt.q/2) then
-            ! do while (diff.gt.q/2)
+          if (diff.ge.q/2) then
+            do while (diff.ge.q/2)
               diff = diff - q
-            ! end do
+            end do
           else if (diff.le.-1.0*q/2) then
-            ! do while (diff.le.-1.0*q/2)
+            do while (diff.le.-1.0*q/2)
               diff = diff + q
-            ! end do
+            end do
           end if
           ! diff = top_x(i,j)
           top_x(i,j) = diff
 
           diff = -1.0*(theta(i,j) - theta(neg(i),j))
-          if (diff.gt.q/2) then
-            ! do while (diff.gt.q/2)
+          if (diff.ge.q/2) then
+            do while (diff.ge.q/2)
               diff = diff - q
-            ! end do
+            end do
           else if (diff.le.-1.0*q/2) then
-            ! do while (diff.le.-1.0*q/2)
+            do while (diff.le.-1.0*q/2)
               diff = diff + q
-            ! end do
+            end do
           end if
           ! diff = top_y(i,j)
           top_y(i,j) = diff
@@ -624,7 +554,6 @@ module update
       e_irrot_avg =         e_irrot_avg + mnphi
       v_avg =               v_avg + float(v)
       rho_avg =             rho_avg + (dble(sum(abs(v))) / L**2)
-      ! ener_tot =            0.5 * lambda**2 * eps_0 * sum(e_field * e_field)
       ener_tot =            0.5 * lambda**2 * eps_0 * sum(top_x**2 + top_y**2)
       ener_rot =            0.5 * lambda**2 * eps_0 * sum(e_rot * e_rot)
       ener_irrot =          0.5 * lambda**2 * eps_0 * sum(mnphi * mnphi)
@@ -644,10 +573,11 @@ module update
       if (do_corr) then
 
         !$omp parallel do&
-        !$omp& private(i,j,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx,&
-        !$omp& mnphi_kx,e_rot_kx,theta_x,theta_y,&
+        !$omp& private(i,j,k,m,p,s,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx,&
+        !$omp& mnphi_kx,e_rot_kx,theta_x,theta_y,cos_k,&
         !$omp& theta_kx,theta_ky,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
-        !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
+        !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,s_ab_theta,&
+        !$omp& dist_r,bin_count,eps_hxy)
         do omp_index = 1, L**2
 
           i = ((omp_index - 1) / (L)) + 1
@@ -676,9 +606,19 @@ module update
             norm_k = 1.0/(((2*pi/(L*lambda))**2)*dble(kx**2 + ky**2))
           end if
 
+          cos_k = 0.0
           do s = 1,L**2
             m = ((s - 1) / L) + 1
             p = mod(s - 1, L) + 1
+
+            ! we need to calculate this thing to get susceptibilties
+            ! NB!!!!! if do_corr is turned off, this will be zero
+            ! and the susceptibilities won't mean all that much
+            if (s.le.kmax) then
+              cos_k = cos_k + cos(s * top_x(m,p)) + cos(s * top_y(m,p))
+              eps_hxy = eps_hxy + (-1)**(s+1) * cos_k
+            end if
+
 
               kdotx = fw(m,i) + hw(p,j)
 
@@ -756,29 +696,6 @@ module update
           rho_k_m(kx,ky) = rho_k_m(kx,ky) + rho_k_m_temp
           ch_ch(kx,ky) = ch_ch(kx,ky) +&
                         (rho_k_p_temp * conjg(rho_k_m_temp))
-
-          ! if (i.eq.1) then
-          !   rho_k_p(kx + L, ky) = rho_k_p(kx,ky)
-          !   rho_k_m(kx + L, ky) = rho_k_m(kx,ky)
-          !   ch_ch(kx + L, ky) = ch_ch(kx,ky)
-          ! end if
-
-          ! if (j.eq.1) then
-          !   rho_k_p(kx, ky + L) = rho_k_p(kx,ky)
-          !   rho_k_m(kx, ky + L) = rho_k_m(kx,ky)
-          !   ch_ch(kx, ky + L) = ch_ch(kx,ky)
-          ! end if
-
-          ! if (i.eq.((bz*L/2)+2).and.j.eq.((bz*L/2)+2)) then
-          !   if (n.eq.1) then
-          !     open(49, file=equil_file)
-          !   else
-          !     open(49, file=equil_file, position='append')
-          !   end if
-          !   runtot = runtot + e_kx_temp*conjg(e_ky)
-          !   write (49,'(i8.1,4f18.8)') n, runtot, runtot / dble(n)
-          !   close(49)
-          ! end if
 
           s_ab(1,1,kx,ky) = s_ab(1,1,kx,ky) +&
           e_kx*conjg(e_kx)
