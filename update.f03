@@ -19,6 +19,7 @@ module update
      do n = 1, L**2
         i = int(rand() * L) + 1
         j = int(rand() * L) + 1
+        deltaU = 0.0
 
         thetaOld = theta(i,j)
         ! deltaTheta = 2. * proposalInterval * (rand() - 0.5)
@@ -78,7 +79,7 @@ module update
 
         attempts(6) = attempts(6) + 1
 
-        if ((deltaU .lt. 0.0) .or. (exp(- beta * deltaU) .gt. rand())) then
+        if ((deltaU.lt.0.0).or.(exp((-beta)*deltaU).gt.rand())) then
            theta(i,j) = thetaNew
            top_x(i,j) = top1new
            top_y(i,j) = top2new
@@ -412,8 +413,8 @@ module update
       do i = 1,L
         do j = 1,L
 
-          ! michael's code measures top_x and top_y again
-          ! so i guess we should too
+          ! michael's code measures top_x and top_y again so I do too;
+          ! don't think it should be necessary in principle though
           diff = (theta(i,j) - theta(i,neg(j)))
           if (diff.ge.q/2) then
             do while (diff.ge.q/2)
@@ -424,7 +425,6 @@ module update
               diff = diff + q
             end do
           end if
-          ! diff = top_x(i,j)
           top_x(i,j) = diff
 
           diff = -1.0*(theta(i,j) - theta(neg(i),j))
@@ -437,18 +437,28 @@ module update
               diff = diff + q
             end do
           end if
-          ! diff = top_y(i,j)
           top_y(i,j) = diff
 
-          ! vert_sum = top_x(i,j) - top_y(i,j) + top_x(pos(i),j) - top_y(i,pos(j))
           vert_sum = top_x(i,j) + top_y(i,j) - top_x(neg(i),j) - top_y(i,neg(j))
           vert_sum = vert_sum / q
 
-          if (vert_sum.gt.1.001.or.vert_sum.lt.-1.001) then
+          ! this is just a check, shouldn't ever happen
+          if (vert_sum.gt.2.0001.or.vert_sum.lt.-2.001) then
             write (*,*) n,i,j,vert_sum
           end if
 
-          ! this is basically what Michael's code did; looks weird to me
+          ! considering the modular operation it's possible
+          ! to have vertex sums arbitrarily close to 4 \pi;
+          ! they're still just single charges though,
+          ! so we have to add/subtract 1 if we find them
+          if (vert_sum.gt.1.999.and.vert_sum.lt.2.001) then
+            vert_sum = vert_sum - 1.0
+          else if (vert_sum.lt.-1.999.and.vert.sum.gt.-2.001) then
+            vert_sum = vert_sum + 1.0
+          end if
+
+          ! this should cover all bases since we've 
+          ! already added/subtracted 1 where necessary
           if (vert_sum.gt.0.999.and.vert_sum.lt.1.001) then
             v(i,j) = 1
           else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.001) then
@@ -457,12 +467,8 @@ module update
             v(i,j) = 0
           end if
 
-          ! doing it like this instead, we'll see what it looks like 
-          ! if (vert_sum.gt.0.999.and.vert_sum.lt.1.999) then
-          !   v(i,j) = 1
-          ! else if (vert_sum.lt.-0.999.and.vert_sum.gt.-1.999) then
-          !   v(i,j) = -1
-          ! end if
+          ! alternatively could just have something like 
+          ! if (vert_sum.gt.0.999.or.vert_sum.lt.-0.999) maybe? 
 
         end do
       end do
@@ -614,9 +620,10 @@ module update
             ! we need to calculate this thing to get susceptibilties
             ! NB!!!!! if do_corr is turned off, this will be zero
             ! and the susceptibilities won't mean all that much
-            if (s.le.kmax) then
-              cos_k = cos_k + cos(s * top_x(m,p)) + cos(s * top_y(m,p))
-              eps_hxy = eps_hxy + (-1)**(s+1) * cos_k
+            if (omp_index.le.kmax) then
+              cos_k = cos_k + cos(omp_index * top_x(m,p)) +&
+                              cos(omp_index * top_y(m,p))
+              eps_hxy = eps_hxy + (-1)**(omp_index + 1) * cos_k
             end if
 
 

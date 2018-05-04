@@ -60,14 +60,14 @@ program mr
 
     ! every proc/sample combination should have a different seed,
     ! otherwise we're averaging identical data. i choose to start @ 0
-    call setup_wrapper((rank * no_samples) + k - 1)
+    call setup_wrapper(seed + (rank * no_samples) + k - 1)
 
     call cpu_time(timings(2))
 
     if (verbose) then
-      write (*,'(a,i2.1,a,i2.1,a,i2.1,a,i3.1)') "Proc. ", rank,&
+      write (*,'(a,i2.1,a,i2.1,a,i2.1,a,i10.1)') "Proc. ", rank,&
         " out of ",num_procs," starting sample ",k,&
-        ". RNG seed = ",((rank * no_samples) + (k - 1))
+        ". RNG seed = ",(seed + (rank * no_samples) + (k - 1) + seed)
     end if
 
     do i = 1,therm_sweeps
@@ -415,7 +415,7 @@ subroutine normalisations(num_procs)
   e_irrot_avg = e_irrot_avg / denom
   v_avg = v_avg / denom
   rho_avg = rho_avg / denom
-  eps_hxy = eps_hxy / denom
+  eps_hxy = eps_hxy / (L**2 * denom)
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
   sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)

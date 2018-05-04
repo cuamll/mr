@@ -229,7 +229,7 @@ module setup
 
     ! wrapper for convenience in main
     ! call read_input
-    call randinit(n)
+    call randinit(n + seed)
     call allocations
     call latt_init
     call arrays_init
