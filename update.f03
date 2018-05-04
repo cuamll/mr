@@ -439,21 +439,27 @@ module update
           end if
           top_y(i,j) = diff
 
+        end do
+      end do
+
+      do i = 1,L
+        do j = 1,L
+
           vert_sum = top_x(i,j) + top_y(i,j) - top_x(neg(i),j) - top_y(i,neg(j))
           vert_sum = vert_sum / q
 
           ! this is just a check, shouldn't ever happen
           if (vert_sum.gt.2.0001.or.vert_sum.lt.-2.001) then
-            write (*,*) n,i,j,vert_sum
+            write (*,*) n,i,j,vert_sum, top_x(i,j), top_y(i,j), top_x(neg(i),j), top_y(i,neg(j))
           end if
 
           ! considering the modular operation it's possible
           ! to have vertex sums arbitrarily close to 4 \pi;
           ! they're still just single charges though,
           ! so we have to add/subtract 1 if we find them
-          if (vert_sum.gt.1.999.and.vert_sum.lt.2.001) then
+          if ((vert_sum.gt.1.999).and.(vert_sum.lt.2.001)) then
             vert_sum = vert_sum - 1.0
-          else if (vert_sum.lt.-1.999.and.vert.sum.gt.-2.001) then
+          else if ((vert_sum.lt.-1.999).and.(vert_sum.gt.-2.001)) then
             vert_sum = vert_sum + 1.0
           end if
 
