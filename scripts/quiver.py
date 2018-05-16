@@ -11,8 +11,6 @@ import matplotlib.pyplot as plt
 
 quiver.py:  Takes field snapshots which my code outputs and makes them into
             matplotlib quiver plots.
-            To do: allow command-line variables so that this can be integrated
-            with my run scripts, etc.
 
 '''
 

@@ -51,6 +51,7 @@ mr*
 lattice.dat
 latts*
 *.inc
+*colormaps*
 
 
 # LaTeX extras
