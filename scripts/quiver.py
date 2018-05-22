@@ -18,10 +18,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory containing field snapshots. Don't add the / at the end!")
 parser.add_argument("length",type=int, help="System size L")
 parser.add_argument("width",type=float, help="Arrow width")
+parser.add_argument("dpi",type=int, help="DPI for plots")
 args = parser.parse_args()
 direc = args.directory
 length = args.length
 arrow_width = args.width
+dots = args.dpi
 sep = '/'
 # this should eventually be an argument to the script as well
 base_fn = 'snapshot_250000_'
@@ -51,7 +53,7 @@ files = [total_file,irrot_file,rot_file]
 for fil in files:
 
     input_file = fil + '.dat'
-    output_file = fil + '.png'
+    output_file = fil + '.eps'
 
 
     raw = np.loadtxt(input_file)
@@ -67,6 +69,6 @@ for fil in files:
     q = ax.quiver(X, Y, U, V, pivot='middle', width=arrow_width, angles='xy', scale_units='xy', scale=2*np.max(raw[:,2:4]))
     plt.plot(pos_x,pos_y,'ro',markeredgecolor='r')
     plt.plot(neg_x,neg_y,'bo',markeredgecolor='b')
-    fig.savefig(output_file)
+    fig.savefig(output_file, format='eps', dpi=dots)
     ax.clear()
     plt.close(fig)

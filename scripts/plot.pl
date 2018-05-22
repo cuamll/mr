@@ -15,12 +15,14 @@ use Data::Dumper qw(Dumper);
 
 my $three_d = 0;
 my $dir; my $kz; my @columns;
+my $slots = 1;
 my $palette = '~/.config/gnuplot/inferno.pal';
 my $addtitles = 1; my $keep_aux = 0;
 my @inputfiles; my @outputfiles; my @tempfiles;
 my @gnuplotargs; my @latexargs; my @dvipsargs; my @ps2pdfargs;
 my $input = GetOptions ("d=s"=> \$dir,
                      "t=i"=> \$addtitles,
+                     "s=i"=> \$slots,
                      "k=i"=> \$keep_aux,
                      "p=s"=> \$palette);
 
@@ -42,7 +44,7 @@ my $outpath = "$dir/plots";
 make_path($outpath);
 my $tempsuffix = '.temp';
 
-my $steps = $parameters{no_samples} * $parameters{measurement_sweeps};
+my $steps = $slots * $parameters{no_samples} * $parameters{measurement_sweeps};
 my $meas = $steps / $parameters{sample_interval};
 my $steps_c = commify($steps);
 my $meas_c = commify($meas);
@@ -67,9 +69,9 @@ my $s_string; my $field_string; my $linetitle; my $plottitle;
 # $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
 my $plottitle_base;
 if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
-  $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen),);
+  $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), );
 } else {
-  $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$,);
+  $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$, );
 }
 
 # the s_ab_whatever files have four components; we want to plot each separately
