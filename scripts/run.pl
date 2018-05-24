@@ -177,11 +177,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
               @stamparray = ('gce','T', $temperatures[$i],'e_c',$core_energies[$n],$comment);
             }
             my $stamp = join('_', @stamparray);
-            # if we specified a directory, use that
-            # otherwise generate a directory name
-            unless (length $stampdir) {
-              $stampdir = "$outdir/$stamp";
-            }
+            $stampdir = "$outdir/$stamp";
             print "Creating directory $stampdir .\n";
             make_path($stampdir);
             $parameters{stamp} = "$stamp";

@@ -62,13 +62,14 @@ for i in range(-1*(int((sp/2) + 0.01)) + 1, (int((sp/2) + 0.01))):
 
         output_file = outdir + 'gx_' + str(i) + '_gy_' + str(j) + '_' + filename + '.eps'
         gx, gy = g_to_index(i,j)
-        qx = kvals[gx-length/2:gx+1+length/2]
-        qy = kvals[gy-length/2:gy+1+length/2]
+        dim = int((length/2) + 0.01)
+        qx = kvals[gx - dim : gx + dim + 1]
+        qy = kvals[gy - dim : gy + dim + 1]
         #ana_int = np.zeros((len(qx),len(qy)))
         Qx, Qy = np.meshgrid(qx, qy)
-        sim_int = intens[gx-length/2:gx+1+length/2, gy-length/2:gy+1+length/2]
+        sim_int = intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1]
         # sim_int = intens[gx+1+length/2:gx-length/2:-1, gy-length/2:gy+1+length/2]
-        ana_int = s_p(Qx, Qy, qx[length/2], qy[length/2])
+        ana_int = s_p(Qx, Qy, qx[dim], qy[dim])
 
         # for k in range(len(qx)):
         #     for m in range(len(qy)):

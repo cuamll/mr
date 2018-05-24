@@ -405,10 +405,12 @@ module input
 
       if (rot_delt.eq.0) then
 
-        if (temp.lt.10.0) then
-          rot_delt = 1.1 * temp
-        else
+        if (temp.lt.0.1) then
+          rot_delt = 2 * temp
+        else if (temp.gt.10.0) then
           rot_delt = sqrt(temp)
+        else
+          rot_delt = 1.1 * temp
         end if
 
         if (verbose) then

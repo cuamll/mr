@@ -6,10 +6,10 @@ canon F
 thermalisation_sweeps 500000
 measurement_sweeps 200000
 sample_interval 10
-temperature 0.2500
+temperature 0.0500
 lattice_spacing 1.0
 charge_value 1.000
-delta_max 0
+delta_max 0.300
 charges 0
 e_c -0.5000
 charge_generation DIPOLE
