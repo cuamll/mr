@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
+from matplotlib.lines import Line2D
 
 # shouldn't need this anymore but using it for now
 def mkdir_p(path):
@@ -77,14 +78,13 @@ np.savetxt(chi_output_file, np.concatenate((kvals,chi_eigvals,chi_eigvecs.reshap
 Relevant peaks in the total S^{ab} tensor are at:
 (\pm \pi, \pm \pi) for the charge crystal case
 (0,0) for the high-temperature conducting liquid phase
-Those three are the three we'll pull out
+The difficult thing is getting the right limits on the mesh
 """
 xpeaks = [np.pi, 0]
 ypeaks = [np.pi, 0]
 stringpeaks = ['pi_pi', '0_0']
 latexpeaks = ['(\pi, \pi)','(0,0)']
 # print s_ab_inv[test,:,:]
-test = 400
 
 if d == 2:
     for i in range(len(xpeaks)):
@@ -93,64 +93,62 @@ if d == 2:
         # def quadric(x, y, a, b, c):
         #     return x**2 / a + y**2 / b + (2 * x * y) / c - 1
 
+        # get the array index we want and also store the relevant k-value
+        # as a string for pretty printing later
         cen_tuple = np.where((np.abs(kvals[:,1] - ypeaks[i]) < 0.01) & (np.abs(kvals[:,0] - xpeaks[i]) < 0.01))
-        print(cen_tuple)
-
+        index = cen_tuple[0]
         kv = kvals[cen_tuple]
         kv_str = r' $ q = ' + latexpeaks[i] + r' $'
-        # xlimit = s_ab_eigvecs[test,0,0]
-        # ylimit = s_ab_eigvecs[test,1,1]
-        xlimit = 10.0
-        ylimit = 10.0
-        # xlist = np.linspace(-1.2 * xlimit,1.2 * xlimit,400)
-        # ylist = np.linspace(-1.2 * ylimit,1.2 * ylimit,400)
-        xlist = np.linspace(-1*xlimit,xlimit,400)
-        ylist = np.linspace(-1*ylimit,ylimit,400)
-        X, Y = np.meshgrid(xlist,ylist)
-        # C = quadric(X, Y, s_ab_inv[test,0,0], s_ab_inv[test,1,1], s_ab_inv[test,0,1])
-        # C2 = quadric(X, Y, chi_inv[test,0,0], chi_inv[test,1,1], chi_inv[test,0,1])
-        # C = quadric(X, Y, s_ab_eigvals[test,0], s_ab_eigvals[test,1])
-        # C2 = quadric(X, Y, chi_eigvals[test,0], chi_eigvals[test,1])
-        C = quadric(X, Y, s_ab_eigvals[cen_tuple,0], s_ab_eigvals[cen_tuple,1])
-        C2 = quadric(X, Y, chi_eigvals[cen_tuple,0], chi_eigvals[cen_tuple,1])
+        # print(s_ab_eigvals[cen_tuple,:],chi_eigvals[cen_tuple,:])
+
+        # by inspection we can see that the eigenvalues should correspond
+        # to the intercepts of the contour, so they're our x and y limits.
+        # also, for some reason, if we don't cast them to float,
+        # linspace doesn't work at all and just prints x/ymax n times
+        s_xmax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,0]),decimals=2))
+        s_ymax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,1]),decimals=2))
+        s_xlist = np.linspace(-s_xmax,s_xmax)
+        s_ylist = np.linspace(-s_ymax,s_ymax)
+        s_X, s_Y = np.meshgrid(s_xlist,s_ylist)
+        C = quadric(s_X, s_Y, s_ab_eigvals[cen_tuple,0], s_ab_eigvals[cen_tuple,1])
+
+        # the extents are different for chi; need the factor of T
+        # chi_xmax = temp * s_xmax
+        # chi_ymax = temp * s_ymax
+        chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
+        chi_ymax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,1]),decimals=2))
+        chi_xlist = np.linspace(-chi_xmax,chi_xmax)
+        chi_ylist = np.linspace(-chi_ymax,chi_ymax)
+        chi_X, chi_Y = np.meshgrid(chi_xlist,chi_ylist)
+        C2 = quadric(chi_X, chi_Y, chi_eigvals[cen_tuple,0], chi_eigvals[cen_tuple,1])
+
         plt.rc('text',usetex=True)
         plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
-        fig, axes = plt.subplots(2, figsize=(4, 10))
-        # slimit = C.max()
-        # chilimit = C2.max()
-        # slist = np.linspace(-1*slimit,slimit,400)
-        # chilist = np.linspace(-1*chilimit,chilimit,400)
-        # X, Y = np.meshgrid(slist,slist)
-        # axes.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-        # axes.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-        axes[0].contour(X, Y, C, levels=[0])
-        axes[0].grid()
-        axes[0].arrow(0.0,0.0,s_ab_eigvecs[cen_tuple,0,0],s_ab_eigvecs[cen_tuple,1,0],color='green')
-        axes[0].arrow(0.0,0.0,s_ab_eigvecs[cen_tuple,0,1],s_ab_eigvecs[cen_tuple,1,1],color='green')
-        axes[0].axhline(0, color='black', lw=2)
-        axes[0].axvline(0, color='black', lw=2)
-        axes[0].set_title(r'$ S^{\alpha\beta}_{tot} $ quadric, ' + kv_str)
-        # X, Y = np.meshgrid(chilist,chilist)
-        axes[1].contour(X, Y, C2, levels=[0])
-        axes[1].grid()
-        axes[1].arrow(0.0,0.0,chi_eigvecs[cen_tuple,0,0],chi_eigvecs[cen_tuple,0,1],color='green')
-        axes[1].arrow(0.0,0.0,chi_eigvecs[cen_tuple,1,0],chi_eigvecs[cen_tuple,1,1],color='green')
-        axes[1].axhline(0, color='black', lw=2)
-        axes[1].axvline(0, color='black', lw=2)
-        axes[1].set_title(r'$ \chi^{\alpha\beta}_{tot} $ quadric, ' + kv_str)
-        # if you wanna see it, I guess
-        # plt.show()
+        # fig, axes = plt.subplots(1,2, figsize=(10, 4))
+        fig, axes = plt.subplots()
+        # axes[0].contour(s_X, s_Y, C, levels=[0])
+        # axes[0].grid()
+        # axes[0].arrow(0.0,0.0,float(s_ab_eigvecs[index,0,0]),float(s_ab_eigvecs[index,1,0]),color='green')
+        # axes[0].arrow(0.0,0.0,float(s_ab_eigvecs[index,0,1]),float(s_ab_eigvecs[index,1,1]),color='green')
+        # axes[0].axhline(0, color='black', lw=1.5)
+        # axes[0].axvline(0, color='black', lw=1.5)
+        # axes[0].set_title(r'$ S^{\alpha\beta}_{tot} $ quadric, ' + kv_str)
+
+        legend_elements = [Line2D([0], [0], color='b', lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
+                           Line2D([0], [0], color='r', lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
+        axes.contour(chi_X, chi_Y, C2, colors='b', levels=[0])
+        axes.contour(s_X, s_Y, C2, colors='r', levels=[0])
+        axes.grid()
+        # axes[1].arrow(0.0,0.0,float(chi_eigvecs[index,0,0]),float(chi_eigvecs[index,1,0]),color='green')
+        # axes[1].arrow(0.0,0.0,float(chi_eigvecs[index,0,1]),float(chi_eigvecs[index,1,1]),color='green')
+        axes.axhline(0, color='black', lw=1.5)
+        axes.axvline(0, color='black', lw=1.5)
+        axes.legend(handles=legend_elements)
+        # axes.set_title(r'$ \chi^{\alpha\beta}_{tot} $ quadric, ' + kv_str)
+
+        plt.title(r'$ \chi^{\alpha\beta}_{tot} $ and $ S^{\alpha\beta}_{tot} $ quadrics, ' + kv_str)
         output_file = output_dir + stringpeaks[i] + '.eps'
-        # fig, ax = plt.subplots()
-        # peak_loc = '(' + str(int((xpeaks[i]+0.01)/np.pi)) + '$ \pi $, ' + str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $).'
-        # plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'bo', label='data')
-        # plt.plot(small_line[:,0] / np.pi, result.init_fit, 'k--', label='initial fit')
-        # plt.plot(small_line[:,0] / np.pi, result.best_fit, 'r-', label='final fit')
-        # param_title = 'Final parameters: $ \chi $ = {:.4f}, $ \kappa $ = {:.4f}, bg = {:.4f}'.format(result.params['chi'].value, result.params['kappa'].value, result.params['bg'].value)
-        # temp_str = ' T = {:.4f} .'.format(temp)
-        # plot_title = 'Lorentzian fit to peak in $ S_{\perp}^{total} $ at ' + peak_loc + temp_str + '\n' + param_title
         plt.legend()
-        # plt.title(plot_title)
         plt.savefig(output_file, format='eps', dpi=dots)
         plt.close()
 

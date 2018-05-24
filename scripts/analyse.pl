@@ -24,6 +24,7 @@ my $dorun = 1;
 my $docontour = 1;
 my $doquiver = 1;
 my $dolorentz = 1;
+my $doquadrics = 1;
 my $arrow_width = 0.002;
 my $dpi = 200;
 my $inputfile = '';
@@ -113,6 +114,12 @@ if ($dolorentz) {
   my $lorentzfile = "$basedir/scripts/fits.py";
   my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
   system($lorentzcmd);
+}
+
+if ($doquadrics) {
+  my $quadricsfile = "$basedir/scripts/quadrics.py";
+  my $quadricscmd = qq[python $quadricsfile $stampdir $parameters{L} $parameters{temperature} $dpi];
+  system($quadricscmd);
 }
 
 sub get_parameters {
