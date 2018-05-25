@@ -21,11 +21,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory containing field snapshots. Don't add the / at the end!")
 parser.add_argument("length",type=int, help="System size L")
 parser.add_argument("temperature",type=float, help="Temperature")
+parser.add_argument("e_c",type=float, help="Core-energy constant")
 parser.add_argument("dpi",type=int, help="DPI for plots")
 args = parser.parse_args()
 direc = args.directory
 length = args.length
 temp = args.temperature
+core_energy = np.abs(args.e_c)
 # this should be in the right neighbourhood for the fit to figure it out
 kappa_test = 2*np.pi/length
 dots = args.dpi
@@ -97,7 +99,7 @@ for i in range(len(xpeaks)):
     # tick_labels = [str(int(((ypeaks[i]+0.01)/np.pi) - 1)) + '$ \pi $', str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $', str(int(((ypeaks[i]+0.01)/np.pi) + 1)) + '$ \pi $']
     # plt.xticks(tick_locs, tick_labels)
     param_title = 'Final parameters: $ \chi $ = {:.4f}, $ \kappa $ = {:.4f}, bg = {:.4f}'.format(result.params['chi'].value, result.params['kappa'].value, result.params['bg'].value)
-    temp_str = ' T = {:.4f} .'.format(temp)
+    temp_str = ' $ T $ = {:.4f}, $ \epsilon_c $ = {:.4f} .'.format(temp, core_energy)
     plot_title = 'Lorentzian fit to peak in $ S_{\perp}^{total} $ at ' + peak_loc + temp_str + '\n' + param_title
     plt.legend()
     plt.title(plot_title)

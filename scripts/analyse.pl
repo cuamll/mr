@@ -112,13 +112,13 @@ if ($doquiver) {
 
 if ($dolorentz) {
   my $lorentzfile = "$basedir/scripts/fits.py";
-  my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
+  my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $parameters{e_c} $dpi];
   system($lorentzcmd);
 }
 
 if ($doquadrics) {
   my $quadricsfile = "$basedir/scripts/quadrics.py";
-  my $quadricscmd = qq[python $quadricsfile $stampdir $parameters{L} $parameters{temperature} $dpi];
+  my $quadricscmd = qq[python $quadricsfile $stampdir $parameters{L} $parameters{temperature} $parameters{e_c} $dpi];
   system($quadricscmd);
 }
 

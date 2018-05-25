@@ -21,11 +21,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory containing field snapshots. Don't add the / at the end!")
 parser.add_argument("length",type=int, help="System size L")
 parser.add_argument("temperature",type=float, help="Temperature")
+parser.add_argument("e_c",type=float, help="Core-energy constant")
 parser.add_argument("dpi",type=int, help="DPI for plots")
 args = parser.parse_args()
 direc = args.directory
 length = args.length
 temp = args.temperature
+core_energy = np.abs(args.e_c)
 dots = args.dpi
 d = 2
 bz = 2
@@ -76,14 +78,14 @@ np.savetxt(chi_output_file, np.concatenate((kvals,chi_eigvals,chi_eigvecs.reshap
 
 """
 Relevant peaks in the total S^{ab} tensor are at:
-(\pm \pi, \pm \pi) for the charge crystal case
-(0,0) for the high-temperature conducting liquid phase
+(\pm \pi, \pm \pi) for the charge crystal case,
+(0,0) for the high-temperature conducting liquid phase,
 The difficult thing is getting the right limits on the mesh
 """
-xpeaks = [np.pi, 0]
-ypeaks = [np.pi, 0]
-stringpeaks = ['pi_pi', '0_0']
-latexpeaks = ['(\pi, \pi)','(0,0)']
+xpeaks = [0, np.pi, np.pi]
+ypeaks = [0, np.pi, 0]
+stringpeaks = ['pi_pi', '0_0', 'pi_0']
+latexpeaks = ['(\pi, \pi)','(0,0)','(\pi, 0)']
 # print s_ab_inv[test,:,:]
 
 if d == 2:
@@ -97,6 +99,7 @@ if d == 2:
         # as a string for pretty printing later
         cen_tuple = np.where((np.abs(kvals[:,1] - ypeaks[i]) < 0.01) & (np.abs(kvals[:,0] - xpeaks[i]) < 0.01))
         index = cen_tuple[0]
+        print(xpeaks[i],ypeaks[i],index,s_ab_eigvals[index,:])
         kv = kvals[cen_tuple]
         kv_str = r' $ q = ' + latexpeaks[i] + r' $'
         # print(s_ab_eigvals[cen_tuple,:],chi_eigvals[cen_tuple,:])
@@ -112,9 +115,6 @@ if d == 2:
         s_X, s_Y = np.meshgrid(s_xlist,s_ylist)
         C = quadric(s_X, s_Y, s_ab_eigvals[cen_tuple,0], s_ab_eigvals[cen_tuple,1])
 
-        # the extents are different for chi; need the factor of T
-        # chi_xmax = temp * s_xmax
-        # chi_ymax = temp * s_ymax
         chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
         chi_ymax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,1]),decimals=2))
         chi_xlist = np.linspace(-chi_xmax,chi_xmax)
@@ -124,29 +124,19 @@ if d == 2:
 
         plt.rc('text',usetex=True)
         plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
-        # fig, axes = plt.subplots(1,2, figsize=(10, 4))
         fig, axes = plt.subplots()
-        # axes[0].contour(s_X, s_Y, C, levels=[0])
-        # axes[0].grid()
-        # axes[0].arrow(0.0,0.0,float(s_ab_eigvecs[index,0,0]),float(s_ab_eigvecs[index,1,0]),color='green')
-        # axes[0].arrow(0.0,0.0,float(s_ab_eigvecs[index,0,1]),float(s_ab_eigvecs[index,1,1]),color='green')
-        # axes[0].axhline(0, color='black', lw=1.5)
-        # axes[0].axvline(0, color='black', lw=1.5)
-        # axes[0].set_title(r'$ S^{\alpha\beta}_{tot} $ quadric, ' + kv_str)
 
         legend_elements = [Line2D([0], [0], color='b', lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
                            Line2D([0], [0], color='r', lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
         axes.contour(chi_X, chi_Y, C2, colors='b', levels=[0])
         axes.contour(s_X, s_Y, C2, colors='r', levels=[0])
         axes.grid()
-        # axes[1].arrow(0.0,0.0,float(chi_eigvecs[index,0,0]),float(chi_eigvecs[index,1,0]),color='green')
-        # axes[1].arrow(0.0,0.0,float(chi_eigvecs[index,0,1]),float(chi_eigvecs[index,1,1]),color='green')
         axes.axhline(0, color='black', lw=1.5)
         axes.axvline(0, color='black', lw=1.5)
         axes.legend(handles=legend_elements)
-        # axes.set_title(r'$ \chi^{\alpha\beta}_{tot} $ quadric, ' + kv_str)
 
-        plt.title(r'$ \chi^{\alpha\beta}_{tot} $ and $ S^{\alpha\beta}_{tot} $ quadrics, ' + kv_str)
+        param_title = 'Parameters: $ T $ = {:.4f}, $ \epsilon_c $ = {:.4f}'.format(temp, core_energy)
+        plt.title(r'$ \chi^{\alpha\beta}_{tot} $ and $ S^{\alpha\beta}_{tot} $ quadrics, ' + kv_str + '\n' + param_title)
         output_file = output_dir + stringpeaks[i] + '.eps'
         plt.legend()
         plt.savefig(output_file, format='eps', dpi=dots)

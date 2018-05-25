@@ -43,7 +43,8 @@ side = int(np.sqrt(len(intens)) + 0.01) # ensure it doesn't round down too far
 intens = intens.reshape((side,side))
 
 def g_to_index(x,y):
-    return (((sp + 2*x) * (length / 2)),((sp + 2*y) * (length / 2)))
+    res = (int(0.001 + ((sp + 2*x) * (length / 2))),int(0.001 + ((sp + 2*y) * (length / 2))))
+    return res
 
 # def s_p(x, y, G_x, G_y):
 #     if G_x == x and G_y == y:
