@@ -31,7 +31,6 @@ core_energy = np.abs(args.e_c)
 # this should be in the right neighbourhood for the fit to figure it out
 kappa_test = 2*np.pi/length
 dots = args.dpi
-input_dir = '/Users/cgray/code/mr/mr/out/gce_T_0.3500_e_c_-0.5000_lorentzian_test/'
 input_file = direc + '/s_perp_total.dat'
 output_dir = direc + '/lorentzian_fits/'
 mkdir_p(output_dir)

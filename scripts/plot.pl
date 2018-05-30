@@ -41,6 +41,7 @@ my $gnuplotscript = "$plotpath" . "heatmap_latex.gp";
 my $inpath = "$dir/";
 my $insuffix = ".dat";
 my $outpath = "$dir/plots";
+print "Creating directory $outpath .\n";
 make_path($outpath);
 my $tempsuffix = '.temp';
 
