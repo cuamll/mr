@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
+import errno
+import os
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import colormaps as cm
-# currently stuck with system python 2.7 so ugly mkdir
-import errno
-import os
-import argparse
 # ignore the runtimewarning from zeros in arrays
 # there's definitely a nicer way of doing this but whatever
 import warnings
+from utils import s_p
 
+# currently stuck with system python 2.7 so ugly mkdir
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -50,19 +51,41 @@ intens = intens.reshape((side,side))
 irrot_intens = irrot_intens.reshape((side,side))
 
 def g_to_index(x,y):
+    '''
+        Basically I'm looping over Brillouin zones below and this function
+        goes from the reciprocal lattice vector \vec{G} at the zone centre
+        to an array index for the simulation data.
+    '''
     tup = (int(0.001 + ((sp + 2*x) * (length / 2))),int(0.001 + ((sp + 2*y) * (length / 2))))
     return tup
 
-def s_p(x, y, G_x, G_y):
-    # the zone centre throws a warning because x = G_x and y = G_y,
-    # but I can't find an easy way of using meshgrid below and
-    # only picking out the zone centre to skip; it complains about
-    # truthiness being ambiguous for arrays. hence, ignore the warning.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        res = (((G_x - x)*x + (G_y - y)*y)**2)/((x**2 + y**2)*((x - G_x)**2 + (y - G_y)**2))
+# def s_p(x, y, G_x, G_y):
+#     '''
+#         This is basically the function f from Steve's correlation notes.
+#         We can think of it as a kind of "projection" from the tensor 
+#         (\chi / S)^{\alpha \beta}, the theoretical object, onto the
+#         perpendicular component we get from neutron scattering.
+#         Without superposing this function we don't see the pinch point;
+#         it's the combination of the \chi/S tensor and f which gives us
+#         the pinch point.
 
-    return res
+#         NB: the reason for catch warnings is that the zone centre throws
+#         a warning at one index of each array, where x = G_x and y = G_y.
+#         But I can't find an easy way of using meshgrid below and
+#         only picking out the zone centre to skip; it complains about
+#         truthiness being ambiguous for arrays. Hence, ignore the warning.
+#         Bit of a hack, but whatever.
+
+#     '''
+#     # the zone centre throws a warning because x = G_x and y = G_y,
+#     # but I can't find an easy way of using meshgrid below and
+#     # only picking out the zone centre to skip; it complains about
+#     # truthiness being ambiguous for arrays. hence, ignore the warning.
+#     with warnings.catch_warnings():
+#         warnings.simplefilter("ignore")
+#         res = (((G_x - x)*x + (G_y - y)*y)**2)/((x**2 + y**2)*((x - G_x)**2 + (y - G_y)**2))
+
+#     return res
 
 # we want it empty and zero-length, so we can append to it in the loop
 tot_ana_int = np.array([])

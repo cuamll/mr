@@ -62,3 +62,4 @@ latts*
 *.bbl
 *.toc
 *.synctex*
+*pycache*

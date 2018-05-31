@@ -1,15 +1,11 @@
 #!/opt/local/bin/perl
-# perl script to run maggs-rossetto code
-# then do some bookkeeping with the output
+# perl script to analyse results from maggs-rossetto CG code
 use strict;
 use warnings;
 use Env;
 use Cwd;
 use Getopt::Long;
-use File::Path qw(make_path);
-use File::Copy;
 use File::Basename;
-# use JSON::MaybeXS qw(encode_json decode_json);
 
 my $row;
 my $fh;
@@ -108,10 +104,12 @@ my @file = (
  "$basedir/scripts/plot.pl",
  "$basedir/scripts/s_perp_contours.py",
  "$basedir/scripts/quiver.py",
- "$basedir/scripts/fits.py",
+ "$basedir/scripts/lorentz.py",
  "$basedir/scripts/quadrics.py"
 );
 
+# NB: for the plotfile especially there are extra parameters;
+# I use the defaults here but check the plot file if they need changing
 my @cmd = (
   qq[$file[0] -d=$stampdir -s="$no_slots"],
   qq[python $file[1] $stampdir $parameters{L} $dpi],
@@ -120,60 +118,12 @@ my @cmd = (
   qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi]
 );
 
-# NB: for the plotfile especially there are extra parameters;
-# I use the defaults here but check the plot file if they need changing
-# my @cmd = (
-#   qq[$plotfile -d=$stampdir -s="$no_slots"],
-#   qq[python $contourfile $stampdir $parameters{L} $dpi],
-#   qq[python $quiverfile $stampdir $parameters{L} $arrow_width $dpi],
-#   qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
-#   qq[python $quadricsfile $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi]
-# );
-
 for my $i (0..$#run) {
   if ($run[$i]) {
     print "Running $file[$i]\n";
     system($cmd[$i]);
   }
 }
-
-# if ($doplots) {
-#   print "Creating directory $stampdir/plots .\n";
-#   make_path("$stampdir/plots");
-#   my $plotfile = "$basedir/scripts/plot.pl";
-#   my $palette = "~/.config/gnuplot/inferno.pal";
-#   my $plotcmd = qq[$plotfile -d=$stampdir -s="$no_slots"];
-#   print "Running $plotfile\n";
-#   system($plotcmd);
-# }
-# 
-# if ($docontour) {
-#   my $contourfile = "$basedir/scripts/s_perp_contours.py";
-#   my $contourcmd = qq[python $contourfile $stampdir $parameters{L} $dpi];
-#   print "Running $contourfile\n";
-#   system($contourcmd);
-# }
-# 
-# if ($doquiver) {
-#   my $quiverfile = "$basedir/scripts/quiver.py";
-#   my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width $dpi];
-#   print "Running $quiverfile\n";
-#   system($quivercmd);
-# }
-# 
-# if ($dolorentz) {
-#   my $lorentzfile = "$basedir/scripts/fits.py";
-#   my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi];
-#   print "Running $lorentzfile\n";
-#   system($lorentzcmd);
-# }
-# 
-# if ($doquadrics) {
-#   my $quadricsfile = "$basedir/scripts/quadrics.py";
-#   my $quadricscmd = qq[python $quadricsfile $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi];
-#   print "Running $quadricsfile\n";
-#   system($quadricscmd);
-# }
 
 sub get_parameters {
 

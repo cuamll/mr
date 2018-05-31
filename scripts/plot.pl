@@ -1,8 +1,6 @@
 #!/opt/local/bin/perl
-# PRELIMINARY!
-# i'm probably gonna expand the scripting to automate more stuff.
-# currently this just plots heatmaps of correlation functions
-# call with "perl plot.pl -l=L ..." etc. from scripts dir
+# plot.pl: gnuplot plotting of output from maggs-rossetto CG code.
+# called from analyse script with parameters included automatically
 use strict;
 use warnings;
 use Env;
@@ -11,7 +9,6 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
-use Data::Dumper qw(Dumper);
 
 my $three_d = 0;
 my $dir; my $kz; my @columns;
