@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 from scipy.optimize import curve_fit
 import colormaps as cm
-from utils import s_p
+from utils import s_p, do_plots
 
 # shouldn't need this anymore but using it for now
 def mkdir_p(path):
@@ -104,29 +104,40 @@ rtr = rot_trace.reshape(( int(np.sqrt(len(fitted_data))),int(np.sqrt(len(fitted_
 # plot the results
 plt.rc('text',usetex=True)
 plt.rc('font',family='sans-serif')
-fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
-# chonk
-for chonk in range(2):
-    axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-    axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-    axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-    axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+# fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
+# # chonk
+# for chonk in range(2):
+#     axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+#     axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+#     axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+#     axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
 
-ax = axes[0]
-params_title = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
-plot_title = r"Fitted $ S^{\alpha \beta}_{irrotational}: " + params_title
-ax.set_title(plot_title)
-cs = ax.contourf(Qx / np.pi, Qy / np.pi, ftr, cmap=cm.viridis)
-fig.colorbar(cs, ax=ax)
+# ax = axes[0]
+# params_title = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
+# plot_title = r"Fitted $ S^{\alpha \beta}_{irrotational}: " + params_title
+# ax.set_title(plot_title)
+# cs = ax.contourf(Qx / np.pi, Qy / np.pi, ftr, cmap=cm.viridis)
+# fig.colorbar(cs, ax=ax)
 
-ax = axes[1]
-ax.set_title(r'Measured $ S^{\alpha \beta}_{irrotational} $')
-cs = ax.contourf(Qx / np.pi, Qy / np.pi, itr, cmap=cm.viridis)
-fig.colorbar(cs, ax=ax)
-output_file = output_dir + 'Helmholtz' + '.eps'
-fig.tight_layout()
-fig.savefig(output_file, format='eps', dpi=dots)
-plt.close(fig)
+# ax = axes[1]
+# ax.set_title(r'Measured $ S^{\alpha \beta}_{irrotational} $')
+# cs = ax.contourf(Qx / np.pi, Qy / np.pi, itr, cmap=cm.viridis)
+# fig.colorbar(cs, ax=ax)
+# output_file = output_dir + 'Helmholtz' + '.eps'
+# fig.tight_layout()
+# fig.savefig(output_file, format='eps', dpi=dots)
+# plt.close(fig)
+
+# gonna use this multiple times
+pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
+
+plot_titles = []
+plt = r"Fitted $ S^{\alpha \beta}_{irrotational}: " + pat
+plot_titles.append(plt)
+plt = r'Measured $ S^{\alpha \beta}_{irrotational} $'
+plot_titles.append(plt)
+output_file = output_dir + 'Helmholtz_sab_irrot' + '.eps'
+do_plots(2, plot_titles, output_file, dots, np.stack((Qx, Qx)), np.stack((Qy, Qy)), np.stack((ftr,itr)))
 
 '''
     Now we've plotted the fit with parameters, try simulating the projections
@@ -144,78 +155,76 @@ scatt_func = s_p(Qx, Qy, Gx * 2 * np.pi, Gy * 2 * np.pi)
 
 s_irrot_fit = ftr * (1.0 - scatt_func)
 s_irrot_sim = itr * (1.0 - scatt_func)
+Z_irrot = np.stack((s_irrot_fit, s_irrot_sim))
 
 s_total_fit = (rtr * (scatt_func)) + s_irrot_fit
 s_total_sim = (rtr * (scatt_func)) + s_irrot_sim
+Z_total = np.stack((s_total_fit, s_total_sim))
 
-fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
+# fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
 # chonk
-for chonk in range(2):
-    axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-    axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-    axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-    axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+# for chonk in range(2):
+#     axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+#     axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+#     axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+#     axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
 
-ax = axes[0]
-params_title = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
-plot_title = r"Fitted $ S^{\perp}_{irrotational}: " + params_title
-ax.set_title(plot_title)
-cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_irrot_fit, cmap=cm.viridis)
-fig.colorbar(cs, ax=ax)
+# ax = axes[0]
+# plot_titles.append(plt)
+# ax.set_title(plot_title)
+# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_irrot_fit, cmap=cm.viridis)
+# fig.colorbar(cs, ax=ax)
 
-ax = axes[1]
-ax.set_title(r'Measured $ S^{\perp}_{irrotational} $')
-cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_irrot_sim, cmap=cm.viridis)
-fig.colorbar(cs, ax=ax)
-fig.tight_layout()
-output_file = output_dir + 'Helmholtz_irrot' + '.eps'
-fig.savefig(output_file, format='eps', dpi=dots)
-plt.close(fig)
+# ax = axes[1]
+# ax.set_title(r'Measured $ S^{\perp}_{irrotational} $')
+# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_irrot_sim, cmap=cm.viridis)
+# fig.colorbar(cs, ax=ax)
+# fig.tight_layout()
+# fig.savefig(output_file, format='eps', dpi=dots)
+# plt.close(fig)
 
-fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
-# chonk
-for chonk in range(2):
-    axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-    axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-    axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-    axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-
-ax = axes[0]
 plot_titles = []
-pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
+plt = r"Fitted $ S^{\perp}_{irrotational}: " + pat
+plot_titles.append(plt)
+plt = r'Measured $ S^{\perp}_{irrotational} $'
+plot_titles.append(plt)
+output_file = output_dir + 'Helmholtz_irrot' + '.eps'
+do_plots(2, plot_titles, output_file, dots, np.stack((Qx, Qx)), np.stack((Qy, Qy)), Z_irrot)
+
+# fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
+# # chonk
+# for chonk in range(2):
+#     axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+#     axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+#     axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+#     axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+
+# ax = axes[0]
+# plot_titles = []
+# pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
+# plt = r"Fitted $ S^{\perp}_{total}: " + pat
+# plot_titles += plt
+
+# ax.set_title(plt)
+# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_total_fit, cmap=cm.viridis)
+# fig.colorbar(cs, ax=ax)
+
+# ax = axes[1]
+# ax.set_title(r'Measured $ S^{\perp}_{total} $')
+# plt = r'Measured $ S^{\perp}_{total} $'
+# plot_titles += plt
+# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_total_sim, cmap=cm.viridis)
+# fig.colorbar(cs, ax=ax)
+# fig.tight_layout()
+# output_file = output_dir + 'Helmholtz_total' + '.eps'
+# # fig.savefig(output_file, format='eps', dpi=dots)
+# plt.close(fig)
+
+plot_titles = []
+
 plt = r"Fitted $ S^{\perp}_{total}: " + pat
-plot_titles += plt
-
-ax.set_title(plt)
-cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_total_fit, cmap=cm.viridis)
-fig.colorbar(cs, ax=ax)
-
-ax = axes[1]
-ax.set_title(r'Measured $ S^{\perp}_{total} $')
+plot_titles.append(plt)
 plt = r'Measured $ S^{\perp}_{total} $'
-plot_titles += plt
-cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_total_sim, cmap=cm.viridis)
-fig.colorbar(cs, ax=ax)
-fig.tight_layout()
+plot_titles.append(plt)
 output_file = output_dir + 'Helmholtz_total' + '.eps'
-fig.savefig(output_file, format='eps', dpi=dots)
-plt.close(fig)
-
-def do_plots(no_plots, plot_titles, output_file, X, Y, Z)
-    fig, axes = plt.subplots(ncols=no_plots, nrows=1, figsize=(5 * no_plots,4))
-    for chonk in range(no_plots):
-        axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-        axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-        axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-        axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-        ax = axes[chonk]
-
-        ax.set_title(plot_titles[chonk])
-        cs = ax.contourf(X[chonk], Y[chonk], Z[chonk], cmap=cm.viridis)
-        fig.colorbar(cs, ax=ax)
-
-    fig.tight_layout()
-    fig.savefig(output_file, format='eps', dpi=dots)
-    plt.close(fig)
-
-
+do_plots(2, plot_titles, output_file, dots, np.stack((Qx, Qx)), np.stack((Qy, Qy)), Z_total)

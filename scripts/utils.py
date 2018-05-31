@@ -29,3 +29,30 @@ def s_p(x, y, G_x, G_y):
         res = (((G_x - x)*x + (G_y - y)*y)**2)/((x**2 + y**2)*((x - G_x)**2 + (y - G_y)**2))
 
     return res
+
+def do_plots(no_plots, plot_titles, output_file, dots, X, Y, Z):
+    ''' 
+        I have a few different places where I want to make side-by-side
+        contour plots of some data. This is just a wrapper to do that for me.
+        NB: need to set plot rc somewhere in the file first?
+    '''
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as tck
+    import colormaps as cm
+    fig, axes = plt.subplots(ncols=int(no_plots), nrows=1, figsize=(5 * int(no_plots),4))
+    # chonk
+    for chonk in range(int(no_plots)):
+        axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+        axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+        axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+        axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+        ax = axes[chonk]
+
+        ax.set_title(plot_titles[chonk])
+        cs = ax.contourf(X[chonk], Y[chonk], Z[chonk], cmap=cm.viridis)
+        fig.colorbar(cs, ax=ax)
+
+    fig.tight_layout()
+    fig.savefig(output_file, format='eps', dpi=dots)
+    plt.close(fig)
+
