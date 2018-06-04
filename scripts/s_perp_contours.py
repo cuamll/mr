@@ -126,12 +126,12 @@ for i in range(-1*(int((sp/2) + 0.01)) + 1, (int((sp/2) + 0.01))):
 
         ax = axes[0]
         ax.set_title('Simulated $ S_{\perp}^{irrotational} $')
-        cs = ax.contourf(Qx / np.pi, Qy / np.pi, irrot_sim_int, cmap=cm.viridis)
+        cs = ax.contourf(Qx / np.pi, Qy / np.pi, irrot_sim_int.T, cmap=cm.viridis)
         fig.colorbar(cs, ax=ax)
 
         ax = axes[1]
         ax.set_title('Simulated $ S_{\perp}^{total} $')
-        cs = ax.contourf(Qx / np.pi, Qy / np.pi, sim_int, cmap=cm.viridis)
+        cs = ax.contourf(Qx / np.pi, Qy / np.pi, sim_int.T, cmap=cm.viridis)
         fig.colorbar(cs, ax=ax)
 
         ax = axes[2]

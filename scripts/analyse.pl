@@ -20,6 +20,7 @@ my $docontour = 1;
 my $doquiver = 1;
 my $dolorentz = 1;
 my $doquadrics = 1;
+my $dohelmholtz = 1;
 my $arrow_width = 0.002;
 my $core_energy = 0.0;
 my $dpi = 200;
@@ -97,7 +98,8 @@ my @run = (
   $docontour,
   $doquiver,
   $dolorentz,
-  $doquadrics
+  $doquadrics,
+  $dohelmholtz,
 );
 
 my @file = (
@@ -105,7 +107,8 @@ my @file = (
  "$basedir/scripts/s_perp_contours.py",
  "$basedir/scripts/quiver.py",
  "$basedir/scripts/lorentz.py",
- "$basedir/scripts/quadrics.py"
+ "$basedir/scripts/quadrics.py",
+ "$basedir/scripts/helmholtz.py"
 );
 
 # NB: for the plotfile especially there are extra parameters;
@@ -115,7 +118,8 @@ my @cmd = (
   qq[python $file[1] $stampdir $parameters{L} $dpi],
   qq[python $file[2] $stampdir $parameters{L} $arrow_width $dpi],
   qq[python $file[3] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
-  qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi]
+  qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
+  qq[python $file[5] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
 );
 
 for my $i (0..$#run) {

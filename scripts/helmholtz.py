@@ -6,8 +6,9 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-from scipy.optimize import curve_fit
 import colormaps as cm
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.optimize import curve_fit
 from utils import s_p, do_plots
 
 # shouldn't need this anymore but using it for now
@@ -89,55 +90,34 @@ def irrot(dist, gamma, chi, kappa):
 # these are all the possible values of small q, i.e. once we do Q - G
 small_q = kvals[0:length+1,1]
 Qx, Qy = np.meshgrid(small_q, small_q)
+qx_stack = np.stack((Qx / np.pi, Qx / np.pi))
+qy_stack = np.stack((Qy / np.pi, Qy / np.pi))
 # this does the fit over the central BZ
 dists = kvals[:,0]**2 + kvals[:,1]**2
 popt, pcov = curve_fit(irrot, dists, irrot_trace)
-print(popt)
+
+# gonna use this string multiple times
+pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
+print(pat)
 
 fitted_data = irrot(dists, *popt)
-
-ftr = fitted_data.reshape(( int(np.sqrt(len(fitted_data))),int(np.sqrt(len(fitted_data))) ))
-itr = irrot_trace.reshape(( int(np.sqrt(len(fitted_data))),int(np.sqrt(len(fitted_data))) ))
-ttr = total_trace.reshape(( int(np.sqrt(len(fitted_data))),int(np.sqrt(len(fitted_data))) ))
-rtr = rot_trace.reshape(( int(np.sqrt(len(fitted_data))),int(np.sqrt(len(fitted_data))) ))
+side = int(np.sqrt(len(fitted_data)))
+ftr = fitted_data.reshape((side, side))
+itr = irrot_trace.reshape((side, side))
+ttr = total_trace.reshape((side, side))
+rtr = rot_trace.reshape((side, side))
 
 # plot the results
 plt.rc('text',usetex=True)
 plt.rc('font',family='sans-serif')
-# fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
-# # chonk
-# for chonk in range(2):
-#     axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-#     axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-#     axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-#     axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-
-# ax = axes[0]
-# params_title = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
-# plot_title = r"Fitted $ S^{\alpha \beta}_{irrotational}: " + params_title
-# ax.set_title(plot_title)
-# cs = ax.contourf(Qx / np.pi, Qy / np.pi, ftr, cmap=cm.viridis)
-# fig.colorbar(cs, ax=ax)
-
-# ax = axes[1]
-# ax.set_title(r'Measured $ S^{\alpha \beta}_{irrotational} $')
-# cs = ax.contourf(Qx / np.pi, Qy / np.pi, itr, cmap=cm.viridis)
-# fig.colorbar(cs, ax=ax)
-# output_file = output_dir + 'Helmholtz' + '.eps'
-# fig.tight_layout()
-# fig.savefig(output_file, format='eps', dpi=dots)
-# plt.close(fig)
-
-# gonna use this multiple times
-pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
 
 plot_titles = []
-plt = r"Fitted $ S^{\alpha \beta}_{irrotational}: " + pat
-plot_titles.append(plt)
-plt = r'Measured $ S^{\alpha \beta}_{irrotational} $'
-plot_titles.append(plt)
+plot_t = r"Fitted $ S^{\alpha \beta}_{irrotational}: " + pat
+plot_titles.append(plot_t)
+plot_t = r'Measured $ S^{\alpha \beta}_{irrotational} $'
+plot_titles.append(plot_t)
 output_file = output_dir + 'Helmholtz_sab_irrot' + '.eps'
-do_plots(2, plot_titles, output_file, dots, np.stack((Qx, Qx)), np.stack((Qy, Qy)), np.stack((ftr,itr)))
+do_plots(2, plot_titles, output_file, dots, qx_stack, qy_stack, np.stack((ftr,itr)))
 
 '''
     Now we've plotted the fit with parameters, try simulating the projections
@@ -150,6 +130,9 @@ qx = small_q + (Gx * 2 * np.pi)
 qy = small_q + (Gy * 2 * np.pi)
 Qx, Qy = np.meshgrid(qx,qy)
 
+qx_stack = np.stack((Qx / np.pi, Qx / np.pi))
+qy_stack = np.stack((Qy / np.pi, Qy / np.pi))
+
 # this does f; now we need to add/subtract it in the right ways
 scatt_func = s_p(Qx, Qy, Gx * 2 * np.pi, Gy * 2 * np.pi)
 
@@ -161,70 +144,20 @@ s_total_fit = (rtr * (scatt_func)) + s_irrot_fit
 s_total_sim = (rtr * (scatt_func)) + s_irrot_sim
 Z_total = np.stack((s_total_fit, s_total_sim))
 
-# fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
-# chonk
-# for chonk in range(2):
-#     axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-#     axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-#     axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-#     axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-
-# ax = axes[0]
-# plot_titles.append(plt)
-# ax.set_title(plot_title)
-# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_irrot_fit, cmap=cm.viridis)
-# fig.colorbar(cs, ax=ax)
-
-# ax = axes[1]
-# ax.set_title(r'Measured $ S^{\perp}_{irrotational} $')
-# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_irrot_sim, cmap=cm.viridis)
-# fig.colorbar(cs, ax=ax)
-# fig.tight_layout()
-# fig.savefig(output_file, format='eps', dpi=dots)
-# plt.close(fig)
-
+# plot of irrotational scattering
 plot_titles = []
-plt = r"Fitted $ S^{\perp}_{irrotational}: " + pat
-plot_titles.append(plt)
-plt = r'Measured $ S^{\perp}_{irrotational} $'
-plot_titles.append(plt)
+plot_t = r"Fitted $ S^{\perp}_{irrotational}: " + pat
+plot_titles.append(plot_t)
+plot_t = r'Measured $ S^{\perp}_{irrotational} $'
+plot_titles.append(plot_t)
 output_file = output_dir + 'Helmholtz_irrot' + '.eps'
-do_plots(2, plot_titles, output_file, dots, np.stack((Qx, Qx)), np.stack((Qy, Qy)), Z_irrot)
+do_plots(2, plot_titles, output_file, dots, qx_stack, qy_stack, Z_irrot)
 
-# fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10,4))
-# # chonk
-# for chonk in range(2):
-#     axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-#     axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-#     axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-#     axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-
-# ax = axes[0]
-# plot_titles = []
-# pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
-# plt = r"Fitted $ S^{\perp}_{total}: " + pat
-# plot_titles += plt
-
-# ax.set_title(plt)
-# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_total_fit, cmap=cm.viridis)
-# fig.colorbar(cs, ax=ax)
-
-# ax = axes[1]
-# ax.set_title(r'Measured $ S^{\perp}_{total} $')
-# plt = r'Measured $ S^{\perp}_{total} $'
-# plot_titles += plt
-# cs = ax.contourf(Qx / np.pi, Qy / np.pi, s_total_sim, cmap=cm.viridis)
-# fig.colorbar(cs, ax=ax)
-# fig.tight_layout()
-# output_file = output_dir + 'Helmholtz_total' + '.eps'
-# # fig.savefig(output_file, format='eps', dpi=dots)
-# plt.close(fig)
-
+# plot of total scattering
 plot_titles = []
-
-plt = r"Fitted $ S^{\perp}_{total}: " + pat
-plot_titles.append(plt)
-plt = r'Measured $ S^{\perp}_{total} $'
-plot_titles.append(plt)
+plot_t = r"Fitted $ S^{\perp}_{total}: " + pat
+plot_titles.append(plot_t)
+plot_t = r'Measured $ S^{\perp}_{total} $'
+plot_titles.append(plot_t)
 output_file = output_dir + 'Helmholtz_total' + '.eps'
-do_plots(2, plot_titles, output_file, dots, np.stack((Qx, Qx)), np.stack((Qy, Qy)), Z_total)
+do_plots(2, plot_titles, output_file, dots, qx_stack, qy_stack, Z_total)
