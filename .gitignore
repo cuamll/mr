@@ -34,6 +34,7 @@ Session.vim
 *.exe
 *.out
 *.app
+hxy2d
 
 # This repo only
 obj*
@@ -51,6 +52,7 @@ mr*
 lattice.dat
 latts*
 *.inc
+*colormaps*
 
 
 # LaTeX extras
@@ -61,3 +63,4 @@ latts*
 *.bbl
 *.toc
 *.synctex*
+*pycache*

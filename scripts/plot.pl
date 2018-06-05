@@ -1,8 +1,6 @@
 #!/opt/local/bin/perl
-# PRELIMINARY!
-# i'm probably gonna expand the scripting to automate more stuff.
-# currently this just plots heatmaps of correlation functions
-# call with "perl plot.pl -l=L ..." etc. from scripts dir
+# plot.pl: gnuplot plotting of output from maggs-rossetto CG code.
+# called from analyse script with parameters included automatically
 use strict;
 use warnings;
 use Env;
@@ -11,16 +9,17 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
-use Data::Dumper qw(Dumper);
 
 my $three_d = 0;
 my $dir; my $kz; my @columns;
+my $slots = 1;
 my $palette = '~/.config/gnuplot/inferno.pal';
 my $addtitles = 1; my $keep_aux = 0;
 my @inputfiles; my @outputfiles; my @tempfiles;
 my @gnuplotargs; my @latexargs; my @dvipsargs; my @ps2pdfargs;
 my $input = GetOptions ("d=s"=> \$dir,
                      "t=i"=> \$addtitles,
+                     "s=i"=> \$slots,
                      "k=i"=> \$keep_aux,
                      "p=s"=> \$palette);
 
@@ -39,10 +38,11 @@ my $gnuplotscript = "$plotpath" . "heatmap_latex.gp";
 my $inpath = "$dir/";
 my $insuffix = ".dat";
 my $outpath = "$dir/plots";
+print "Creating directory $outpath .\n";
 make_path($outpath);
 my $tempsuffix = '.temp';
 
-my $steps = $parameters{no_samples} * $parameters{measurement_sweeps};
+my $steps = $slots * $parameters{no_samples} * $parameters{measurement_sweeps};
 my $meas = $steps / $parameters{sample_interval};
 my $steps_c = commify($steps);
 my $meas_c = commify($meas);
@@ -66,12 +66,11 @@ my $s_string; my $field_string; my $linetitle; my $plottitle;
 # my $chgen = lc $parameters{charge_generation};
 # $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
 my $plottitle_base;
-$plottitle_base = qq(HXY: L = $parameters{L}, T = $parameters{temperature}, );
-# if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
-#   $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen),);
-# } else {
-#   $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$,);
-# }
+if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
+  $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), );
+} else {
+  $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$, );
+}
 
 # the s_ab_whatever files have four components; we want to plot each separately
 for my $i (0..$#filenames) {

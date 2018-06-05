@@ -21,7 +21,9 @@ my $doplots = 1;
 my $dorun = 1;
 my $docontour = 1;
 my $doquiver = 1;
+my $dolorentz = 1;
 my $arrow_width = 0.002;
+my $dpi = 200;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
 my $comment = '';
@@ -33,6 +35,7 @@ my @core_energies = '';
 my @spacings = '';
 my @params_temp = '';
 my @stamparray = '';
+my $stampdir = '';
 
 # Get command line options; they all have (hopefully) sensible defaults
 $input = GetOptions ("help"=> \$help,
@@ -40,6 +43,8 @@ $input = GetOptions ("help"=> \$help,
                      "run=i"=> \$dorun,
                      "contour=i"=> \$docontour,
                      "quiver=i"=> \$doquiver,
+                     "lorentz=i"=> \$dolorentz,
+                     "directory=s"=> \$stampdir,
                      "lengths=s"=> \@lengths,
                      "temperatures=s"=> \@temperatures,
                      "charges=s"=> \@charges,
@@ -95,6 +100,11 @@ if (@charge_values) {
   shift(@charge_values);
 }
 
+if (@core_energies) {
+  @core_energies = split(/,/,join(',',@core_energies));
+  shift(@core_energies);
+}
+
 if (@spacings) {
   @spacings = split(/,/,join(',',@spacings));
   shift(@spacings);
@@ -121,6 +131,7 @@ push @lengths, $parameters{L};
 push @temperatures, $parameters{temperature};
 push @charges, $parameters{charges};
 push @charge_values, $parameters{charge_value};
+push @core_energies, $parameters{e_c};
 push @spacings, $parameters{lattice_spacing};
 
 # ensures we don't waste time doing identical simulations
@@ -128,6 +139,7 @@ push @spacings, $parameters{lattice_spacing};
 @temperatures = uniq(@temperatures);
 @charges = uniq(@charges);
 @charge_values = uniq(@charge_values);
+@core_energies = uniq(@core_energies);
 @spacings = uniq(@spacings);
 
 # portably change relative path names into absolute ones
@@ -139,15 +151,18 @@ for( my $i = 0; $i < @temperatures; $i++) {
     for( my $k = 0; $k < @spacings; $k++) {
       for( my $l = 0; $l < @charges; $l++) {
         for( my $m = 0; $m < @lengths; $m++) {
+          for( my $n = 0; $n < @core_energies; $n++) {
 
             $parameters{temperature} = $temperatures[$i];
             $parameters{charge_value} = $charge_values[$j];
             $parameters{lattice_spacing} = $spacings[$k];
             $parameters{charges} = $charges[$l];
             $parameters{L} = $lengths[$m];
+            $parameters{e_c} = $core_energies[$n];
             print "New temperature: $parameters{temperature}\n";
             print "New number of charges: $parameters{charges}\n";
             print "New charge value: $parameters{charge_value}\n";
+            print "New core energy: $parameters{e_c}\n";
             print "New lattice spacing $parameters{lattice_spacing}\n";
             print "New system size $parameters{L}\n";
 
@@ -155,10 +170,14 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
             # don't think i can call a function inside an array assignment
             # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
-            # gonna want to add core-energy in here probably
-            @stamparray = ('hxy','T', $temperatures[$i],$comment);
+            if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
+              @stamparray = ('ce','T', $temperatures[$i],'chg', $charges[$l],$comment);
+            } else {
+              # gonna want to add core-energy in here probably
+              @stamparray = ('gce','T', $temperatures[$i],'e_c',$core_energies[$n],$comment);
+            }
             my $stamp = join('_', @stamparray);
-            my $stampdir = "$outdir/$stamp";
+            $stampdir = "$outdir/$stamp";
             print "Creating directory $stampdir .\n";
             make_path($stampdir);
             $parameters{stamp} = "$stamp";
@@ -264,16 +283,23 @@ exit 0
 
             if ($docontour) {
               my $contourfile = "$basedir/scripts/s_perp_contours.py";
-              my $contourcmd = qq[python $contourfile $stampdir $parameters{L}];
+              my $contourcmd = qq[python $contourfile $stampdir $parameters{L} $dpi];
               system($contourcmd);
             }
 
             if ($doquiver) {
               my $quiverfile = "$basedir/scripts/quiver.py";
-              my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width];
+              my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width $dpi];
               system($quivercmd);
             }
+
+            if ($dolorentz) {
+              my $lorentzfile = "$basedir/scripts/fits.py";
+              my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
+              system($lorentzcmd);
+            }
             
+          }
         }
       }
     }

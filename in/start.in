@@ -5,7 +5,7 @@ do_corr T
 thermalisation_sweeps 100000
 measurement_sweeps 250000
 sample_interval 10
-temperature 100.000
+temperature 2.000
 lattice_spacing 1.0
 charge_value 6.283185307179586
 delta_max 0

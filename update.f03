@@ -479,6 +479,25 @@ module update
         end do
       end do
 
+
+      ! we need to calculate this thing to get susceptibilties
+      ! NB!!!!! if do_corr is turned off, this will be zero
+      ! and the susceptibilities won't mean all that much
+      do k = 1, kmax
+
+        cos_k = 0.0
+
+        do i = 1,L
+          do j = 1,L
+            cos_k = cos_k + cos(k * top_x(i,j)) +&
+                            cos(k * top_y(i,j))
+          end do
+        end do
+
+        eps_hxy = eps_hxy + (-1)**(k + 1) * cos_k
+
+      end do
+
       call linsol
       e_rot(1,:,:) = top_x + mnphi(1,:,:)
       e_rot(2,:,:) = top_y + mnphi(2,:,:)
@@ -622,15 +641,6 @@ module update
           do s = 1,L**2
             m = ((s - 1) / L) + 1
             p = mod(s - 1, L) + 1
-
-            ! we need to calculate this thing to get susceptibilties
-            ! NB!!!!! if do_corr is turned off, this will be zero
-            ! and the susceptibilities won't mean all that much
-            if (omp_index.le.kmax) then
-              cos_k = cos_k + cos(omp_index * top_x(m,p)) +&
-                              cos(omp_index * top_y(m,p))
-              eps_hxy = eps_hxy + (-1)**(omp_index + 1) * cos_k
-            end if
 
 
               kdotx = fw(m,i) + hw(p,j)

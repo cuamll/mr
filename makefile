@@ -1,6 +1,6 @@
 # maggs-rossetto makefile
 GF = mpif90
-EXECNAME = mr2d
+EXECNAME = hxy2d
 MOD_DIR = mod
 OBJ_DIR = obj
 CFLAGS = -J$(MOD_DIR) -std=f2003 -fopenmp
