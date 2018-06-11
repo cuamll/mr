@@ -131,7 +131,7 @@ push @lengths, $parameters{L};
 push @temperatures, $parameters{temperature};
 push @charges, $parameters{charges};
 push @charge_values, $parameters{charge_value};
-push @core_energies, $parameters{e_c};
+# push @core_energies, $parameters{e_c};
 push @spacings, $parameters{lattice_spacing};
 
 # ensures we don't waste time doing identical simulations
@@ -139,7 +139,7 @@ push @spacings, $parameters{lattice_spacing};
 @temperatures = uniq(@temperatures);
 @charges = uniq(@charges);
 @charge_values = uniq(@charge_values);
-@core_energies = uniq(@core_energies);
+# @core_energies = uniq(@core_energies);
 @spacings = uniq(@spacings);
 
 # portably change relative path names into absolute ones
@@ -151,18 +151,18 @@ for( my $i = 0; $i < @temperatures; $i++) {
     for( my $k = 0; $k < @spacings; $k++) {
       for( my $l = 0; $l < @charges; $l++) {
         for( my $m = 0; $m < @lengths; $m++) {
-          for( my $n = 0; $n < @core_energies; $n++) {
+          # for( my $n = 0; $n < @core_energies; $n++) {
 
             $parameters{temperature} = $temperatures[$i];
             $parameters{charge_value} = $charge_values[$j];
             $parameters{lattice_spacing} = $spacings[$k];
             $parameters{charges} = $charges[$l];
             $parameters{L} = $lengths[$m];
-            $parameters{e_c} = $core_energies[$n];
+            # $parameters{e_c} = $core_energies[$n];
             print "New temperature: $parameters{temperature}\n";
             print "New number of charges: $parameters{charges}\n";
             print "New charge value: $parameters{charge_value}\n";
-            print "New core energy: $parameters{e_c}\n";
+            # print "New core energy: $parameters{e_c}\n";
             print "New lattice spacing $parameters{lattice_spacing}\n";
             print "New system size $parameters{L}\n";
 
@@ -170,12 +170,13 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
             # don't think i can call a function inside an array assignment
             # my @stamparray = ($timestamp,'L',$parameters{L},'T', $temperatures[$i],'chg', $charges[$l],'q', $charge_values[$j],'a', $spacings[$k]);
-            if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
-              @stamparray = ('ce','T', $temperatures[$i],'chg', $charges[$l],$comment);
-            } else {
+            @stamparray = ('T', $temperatures[$i],$comment);
+            # if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
+            #   @stamparray = ('ce','T', $temperatures[$i],'chg', $charges[$l],$comment);
+            # } else {
               # gonna want to add core-energy in here probably
-              @stamparray = ('gce','T', $temperatures[$i],'e_c',$core_energies[$n],$comment);
-            }
+              # @stamparray = ('gce','T', $temperatures[$i],'e_c',$core_energies[$n],$comment);
+            # }
             my $stamp = join('_', @stamparray);
             $stampdir = "$outdir/$stamp";
             print "Creating directory $stampdir .\n";
@@ -223,7 +224,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
               my $email = q(zcapg55@ucl.ac.uk);
               my $vf = '960M';
               my $pe = '32';
-              my $jobname = "mr_T_$parameters{temperature}_L_$parameters{L}_canon";
+              my $jobname = "hxy_T_$parameters{temperature}_L_$parameters{L}";
               my $jobfilecontent = qq(
 #!/bin/bash -f
 # ------------------------------
@@ -299,7 +300,7 @@ exit 0
               system($lorentzcmd);
             }
             
-          }
+          # }
         }
       }
     }

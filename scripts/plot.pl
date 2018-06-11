@@ -66,11 +66,12 @@ my $s_string; my $field_string; my $linetitle; my $plottitle;
 # my $chgen = lc $parameters{charge_generation};
 # $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
 my $plottitle_base;
-if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
-  $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), );
-} else {
-  $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$, );
-}
+# if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
+#   $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), );
+# } else {
+#   $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$, );
+# }
+  $plottitle_base = qq(HXY: L = $parameters{L}, T = $parameters{temperature}, );
 
 # the s_ab_whatever files have four components; we want to plot each separately
 for my $i (0..$#filenames) {
