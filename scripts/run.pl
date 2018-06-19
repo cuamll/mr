@@ -294,7 +294,7 @@ exit 0
             }
 
             if ($dolorentz) {
-              my $lorentzfile = "$basedir/scripts/fits.py";
+              my $lorentzfile = "$basedir/scripts/lorentz.py";
               my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
               system($lorentzcmd);
             }

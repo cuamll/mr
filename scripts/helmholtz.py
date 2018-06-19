@@ -60,6 +60,7 @@ rot_red = rot_red[np.where(np.abs(rot_red[:,1]) - 0.0001 <= np.pi)]
 # to match Steve's correlation calculations later on
 zero_index = int((len(total_red)/2))
 rot_red[zero_index,:] = irrot_red[zero_index,:]
+# why the half? can't remember
 irrot_red[zero_index,:] = 0.5 * total_red[zero_index,:]
 
 kvals = np.array(total_red[:,0:2],dtype=float)

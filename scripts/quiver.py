@@ -5,6 +5,8 @@ from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import utils
 
 
 '''
@@ -26,7 +28,7 @@ arrow_width = args.width
 dots = args.dpi
 sep = '/'
 # this should eventually be an argument to the script as well
-base_fn = 'snapshot_250000_'
+base_fn = 'snapshot_25000_'
 total_file = direc + sep + base_fn + 'total'
 irrot_file = direc + sep + base_fn + 'irrot'
 rot_file = direc + sep + base_fn + 'rot'
@@ -49,12 +51,13 @@ for i in range(len(c_raw)):
         neg_y.append(c_raw[i,1])
 
 files = [total_file,irrot_file,rot_file]
+count = 0
 
 for fil in files:
 
     input_file = fil + '.dat'
     output_file = fil + '.eps'
-
+    count = count + 1
 
     raw = np.loadtxt(input_file)
     X = raw[:,0]
@@ -66,9 +69,16 @@ for fil in files:
     # the scale here is because the output arrows were originally huge.
     # dividing through by 2x the maximum value seems to do the trick
     # while keeping it legible, but could be tweaked
+    loc = ticker.MultipleLocator(base=length/4) # this locator puts ticks at regular intervals
+    ax.xaxis.set_major_locator(loc)
+    ax.yaxis.set_major_locator(loc)
     q = ax.quiver(X, Y, U, V, pivot='middle', width=arrow_width, angles='xy', scale_units='xy', scale=2*np.max(raw[:,2:4]))
-    plt.plot(pos_x,pos_y,'ro',markeredgecolor='r')
-    plt.plot(neg_x,neg_y,'bo',markeredgecolor='b')
+    # plt.plot(pos_x,pos_y,'o',color=utils.rd,markeredgecolor='r')
+    # plt.plot(neg_x,neg_y,'o',color=utils.blu,markeredgecolor='b')
+    if count < 3:
+        plt.plot(pos_x,pos_y,'o',color=utils.rd)
+        plt.plot(neg_x,neg_y,'o',color=utils.blu)
+
     fig.savefig(output_file, format='eps', dpi=dots)
     ax.clear()
     plt.close(fig)

@@ -2,6 +2,14 @@
 import numpy as np
 import warnings
 
+# colours
+purp = "#832591"
+blu = "#278BE8"
+rd = "#99001A"
+grn = "#145E00"
+yl = "#F2D33C"
+orng = "#E88427"
+
 def s_p(x, y, G_x, G_y):
     '''
         This is basically the function f from Steve's correlation notes.
@@ -49,7 +57,7 @@ def do_plots(no_plots, plot_titles, output_file, dots, X, Y, Z):
         ax = axes[chonk]
 
         ax.set_title(plot_titles[chonk])
-        cs = ax.contourf(X[chonk], Y[chonk], Z[chonk], cmap=cm.viridis)
+        cs = ax.contourf(X[chonk], Y[chonk], Z[chonk], cmap=cm.inferno)
         fig.colorbar(cs, ax=ax)
 
     fig.tight_layout()

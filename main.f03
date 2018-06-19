@@ -88,7 +88,7 @@ program mr
         call measure(i)
       end if
 
-      if (i.eq.250000) then
+      if (i.eq.25000) then
         call snapshot(i)
       end if
 

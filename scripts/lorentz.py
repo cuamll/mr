@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 from lmfit import Model
+import utils
 
 # shouldn't need this anymore but using it for now
 def mkdir_p(path):
@@ -90,9 +91,9 @@ for i in range(len(xpeaks)):
     peak_loc = '(' + str(int((xpeaks[i]+0.01)/np.pi)) + '$ \pi $, ' + str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $).'
     ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
     ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'bo', label='data')
+    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'o', color=utils.blu, label='data')
     plt.plot(small_line[:,0] / np.pi, result.init_fit, 'k--', label='initial fit')
-    plt.plot(small_line[:,0] / np.pi, result.best_fit, 'r-', label='final fit')
+    plt.plot(small_line[:,0] / np.pi, result.best_fit, '-', color=utils.rd, linewidth=2, label='final fit')
     # ax = plt.axes()
     # tick_locs = [centre-np.pi,centre,centre+np.pi]
     # tick_labels = [str(int(((ypeaks[i]+0.01)/np.pi) - 1)) + '$ \pi $', str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $', str(int(((ypeaks[i]+0.01)/np.pi) + 1)) + '$ \pi $']

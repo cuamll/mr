@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 from matplotlib.lines import Line2D
+import utils
 
 # shouldn't need this anymore but using it for now
 def mkdir_p(path):
@@ -126,10 +127,10 @@ if d == 2:
         plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
         fig, axes = plt.subplots()
 
-        legend_elements = [Line2D([0], [0], color='b', lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
-                           Line2D([0], [0], color='r', lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
-        axes.contour(chi_X, chi_Y, C2, colors='b', levels=[0])
-        axes.contour(s_X, s_Y, C2, colors='r', levels=[0])
+        legend_elements = [Line2D([0], [0], color=utils.blu, lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
+                           Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
+        axes.contour(chi_X, chi_Y, C2, colors=utils.blu, levels=[0])
+        axes.contour(s_X, s_Y, C2, colors=utils.rd, levels=[0])
         axes.grid()
         axes.axhline(0, color='black', lw=1.5)
         axes.axvline(0, color='black', lw=1.5)
