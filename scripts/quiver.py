@@ -28,7 +28,7 @@ arrow_width = args.width
 dots = args.dpi
 sep = '/'
 # this should eventually be an argument to the script as well
-base_fn = 'snapshot_25000_'
+base_fn = 'snapshot_250000_'
 total_file = direc + sep + base_fn + 'total'
 irrot_file = direc + sep + base_fn + 'irrot'
 rot_file = direc + sep + base_fn + 'rot'

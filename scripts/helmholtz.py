@@ -100,6 +100,10 @@ popt, pcov = curve_fit(irrot, dists, irrot_trace)
 # gonna use this string multiple times
 pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
 print(pat)
+output_file = output_dir + 'fit_params.dat'
+f = open(output_file,'w')
+f.write("# gamma, chi, kappa\n{:.4f}\n{:.4f}\n{:.4f}".format(popt[0],popt[1],popt[2]))
+f.close()
 
 fitted_data = irrot(dists, *popt)
 side = int(np.sqrt(len(fitted_data)))
