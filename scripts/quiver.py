@@ -76,8 +76,8 @@ for fil in files:
     # plt.plot(pos_x,pos_y,'o',color=utils.rd,markeredgecolor='r')
     # plt.plot(neg_x,neg_y,'o',color=utils.blu,markeredgecolor='b')
     if count < 3:
-        plt.plot(pos_x,pos_y,'o',color=utils.rd)
-        plt.plot(neg_x,neg_y,'o',color=utils.blu)
+        plt.plot(pos_x, pos_y, 'o', markersize=48/length, color=utils.rd)
+        plt.plot(neg_x, neg_y, 'o', markersize=48/length, color=utils.blu)
 
     fig.savefig(output_file, format='eps', dpi=dots)
     ax.clear()

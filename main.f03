@@ -192,17 +192,17 @@ program mr
 
     if (.not.canon) then
 
-      if (attempts(4).gt.0) then
-        write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
-        accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-      else 
+      if (attempts(4).eq.0) then
         write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
         accepts(4), attempts(4)
+      else 
+        write (*,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+        accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
       end if
 
-      if (attempts(5).gt.0) then
+      if (attempts(5).eq.0) then
         write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
-        accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+        accepts(5), attempts(5)
       else
         write (*,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
         accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
@@ -412,15 +412,6 @@ subroutine normalisations(num_procs)
   ebar_dip_sq_sum = ebar_dip_sq_sum / denom
   ebar_wind_sum = ebar_wind_sum / denom
   ebar_wind_sq_sum = ebar_wind_sq_sum / denom
-  rho_k_p = rho_k_p / denom
-  rho_k_m = rho_k_m / denom
-  ch_ch = ch_ch / denom
-  s_ab = s_ab / denom
-  s_ab_irrot = s_ab_irrot / denom
-  s_ab_rot = s_ab_rot / denom
-  dir_struc = dir_struc / denom
-  dist_r = dist_r / denom
-  bin_count = bin_count / denom
   e_tot_avg = e_tot_avg / denom
   e_rot_avg = e_rot_avg / denom
   e_irrot_avg = e_irrot_avg / denom
@@ -428,6 +419,18 @@ subroutine normalisations(num_procs)
   rho_avg = rho_avg / denom
   windings = windings / denom
   windings_sq = windings_sq / denom
+
+  if (do_corr) then
+    rho_k_p = rho_k_p / denom
+    rho_k_m = rho_k_m / denom
+    ch_ch = ch_ch / denom
+    s_ab = s_ab / denom
+    s_ab_irrot = s_ab_irrot / denom
+    s_ab_rot = s_ab_rot / denom
+    dir_struc = dir_struc / denom
+    dist_r = dist_r / denom
+    bin_count = bin_count / denom
+  end if
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
   sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)
@@ -526,17 +529,17 @@ subroutine normalisations(num_procs)
 
   if (.not.canon) then
 
-    if (attempts(4).gt.0) then
-      write (30,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
-      accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
-    else 
+    if (attempts(4).eq.0) then
       write (30,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
       accepts(4), attempts(4)
+    else 
+      write (30,'(a,2i12.1,es18.9)') "Creations: total, attempts, rate: ",&
+      accepts(4), attempts(4), dble(accepts(4)) / dble(attempts(4))
     end if
 
-    if (attempts(5).gt.0) then
+    if (attempts(5).eq.0) then
       write (30,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
-      accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))
+      accepts(5), attempts(5)
     else
       write (30,'(a,2i12.1,es18.9)') "Annihilations: total, attempts, rate: ",&
       accepts(5), attempts(5), dble(accepts(5)) / dble(attempts(5))

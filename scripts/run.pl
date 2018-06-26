@@ -17,11 +17,14 @@ my $fh;
 my $fh_temp;
 my $input;
 my $help = '';
-my $doplots = 1;
 my $dorun = 1;
+my $doplots = 1;
+my $doanalysis = 1;
 my $docontour = 1;
 my $doquiver = 1;
 my $dolorentz = 1;
+my $doquadrics = 1;
+my $dohelmholtz = 1;
 my $arrow_width = 0.002;
 my $dpi = 200;
 my $inputfile = 'in/start.in';
@@ -39,10 +42,13 @@ my $stampdir = '';
 
 # Get command line options; they all have (hopefully) sensible defaults
 $input = GetOptions ("help"=> \$help,
-                     "plot=i"=> \$doplots,
                      "run=i"=> \$dorun,
+                     "analysis=i"=> \$doanalysis,
+                     "plot=i"=> \$doplots,
                      "contour=i"=> \$docontour,
                      "quiver=i"=> \$doquiver,
+                     "quadrics=i"=> \$doquadrics,
+                     "helmholtz=i"=> \$dohelmholtz,
                      "lorentz=i"=> \$dolorentz,
                      "directory=s"=> \$stampdir,
                      "lengths=s"=> \@lengths,
@@ -269,35 +275,39 @@ exit 0
 
             copy($tempinputfile, "$stampdir/input.in");
             # unlink($tempinputfile);
+            if ($doanalysis) {
+              my $analysis_script = "$basedir/scripts/analyse.pl";
+              qq[$analysis_script -d=$stampdir --plot=$doplots --contour=$docontour --quiver=$doquiver --lorentz=$dolorentz --quadrics=$doquadrics --helmholtz=$dohelmholtz];
+            }
 
             # then gnuplot
-            if ($doplots) {
-              my $plotfile = "$basedir/scripts/plot.pl";
-              my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
-              my $kz = 0;
-              my $palette = "~/.config/gnuplot/inferno.pal";
-              #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
-              my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
-              system($plotcmd);
-            }
+            #if ($doplots) {
+            #  my $plotfile = "$basedir/scripts/plot.pl";
+            #  my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
+            #  my $kz = 0;
+            #  my $palette = "~/.config/gnuplot/inferno.pal";
+            #  #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
+            #  my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
+            #  system($plotcmd);
+            #}
 
-            if ($docontour) {
-              my $contourfile = "$basedir/scripts/s_perp_contours.py";
-              my $contourcmd = qq[python $contourfile $stampdir $parameters{L} $dpi];
-              system($contourcmd);
-            }
+            #if ($docontour) {
+            #  my $contourfile = "$basedir/scripts/s_perp_contours.py";
+            #  my $contourcmd = qq[python $contourfile $stampdir $parameters{L} $dpi];
+            #  system($contourcmd);
+            #}
 
-            if ($doquiver) {
-              my $quiverfile = "$basedir/scripts/quiver.py";
-              my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width $dpi];
-              system($quivercmd);
-            }
+            #if ($doquiver) {
+            #  my $quiverfile = "$basedir/scripts/quiver.py";
+            #  my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width $dpi];
+            #  system($quivercmd);
+            #}
 
-            if ($dolorentz) {
-              my $lorentzfile = "$basedir/scripts/lorentz.py";
-              my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
-              system($lorentzcmd);
-            }
+            #if ($dolorentz) {
+            #  my $lorentzfile = "$basedir/scripts/lorentz.py";
+            #  my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
+            #  system($lorentzcmd);
+            #}
             
           }
         }

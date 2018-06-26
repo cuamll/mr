@@ -68,7 +68,10 @@ module output
 
   subroutine write_output
 
-    call fix_arrays
+    if (do_corr) then
+      call fix_arrays
+    end if
+
     call calc_correlations
 
   end subroutine write_output

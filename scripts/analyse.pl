@@ -35,6 +35,7 @@ $input = GetOptions ("help"=> \$help,
                      "quiver=i"=> \$doquiver,
                      "lorentz=i"=> \$dolorentz,
                      "quadrics=i"=> \$doquadrics,
+                     "helmholtz=i"=> \$dohelmholtz,
                      "directory=s"=> \$stampdir,
                      "input_file=s"=> \$inputfile,
                      "comment=s"=> \$comment);
