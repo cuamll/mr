@@ -21,7 +21,8 @@ module setup
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
     allocate(e_irrot_avg(2,L,L))
-    allocate(lgf(L,L,L,L))
+    ! allocate(lgf(L,L,L,L))
+    allocate(lgf(0:L/2,0:L/2))
     if (do_corr) then
       allocate(s_ab(2,2,(bz*L)+1,(bz*L)+1))
       allocate(s_ab_rot(2,2,(bz*L)+1,(bz*L)+1))

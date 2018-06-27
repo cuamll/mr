@@ -4,7 +4,7 @@ module linear_solver
   use common
   implicit none
 
-  integer, private :: a,b,c,x,y,z,kx,ky,kz,i,nch
+  integer, private :: a,b,c,x,y,z,kx,ky,kz,rx,ry,rpx,rpy,i,nch
   real(kind=8), private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,fkx,fky,fkz
   real(kind=8), private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
   real(kind=8), public :: u_int, u_self, g_zero, g_z_sum
@@ -54,8 +54,41 @@ module linear_solver
           do y=1,L
             do x=1,L
 
+              rx = (a - x)
+              if (rx.gt.(L/2)) then
+                rx = rx - L
+              else if (rx.le.(-L/2)) then
+                rx = rx + L
+              end if
+              rx = abs(rx)
+
+              rpx = (a - pos(x))
+              if (rpx.gt.(L/2)) then
+                rpx = rpx - L
+              else if (rpx.le.(-L/2)) then
+                rpx = rpx + L
+              end if
+              rpx = abs(rpx)
+
+              ry = (b - y)
+              if (ry.gt.(L/2)) then
+                ry = ry - L
+              else if (ry.le.(-L/2)) then
+                ry = ry + L
+              end if
+              ry = abs(ry)
+
+              rpy = (b - pos(y))
+              if (rpy.gt.(L/2)) then
+                rpy = rpy - L
+              else if (rpy.le.(-L/2)) then
+                rpy = rpy + L
+              end if
+              rpy = abs(rpy)
+
               if (a.eq.x.and.b.eq.y) then
-                g0 = g0 + lgf(a,b,x,y)
+                g0 = g0 + lgf(rx,ry)
+                ! g0 = g0 + lgf(a,b,x,y)
               end if
 
               if (v(x,y).ne.0) then ! non-zero charge at (x,y,z)
@@ -69,10 +102,18 @@ module linear_solver
                 !       * (lgf(a,b,x,y) - lgf(a,b,pos(x),y))
                 ! sum_y = sum_y + charge * (-1)&
                 !       * (lgf(a,b,x,y) - lgf(a,b,x,pos(y)))
+
+                ! four index
+                ! sum_x = sum_x + charge * (+1)&
+                !       * (lgf(a,b,pos(x),y) - lgf(a,b,x,y))
+                ! sum_y = sum_y + charge * (+1)&
+                !       * (lgf(a,b,x,pos(y)) - lgf(a,b,x,y))
+
+                ! two index
                 sum_x = sum_x + charge * (+1)&
-                      * (lgf(a,b,pos(x),y) - lgf(a,b,x,y))
+                      * (lgf(rpx,ry) - lgf(rx,ry))
                 sum_y = sum_y + charge * (+1)&
-                      * (lgf(a,b,x,pos(y)) - lgf(a,b,x,y))
+                      * (lgf(rx,rpy) - lgf(rx,ry))
 
                 ! NEGATIVE GRAD i.e. - \hat{\nabla} \phi
                 ! sum_x = sum_x + charge * (-1) *&
@@ -81,9 +122,11 @@ module linear_solver
                 !       (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
                 if (v(a,b).ne.0) then
                   if (a.eq.x.and.b.eq.y) then
-                    u_self = u_self + charge**2 * lgf(x,y,x,y)
+                    u_self = u_self + charge**2 * lgf(rx,ry)
+                    ! u_self = u_self + charge**2 * lgf(a,b,x,y)
                   else
-                    u_int = u_int + q * v(a,b) * charge * lgf(a,b,x,y)
+                    u_int = u_int + q * v(a,b) * charge * lgf(rx,ry)
+                    ! u_int = u_int + q * v(a,b) * charge * lgf(a,b,x,y)
                   end if
                 end if
 
@@ -128,22 +171,34 @@ module linear_solver
 
   subroutine lgfcalc(filename)
     character(6), intent(in) :: filename
-    ! real, dimension((L),(L)) :: lgf_twoindex
-    ! integer :: i,j
 
-    ! lgf_twoindex = 0.0
     g0 = 0.0
+    lgf = 0.0
 
     do y=1,L
       do x=1,L
         do b=1,L
           do a=1,L
 
-            lgf(a,b,x,y)=0.0
-
             ! these need to be real, for cos to work later
             p1=float(a-x)
             q1=float(b-y)
+
+            rx = (a - x)
+            if (rx.gt.(L/2)) then
+              rx = rx - L
+            else if (rx.le.(-L/2)) then
+              rx = rx + L
+            end if
+            rx = abs(rx)
+
+            ry = (b - y)
+            if (ry.gt.(L/2)) then
+              ry = ry - L
+            else if (ry.le.(-L/2)) then
+              ry = ry + L
+            end if
+            ry = abs(ry)
 
             ! these need to be within [L/2,-L/2]. The Green's
             ! function is even though because we use cosines, so it
@@ -169,35 +224,17 @@ module linear_solver
 
                   else
 
-                    lgf(a,b,x,y)=lgf(a,b,x,y)+(cos(fkx*p1)&
+                    lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
                       *cos(fky*q1))/(2-cos(fkx)-cos(fky))
 
                   end if ! end of kx=ky=kz=0 block
                 end do ! end kx loop
               end do ! end ky loop
 
-            lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
-
-            !i = 0; j = 0
-
-            !i = abs(a - x)
-            !j = abs(b - y)
-
-            !!if (i.gt.(L/2)) then
-            !!  i=L-i
-            !!end if
-
-            !!if (j.gt.(L/2)) then
-            !!  j=L-j
-            !!end if
-
-            !i = i + 1
-            !j = j + 1
-
-            !lgf_twoindex(i,j) = lgf_twoindex(i,j) + lgf(a,b,x,y)
+            lgf(rx,ry)=lgf(rx,ry)/(2*L**2)
 
             if (a.eq.x.and.b.eq.y) then
-              g0 = g0 + lgf(a,b,x,y)
+              g0 = g0 + lgf(rx,ry)
             end if
 
           end do ! end a loop
@@ -205,17 +242,91 @@ module linear_solver
       end do ! end x loop
     end do ! end y loop
 
-    ! open(30,file="lgf_twoindex.dat")
-
-    ! do i=1,(L)
-    !   do j=1,(L)
-    !     write(30,'(2i4.2,f16.8)') i-1,j-1,lgf_twoindex(i,j)
-    !   end do
-    ! end do
-
-    ! close(30)
-
     g0 = g0 / L**2
+
+    ! old, four index version
+    !do y=1,L
+    !  do x=1,L
+    !    do b=1,L
+    !      do a=1,L
+
+    !        lgf(a,b,x,y)=0.0
+
+    !        ! these need to be real, for cos to work later
+    !        p1=float(a-x)
+    !        q1=float(b-y)
+
+    !        ! these need to be within [L/2,-L/2]. The Green's
+    !        ! function is even though because we use cosines, so it
+    !        ! doesn't matter whether it's positive or negative.
+
+    !        if (p1.gt.float(L/2)) then
+    !          p1=p1-float(L)
+    !        else if (p1.lt.(-float(L/2))) then
+    !          p1=p1+float(L)
+    !        end if
+
+    !        if (q1.gt.float(L/2)) then
+    !          q1=q1-float(L)
+    !        else if (q1.lt.(-float(L/2))) then
+    !          q1=q1+float(L)
+    !        end if
+
+    !          do ky=-(L-1)/2,L/2
+    !            do kx=-(L-1)/2,L/2
+    !              fky=2*pi*ky/L
+    !              fkx=2*pi*kx/L
+    !              if ((kx.eq.0).and.(ky.eq.0)) then
+
+    !              else
+
+    !                lgf(a,b,x,y)=lgf(a,b,x,y)+(cos(fkx*p1)&
+    !                  *cos(fky*q1))/(2-cos(fkx)-cos(fky))
+
+    !              end if ! end of kx=ky=kz=0 block
+    !            end do ! end kx loop
+    !          end do ! end ky loop
+
+    !        lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
+
+    !        !i = 0; j = 0
+
+    !        !i = abs(a - x)
+    !        !j = abs(b - y)
+
+    !        !!if (i.gt.(L/2)) then
+    !        !!  i=L-i
+    !        !!end if
+
+    !        !!if (j.gt.(L/2)) then
+    !        !!  j=L-j
+    !        !!end if
+
+    !        !i = i + 1
+    !        !j = j + 1
+
+    !        !lgf_twoindex(i,j) = lgf_twoindex(i,j) + lgf(a,b,x,y)
+
+    !        if (a.eq.x.and.b.eq.y) then
+    !          g0 = g0 + lgf(a,b,x,y)
+    !        end if
+
+    !      end do ! end a loop
+    !    end do ! end b loop
+    !  end do ! end x loop
+    !end do ! end y loop
+
+    !! open(30,file="lgf_twoindex.dat")
+
+    !! do i=1,(L)
+    !!   do j=1,(L)
+    !!     write(30,'(2i4.2,f16.8)') i-1,j-1,lgf_twoindex(i,j)
+    !!   end do
+    !! end do
+
+    !! close(30)
+
+    !g0 = g0 / L**2
 
     !write (*,*) "g(0) = ",g0
     !write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
