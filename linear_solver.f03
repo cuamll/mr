@@ -135,8 +135,10 @@ module linear_solver
           end do ! y do loop
         end do ! x do loop
 
-        mnphi(1,a,b)=sum_x
-        mnphi(2,a,b)=sum_y
+        ! mnphi(1,a,b)=sum_x
+        ! mnphi(2,a,b)=sum_y
+        mnphi(1,a,b)=(q / eps_0) * sum_x
+        mnphi(2,a,b)=(q / eps_0) * sum_y
 
         ! ebar(1)=ebar(1)+mnphi(1,a,b)
         ! ebar(2)=ebar(2)+mnphi(2,a,b)
