@@ -394,6 +394,7 @@ module input
       else
         canon = .false.
       end if
+
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
       eps_0 = 1.0 / (2*pi)
