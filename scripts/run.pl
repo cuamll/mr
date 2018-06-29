@@ -275,9 +275,11 @@ exit 0
 
             copy($tempinputfile, "$stampdir/input.in");
             # unlink($tempinputfile);
+            print "Do analysis = $doanalysis\n";
             if ($doanalysis) {
+              print "Doing analysis\n";
               my $analysis_script = "$basedir/scripts/analyse.pl";
-              qq[$analysis_script -d=$stampdir --plot=$doplots --contour=$docontour --quiver=$doquiver --lorentz=$dolorentz --quadrics=$doquadrics --helmholtz=$dohelmholtz];
+              system(qq[$analysis_script -d=$stampdir --plot=$doplots --contour=$docontour --quiver=$doquiver --lorentz=$dolorentz --quadrics=$doquadrics --helmholtz=$dohelmholtz]);
             }
 
             # then gnuplot

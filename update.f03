@@ -546,6 +546,9 @@ module update
         avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
         avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
 
+        e_rot(i,:,:) = e_rot(i,:,:) - ebar(i) / L**2
+        mnphi(i,:,:) = mnphi(i,:,:) + ebar(i) / L**2
+
 
       end do
 
