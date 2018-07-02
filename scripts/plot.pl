@@ -78,6 +78,34 @@ for my $i (0..$#filenames) {
   if ($file =~ /s_ab_([a-z]+)/) {
     my $field_component = $1;
 
+    # the multiplot is really awkward. ugly code. whatever
+    my $mplotscript = "$plotpath" . "heatplot_multiplot.gnu";
+    my $multiplottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$, );
+    $linetitle = qq(\$ S^{\\alpha \\beta}_{$field_component} \$ );
+    $multiplottitle = $multiplottitle . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    my $minfile = $inpath . $filenames[$i] . $insuffix;
+    my $moutfile = $outpath . '/' . "s_ab_gnu_multiplot_$field_component";
+    my $mplotarg = qq(FILE='$minfile'; OUTPUT='$moutfile$plotsuffix'; PALETTE = '$palette'; PITICS = 'Y';);
+    if ($addtitles) {
+      $mplotarg .= qq( PLOTTITLE='$multiplottitle';);
+    }
+    my $mlatexarg = qq(latex -interaction=batchmode -output-directory=$outpath $moutfile$plotsuffix > /dev/null);
+    my $mdvipsarg = qq(dvips -q -D10000 -o $moutfile.ps $moutfile.dvi);
+    my $mps2pdfarg =  qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $moutfile.ps $moutfile.pdf 2> /dev/null);
+    my $syscall = qq(gnuplot -e "$mplotarg" $mplotscript);
+    print "Plotting $moutfile\n";
+    system($syscall);
+    system($mlatexarg);
+    system($mdvipsarg);
+    system($mps2pdfarg);
+    if (!$keep_aux) {
+      unlink("$moutfile.log");
+      unlink("$moutfile.aux");
+      unlink("$moutfile.dvi");
+      unlink("$moutfile.ps");
+      unlink("$moutfile-inc.eps");
+    }
+
     # do each tensor component separately
     $linetitle = qq(\$ S^{xx}_{$field_component} \$ );
     $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
@@ -200,6 +228,7 @@ for my $i (0..$#inputfiles) {
   }
 
 }
+
 
 # warn "Different number of titles and files!\n" unless @titles == @filenames;
 

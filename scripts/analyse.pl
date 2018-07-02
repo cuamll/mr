@@ -15,6 +15,7 @@ my $fh_temp;
 my $input;
 my $help = '';
 my $doplots = 1;
+my $domultiplot = 1;
 my $dorun = 1;
 my $docontour = 1;
 my $doquiver = 1;
@@ -33,6 +34,7 @@ $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
                      "contour=i"=> \$docontour,
                      "quiver=i"=> \$doquiver,
+                     "multiplot=i"=> \$domultiplot,
                      "lorentz=i"=> \$dolorentz,
                      "quadrics=i"=> \$doquadrics,
                      "helmholtz=i"=> \$dohelmholtz,
@@ -78,7 +80,7 @@ if (exists $parameters{'e_c'}) {
 # job file tells us how many MPI threads were used in simulation
 my ($filename,$directories,$suffix) = fileparse($inputfile);
 my @arr = split(/\//,$directories);
-my $jobfile = "$directories/$arr[-1].job";
+my $jobfile = "$directories$arr[-1].job";
 print "Job file = $jobfile\n";
 
 # grab the number of MPI slots used. Hacky af hehe
@@ -98,6 +100,7 @@ my @run = (
   $doplots,
   $docontour,
   $doquiver,
+  $domultiplot,
   $dolorentz,
   $doquadrics,
   $dohelmholtz,
@@ -107,6 +110,7 @@ my @file = (
  "$basedir/scripts/plot.pl",
  "$basedir/scripts/s_perp_contours.py",
  "$basedir/scripts/quiver.py",
+ "$basedir/scripts/sab_multiplot.py",
  "$basedir/scripts/lorentz.py",
  "$basedir/scripts/quadrics.py",
  "$basedir/scripts/helmholtz.py"
@@ -121,6 +125,7 @@ my @cmd = (
   qq[python $file[3] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[python $file[5] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
+  qq[python $file[6] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
 );
 
 for my $i (0..$#run) {

@@ -163,7 +163,18 @@ module linear_solver
   end subroutine linsol
 
   subroutine lgfcalc
+    implicit none
+    real(kind=rk), dimension(0:L) :: fk, cosine
 
+    do a = 0, L
+
+      b = a - L/2
+      fk(a) = (2 * pi * b) / L
+      cosine(a) = cos(fk(a))
+
+    end do
+
+    a = 0; b = 0
     g0 = 0.0
     lgf = 0.0
 
@@ -185,6 +196,7 @@ module linear_solver
 
       do y=1,L
         do x=1,L
+          write(*,'(a,2i4.1)') "(x,y) = ",x,y
           do b=1,L
             do a=1,L
 
@@ -224,16 +236,22 @@ module linear_solver
                 q1=q1+float(L)
               end if
 
-                do ky=-(L-1)/2,L/2
-                  do kx=-(L-1)/2,L/2
-                    fky=2*pi*ky/L
-                    fkx=2*pi*kx/L
-                    if ((kx.eq.0).and.(ky.eq.0)) then
+                ! do ky=-(L-1)/2,L/2
+                !   do kx=-(L-1)/2,L/2
+                do ky=0,L
+                  do kx=0,L
+                    ! fky=2*pi*ky/L
+                    ! fkx=2*pi*kx/L
+
+                    ! if ((kx.eq.0).and.(ky.eq.0)) then
+                    if ((kx.eq.(L/2)+1).and.(ky.eq.(L/2)+1)) then
 
                     else
 
-                      lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
-                        *cos(fky*q1))/(2-cos(fkx)-cos(fky))
+                      ! lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
+                      !   *cos(fky*q1))/(2-cos(fkx)-cos(fky))
+                      lgf(rx,ry)=lgf(rx,ry)+(cos(fk(kx)*p1)&
+                        *cos(fk(ky)*q1))/(2-cosine(kx)-cosine(ky))
 
                     end if ! end of kx=ky=kz=0 block
                   end do ! end kx loop
