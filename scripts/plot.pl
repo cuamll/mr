@@ -1,8 +1,6 @@
 #!/opt/local/bin/perl
-# PRELIMINARY!
-# i'm probably gonna expand the scripting to automate more stuff.
-# currently this just plots heatmaps of correlation functions
-# call with "perl plot.pl -l=L ..." etc. from scripts dir
+# plot.pl: gnuplot plotting of output from maggs-rossetto CG code.
+# called from analyse script with parameters included automatically
 use strict;
 use warnings;
 use Env;
@@ -11,16 +9,17 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
-use Data::Dumper qw(Dumper);
 
 my $three_d = 0;
 my $dir; my $kz; my @columns;
+my $slots = 1;
 my $palette = '~/.config/gnuplot/inferno.pal';
-my $addtitles = 1; my $keep_aux = 0;
+my $addtitles = 0; my $keep_aux = 0;
 my @inputfiles; my @outputfiles; my @tempfiles;
 my @gnuplotargs; my @latexargs; my @dvipsargs; my @ps2pdfargs;
 my $input = GetOptions ("d=s"=> \$dir,
                      "t=i"=> \$addtitles,
+                     "s=i"=> \$slots,
                      "k=i"=> \$keep_aux,
                      "p=s"=> \$palette);
 
@@ -39,10 +38,11 @@ my $gnuplotscript = "$plotpath" . "heatmap_latex.gp";
 my $inpath = "$dir/";
 my $insuffix = ".dat";
 my $outpath = "$dir/plots";
+print "Creating directory $outpath .\n";
 make_path($outpath);
 my $tempsuffix = '.temp';
 
-my $steps = $parameters{no_samples} * $parameters{measurement_sweeps};
+my $steps = $slots * $parameters{no_samples} * $parameters{measurement_sweeps};
 my $meas = $steps / $parameters{sample_interval};
 my $steps_c = commify($steps);
 my $meas_c = commify($meas);
@@ -65,6 +65,12 @@ my $s_string; my $field_string; my $linetitle; my $plottitle;
 # $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
 # my $chgen = lc $parameters{charge_generation};
 # $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+my $plottitle_base;
+if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
+  $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), );
+} else {
+  $plottitle_base = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$, );
+}
 
 # the s_ab_whatever files have four components; we want to plot each separately
 for my $i (0..$#filenames) {
@@ -72,37 +78,65 @@ for my $i (0..$#filenames) {
   if ($file =~ /s_ab_([a-z]+)/) {
     my $field_component = $1;
 
+    # the multiplot is really awkward. ugly code. whatever
+    my $mplotscript = "$plotpath" . "heatplot_multiplot.gnu";
+    my $multiplottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, \$ \\epsilon_c = $parameters{e_c} \$, );
+    $linetitle = qq(\$ S^{\\alpha \\beta}_{$field_component} \$ );
+    $multiplottitle = $multiplottitle . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    my $minfile = $inpath . $filenames[$i] . $insuffix;
+    my $moutfile = $outpath . '/' . "s_ab_$field_component" . '_gnu';
+    my $mplotarg = qq(FILE='$minfile'; OUTPUT='$moutfile$plotsuffix'; PALETTE = '$palette'; PITICS = 'Y';);
+    if ($addtitles) {
+      $mplotarg .= qq( PLOTTITLE='$multiplottitle';);
+    }
+    my $mlatexarg = qq(latex -interaction=batchmode -output-directory=$outpath $moutfile$plotsuffix > /dev/null);
+    my $mdvipsarg = qq(dvips -q -D10000 -o $moutfile.ps $moutfile.dvi);
+    my $mps2pdfarg =  qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $moutfile.ps $moutfile.pdf 2> /dev/null);
+    my $syscall = qq(gnuplot -e "$mplotarg" $mplotscript);
+    print "Plotting $moutfile\n";
+    system($syscall);
+    system($mlatexarg);
+    system($mdvipsarg);
+    system($mps2pdfarg);
+    if (!$keep_aux) {
+      unlink("$moutfile.log");
+      unlink("$moutfile.aux");
+      unlink("$moutfile.dvi");
+      unlink("$moutfile.ps");
+      unlink("$moutfile-inc.eps");
+    }
+
     # do each tensor component separately
     $linetitle = qq(\$ S^{xx}_{$field_component} \$ );
-    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_xx_$field_component";
     push @columns, 3;
 
     $linetitle = qq(\$ S^{xy}_{$field_component} \$ );
-    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_xy_$field_component";
     push @columns, 4;
 
     $linetitle = qq(\$ S^{yx}_{$field_component} \$ );
-    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_yx_$field_component";
     push @columns, 5;
 
     $linetitle = qq(\$ S^{yy}_{$field_component} \$ );
-    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_yy_$field_component";
     push @columns, 6;
 
     $linetitle = qq(\$ S^{xx}_{$field_component} + S^{yy}_{$field_component} \$ );
-    $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+    $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     push @titles, $plottitle;
     push @inputfiles, $inpath . $filenames[$i] . $insuffix;
     push @outputfiles, $outpath . '/' . "s_trace_$field_component";
@@ -141,7 +175,8 @@ for my $i (0..$#filenames) {
     } elsif ($1 =~ /direct/) {
       $linetitle = q($ g^{\pm}(r) $);
     } else {
-      die "File name doesn't match regex. $file $!\n";
+      print "File name doesn't match regex. $file $!\n";
+      next;
     }
 
   } else {
@@ -150,7 +185,7 @@ for my $i (0..$#filenames) {
   }
 
   # if they're going in a document as a figure, might not want the titles
-  $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
+  $plottitle = $plottitle_base . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
   push @titles, $plottitle;
 
   # generate lists of input/output files and command-line arguments
@@ -165,7 +200,7 @@ for my $i (0..$#inputfiles) {
   push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]$plotsuffix'; COLUMN='$columns[$i]'; LINETITLE = ''; PALETTE = '$palette';);
   push @latexargs, qq(latex -interaction=batchmode -output-directory=$outpath $outputfiles[$i]$plotsuffix > /dev/null);
   push @dvipsargs, qq(dvips -q -D10000 -o $outputfiles[$i].ps $outputfiles[$i].dvi);
-  push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outputfiles[$i].ps $outputfiles[$i].pdf);
+  push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outputfiles[$i].ps $outputfiles[$i].pdf 2> /dev/null);
 
   if (index($inputfiles[$i],'s_direct') != -1) {
     # $gnuplotargs[$i] .= qq( PITICS = 'N';);
@@ -193,6 +228,7 @@ for my $i (0..$#inputfiles) {
   }
 
 }
+
 
 # warn "Different number of titles and files!\n" unless @titles == @filenames;
 

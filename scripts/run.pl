@@ -17,11 +17,16 @@ my $fh;
 my $fh_temp;
 my $input;
 my $help = '';
-my $doplots = 1;
 my $dorun = 1;
+my $doplots = 1;
+my $doanalysis = 1;
 my $docontour = 1;
 my $doquiver = 1;
+my $dolorentz = 1;
+my $doquadrics = 1;
+my $dohelmholtz = 1;
 my $arrow_width = 0.002;
+my $dpi = 200;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
 my $comment = '';
@@ -33,13 +38,19 @@ my @core_energies = '';
 my @spacings = '';
 my @params_temp = '';
 my @stamparray = '';
+my $stampdir = '';
 
 # Get command line options; they all have (hopefully) sensible defaults
 $input = GetOptions ("help"=> \$help,
-                     "plot=i"=> \$doplots,
                      "run=i"=> \$dorun,
+                     "analysis=i"=> \$doanalysis,
+                     "plot=i"=> \$doplots,
                      "contour=i"=> \$docontour,
                      "quiver=i"=> \$doquiver,
+                     "quadrics=i"=> \$doquadrics,
+                     "helmholtz=i"=> \$dohelmholtz,
+                     "lorentz=i"=> \$dolorentz,
+                     "directory=s"=> \$stampdir,
                      "lengths=s"=> \@lengths,
                      "temperatures=s"=> \@temperatures,
                      "charges=s"=> \@charges,
@@ -172,7 +183,7 @@ for( my $i = 0; $i < @temperatures; $i++) {
               @stamparray = ('gce','T', $temperatures[$i],'e_c',$core_energies[$n],$comment);
             }
             my $stamp = join('_', @stamparray);
-            my $stampdir = "$outdir/$stamp";
+            $stampdir = "$outdir/$stamp";
             print "Creating directory $stampdir .\n";
             make_path($stampdir);
             $parameters{stamp} = "$stamp";
@@ -186,6 +197,12 @@ for( my $i = 0; $i < @temperatures; $i++) {
             my $logfile = "$logdir/$stamp.log";
 
             foreach (keys %parameters) {
+
+              if ($_ =~ /lgf_path/) {
+                # my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
+                $parameters{$_} = "$basedir/$parameters{$_}";
+              }
+
               if ($_ =~ /_file/) {
                 my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
                 $parameters{$_} = "$stampdir/$fnm$suff";
@@ -220,24 +237,24 @@ for( my $i = 0; $i < @temperatures; $i++) {
               my $pe = '32';
               my $jobname = "mr_T_$parameters{temperature}_L_$parameters{L}_canon";
               my $jobfilecontent = qq(
-  #!/bin/bash -f
-  # ------------------------------
-  #\$ \-M $email
-  #\$ \-m bes
-  #\$ \-V
-  #\$ \-j y
-  #\$ \-cwd
-  #\$ \-N '$jobname'
-  #\$ \-S /bin/bash
-  #\$ \-l vf=$vf
-  #\$ \-pe ompi $pe
-  #
-  echo "Got \${NSLOTS} slots."
-  IPWD=`pwd`
-  echo "in \${IPWD}."
-  mpirun --mca btl ^openib --mca mtl ^psm --n \${NSLOTS} $basedir/$progname -v $tempinputfile
-  exit 0
-  );
+#!/bin/bash -f
+# ------------------------------
+#\$ \-M $email
+#\$ \-m bes
+#\$ \-V
+#\$ \-j y
+#\$ \-cwd
+#\$ \-N '$jobname'
+#\$ \-S /bin/bash
+#\$ \-l vf=$vf
+#\$ \-pe ompi $pe
+#
+echo "Got \${NSLOTS} slots."
+IPWD=`pwd`
+echo "in \${IPWD}."
+mpirun --mca btl ^openib --mca mtl ^psm --n \${NSLOTS} $basedir/$progname -v $tempinputfile
+exit 0
+);
               my $jobfilename = "$basedir/$stamp.job";
               write_to_file($jobfilename, $jobfilecontent, "write");
 
@@ -264,29 +281,41 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
             copy($tempinputfile, "$stampdir/input.in");
             # unlink($tempinputfile);
+            print "Do analysis = $doanalysis\n";
+            if ($doanalysis) {
+              print "Doing analysis\n";
+              my $analysis_script = "$basedir/scripts/analyse.pl";
+              system(qq[$analysis_script -d=$stampdir --plot=$doplots --contour=$docontour --quiver=$doquiver --lorentz=$dolorentz --quadrics=$doquadrics --helmholtz=$dohelmholtz]);
+            }
 
             # then gnuplot
-            if ($doplots) {
-              my $plotfile = "$basedir/scripts/plot.pl";
-              my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
-              my $kz = 0;
-              my $palette = "~/.config/gnuplot/inferno.pal";
-              #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
-              my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
-              system($plotcmd);
-            }
+            #if ($doplots) {
+            #  my $plotfile = "$basedir/scripts/plot.pl";
+            #  my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
+            #  my $kz = 0;
+            #  my $palette = "~/.config/gnuplot/inferno.pal";
+            #  #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
+            #  my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
+            #  system($plotcmd);
+            #}
 
-            if ($docontour) {
-              my $contourfile = "$basedir/scripts/s_perp_contours.py";
-              my $contourcmd = qq[python $contourfile $stampdir $parameters{L}];
-              system($contourcmd);
-            }
+            #if ($docontour) {
+            #  my $contourfile = "$basedir/scripts/s_perp_contours.py";
+            #  my $contourcmd = qq[python $contourfile $stampdir $parameters{L} $dpi];
+            #  system($contourcmd);
+            #}
 
-            if ($doquiver) {
-              my $quiverfile = "$basedir/scripts/quiver.py";
-              my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width];
-              system($quivercmd);
-            }
+            #if ($doquiver) {
+            #  my $quiverfile = "$basedir/scripts/quiver.py";
+            #  my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width $dpi];
+            #  system($quivercmd);
+            #}
+
+            #if ($dolorentz) {
+            #  my $lorentzfile = "$basedir/scripts/lorentz.py";
+            #  my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
+            #  system($lorentzcmd);
+            #}
             
           }
         }
