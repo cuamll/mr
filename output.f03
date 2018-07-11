@@ -1042,7 +1042,9 @@ module output
       allocate(s_par_rot((sp*L)+1,(sp*L)+1,(sp*L)+1))
       s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
       s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
+      chi_ab = 0.0; chi_ab_rot = 0.0; chi_ab_irrot = 0.0
 
+      ! write (*,*) "Calculating s_perp and s_par"
       ! renormalise s_ab tensors here: then it propagates through to
       ! s_perp and s_par
       ! Try 3 * L**3 here since there are 3N field links
@@ -1168,6 +1170,7 @@ module output
               kx = m + 1 + (bz*(L/2))
             end if
 
+
             !if (p.lt.(-1*(bz*(L/2)))) then
             !  ky = p
             !  do while (ky.lt.(-1*(bz*(L/2))))
@@ -1201,6 +1204,8 @@ module output
             !else
             !  kx = m + 1 + (bz*(L/2))
             !end if
+
+
 
             s_perp(i,j,k) = (1 - kx_float*kx_float*norm_k) *&
                             &real(s_ab(1,1,kx,ky,kz))+&
@@ -1333,6 +1338,7 @@ module output
       write (30, '(3f20.8)') sum(s_perp), sum(s_perp_rot), sum(s_perp_irrot)
 
 
+      write (*,'(f20.8)') sum(real(chi_ab_rot(1,1,:,:,:)))
       write (30, '(a)') "# Chi_ab integrals (s_ab / temp)!"
       write (30, '(a)') "# Chi_xx: total, rot, irrot"
       write (30, '(3f20.8)') sum(real(chi_ab(1,1,:,:,:))),&

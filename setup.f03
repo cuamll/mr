@@ -30,7 +30,7 @@ module setup
     allocate(dir_struc((L/2) + 1,(L/2) + 1,(L/2) + 1))
     allocate(dist_r(ceiling(sqrt(float(3*(((L/2)**3))))*(1 / bin_size))))
     allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**3))))*(1 / bin_size))))
-    allocate(lgf(L,L,L,L,L,L))
+    allocate(lgf(0:L/2,0:L/2,0:L/2))
     allocate(fw(L,L))
     allocate(hw(L,L))
 

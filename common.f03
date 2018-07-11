@@ -27,7 +27,7 @@ module common
   real(kind=8), public :: q, lambda, volume, temp, beta, u_tot, eps_0,&
   bin_size, rot_delt, g0, rot_ratio, g_ratio, hop_ratio, g_thr, e_c
   real(kind=8), dimension(:,:,:,:), allocatable, public :: e_field, mnphi
-  real(kind=8), dimension(:,:,:,:,:,:), allocatable, public :: lgf
+  real(kind=8), dimension(:,:,:), allocatable, public :: lgf
   real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&
   ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg
   real(kind=rk), dimension(3), public :: ebar, ebar_dip, ebar_wind, ebar_sum,&
@@ -53,7 +53,7 @@ module common
   irrot_field_file, irrot_sab_file, irrot_sperp_file, rot_field_file,&
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
   irrot_spar_file, avg_field_file, equil_file, chi_ab_file, rot_chi_ab_file,&
-  irrot_chi_ab_file, windings_file, windings_sq_file
+  irrot_chi_ab_file, windings_file, windings_sq_file, lgf_path
 
   character(6) :: charge_gen
 

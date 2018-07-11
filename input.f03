@@ -16,8 +16,8 @@ module input
     character(len=200) :: lattfile_long, en_long, sq_en_long,&
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
-    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, cab_l,&
-    r_cab_l, ir_cab_l, ch_g, wf_l, wsq_l
+    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, ch_g, c_ab_l,&
+    r_cab_l, ir_cab_l, wf_l, wsq_l, lpl
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -110,11 +110,6 @@ module input
             if (verbose) then
               write (*,*) 'Temperature: ',temp
             end if
-          case ('core_energy')
-            read(buffer, '(F10.1)', iostat=ios) e_c
-            if (verbose) then
-              write (*,*) 'Core energy constant: ',e_c
-            end if
           case ('lattice_spacing')
             read(buffer, '(F10.1)', iostat=ios) lambda
             if (verbose) then
@@ -124,6 +119,11 @@ module input
             read(buffer, '(F16.1)', iostat=ios) q
             if (verbose) then
               write (*,*) 'Charge value: ',q
+            end if
+          case ('e_c')
+            read(buffer, '(F16.1)', iostat=ios) e_c
+            if (verbose) then
+              write (*,*) 'Core energy constant: ',e_c
             end if
           case ('delta_max')
             read(buffer, '(F10.1)', iostat=ios) rot_delt
@@ -163,12 +163,12 @@ module input
           case ('windings_file')
             read(buffer, '(a)', iostat=ios) wf_l
             if (verbose) then
-              write (*,*) 'Lattice file name: ',wf_l
+              write (*,*) 'Windings file name: ',wf_l
             end if
           case ('windings_sq_file')
             read(buffer, '(a)', iostat=ios) wsq_l
             if (verbose) then
-              write (*,*) 'Lattice file name: ',wsq_l
+              write (*,*) 'Windings file name: ',wsq_l
             end if
           case ('lattice_file')
             read(buffer, '(a)', iostat=ios) lattfile_long
@@ -216,19 +216,19 @@ module input
               write (*,*) 'Total S^(α β) file name: ',s_ab_l
             end if
           case ('total_chi^(alpha_beta)_file')
-            read(buffer, '(a)', iostat=ios) cab_l
+            read(buffer, '(a)', iostat=ios) c_ab_l
             if (verbose) then
-              write (*,*) 'Total Chi^(α β) file name: ',cab_l
+              write (*,*) 'Total chi^(α β) file name: ',c_ab_l
             end if
           case ('rot_chi^(alpha_beta)_file')
             read(buffer, '(a)', iostat=ios) r_cab_l
             if (verbose) then
-              write (*,*) 'Rotational Chi^(α β) file name: ',r_cab_l
+              write (*,*) 'Rotational chi^(α β) file name: ',r_cab_l
             end if
           case ('irrot_chi^(alpha_beta)_file')
             read(buffer, '(a)', iostat=ios) ir_cab_l
             if (verbose) then
-              write (*,*) 'Irrotational Chi^(α β) file name: ',ir_cab_l
+              write (*,*) 'Irrotational chi^(α β) file name: ',ir_cab_l
             end if
           case ('total_s_(perp)_file')
             read(buffer, '(a)', iostat=ios) s_p_l
@@ -294,6 +294,11 @@ module input
             read(buffer, '(a)', iostat=ios) sp_su_l
             if (verbose) then
               write (*,*) 'Raw file name for specific heat/susceptibility: ',sp_su_l
+            end if
+          case ('lgf_path')
+            read(buffer, '(a)', iostat=ios) lpl
+            if (verbose) then
+              write (*,*) 'Path to LGF binary file:',lpl
             end if
           case ('equil_file')
             read(buffer, '(a)', iostat=ios) eq_l
@@ -389,8 +394,6 @@ module input
       else
         do_corr = .false.
       end if
-
-
       if (canon_char.eq.'T'.or.canon_char.eq.'Y') then
         canon = .true.
       else
@@ -399,27 +402,26 @@ module input
 
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
-      ! eps_0 = 1.0 / (2 * pi * lambda)
-      eps_0 = 1.0 / (lambda)
-      ! eps_0 = 1.0 / L
+      eps_0 = 1.0 / (2*pi)
       ! eps_0 = 1.0
       !q = 2 * pi * q
       !write (*,*) "q = ",q
       beta = 1.0 / temp
-      g_thr = 1 / real(L**2)
+      g_thr = 1 / real(L)
 
       if (rot_delt.eq.0) then
- 
-        if (temp.lt.10.0) then
-          rot_delt = 1.1 * temp
-        else
+
+        if (temp.lt.0.1) then
+          rot_delt = 2 * temp
+        else if (temp.gt.10.0) then
           rot_delt = sqrt(temp)
+        else
+          rot_delt = 1.1 * temp
         end if
- 
+
         if (verbose) then
           write (*,*) "Delta_max read in as 0; being set to",rot_delt
         end if
- 
       end if
 
       lattfile = trim(adjustl(lattfile_long))
@@ -446,19 +448,19 @@ module input
       sphe_sus_file = trim(adjustl(sp_su_l))
       equil_file = trim(adjustl(eq_l))
       charge_gen = trim(adjustl(ch_g))
-      chi_ab_file = trim(adjustl(cab_l))
+      chi_ab_file = trim(adjustl(c_ab_l))
       rot_chi_ab_file = trim(adjustl(r_cab_l))
       irrot_chi_ab_file = trim(adjustl(ir_cab_l))
       windings_file = trim(adjustl(wf_l))
       windings_sq_file = trim(adjustl(wsq_l))
+      lgf_path = trim(adjustl(lpl))
 
-      if (charge_gen.ne."RANDOM"&
-          .and.charge_gen.ne."DIPOLE"&
-          .and.charge_gen.ne."CRYSTA") then
-        write(*,*) "Charge generation method should be either RANDOM&
-          & or DIPOLE. Edit input file and try again."
+      if (charge_gen.ne."RANDOM".and.charge_gen.ne."DIPOLE".and.charge_gen.ne."CRYSTA") then
+        write(*,*) "Charge generation method should be either RANDOM,&
+          & DIPOLE, or CRYSTAL. Edit input file and try again."
         STOP
       end if
+
 
     else
       write (*,'(a)',advance='no') "Can't find an input file at ",arg

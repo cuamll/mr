@@ -16,10 +16,10 @@ RV = $(shell git rev-parse --short HEAD)
 
 DEBUG = 0
 ifeq ($(DEBUG), 1)
-	# DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
-	# 	     -ffpe-trap=invalid,zero,denormal,underflow,overflow
 	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
-		     -ffpe-trap=invalid,zero
+		     -ffpe-trap=invalid,zero,denormal,underflow,overflow
+	# DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
+	# 	     -ffpe-trap=invalid,zero
 else
 	DEBUGFLAGS = -O2
 endif

@@ -425,7 +425,7 @@ module update
       ! get irrotational part of field
       ! this way we can get decomposed parts along with total
       call linsol
-      e_rot = e_field - mnphi
+      e_rot = e_field + mnphi
 
       e_tot_avg =           e_tot_avg + e_field
       e_rot_avg =           e_rot_avg + e_rot
@@ -488,6 +488,9 @@ module update
         ! avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
         ! avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
         ! avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
+
+        e_rot(i,:,:,:) = e_rot(i,:,:,:) - (ebar(i) / L**3)
+        mnphi(i,:,:,:) = mnphi(i,:,:,:) + (ebar(i) / L**3)
 
       end do
 
