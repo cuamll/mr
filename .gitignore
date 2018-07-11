@@ -46,11 +46,13 @@ test*
 michael*
 linso*
 mr*
+hxy2d
 *_uncorr*
 *_rot*
 lattice.dat
 latts*
 *.inc
+*colormaps*
 
 
 # LaTeX extras
@@ -61,3 +63,4 @@ latts*
 *.bbl
 *.toc
 *.synctex*
+*pycache*
