@@ -14,7 +14,7 @@ my $three_d = 0;
 my $dir; my $kz; my @columns;
 my $slots = 1;
 my $palette = '~/.config/gnuplot/inferno.pal';
-my $addtitles = 1; my $keep_aux = 0;
+my $addtitles = 0; my $keep_aux = 0;
 my @inputfiles; my @outputfiles; my @tempfiles;
 my @gnuplotargs; my @latexargs; my @dvipsargs; my @ps2pdfargs;
 my $input = GetOptions ("d=s"=> \$dir,
@@ -84,7 +84,7 @@ for my $i (0..$#filenames) {
     $linetitle = qq(\$ S^{\\alpha \\beta}_{$field_component} \$ );
     $multiplottitle = $multiplottitle . qq($linetitle\n\n$meas_c measurements from $steps_c MC steps.);
     my $minfile = $inpath . $filenames[$i] . $insuffix;
-    my $moutfile = $outpath . '/' . "s_ab_gnu_multiplot_$field_component";
+    my $moutfile = $outpath . '/' . "s_ab_$field_component" . '_gnu';
     my $mplotarg = qq(FILE='$minfile'; OUTPUT='$moutfile$plotsuffix'; PALETTE = '$palette'; PITICS = 'Y';);
     if ($addtitles) {
       $mplotarg .= qq( PLOTTITLE='$multiplottitle';);

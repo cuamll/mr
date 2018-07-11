@@ -17,7 +17,7 @@ module input
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
     r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, ch_g, c_ab_l,&
-    r_cab_l, ir_cab_l, wf_l, wsq_l
+    r_cab_l, ir_cab_l, wf_l, wsq_l, lpl
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -295,6 +295,11 @@ module input
             if (verbose) then
               write (*,*) 'Raw file name for specific heat/susceptibility: ',sp_su_l
             end if
+          case ('lgf_path')
+            read(buffer, '(a)', iostat=ios) lpl
+            if (verbose) then
+              write (*,*) 'Path to LGF binary file:',lpl
+            end if
           case ('equil_file')
             read(buffer, '(a)', iostat=ios) eq_l
             if (verbose) then
@@ -448,6 +453,7 @@ module input
       irrot_chi_ab_file = trim(adjustl(ir_cab_l))
       windings_file = trim(adjustl(wf_l))
       windings_sq_file = trim(adjustl(wsq_l))
+      lgf_path = trim(adjustl(lpl))
 
       if (charge_gen.ne."RANDOM".and.charge_gen.ne."DIPOLE".and.charge_gen.ne."CRYSTA") then
         write(*,*) "Charge generation method should be either RANDOM,&

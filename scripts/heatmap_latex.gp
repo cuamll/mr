@@ -6,7 +6,9 @@ set print "-"
 set autoscale fix
 load PALETTE
 
-set title PLOTTITLE
+if (exists("PLOTTITLE")) {
+  set title PLOTTITLE
+}
 set key top right spacing 3 width 2
 set tmargin at screen 0.12
 set bmargin at screen 0.88
@@ -20,6 +22,7 @@ if (exists("PITICS")) {
   set format y '%.0P';
   set xlabel offset 0,-2 "$ G_x $";
   set ylabel offset -2,0 "$ G_y $";
+  set format cb '%.2f'
 }
 
 # We have to add 0 to COLUMN, otherwise it's read as a string

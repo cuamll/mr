@@ -41,9 +41,9 @@ irrot_input_file = direc + '/s_ab_irrot.dat'
 rot_input_file = direc + '/s_ab_rot.dat'
 
 output_dir = direc + '/plots/'
-total_output_file = output_dir + '/s_ab_total_multiplot.eps'
-irrot_output_file = output_dir + '/s_ab_irrot_multiplot.eps'
-rot_output_file = output_dir + '/s_ab_rot_multiplot.eps'
+total_output_file = output_dir + '/s_ab_total_mpl.eps'
+irrot_output_file = output_dir + '/s_ab_irrot_mpl.eps'
+rot_output_file = output_dir + '/s_ab_rot_mpl.eps'
 
 mkdir_p(output_dir)
 total_data = np.loadtxt(total_input_file)
@@ -80,8 +80,8 @@ params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
 plt.rcParams.update(params)
 
 # empty string evaluates to false; comment/uncomment to plot titles or not
-dotitle = 'True'
-# dotitle = ''
+# dotitle = 'True'
+dotitle = ''
 
 for i in range(len(files)):
     # Set up figure and image grid
@@ -98,10 +98,10 @@ for i in range(len(files)):
                      cbar_size="7%",
                      cbar_pad=0.05,
                      )
-    xx = dats[i][:,dim].reshape((len(small_q),len(small_q)))
-    xy = dats[i][:,dim+1].reshape((len(small_q),len(small_q)))
-    yx = dats[i][:,dim+2].reshape((len(small_q),len(small_q)))
-    yy = dats[i][:,dim+3].reshape((len(small_q),len(small_q)))
+    xx = dats[i][:,dim].reshape((len(small_q),len(small_q))).T
+    xy = dats[i][:,dim+1].reshape((len(small_q),len(small_q))).T
+    yx = dats[i][:,dim+2].reshape((len(small_q),len(small_q))).T
+    yy = dats[i][:,dim+3].reshape((len(small_q),len(small_q))).T
     tens = [xx,xy,yx,yy]
     # print(xx.shape)
     # print(qx.shape)
@@ -112,6 +112,7 @@ for i in range(len(files)):
         ax.yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
         ax.yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
         im = ax.contourf(qx, qy, tens[j], cmap=cm.inferno)
+        # im = ax.pcolormesh(qx, qy, tens[j], cmap=cm.inferno, edgecolors='None')
         ax.cax.colorbar(im)
         ax.cax.tick_params(length=1, labelsize=9)
         ax.cax.toggle_label(True)

@@ -457,15 +457,15 @@ module update
       ! use omp_lib
       implicit none
       integer,intent(in) :: step_number
-      integer :: i,n
-      real(kind=8) :: ener_tot, ener_rot, ener_irrot
-      real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
+      integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
       real(kind=8), dimension(2,L,L) :: e_rot
-      ! complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
-      ! complex(kind=rk) :: e_kx_temp, e_ky
-      ! complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
-      ! complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
-      ! complex(kind=rk) :: imag, kdotx
+      real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
+      real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
+      complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
+      complex(kind=rk) :: e_kx_temp, e_ky
+      complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
+      complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
+      complex(kind=rk) :: imag, kdotx
 
       ! | --------------- SUBROUTINE MEASURE(STEP_NUMBER) --------------- |
       ! |                 "MEASURES" RELEVANT QUANTITIES                  |
@@ -478,12 +478,12 @@ module update
       ! | --------------------------------------------------------------- |
 
       ebar = 0.0; ebar_dip = 0.0; ebar_wind = 0.0; dp = 0.0; np = 0.0
-      ! norm_k = 0.0; dist = 0.0
-      ! rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
-      ! e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
-      ! e_rot_kx_temp = (0.0,0.0)
-      ! e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
-      ! kdotx = (0.0,0.0); imag = (0.0, 1.0)
+      norm_k = 0.0; dist = 0.0
+      rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
+      e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
+      e_rot_kx_temp = (0.0,0.0)
+      e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
+      kdotx = (0.0,0.0); imag = (0.0, 1.0)
 
       n = step_number / sample_interval
 
@@ -578,28 +578,7 @@ module update
       ebar_wind_sq_sum(2) = ebar_wind_sq_sum(2) + (ebar_wind(2) * ebar_wind(2))
 
       if (do_corr) then
-
-        call do_fts(e_rot)
-
-      end if
-
-    end subroutine measure
-
-    subroutine do_fts(e_rot)
-      use common
-      use linear_solver
-      use omp_lib
-      implicit none
-      real(kind=8), dimension(2,L,L), intent(in) :: e_rot
-      integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
-      real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
-      real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
-      complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
-      complex(kind=rk) :: e_kx_temp, e_ky
-      complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
-      complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
-      complex(kind=rk) :: imag, kdotx
-
+        
         !$omp parallel do&
         !$omp& private(i,j,m,p,s,x,y,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
         !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
@@ -776,6 +755,8 @@ module update
         end do ! end openmp_index loop
         !$omp end parallel do
 
-    end subroutine do_fts
+      end if
+
+    end subroutine measure
 
 end module update

@@ -8,9 +8,9 @@ module linear_solver
   real(kind=8), private :: sum_x,sum_y,sum_z,p1,p2,q1,q2,r1,r2,fkx,fky,fkz
   real(kind=8), private :: m1p1,m1p2,m1q1,m1q2,m1r1,m1r2,charge
   real(kind=8), public :: u_int, u_self, g_zero, g_z_sum
-  character(4) :: lgf_path = "lgf/"
-  character(2) :: l_char
-  character(6) :: lgf_file
+  character(3) :: l_char
+  character(8) :: lgf_fn
+  character(200) :: lgf_file
   logical :: lgf_there
   save
 
@@ -49,6 +49,10 @@ module linear_solver
               end if
               rx = abs(rx)
 
+              ! had a thought
+              ! rpx = pos(rx + 1) - 1
+              ! rpx = mod(rx + 1, L/2 + 1)
+
               rpx = (a - pos(x))
               if (rpx.gt.(L/2)) then
                 rpx = rpx - L
@@ -64,6 +68,9 @@ module linear_solver
                 ry = ry + L
               end if
               ry = abs(ry)
+
+              ! rpy = mod(ry + 1, L/2) - 1
+              ! rpy = mod(pos(ry), L/2 +  1)
 
               rpy = (b - pos(y))
               if (rpy.gt.(L/2)) then
@@ -166,19 +173,10 @@ module linear_solver
     implicit none
     real(kind=rk), dimension(0:L) :: fk, cosine
 
-    do a = 0, L
-
-      b = a - L/2
-      fk(a) = (2 * pi * b) / L
-      cosine(a) = cos(fk(a))
-
-    end do
-
-    a = 0; b = 0
     g0 = 0.0
     lgf = 0.0
 
-    write (l_char,'(i2)') L
+    write (l_char,'(i3)') L
     lgf_file = lgf_path//l_char
 
     inquire(file=lgf_file, exist = lgf_there)
@@ -194,174 +192,160 @@ module linear_solver
 
       write(*,*) "Calculating LGF"
 
-      do y=1,L
-        do x=1,L
-          write(*,'(a,2i4.1)') "(x,y) = ",x,y
-          do b=1,L
-            do a=1,L
+      ! do y=1,L
+      !   do x=1,L
+      !     do b=1,L
+      !       do a=1,L
 
-              ! these need to be real, for cos to work later
-              p1=float(a-x)
-              q1=float(b-y)
+      !         ! these need to be real, for cos to work later
+      !         p1=float(a-x)
+      !         q1=float(b-y)
 
-              rx = (a - x)
-              if (rx.gt.(L/2)) then
-                rx = rx - L
-              else if (rx.le.(-L/2)) then
-                rx = rx + L
-              end if
-              rx = abs(rx)
+      !         rx = (a - x)
+      !         if (rx.gt.(L/2)) then
+      !           rx = rx - L
+      !         else if (rx.le.(-L/2)) then
+      !           rx = rx + L
+      !         end if
+      !         rx = abs(rx)
 
-              ry = (b - y)
-              if (ry.gt.(L/2)) then
-                ry = ry - L
-              else if (ry.le.(-L/2)) then
-                ry = ry + L
-              end if
-              ry = abs(ry)
+      !         ry = (b - y)
+      !         if (ry.gt.(L/2)) then
+      !           ry = ry - L
+      !         else if (ry.le.(-L/2)) then
+      !           ry = ry + L
+      !         end if
+      !         ry = abs(ry)
 
-              ! these need to be within [L/2,-L/2]. The Green's
-              ! function is even though because we use cosines, so it
-              ! doesn't matter whether it's positive or negative.
+      !         ! these need to be within [L/2,-L/2]. The Green's
+      !         ! function is even though because we use cosines, so it
+      !         ! doesn't matter whether it's positive or negative.
 
-              if (p1.gt.float(L/2)) then
-                p1=p1-float(L)
-              else if (p1.lt.(-float(L/2))) then
-                p1=p1+float(L)
-              end if
+      !         if (p1.gt.float(L/2)) then
+      !           p1=p1-float(L)
+      !         else if (p1.lt.(-float(L/2))) then
+      !           p1=p1+float(L)
+      !         end if
 
-              if (q1.gt.float(L/2)) then
-                q1=q1-float(L)
-              else if (q1.lt.(-float(L/2))) then
-                q1=q1+float(L)
-              end if
+      !         if (q1.gt.float(L/2)) then
+      !           q1=q1-float(L)
+      !         else if (q1.lt.(-float(L/2))) then
+      !           q1=q1+float(L)
+      !         end if
 
-                ! do ky=-(L-1)/2,L/2
-                !   do kx=-(L-1)/2,L/2
-                do ky=0,L
-                  do kx=0,L
-                    ! fky=2*pi*ky/L
-                    ! fkx=2*pi*kx/L
+      !           do ky=-(L-1)/2,L/2
+      !             do kx=-(L-1)/2,L/2
+      !           ! do ky=0,L
+      !           !   do kx=0,L
+      !               fky=2*pi*ky/L
+      !               fkx=2*pi*kx/L
 
-                    ! if ((kx.eq.0).and.(ky.eq.0)) then
-                    if ((kx.eq.(L/2)+1).and.(ky.eq.(L/2)+1)) then
+      !               if ((kx.eq.0).and.(ky.eq.0)) then
+      !               ! if ((kx.eq.(L/2)+1).and.(ky.eq.(L/2)+1)) then
 
-                    else
+      !               else
 
-                      ! lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
-                      !   *cos(fky*q1))/(2-cos(fkx)-cos(fky))
-                      lgf(rx,ry)=lgf(rx,ry)+(cos(fk(kx)*p1)&
-                        *cos(fk(ky)*q1))/(2-cosine(kx)-cosine(ky))
+      !                 lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
+      !                   *cos(fky*q1))/(2-cos(fkx)-cos(fky))
+      !                 ! lgf(rx,ry)=lgf(rx,ry)+(cos(fk(kx)*p1)&
+      !                 !   *cos(fk(ky)*q1))/(2-cosine(kx)-cosine(ky))
 
-                    end if ! end of kx=ky=kz=0 block
-                  end do ! end kx loop
-                end do ! end ky loop
+      !               end if ! end of kx=ky=kz=0 block
+      !             end do ! end kx loop
+      !           end do ! end ky loop
 
-              lgf(rx,ry)=lgf(rx,ry)/(2*L**2)
+      !         lgf(rx,ry)=lgf(rx,ry)/(2*L**2)
 
-              if (a.eq.x.and.b.eq.y) then
-                g0 = g0 + lgf(rx,ry)
-              end if
+      !         if (a.eq.x.and.b.eq.y) then
+      !           g0 = g0 + lgf(rx,ry)
+      !         end if
 
-            end do ! end a loop
-          end do ! end b loop
-        end do ! end x loop
-      end do ! end y loop
+      !       end do ! end a loop
+      !     end do ! end b loop
+      !   end do ! end x loop
+      ! end do ! end y loop
 
-      g0 = g0 / L**2
+      ! g0 = g0 / L**2
 
-      ! old, four index version
-      !do y=1,L
-      !  do x=1,L
-      !    do b=1,L
-      !      do a=1,L
+      !!write (*,*) "g(0) = ",g0
+      !!write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
 
-      !        lgf(a,b,x,y)=0.0
+      !! open(30, file=lgf_file, status="new",&
+      !!      action="write", access="stream", form="unformatted")
+      !open(30, file=lgf_file, status="new", action="write")
+      !do rx = 0, L/2
+      !  do ry = 0, L/2
+      !    write(30, '(2i4.2, f12.8)') rx, ry, lgf(rx, ry)
+      !  end do
+      !end do
+      !write (*,*) "Written LGF"
+      !close(30)
 
-      !        ! these need to be real, for cos to work later
-      !        p1=float(a-x)
-      !        q1=float(b-y)
+    do ry=0,L/2
+      do rx=0,L/2
 
-      !        ! these need to be within [L/2,-L/2]. The Green's
-      !        ! function is even though because we use cosines, so it
-      !        ! doesn't matter whether it's positive or negative.
+        ! these need to be real, for cos to work later
+        p1=float(rx)
+        q1=float(ry)
 
-      !        if (p1.gt.float(L/2)) then
-      !          p1=p1-float(L)
-      !        else if (p1.lt.(-float(L/2))) then
-      !          p1=p1+float(L)
-      !        end if
+        ! these need to be within [L/2,-L/2]. The Green's
+        ! function is even though because we use cosines, so it
+        ! doesn't matter whether it's positive or negative.
 
-      !        if (q1.gt.float(L/2)) then
-      !          q1=q1-float(L)
-      !        else if (q1.lt.(-float(L/2))) then
-      !          q1=q1+float(L)
-      !        end if
+        if (p1.gt.float(L/2)) then
+          p1=p1-float(L)
+        else if (p1.lt.(-float(L/2))) then
+          p1=p1+float(L)
+        end if
 
-      !          do ky=-(L-1)/2,L/2
-      !            do kx=-(L-1)/2,L/2
-      !              fky=2*pi*ky/L
-      !              fkx=2*pi*kx/L
-      !              if ((kx.eq.0).and.(ky.eq.0)) then
+        if (q1.gt.float(L/2)) then
+          q1=q1-float(L)
+        else if (q1.lt.(-float(L/2))) then
+          q1=q1+float(L)
+        end if
 
-      !              else
+        do ky=-(L-1)/2, L/2
+          do kx=-(L-1)/2, L/2
+        ! do ky=0,L
+        !   do kx=0,L
+            fky=2*pi*ky/L
+            fkx=2*pi*kx/L
 
-      !                lgf(a,b,x,y)=lgf(a,b,x,y)+(cos(fkx*p1)&
-      !                  *cos(fky*q1))/(2-cos(fkx)-cos(fky))
+            if ((kx.eq.0).and.(ky.eq.0)) then
+            ! if ((kx.eq.(L/2)+1).and.(ky.eq.(L/2)+1)) then
 
-      !              end if ! end of kx=ky=kz=0 block
-      !            end do ! end kx loop
-      !          end do ! end ky loop
+            else
 
-      !        lgf(a,b,x,y)=lgf(a,b,x,y)/(2*L**2)
+              lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
+                *cos(fky*q1))/(2-cos(fkx)-cos(fky))
+              ! lgf(rx,ry)=lgf(rx,ry)+(cos(fk(kx)*p1)&
+              !   *cos(fk(ky)*q1))/(2-cosine(kx)-cosine(ky))
 
-      !        !i = 0; j = 0
+            end if ! end of kx=ky=kz=0 block
+          end do ! end kx loop
+        end do ! end ky loop
 
-      !        !i = abs(a - x)
-      !        !j = abs(b - y)
+        lgf(rx,ry)=lgf(rx,ry)/(2*L**2)
 
-      !        !!if (i.gt.(L/2)) then
-      !        !!  i=L-i
-      !        !!end if
+        if (rx.eq.0.and.ry.eq.0) then
+          g0 = g0 + lgf(rx,ry)
+        end if
 
-      !        !!if (j.gt.(L/2)) then
-      !        !!  j=L-j
-      !        !!end if
+      end do ! end x loop
+    end do ! end y loop
 
-      !        !i = i + 1
-      !        !j = j + 1
+    open(30, file=lgf_file, status="new",&
+         action="write", access="stream", form="unformatted")
+    write(30) lgf
 
-      !        !lgf_twoindex(i,j) = lgf_twoindex(i,j) + lgf(a,b,x,y)
-
-      !        if (a.eq.x.and.b.eq.y) then
-      !          g0 = g0 + lgf(a,b,x,y)
-      !        end if
-
-      !      end do ! end a loop
-      !    end do ! end b loop
-      !  end do ! end x loop
-      !end do ! end y loop
-
-      !! open(30,file="lgf_twoindex.dat")
-
-      !! do i=1,(L)
-      !!   do j=1,(L)
-      !!     write(30,'(2i4.2,f16.8)') i-1,j-1,lgf_twoindex(i,j)
-      !!   end do
-      !! end do
-
-      !! close(30)
-
-      !g0 = g0 / L**2
-
-      !write (*,*) "g(0) = ",g0
-      !write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
-
-      open(30, file=lgf_file, status="new",&
-           action="write", access="stream", form="unformatted")
-      write(30) lgf
-      write (*,*) "Written LGF"
-      close(30)
+    ! open(30, file=lgf_file//"_fast", status="new", action="write")
+    ! do rx = 0, L/2
+    !   do ry = 0, L/2
+    !     write(30, '(2i4.2, f12.8)') rx, ry, lgf(rx, ry)
+    !   end do
+    ! end do
+    write (*,*) "Written LGF to ",lgf_file
+    close(30)
 
     end if
 

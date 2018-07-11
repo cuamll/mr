@@ -37,10 +37,10 @@ YTICS = "set ytics pi; \
 # BMARGIN = "set tmargin at screen 0.55; set bmargin at screen 0.20"
 # LMARGIN = "set lmargin at screen 0.15; set rmargin at screen 0.55"
 # RMARGIN = "set lmargin at screen 0.55; set rmargin at screen 0.95"
-TMARGIN = "set tmargin at screen 0.88; set bmargin at screen 0.58"
-BMARGIN = "set tmargin at screen 0.55; set bmargin at screen 0.25"
-LMARGIN = "set lmargin at screen 0.10; set rmargin at screen 0.40"
-RMARGIN = "set lmargin at screen 0.48; set rmargin at screen 0.78"
+TMARGIN = "set tmargin at screen 0.88; set bmargin at screen 0.51"
+BMARGIN = "set tmargin at screen 0.47; set bmargin at screen 0.10"
+LMARGIN = "set lmargin at screen 0.08; set rmargin at screen 0.45"
+RMARGIN = "set lmargin at screen 0.53; set rmargin at screen 0.90"
 CBTICS = "set cbtics scale 0.8; set format cb '%.2f'"
 
 if (exists("PITICS")) {
@@ -58,7 +58,10 @@ if (exists("PITICS")) {
 # if (COLUMN==7) plot FILE u 1:2:($3 + $6) w image title LINETITLE; else \
 #   plot FILE u ($1/2):($2/2):COLUMN w image title LINETITLE;
 
-set label PLOTTITLE at screen 0.5, 0.93 center front
+if (exists("PLOTTITLE")) {
+  set label PLOTTITLE at screen 0.5, 0.93 center front
+}
+
 @CBTICS
 
 set multiplot layout 2,2 rowsfirst title ''

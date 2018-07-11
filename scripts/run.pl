@@ -197,6 +197,12 @@ for( my $i = 0; $i < @temperatures; $i++) {
             my $logfile = "$logdir/$stamp.log";
 
             foreach (keys %parameters) {
+
+              if ($_ =~ /lgf_path/) {
+                # my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
+                $parameters{$_} = "$basedir/$parameters{$_}";
+              }
+
               if ($_ =~ /_file/) {
                 my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
                 $parameters{$_} = "$stampdir/$fnm$suff";
