@@ -12,8 +12,8 @@ if (exists("PLOTTITLE")) {
 set key top right spacing 3 width 2
 set tmargin at screen 0.12
 set bmargin at screen 0.88
-set lmargin at screen 0.12
-set rmargin at screen 0.88
+set lmargin at screen 0.10
+set rmargin at screen 0.86
 
 if (exists("PITICS")) {
   set xtics pi;
@@ -22,7 +22,7 @@ if (exists("PITICS")) {
   set format y '%.0P';
   set xlabel offset 0,-2 "$ G_x $";
   set ylabel offset -2,0 "$ G_y $";
-  set format cb '%.2f'
+  set format cb '%5.3g'
 }
 
 # We have to add 0 to COLUMN, otherwise it's read as a string
