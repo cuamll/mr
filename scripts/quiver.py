@@ -65,7 +65,7 @@ for fil in files:
     U = raw[:,2]
     V = raw[:,3]
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,10))
     # the scale here is because the output arrows were originally huge.
     # dividing through by 2x the maximum value seems to do the trick
     # while keeping it legible, but could be tweaked
