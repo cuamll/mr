@@ -254,31 +254,31 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sq_sum, 1, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_sum, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, ebar_sum, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_sq_sum, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, ebar_sq_sum, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sum, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sum, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sq_sum, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sq_sum, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sum, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sum, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sq_sum, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sq_sum, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, rho_avg, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, rho_avg, 1, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, avg_field_total, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_total, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, avg_field_rot, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_rot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, avg_field_irrot, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_irrot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_total, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_total, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_rot, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_rot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_irrot, 2, MPI_NEW_REAL,&
+    call MPI_Reduce(MPI_IN_PLACE, avg_field_sq_irrot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, windings, size(windings), MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -315,7 +315,7 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_wind_sq_sum, ebar_wind_sq_sum, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(rho_avg, rho_avg, 3, MPI_NEW_REAL,&
+    call MPI_Reduce(rho_avg, rho_avg, 1, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(avg_field_total, avg_field_total, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -330,9 +330,9 @@ subroutine reductions(id)
     call MPI_Reduce(avg_field_sq_irrot, avg_field_sq_irrot, 3, MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(windings, windings, size(windings),&
-                       MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                       MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(windings_sq, windings_sq, size(windings_sq),&
-                       MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                       MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   end if
 

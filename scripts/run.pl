@@ -27,6 +27,7 @@ my $doquadrics = 1;
 my $dohelmholtz = 1;
 my $arrow_width = 0.002;
 my $dpi = 200;
+my $lgf_fix_path = 0;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
 my $comment = '';
@@ -198,9 +199,12 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
             foreach (keys %parameters) {
 
-              if ($_ =~ /lgf_path/) {
-                # my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
-                $parameters{$_} = "$basedir/$parameters{$_}";
+              if ($lgf_fix_path = 0) {
+                if ($_ =~ /lgf_path/) {
+                  # my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
+                  $parameters{$_} = "$basedir/$parameters{$_}";
+                  $lgf_fix_path = 1;
+                }
               }
 
               if ($_ =~ /_file/) {
@@ -267,8 +271,8 @@ exit 0
             } else {
 
               # run program
-              my $np = 1;
-              # my $mpi_args = '--bind-to none';
+              my $np = 2;
+              my $mpi_args = '--bind-to none';
               my $mpi_args = '';
               my $verbose = '-v';
               my $runcmd = qq(mpirun -np $np $mpi_args $progname $verbose $tempinputfile 2>&1 | tee $logfile);
