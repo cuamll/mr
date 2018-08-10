@@ -584,6 +584,7 @@ module update
         !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
         do omp_index = 1, L**2
+        ! omp_index = 1
 
           i = ((omp_index - 1) / (L)) + 1
           j = mod(omp_index - 1, (L)) + 1

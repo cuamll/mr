@@ -26,6 +26,7 @@ my $dolorentz = 1;
 my $doquadrics = 1;
 my $dohelmholtz = 1;
 my $arrow_width = 0.002;
+my $lgf_path_fix = 0;
 my $dpi = 200;
 my $inputfile = 'in/start.in';
 my $tempinputfile = '';
@@ -198,9 +199,12 @@ for( my $i = 0; $i < @temperatures; $i++) {
 
             foreach (keys %parameters) {
 
-              if ($_ =~ /lgf_path/) {
-                # my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
-                $parameters{$_} = "$basedir/$parameters{$_}";
+              if ($lgf_path_fix = 0) {
+                if ($_ =~ /lgf_path/) {
+                  # my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
+                  $parameters{$_} = "$basedir/$parameters{$_}";
+                  $lgf_path_fix = 1;
+                }
               }
 
               if ($_ =~ /_file/) {
