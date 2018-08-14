@@ -32,10 +32,17 @@ core_energy = np.abs(args.e_c)
 # this should be in the right neighbourhood for the fit to figure it out
 kappa_test = 2*np.pi/length
 dots = args.dpi
-input_file = direc + '/s_perp_total.dat'
-output_dir = direc + '/lorentzian_fits/'
+perp_input_file = direc + '/s_perp_total.dat'
+par_input_file = direc + '/s_par_total.dat'
+# output_dir = direc + '/lorentz_sperp_plus_spar/'
+output_dir = direc + '/lorentz_sperp/'
 mkdir_p(output_dir)
-data = np.loadtxt(input_file)
+perp_data = np.loadtxt(perp_input_file)
+# par_data = np.loadtxt(par_input_file)
+kvals = perp_data[:,0:2]
+# sum_data = perp_data[:,-1] + par_data[:,-1]
+sum_data = perp_data[:,-1]
+data = np.column_stack((kvals,sum_data))
 
 def lor(x, x0, chi, kappa, bg):
     """ 1d lorentzian: centred on x0, peak amplitude chi, fwhm kappa """
@@ -50,9 +57,9 @@ Relevant peaks are at (among other places, in descending order of amplidtude):
 Those three are the three we'll pull out
 """
 
-xpeaks = [3 * np.pi, 5 * np.pi, 3 * np.pi]
-ypeaks = [5 * np.pi, np.pi,     7 * np.pi]
-stringpeaks = ['3pi_5pi','5pi_pi','3pi_7pi']
+xpeaks = [np.pi, 3 * np.pi, 5 * np.pi, 3 * np.pi]
+ypeaks = [np.pi, 5 * np.pi, np.pi,     7 * np.pi]
+stringpeaks = ['pi_pi','3pi_5pi','5pi_pi','3pi_7pi']
 
 for i in range(len(xpeaks)):
     # pull out the relevant line
@@ -77,7 +84,7 @@ for i in range(len(xpeaks)):
     f = open(output_file,'w')
     f.write(result.fit_report())
     f.write('\nybar = {:.6f}\n'.format(ybar))
-    f.write('\nk_y          ys          final_ys            residuals\n')
+    f.write('\nk_y          ys          fitted_ys            residuals\n')
     f.write(np.array2string(np.column_stack((small_line[:,0],small_line[:,1],final_ys,residuals))))
     f.write('\nSS_reg = {:.4f}, SS_tot = {:.4f}, R^2 = {:.4f}'.format(ssreg,sstot,rsq))
     f.write('\nS = sum((ys - final_ys)^2)/len(ys) = {:.4f}'.format(std_err))
@@ -91,17 +98,18 @@ for i in range(len(xpeaks)):
     peak_loc = '(' + str(int((xpeaks[i]+0.01)/np.pi)) + '$ \pi $, ' + str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $).'
     ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
     ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'o', color=utils.blu, label='data')
-    plt.plot(small_line[:,0] / np.pi, result.init_fit, 'k--', label='initial fit')
-    plt.plot(small_line[:,0] / np.pi, result.best_fit, '-', color=utils.rd, linewidth=2, label='final fit')
+    # plt.plot(small_line[:,0] / np.pi, result.init_fit, 'k--', label='initial fit')
+    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'o', color=utils.blu, ms=8, label='simulation data')
+    plt.plot(small_line[:,0] / np.pi, result.best_fit, 'o-', color=utils.rd, ms=4, linewidth=2, label='Lorentzian fit')
+    plt.xlabel('$ Q_x $')
     # ax = plt.axes()
     # tick_locs = [centre-np.pi,centre,centre+np.pi]
     # tick_labels = [str(int(((ypeaks[i]+0.01)/np.pi) - 1)) + '$ \pi $', str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $', str(int(((ypeaks[i]+0.01)/np.pi) + 1)) + '$ \pi $']
     # plt.xticks(tick_locs, tick_labels)
-    param_title = 'Final parameters: $ \chi $ = {:.4f}, $ \kappa $ = {:.4f}, bg = {:.4f}'.format(result.params['chi'].value, result.params['kappa'].value, result.params['bg'].value)
-    temp_str = ' $ T $ = {:.4f}, $ \epsilon_c $ = {:.4f} .'.format(temp, core_energy)
-    plot_title = 'Lorentzian fit to peak in $ S_{\perp}^{total} $ at ' + peak_loc + temp_str + '\n' + param_title
+    param_title = 'Final parameters: $ \chi $ = {:.4f}, $ \kappa $ = {:.4f}, $ \gamma $ = {:.4f}'.format(result.params['chi'].value, result.params['kappa'].value, result.params['bg'].value)
+    temp_str = ' $ T $ = {:.4f}, $ \epsilon_c $ = {:.4f}'.format(temp, core_energy)
+    plot_title = '$ S_{\perp}^{total}$' + peak_loc + temp_str + '\n' + param_title
     plt.legend()
-    plt.title(plot_title)
+    # plt.title(plot_title)
     plt.savefig(output_file, format='eps', dpi=dots)
     plt.close()
