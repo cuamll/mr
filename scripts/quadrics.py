@@ -34,7 +34,7 @@ d = 2
 bz = 2
 
 input_file = direc + '/s_ab_total.dat'
-output_dir = direc + '/quadrics/'
+output_dir = direc + '/quadrics_new/'
 s_ab_output_file = output_dir + 's_ab_total_eig.dat'
 chi_output_file = output_dir + 'chi_ab_total_eig.dat'
 mkdir_p(output_dir)
@@ -62,8 +62,14 @@ for i in range(len(s_ab_tot)):
     s_ab_inv[i] = np.linalg.inv(s_ab_tot[i])
     chi_inv[i] = np.linalg.inv(chi_tot[i])
     # s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
-    s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
-    chi_eigvals[i], chi_eigvecs[i] = np.linalg.eig(np.linalg.inv(chi_tot[i]))
+    s_ab_eigvals_temp, s_ab_eigvecs_temp = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
+    chi_eigvals_temp, chi_eigvecs_temp = np.linalg.eig(np.linalg.inv(chi_tot[i]))
+    idx = np.argsort(s_ab_eigvals_temp)
+    s_ab_eigvals[i] = s_ab_eigvals_temp[idx]
+    s_ab_eigvecs[i] = s_ab_eigvecs_temp[:,idx]
+    idx = np.argsort(chi_eigvals_temp)
+    chi_eigvals[i] = chi_eigvals_temp[idx]
+    chi_eigvecs[i] = chi_eigvecs_temp[:,idx]
     
 # print "All s_ab eigvals positive? " + str(np.all(s_ab_eigvals >= 0.0))
 # print "All chi_ab eigvals positive? " + str(np.all(chi_eigvals >= 0.0))
@@ -83,10 +89,10 @@ Relevant peaks in the total S^{ab} tensor are at:
 (0,0) for the high-temperature conducting liquid phase,
 The difficult thing is getting the right limits on the mesh
 """
-xpeaks = [0, np.pi, np.pi]
-ypeaks = [0, np.pi, 0]
-stringpeaks = ['pi_pi', '0_0', 'pi_0']
-latexpeaks = ['(\pi, \pi)','(0,0)','(\pi, 0)']
+xpeaks = [0, np.pi, np.pi, np.pi/4]
+ypeaks = [0, np.pi, 0, 3*np.pi/4]
+stringpeaks = ['0_0', 'pi_pi', 'pi_0', 'pib4_3pib4']
+latexpeaks = ['(0,0)','(\pi, \pi)','(\pi, 0)', '(\pi/4, 3\pi/4)']
 # print s_ab_inv[test,:,:]
 
 if d == 2:
@@ -111,15 +117,23 @@ if d == 2:
         # linspace doesn't work at all and just prints x/ymax n times
         s_xmax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,0]),decimals=2))
         s_ymax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,1]),decimals=2))
-        s_xlist = np.linspace(-s_xmax,s_xmax)
-        s_ylist = np.linspace(-s_ymax,s_ymax)
+        if (s_xmax > s_ymax):
+            s_max = s_xmax
+        else:
+            s_max = s_ymax
+
+        s_xlist = np.linspace(-s_max,s_max, num=150)
+        s_ylist = np.linspace(-s_max,s_max, num=150)
+        # s_xlist = np.linspace(-s_xmax,s_xmax)
+        # s_ylist = np.linspace(-s_ymax,s_ymax)
         s_X, s_Y = np.meshgrid(s_xlist,s_ylist)
         C = quadric(s_X, s_Y, s_ab_eigvals[cen_tuple,0], s_ab_eigvals[cen_tuple,1])
 
+        # chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
         chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
         chi_ymax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,1]),decimals=2))
-        chi_xlist = np.linspace(-chi_xmax,chi_xmax)
-        chi_ylist = np.linspace(-chi_ymax,chi_ymax)
+        chi_xlist = np.linspace(-chi_xmax,chi_xmax, num=150)
+        chi_ylist = np.linspace(-chi_ymax,chi_ymax, num=150)
         chi_X, chi_Y = np.meshgrid(chi_xlist,chi_ylist)
         C2 = quadric(chi_X, chi_Y, chi_eigvals[cen_tuple,0], chi_eigvals[cen_tuple,1])
 
@@ -127,17 +141,18 @@ if d == 2:
         plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
         fig, axes = plt.subplots()
 
-        legend_elements = [Line2D([0], [0], color=utils.blu, lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
-                           Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
-        axes.contour(chi_X, chi_Y, C2, colors=utils.blu, levels=[0])
-        axes.contour(s_X, s_Y, C2, colors=utils.rd, levels=[0])
+        legend_elements = [Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
+        # legend_elements = [Line2D([0], [0], color=utils.blu, lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
+        #                    Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
+        # axes.contour(chi_X, chi_Y, C2, colors=utils.blu, levels=[0])
         axes.grid()
         axes.axhline(0, color='black', lw=1.5)
         axes.axvline(0, color='black', lw=1.5)
+        axes.contour(s_X, s_Y, C, colors=utils.rd, levels=[0])
         axes.legend(handles=legend_elements)
 
         param_title = 'Parameters: $ T $ = {:.4f}, $ \epsilon_c $ = {:.4f}'.format(temp, core_energy)
-        plt.title(r'$ \chi^{\alpha\beta}_{tot} $ and $ S^{\alpha\beta}_{tot} $ quadrics, ' + kv_str + '\n' + param_title)
+        # plt.title(r'$ \chi^{\alpha\beta}_{tot} $ and $ S^{\alpha\beta}_{tot} $ quadrics, ' + kv_str + '\n' + param_title)
         output_file = output_dir + stringpeaks[i] + '.eps'
         plt.legend()
         plt.savefig(output_file, format='eps', dpi=dots)

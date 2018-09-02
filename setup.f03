@@ -199,7 +199,7 @@ module setup
           j = modulo(i - 1, L) + 1
           ! write(6,*) i,k,j, (2*mod(i,2) - 1)
           ! flush(6)
-          v(k,j) = 2*mod(i, 2) - 1
+          v(k,j) = 2*mod(k + j, 2) - 1
 
         end do
 

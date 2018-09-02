@@ -246,7 +246,7 @@ module update
         end if
 
         eo = e_field(mu,site(1),site(2))
-        en = eo + pm * increment
+        en = eo + (pm * increment)
 
         ! adding to the field bond means charge moving "backwards"
         ! current charges tell us if this is hop/creation/annihilation
@@ -270,6 +270,15 @@ module update
           ! ANNIHILATION
           attempts(5) = attempts(5) + 1
         end if
+        
+        ! IDEA: if both charges we should preferentially have annihilation
+        ! if (v1o.eq.1.and.v2o.eq.-1) then
+        !   pm = 1
+        !   en = eo
+        ! else if (v1o.eq.-1.and.v2o.eq.1) then
+        !   pm = -1
+        !   en = eo
+        ! end if
 
         ! actually we only need the difference in core energies, really
         old_u_core = (abs(v1o) + abs(v2o)) * e_c * q**2
@@ -278,6 +287,12 @@ module update
         old_e = (0.5 * eps_0 * lambda**2 * eo**2) + old_u_core
         new_e = (0.5 * eps_0 * lambda**2 * en**2) + new_u_core
         delta_e = new_e - old_e
+
+        if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
+          ! ANNIHILATION
+          ! write (*,'(a,a,7i3.1,5f8.3)') "x_1, mu, rho(x_1), rho(x_2), eo, en, old_e",&
+          ! ", new_e, delta_e:",site(1),site(2),mu,v1o,v2o,v1n,v2n,eo,en,old_e,new_e,delta_e
+        end if
 
         if (abs(v1n).le.1.and.abs(v2n).le.1) then
           if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then

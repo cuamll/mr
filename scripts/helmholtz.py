@@ -59,15 +59,16 @@ rot_red = rot_red[np.where(np.abs(rot_red[:,1]) - 0.0001 <= np.pi)]
 # we want to move the k = 0 point to the irrotational component
 # to match Steve's correlation calculations later on
 zero_index = int((len(total_red)/2))
-rot_red[zero_index,:] = irrot_red[zero_index,:]
+# rot_red[zero_index,:] = irrot_red[zero_index,:]
 # why the half? can't remember
-irrot_red[zero_index,:] = 0.5 * total_red[zero_index,:]
+# irrot_red[zero_index,:] = 0.5 * total_red[zero_index,:]
 
 kvals = np.array(total_red[:,0:2],dtype=float)
 # in 3d this would need adapting, three elements to sum
+# there's a factor of 4 in the xy unit results
 rot_trace = rot_red[:,dim] + rot_red[:,(dim * (dim + 1) - 1)]
-irrot_trace = irrot_red[:,dim] + irrot_red[:,(dim * (dim + 1) - 1)]
-total_trace = total_red[:,dim] + total_red[:,(dim * (dim + 1) - 1)]
+irrot_trace = (irrot_red[:,dim] + irrot_red[:,(dim * (dim + 1) - 1)])
+total_trace = (total_red[:,dim] + total_red[:,(dim * (dim + 1) - 1)])
 
 # there's a hole at k = 0 from moving the component across; fill it in
 # NB: Steve's gamma should be equal to rot_avg here, basically
@@ -96,13 +97,14 @@ qy_stack = np.stack((Qy / np.pi, Qy / np.pi))
 # this does the fit over the central BZ
 dists = kvals[:,0]**2 + kvals[:,1]**2
 popt, pcov = curve_fit(irrot, dists, irrot_trace)
+perr = np.sqrt(np.diag(pcov))
 
 # gonna use this string multiple times
 pat = "\gamma = {:.4f}, \chi = {:.4f}, \kappa = {:.4f} $".format(popt[0],popt[1],popt[2])
 print(pat)
 output_file = output_dir + 'fit_params.dat'
 f = open(output_file,'w')
-f.write("# gamma, chi, kappa\n{:.4f}\n{:.4f}\n{:.4f}".format(popt[0],popt[1],popt[2]))
+f.write("# gamma\tgamma_err\tchi\tchi_err\tkappa\tkappa_err\n{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}".format(popt[0],perr[0],popt[1],perr[1],popt[2],perr[2]))
 f.close()
 
 fitted_data = irrot(dists, *popt)

@@ -22,7 +22,7 @@ if (exists("PITICS")) {
   set format y '%.0P';
   set xlabel offset 0,-2 "$ G_x $";
   set ylabel offset -2,0 "$ G_y $";
-  set format cb '%5.3g'
+  set format cb '$%g$'
 }
 
 # We have to add 0 to COLUMN, otherwise it's read as a string
