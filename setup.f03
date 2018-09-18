@@ -107,31 +107,33 @@ module setup
 
     n = 0
 
-    if (add_charges.ne.0) then
-
       if (charge_gen.eq."RANDOM") then
 
-        do while (n.lt.add_charges)
+        if (add_charges.ne.0) then
 
-          ! pick a random position, check if there's a charge there
-          ! if so, pick again; if not, alternate pos/neg
-          i = int(rand() * L) + 1
-          j = int(rand() * L) + 1
-          k = int(rand() * L) + 1
+          do while (n.lt.add_charges)
 
-          if (v(i,j,k).ne.0) then
-            CYCLE
-          end if
+            ! pick a random position, check if there's a charge there
+            ! if so, pick again; if not, alternate pos/neg
+            i = int(rand() * L) + 1
+            j = int(rand() * L) + 1
+            k = int(rand() * L) + 1
 
-          if (modulo(n,2)==0) then
-            v(i,j,k) = 1
-          else
-            v(i,j,k) = -1
-          end if
+            if (v(i,j,k).ne.0) then
+              CYCLE
+            end if
 
-          n = n + 1
+            if (modulo(n,2)==0) then
+              v(i,j,k) = 1
+            else
+              v(i,j,k) = -1
+            end if
 
-        end do
+            n = n + 1
+
+          end do
+
+        end if
 
       else if (charge_gen.eq."DIPOLE") then
 
@@ -213,15 +215,14 @@ module setup
           i = ((n - 1) / (L**2)) + 1
           j = mod(((n - 1) / (L)), L) + 1
           k = mod(n - 1, (L)) + 1
-          write(6,*) i,k,j, (2*mod(i,2) - 1)
+          !
+          ! write(6,*) i,k,j, (2*mod(i + j + k,2) - 1)
           flush(6)
-          v(i,j,k) = 2*mod(n, 2) - 1
+          v(i,j,k) = 2*mod(i + j + k, 2) - 1
 
         end do
         
       end if
-
-    end if
 
     ! do i=1,L
     !   write (*,'(a,i3.1)') "i = ",i

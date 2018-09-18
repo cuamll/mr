@@ -106,7 +106,7 @@ module linear_solver
               if (v(x,y,z).ne.0) then ! non-zero charge at (x,y,z)
 
                 charge = q * v(x,y,z)
-                nch = nch + 1
+                ! nch = nch + 1
 
                 sum_x = sum_x + charge * (+1)&
                       * (lgf(rpx,ry,rz) - lgf(rx,ry,rz))
@@ -117,8 +117,10 @@ module linear_solver
 
                 if (v(a,b,c).ne.0) then
                   if (a.eq.x.and.b.eq.y.and.c.eq.z) then
+                    ! u_self = u_self + (1 / (2 * eps_0)) * charge**2 * lgf(rx,ry,rz)
                     u_self = u_self + charge**2 * lgf(rx,ry,rz)
                   else
+                    ! u_int = u_int + (1 / (2 * eps_0)) * q * v(a,b,c) * charge * lgf(rx,ry,rz)
                     u_int = u_int + q * v(a,b,c) * charge * lgf(rx,ry,rz)
                   end if
                 end if
@@ -145,20 +147,28 @@ module linear_solver
   ebar(2) = sum(mnphi(2,:,:,:))
   ebar(3) = sum(mnphi(3,:,:,:))
   u_tot = 0.5 * eps_0 * lambda**3 * sum(mnphi*mnphi)
+  u_self = u_self * lambda**4 * (1 / (1 * eps_0))
+  u_int = u_int * lambda**4 * (1 / (1 * eps_0))
 
   ebar = ebar / L**3
   g0 = g0 / L**3
 
-  nch=nch/L**3 ! bc we count nch once for each abc
+  nch= sum(abs(v))
 
-  !write (*,*) "ebar = ",ebar(1),ebar(2),ebar(3)
-  !write(*,*)
-  !write(*,*) "--- LINEAR SOLVER RESULTS: ---"
-  !write (*,*) 'sum of irrotational E_ij^2 =',u_tot
-  !write(*,*) "self-energy from lgf(0,0) * n charges = ",u_self
-  !write(*,*) 'interaction energy = ',u_int
-  !write (*,*) 'harmonic term in units of 1/L**3 (V*Ebar^2) = '&
-  !  &,L**3*sum(ebar**2)
+  write(*,*)
+  write(*,*) "--- LINEAR SOLVER RESULTS: ---"
+  write(*,*) "n_ch",nch
+  write(*,*) "ebar = ",ebar(1),ebar(2),ebar(3)
+  write(*,*) "nn = ",lgf(1,0,0),lgf(0,0,1),lgf(0,1,0)
+  write(*,*) 'sum of irrotational E_ij^2 =',u_tot
+  write(*,*) "self-energy from lgf(0,0) per charge = ",u_self / nch
+  write(*,*) "self-energy from lgf(0,0) = ",u_self
+  write(*,*) 'interaction energy = ',u_int
+  write(*,*) 'interaction energy * L**3 / 2 = ',u_int * (L**3 / 2)
+  write(*,*) '(unnormalised) u_tot = ',sum(mnphi*mnphi)
+  write(*,*) 'u_tot - u_self = ',u_tot - u_self
+  write(*,*) 'harmonic term in units of 1/L**3 (V*Ebar^2) = '&
+    &,L**3*sum(ebar**2)
 
   end subroutine linsol
 
@@ -229,7 +239,7 @@ module linear_solver
 
                 else
 
-                  lgf(rx,ry,rz)=lgf(rx,ry,rz)+(cos(fkx*p1)&
+                  lgf(rx,ry,rz)= lgf(rx,ry,rz) + (cos(fkx*p1)&
                     *cos(fky*q1)*cos(fkz*r1))/(3-cos(fkx)-cos(fky)-cos(fkz))
                   ! lgf(rx,ry)=lgf(rx,ry)+(cos(fk(kx)*p1)&
                   !   *cos(fk(ky)*q1))/(2-cosine(kx)-cosine(ky))
@@ -240,6 +250,7 @@ module linear_solver
           end do
 
           lgf(rx,ry,rz)=lgf(rx,ry,rz)/(2*L**3)
+          ! lgf(rx,ry,rz)=lgf(rx,ry,rz)/(L**3)
 
           if (rx.eq.0.and.ry.eq.0.and.rz.eq.0) then
             g0 = g0 + lgf(rx,ry,rz)
