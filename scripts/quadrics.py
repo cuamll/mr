@@ -139,9 +139,9 @@ if d == 2:
 
         plt.rc('text',usetex=True)
         plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
-        fig, axes = plt.subplots()
+        fig, axes = plt.subplots(figsize=(10, 10))
 
-        legend_elements = [Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
+        legend_elements = [Line2D([0], [0], color=utils.rd, lw=1, label=r' $ \bar{S}^{\alpha\beta}_{tot} $ ')]
         # legend_elements = [Line2D([0], [0], color=utils.blu, lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
         #                    Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
         # axes.contour(chi_X, chi_Y, C2, colors=utils.blu, levels=[0])
