@@ -1,4 +1,5 @@
-! maggs-rossetto algorithm on cubic lattice
+! generalised lattice coulomb gas with maggs-rossetto algorithm
+! 2d, square lattice
 ! i'll write proper docs at some point
 ! callum gray, UCL / ENS Lyon, 2016. do wat u like
 program mr

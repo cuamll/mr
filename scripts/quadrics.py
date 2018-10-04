@@ -32,16 +32,30 @@ core_energy = np.abs(args.e_c)
 dots = args.dpi
 d = 2
 bz = 2
+# threshold for deciding if an eigenvector is transverse to q
+thresh = 0.05
 
 input_file = direc + '/s_ab_total.dat'
 output_dir = direc + '/quadrics_new/'
 s_ab_output_file = output_dir + 's_ab_total_eig.dat'
+s_ab_small_output_file = output_dir + 's_ab_small_total_eig.dat'
+sab_rot_small_output_file = output_dir + 's_ab_small_rot_eig.dat'
 chi_output_file = output_dir + 'chi_ab_total_eig.dat'
 mkdir_p(output_dir)
 
 s_raw = np.loadtxt(input_file)
 kvals = s_raw[:,0:d]
+kvals_norm = np.zeros_like(kvals)
 s_ab_tot = s_raw[:,d:(d*(d+1))]
+
+for i in range(len(kvals)):
+    if kvals[i,0] != 0.0 and kvals[i,1] != 0.0:
+        kn = (kvals[i,0]**2 + kvals[i,1]**2)
+    else:
+        kn = 1.0
+
+    kvals_norm[i] = kvals[i] / kn
+
 
 # reshape to be a list of dxd matrices
 s_ab_tot = s_ab_tot.reshape((-1,d,d))
@@ -55,33 +69,89 @@ s_ab_eigvals = np.zeros((len(s_ab_tot),d))
 s_ab_eigvecs = np.zeros(s_ab_tot.shape)
 chi_eigvals = np.zeros((len(s_ab_tot),d))
 chi_eigvecs = np.zeros(s_ab_tot.shape)
+# gonna do the helmholtz decomp in fourier space
+s_ab_rot_gen = np.zeros(s_ab_tot.shape)
 
 for i in range(len(s_ab_tot)):
-    # following Steve, we want the inverse tensor
-    # to ensure none of the principal axes blow up later
-    s_ab_inv[i] = np.linalg.inv(s_ab_tot[i])
-    chi_inv[i] = np.linalg.inv(chi_tot[i])
-    # s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
-    s_ab_eigvals_temp, s_ab_eigvecs_temp = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
-    chi_eigvals_temp, chi_eigvecs_temp = np.linalg.eig(np.linalg.inv(chi_tot[i]))
-    idx = np.argsort(s_ab_eigvals_temp)
-    s_ab_eigvals[i] = s_ab_eigvals_temp[idx]
-    s_ab_eigvecs[i] = s_ab_eigvecs_temp[:,idx]
-    idx = np.argsort(chi_eigvals_temp)
-    chi_eigvals[i] = chi_eigvals_temp[idx]
-    chi_eigvecs[i] = chi_eigvecs_temp[:,idx]
+    # following Steve, we want the inverse tensor to
+    # ensure none of the principal axes blow up later
+    s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
+    eigvals_temp = s_ab_eigvals[i]
+    eigvecs_temp = s_ab_eigvecs[i]
+
+    if all(abs(kvals[i]) <= (0.00001 + (np.pi))):
+        # now, we dot the normalised k's with each of the eigenvectors
+        dots = np.zeros(len(eigvals_temp))
+        # eigvecs_temp = np.flipud(eigvecs_temp)
+        for row in range(len(eigvecs_temp)):
+            dots[row] = np.dot(kvals_norm[i],eigvecs_temp[:,row])
+
+        # something along the line flips the eigenvectors -- what? undo it
+        if ((kvals_norm[i,1]) < kvals_norm[i,0]):
+            eigvals_temp = np.flipud(eigvals_temp)
+        else:
+            eigvecs_temp = np.flipud(eigvecs_temp)
+
+
+
+        # the smallest dot product should be the transverse one
+        # print(dots, kvals[i])
+        which_transverse = np.unravel_index(np.argmin(dots), dots.shape)
+        # the corresponding eigenvalue is the transverse one
+        transverse_eigval = eigvals_temp[which_transverse]
+        # the transverse dot product here should be small! if not, break
+        if dots[which_transverse] >= thresh:
+            print(kvals[i],kvals_norm[i],eigvecs_temp[which_transverse,:],dots)
+            raise Exception("Smallest eigenvalue is too big!")
+
+        # now we need to construct the diagonalised matrix with only
+        # the transverse eigenvalue in it, but in the right place:
+        diag = np.zeros(len(dots))
+        diag[which_transverse] = transverse_eigval
+        diag = np.diag(diag)
+        # now, everything should be set up to do the helmholtz decomp: 
+        # s_ab_rot_gen[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+        sargt = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+
+        # there's the periodicity issue in the s_xy's,
+        # due to the differing brillouin zones: fix it
+        # if (np.sign(kvals_norm[i,0]) != np.sign(kvals_norm[i,1])):
+        if ((kvals_norm[i,1]) >= kvals_norm[i,0]):
+            sd = np.diag(np.diag(sargt))
+            offd = sargt - sd
+            offd = offd * -1
+            sargt = sd + offd
+
+        # print(s_ab_rot_gen[i])
+        s_ab_rot_gen[i] = sargt / np.prod(eigvals_temp)
+
     
-# print "All s_ab eigvals positive? " + str(np.all(s_ab_eigvals >= 0.0))
-# print "All chi_ab eigvals positive? " + str(np.all(chi_eigvals >= 0.0))
+fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
+sab_rot_fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
+concat = np.concatenate((kvals,kvals_norm,s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1)
+sab_rot_concat = np.concatenate((kvals,kvals_norm,s_ab_rot_gen.reshape((-1,d**2))),axis=1)
+np.savetxt(s_ab_output_file, concat, fmt=fmt_arr)
+np.savetxt(chi_output_file, np.concatenate((kvals,kvals_norm,chi_eigvals,chi_eigvecs.reshape((-1,d**2))),axis=1), fmt=fmt_arr)
 
-# if not np.all(s_ab_eigvals >= 0.0):
-#     print "Negative eigenvalue of s_ab_inv at",np.where(s_ab_eigvals >= 0.0)
+# this should not be this fucking hard. i hate python
+size = int((length + 1)**2)
+concat_small = np.empty(shape=(size,10))
+sab_rot_concat_small = np.empty(shape=(size,8))
+j = 0
 
-# if not np.all(chi_eigvals >= 0.0):
-#     print "Negative eigenvalue of chi_inv at",np.where(chi_eigvals >= 0.0)
+for i in range(len(concat)):
+    if abs(concat[i,0]) <= (0.000001 + np.pi) and abs(concat[i,1]) <= (0.000001 + np.pi):
+        concat_small[j] = concat[i,:]
+        sab_rot_concat_small[j] = sab_rot_concat[i,:]
+        j = j + 1
 
-np.savetxt(s_ab_output_file, np.concatenate((kvals,s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1))
-np.savetxt(chi_output_file, np.concatenate((kvals,chi_eigvals,chi_eigvecs.reshape((-1,d**2))),axis=1))
+concat_small = np.array(concat_small)
+sab_rot_concat_small = np.array(sab_rot_concat_small)
+print(concat_small.shape)
+# concat_small = concat[np.where(abs(kv1) <= (0.00001 + np.pi/2.) and abs(kvals[:,1]) <= (0.00001 + np.pi/2.))]
+np.savetxt(s_ab_small_output_file, concat_small, fmt=fmt_arr)
+np.savetxt(sab_rot_small_output_file, sab_rot_concat_small, fmt=sab_rot_fmt_arr)
+
 
 """
 Relevant peaks in the total S^{ab} tensor are at:
@@ -89,10 +159,10 @@ Relevant peaks in the total S^{ab} tensor are at:
 (0,0) for the high-temperature conducting liquid phase,
 The difficult thing is getting the right limits on the mesh
 """
-xpeaks = [0, np.pi, np.pi, np.pi/4]
-ypeaks = [0, np.pi, 0, 3*np.pi/4]
-stringpeaks = ['0_0', 'pi_pi', 'pi_0', 'pib4_3pib4']
-latexpeaks = ['(0,0)','(\pi, \pi)','(\pi, 0)', '(\pi/4, 3\pi/4)']
+xpeaks = [0, np.pi/8, np.pi/6, np.pi/4]
+ypeaks = [0, np.pi/8, np.pi/3, np.pi/4]
+stringpeaks = ['0_0', 'pi8_pi8', 'pi6_pi3', 'pi4_pi4']
+latexpeaks = ['(0,0)','(\pi/8, \pi/8)','(\pi/6, \pi/3)', '(\pi/4, \pi/4)']
 # print s_ab_inv[test,:,:]
 
 if d == 2:

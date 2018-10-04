@@ -594,7 +594,10 @@ module update
 
       if (do_corr) then
         
-        !$omp parallel do&
+        ! we actually don't want openmp on the LCN clusters;
+        ! there's only one thread per node and adding openmp
+        ! just breaks the whole thing and leads to jobs getting killed.
+        !$omp parallel do num_threads(1)&
         !$omp& private(i,j,m,p,s,x,y,kx,ky,rho_k_p_temp,rho_k_m_temp,e_kx_temp,&
         !$omp& mnphi_kx_temp,e_rot_kx_temp,e_ky,mnphi_ky,e_rot_ky,norm_k,kdotx)&
         !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
