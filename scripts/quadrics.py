@@ -71,15 +71,25 @@ chi_eigvals = np.zeros((len(s_ab_tot),d))
 chi_eigvecs = np.zeros(s_ab_tot.shape)
 # gonna do the helmholtz decomp in fourier space
 s_ab_rot_gen = np.zeros(s_ab_tot.shape)
+# there's some stupid thing with the way the eigenvalues order:
+nsmall = 0
 
 for i in range(len(s_ab_tot)):
     # following Steve, we want the inverse tensor to
     # ensure none of the principal axes blow up later
-    s_ab_eigvals[i], s_ab_eigvecs[i] = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
-    eigvals_temp = s_ab_eigvals[i]
-    eigvecs_temp = s_ab_eigvecs[i]
+    eigvals_temp, eigvecs_temp = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
+    idx = np.argsort(eigvals_temp)
+    eigvals_temp = eigvals_temp[idx]
+    # eigenvalues of inverse tensor!
+    eigvals_temp = 1. / eigvals_temp
+    eigvecs_temp = eigvecs_temp[:,idx]
+    s_ab_eigvals[i] = eigvals_temp
+    s_ab_eigvecs[i] = eigvecs_temp
 
     if all(abs(kvals[i]) <= (0.00001 + (np.pi))):
+        nsmall = nsmall + 1
+        # possible floating point stuff
+        eps = 0.00001
         # now, we dot the normalised k's with each of the eigenvectors
         dots = np.zeros(len(eigvals_temp))
         # eigvecs_temp = np.flipud(eigvecs_temp)
@@ -87,21 +97,31 @@ for i in range(len(s_ab_tot)):
             dots[row] = np.dot(kvals_norm[i],eigvecs_temp[:,row])
 
         # something along the line flips the eigenvectors -- what? undo it
-        if ((kvals_norm[i,1]) < kvals_norm[i,0]):
-            eigvals_temp = np.flipud(eigvals_temp)
-        else:
-            eigvecs_temp = np.flipud(eigvecs_temp)
+        # if ((kvals_norm[i,1]) < kvals_norm[i,0]):
+        #     eigvals_temp = np.flipud(eigvals_temp)
+        # elif ((abs(kvals_norm[i,1] - kvals_norm[i,0])) < eps):
+        #     if (int(i/2) % 2 == 1):
+        #         eigvals_temp = np.flipud(eigvals_temp)
+        #     else:
+        #         eigvecs_temp = np.flipud(eigvecs_temp)
+        # elif ((kvals_norm[i,1]) > kvals_norm[i,0]):
+        #     eigvecs_temp = np.flipud(eigvecs_temp)
+        # else:
+            # print(kvals[i],kvals_norm[i],abs(kvals_norm[i,1] - kvals_norm[i,0]) < eps)
+            # raise Exception("The two q components are broken somehow!")
 
 
 
         # the smallest dot product should be the transverse one
         # print(dots, kvals[i])
-        which_transverse = np.unravel_index(np.argmin(dots), dots.shape)
+        which_transverse = np.unravel_index(np.argmin(abs(dots)), dots.shape)
         # the corresponding eigenvalue is the transverse one
         transverse_eigval = eigvals_temp[which_transverse]
+        # if ((kvals_norm[i,1]) <= kvals_norm[i,0]):
+        #     print(kvals[i],kvals_norm[i],which_transverse,eigvals_temp,eigvecs_temp,dots)
         # the transverse dot product here should be small! if not, break
         if dots[which_transverse] >= thresh:
-            print(kvals[i],kvals_norm[i],eigvecs_temp[which_transverse,:],dots)
+            print(kvals[i],kvals_norm[i],eigvecs_temp[:,which_transverse],dots)
             raise Exception("Smallest eigenvalue is too big!")
 
         # now we need to construct the diagonalised matrix with only
@@ -111,19 +131,26 @@ for i in range(len(s_ab_tot)):
         diag = np.diag(diag)
         # now, everything should be set up to do the helmholtz decomp: 
         # s_ab_rot_gen[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
-        sargt = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+        s_ab_rot_gen[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
         # there's the periodicity issue in the s_xy's,
         # due to the differing brillouin zones: fix it
         # if (np.sign(kvals_norm[i,0]) != np.sign(kvals_norm[i,1])):
-        if ((kvals_norm[i,1]) >= kvals_norm[i,0]):
-            sd = np.diag(np.diag(sargt))
-            offd = sargt - sd
-            offd = offd * -1
-            sargt = sd + offd
+        # if ((kvals_norm[i,1]) > kvals_norm[i,0]):
+        #     sd = np.diag(np.diag(sargt))
+        #     offd = sargt - sd
+        #     offd = offd * -1
+        #     sargt = sd + offd
+        # elif ((abs(kvals_norm[i,1] - kvals_norm[i,0])) < eps):
+        #     if (int(i/2) % 2 == 0):
+        #         sd = np.diag(np.diag(sargt))
+        #         offd = sargt - sd
+        #         offd = offd * -1
+        #         sargt = sd + offd
 
         # print(s_ab_rot_gen[i])
-        s_ab_rot_gen[i] = sargt / np.prod(eigvals_temp)
+        # s_ab_rot_gen[i] = sargt * np.prod(eigvals_temp)
+        # s_ab_rot_gen[i] = sargt
 
     
 fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
