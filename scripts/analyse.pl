@@ -17,6 +17,7 @@ my $help = '';
 my $doplots = 1;
 my $domultiplot = 1;
 my $dorun = 1;
+my $dospr = 1;
 my $docontour = 1;
 my $doquiver = 1;
 my $dolorentz = 1;
@@ -72,6 +73,21 @@ foreach (keys %parameters) {
   }
 }
 
+my $tempinputfile = "$basedir/temp";
+
+open($fh, '>:encoding(UTF-8)', $tempinputfile)
+or die "Unable to create temporary input file:$!\n";
+print "Creating temporary input file at $tempinputfile\n";
+
+for my $key (keys %parameters) {
+if ($key !~ /comment/) {
+  if ($key !~ /stamp/) {
+    print $fh "$key $parameters{$key}\n";
+  }
+}
+}
+close $fh;
+
 # some of my old results don't include this parameter
 if (exists $parameters{'e_c'}) {
   $core_energy = $parameters{'e_c'}
@@ -97,35 +113,38 @@ if (-f $jobfile) {
 }
 
 my @run = (
+  $doquadrics,
+  $dospr,
   $doplots,
   $docontour,
   $doquiver,
   $domultiplot,
   $dolorentz,
-  $doquadrics,
   $dohelmholtz,
 );
 
 my @file = (
+ "$basedir/scripts/quadrics.py",
+ "$basedir/spr_fh",
  "$basedir/scripts/plot.pl",
  "$basedir/scripts/s_perp_contours.py",
  "$basedir/scripts/quiver.py",
  "$basedir/scripts/sab_multiplot.py",
  "$basedir/scripts/lorentz.py",
- "$basedir/scripts/quadrics.py",
  "$basedir/scripts/helmholtz.py"
 );
 
 # NB: for the plotfile especially there are extra parameters;
 # I use the defaults here but check the plot file if they need changing
 my @cmd = (
-  qq[$file[0] -d=$stampdir -s="$no_slots"],
-  qq[python $file[1] $stampdir $parameters{L} $dpi],
-  qq[python $file[2] $stampdir $parameters{L} $arrow_width $dpi],
-  qq[python $file[3] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
-  qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
+  qq[python $file[0] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
+  qq[$file[1] $tempinputfile],
+  qq[$file[2] -d=$stampdir -s="$no_slots"],
+  qq[python $file[3] $stampdir $parameters{L} $dpi],
+  qq[python $file[4] $stampdir $parameters{L} $arrow_width $dpi],
   qq[python $file[5] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[python $file[6] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
+  qq[python $file[7] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
 );
 
 for my $i (0..$#run) {
@@ -134,6 +153,8 @@ for my $i (0..$#run) {
     system($cmd[$i]);
   }
 }
+
+unlink $tempinputfile;
 
 sub get_parameters {
 

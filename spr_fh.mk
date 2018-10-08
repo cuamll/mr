@@ -1,6 +1,6 @@
 # maggs-rossetto makefile
 GF = mpif90
-EXECNAME = mr2d
+EXECNAME = spr_fh
 MOD_DIR = mod
 OBJ_DIR = obj
 CFLAGS = -J$(MOD_DIR) -std=f2003 -fopenmp
@@ -18,25 +18,26 @@ DEBUG = 0
 ifeq ($(DEBUG), 1)
 	DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
 		     -ffpe-trap=invalid,zero,denormal,underflow,overflow
+	# DEBUGFLAGS = -g -pg -fbacktrace -fopenmp -fbounds-check \
+	# 	     -ffpe-trap=invalid,zero
 else
 	DEBUGFLAGS = -O2
 endif
 
 ifeq ($(UNAME), Darwin)
-	LIBS = 
+	LIBS =
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 ifeq ($(UNAME), Linux)
-	LIBS = -llapack
+	LIBS =
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 
 SOURCES = common.f03\
 	  input.f03\
 	  linear_solver.f03\
-	  output.f03\
+	  k_scatter.f03\
 	  setup.f03\
-	  update.f03
 
 OBJ_T1 = $(patsubst %.f03, %.o,$(SOURCES))
 OBJ_T2 = $(notdir $(OBJ_T1))
@@ -47,7 +48,7 @@ MODS = $(patsubst %.o, $(MOD_DIR)/%.o,$(MOD_T2))
 
 $(EXECNAME) : $(OBJECTS)
 	echo "character(len=7), parameter :: revision = '$(RV)'" > rev.inc
-	$(GF) $(CFLAGS)  $(LFLAGS) $(OBJECTS) main.f03 -o $(EXECNAME)
+	$(GF) $(CFLAGS)  $(LFLAGS) $(OBJECTS) spr_fh.f03 -o $(EXECNAME)
 
 $(OBJ_DIR)/%.o : %.f03
 	$(GF) $(CFLAGS) $(DEBUGFLAGS) -o $@ -c $<

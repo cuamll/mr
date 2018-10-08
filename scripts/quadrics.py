@@ -33,14 +33,15 @@ dots = args.dpi
 d = 2
 bz = 2
 # threshold for deciding if an eigenvector is transverse to q
-thresh = 0.05
+# thresh = 0.05
 
 input_file = direc + '/s_ab_total.dat'
 output_dir = direc + '/quadrics_new/'
 s_ab_output_file = output_dir + 's_ab_total_eig.dat'
-s_ab_small_output_file = output_dir + 's_ab_small_total_eig.dat'
-sab_rot_small_output_file = output_dir + 's_ab_small_rot_eig.dat'
 chi_output_file = output_dir + 'chi_ab_total_eig.dat'
+s_ab_small_output_file = output_dir + 's_ab_small_total_eig.dat'
+s_ab_t_output_file = direc + '/s_ab_t.dat'
+s_ab_l_output_file = direc + '/s_ab_l.dat'
 mkdir_p(output_dir)
 
 s_raw = np.loadtxt(input_file)
@@ -70,13 +71,11 @@ s_ab_eigvecs = np.zeros(s_ab_tot.shape)
 chi_eigvals = np.zeros((len(s_ab_tot),d))
 chi_eigvecs = np.zeros(s_ab_tot.shape)
 # gonna do the helmholtz decomp in fourier space
-s_ab_rot_gen = np.zeros(s_ab_tot.shape)
-# there's some stupid thing with the way the eigenvalues order:
-nsmall = 0
+s_ab_t = np.zeros(s_ab_tot.shape)
+s_ab_l = np.zeros(s_ab_tot.shape)
 
 for i in range(len(s_ab_tot)):
-    # following Steve, we want the inverse tensor to
-    # ensure none of the principal axes blow up later
+    # Doing eig of the inverse is actually probably unnecessary?
     eigvals_temp, eigvecs_temp = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
     idx = np.argsort(eigvals_temp)
     eigvals_temp = eigvals_temp[idx]
@@ -87,42 +86,22 @@ for i in range(len(s_ab_tot)):
     s_ab_eigvecs[i] = eigvecs_temp
 
     if all(abs(kvals[i]) <= (0.00001 + (np.pi))):
-        nsmall = nsmall + 1
-        # possible floating point stuff
-        eps = 0.00001
         # now, we dot the normalised k's with each of the eigenvectors
         dots = np.zeros(len(eigvals_temp))
-        # eigvecs_temp = np.flipud(eigvecs_temp)
         for row in range(len(eigvecs_temp)):
             dots[row] = np.dot(kvals_norm[i],eigvecs_temp[:,row])
 
-        # something along the line flips the eigenvectors -- what? undo it
-        # if ((kvals_norm[i,1]) < kvals_norm[i,0]):
-        #     eigvals_temp = np.flipud(eigvals_temp)
-        # elif ((abs(kvals_norm[i,1] - kvals_norm[i,0])) < eps):
-        #     if (int(i/2) % 2 == 1):
-        #         eigvals_temp = np.flipud(eigvals_temp)
-        #     else:
-        #         eigvecs_temp = np.flipud(eigvecs_temp)
-        # elif ((kvals_norm[i,1]) > kvals_norm[i,0]):
-        #     eigvecs_temp = np.flipud(eigvecs_temp)
-        # else:
-            # print(kvals[i],kvals_norm[i],abs(kvals_norm[i,1] - kvals_norm[i,0]) < eps)
-            # raise Exception("The two q components are broken somehow!")
-
-
-
         # the smallest dot product should be the transverse one
-        # print(dots, kvals[i])
         which_transverse = np.unravel_index(np.argmin(abs(dots)), dots.shape)
         # the corresponding eigenvalue is the transverse one
         transverse_eigval = eigvals_temp[which_transverse]
-        # if ((kvals_norm[i,1]) <= kvals_norm[i,0]):
-        #     print(kvals[i],kvals_norm[i],which_transverse,eigvals_temp,eigvecs_temp,dots)
-        # the transverse dot product here should be small! if not, break
-        if dots[which_transverse] >= thresh:
-            print(kvals[i],kvals_norm[i],eigvecs_temp[:,which_transverse],dots)
-            raise Exception("Smallest eigenvalue is too big!")
+        # the others are the longitudinal ones
+        which_long = np.arange(len(eigvals_temp))!=which_transverse
+        long_eigvals = eigvals_temp[which_long]
+
+        if dots[which_transverse] >= 0.1:
+            print("Smallest eigenvalue is ",dots,kvals[i])
+            # raise Exception("Smallest eigenvalue is too big!")
 
         # now we need to construct the diagonalised matrix with only
         # the transverse eigenvalue in it, but in the right place:
@@ -130,54 +109,42 @@ for i in range(len(s_ab_tot)):
         diag[which_transverse] = transverse_eigval
         diag = np.diag(diag)
         # now, everything should be set up to do the helmholtz decomp: 
-        # s_ab_rot_gen[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
-        s_ab_rot_gen[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+        s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
-        # there's the periodicity issue in the s_xy's,
-        # due to the differing brillouin zones: fix it
-        # if (np.sign(kvals_norm[i,0]) != np.sign(kvals_norm[i,1])):
-        # if ((kvals_norm[i,1]) > kvals_norm[i,0]):
-        #     sd = np.diag(np.diag(sargt))
-        #     offd = sargt - sd
-        #     offd = offd * -1
-        #     sargt = sd + offd
-        # elif ((abs(kvals_norm[i,1] - kvals_norm[i,0])) < eps):
-        #     if (int(i/2) % 2 == 0):
-        #         sd = np.diag(np.diag(sargt))
-        #         offd = sargt - sd
-        #         offd = offd * -1
-        #         sargt = sd + offd
+        # and now the irrotational
+        diag = np.zeros(len(dots))
+        diag[which_long] = long_eigvals
+        diag = np.diag(diag)
+        s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
-        # print(s_ab_rot_gen[i])
-        # s_ab_rot_gen[i] = sargt * np.prod(eigvals_temp)
-        # s_ab_rot_gen[i] = sargt
-
-    
 fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
-sab_rot_fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
+sab_rot_fmt_arr = ['%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E']
 concat = np.concatenate((kvals,kvals_norm,s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1)
-sab_rot_concat = np.concatenate((kvals,kvals_norm,s_ab_rot_gen.reshape((-1,d**2))),axis=1)
+s_ab_t_concat = np.concatenate((kvals,kvals_norm,s_ab_t.reshape((-1,d**2))),axis=1)
+s_ab_l_concat = np.concatenate((kvals,kvals_norm,s_ab_l.reshape((-1,d**2))),axis=1)
 np.savetxt(s_ab_output_file, concat, fmt=fmt_arr)
 np.savetxt(chi_output_file, np.concatenate((kvals,kvals_norm,chi_eigvals,chi_eigvecs.reshape((-1,d**2))),axis=1), fmt=fmt_arr)
 
-# this should not be this fucking hard. i hate python
+# this should not be this hard, probably
 size = int((length + 1)**2)
 concat_small = np.empty(shape=(size,10))
-sab_rot_concat_small = np.empty(shape=(size,8))
+s_ab_t_concat_small = np.empty(shape=(size,8))
+s_ab_l_concat_small = np.empty(shape=(size,8))
 j = 0
 
 for i in range(len(concat)):
     if abs(concat[i,0]) <= (0.000001 + np.pi) and abs(concat[i,1]) <= (0.000001 + np.pi):
         concat_small[j] = concat[i,:]
-        sab_rot_concat_small[j] = sab_rot_concat[i,:]
+        s_ab_t_concat_small[j] = s_ab_t_concat[i,:]
+        s_ab_l_concat_small[j] = s_ab_l_concat[i,:]
         j = j + 1
 
 concat_small = np.array(concat_small)
-sab_rot_concat_small = np.array(sab_rot_concat_small)
-print(concat_small.shape)
-# concat_small = concat[np.where(abs(kv1) <= (0.00001 + np.pi/2.) and abs(kvals[:,1]) <= (0.00001 + np.pi/2.))]
-np.savetxt(s_ab_small_output_file, concat_small, fmt=fmt_arr)
-np.savetxt(sab_rot_small_output_file, sab_rot_concat_small, fmt=sab_rot_fmt_arr)
+s_ab_t_concat_small = np.array(s_ab_t_concat_small)
+s_ab_l_concat_small = np.array(s_ab_l_concat_small)
+# np.savetxt(s_ab_small_output_file, concat_small, fmt=fmt_arr)
+np.savetxt(s_ab_t_output_file, s_ab_t_concat_small, fmt=sab_rot_fmt_arr)
+np.savetxt(s_ab_l_output_file, s_ab_l_concat_small, fmt=sab_rot_fmt_arr)
 
 
 """
@@ -186,6 +153,7 @@ Relevant peaks in the total S^{ab} tensor are at:
 (0,0) for the high-temperature conducting liquid phase,
 The difficult thing is getting the right limits on the mesh
 """
+
 xpeaks = [0, np.pi/8, np.pi/6, np.pi/4]
 ypeaks = [0, np.pi/8, np.pi/3, np.pi/4]
 stringpeaks = ['0_0', 'pi8_pi8', 'pi6_pi3', 'pi4_pi4']
@@ -196,8 +164,6 @@ if d == 2:
     for i in range(len(xpeaks)):
         def quadric(x, y, a, b):
             return (x**2 / a) + (y**2 / b) - 1
-        # def quadric(x, y, a, b, c):
-        #     return x**2 / a + y**2 / b + (2 * x * y) / c - 1
 
         # get the array index we want and also store the relevant k-value
         # as a string for pretty printing later

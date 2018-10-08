@@ -54,7 +54,9 @@ module common
   irrot_field_file, irrot_sab_file, irrot_sperp_file, rot_field_file,&
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
   irrot_spar_file, avg_field_file, equil_file, chi_ab_file, rot_chi_ab_file,&
-  irrot_chi_ab_file, windings_file, windings_sq_file, lgf_path
+  irrot_chi_ab_file, windings_file, windings_sq_file, lgf_path,&
+  s_perp_transverse_file,s_perp_long_file,s_par_transverse_file,s_par_long_file,&
+  s_ab_transverse_file,s_ab_long_file
 
   character(6) :: charge_gen
 
