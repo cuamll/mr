@@ -91,56 +91,69 @@ for i in range(len(s_ab_tot)):
         for row in range(len(eigvecs_temp)):
             dots[row] = np.dot(kvals_norm[i],eigvecs_temp[:,row])
 
-        # the smallest dot product should be the transverse one
-        which_transverse = np.unravel_index(np.argmin(abs(dots)), dots.shape)
-        # the corresponding eigenvalue is the transverse one
+        # at q = 0 both dot products are zero, but the tensor is
+        # a circle; just pick one. otherwise check the dot products
+        if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
+            which_transverse = (0,)
+            which_long = (1,)
+        else:
+            which_transverse = np.unravel_index(np.argmin(abs(dots)), dots.shape)
+            which_long = np.unravel_index(np.argmax(abs(dots)), dots.shape)
+
+        # the smallest dot product is the transverse one
         transverse_eigval = eigvals_temp[which_transverse]
         # the others are the longitudinal ones
         # this caused problems with value errors and stuff. removing
         # which_long = np.arange(len(eigvals_temp))!=which_transverse
-        which_long = np.unravel_index(np.argmax(abs(dots)), dots.shape)
         long_eigval = eigvals_temp[which_long]
 
-        # if abs(long_eigval - transverse_eigval) <= thresh:
-        #     print("Eigvals, q: ",eigvals_temp,long_eigval, transverse_eigval, abs(long_eigval - transverse_eigval), kvals[i])
-        #     # everything's an eigenvector of an identity matrix!
-        #     k_long = np.array([kvals_norm[i,0], kvals_norm[i,1]])
+        if abs(long_eigval - transverse_eigval) <= thresh:
+            # print("Eigvals, q: ",eigvals_temp,long_eigval, transverse_eigval, abs(long_eigval - transverse_eigval), kvals[i])
+            if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
+                print(which_long, which_transverse)
+                k_long = np.array([[1.], [0.]])
+                k_transverse = np.array([[0.], [1.]])
+            else:
+                # everything's an eigenvector of an identity matrix! so
+                # we're fine to set k to be the longitudinal eigenvector
+                k_long = np.array([[kvals_norm[i,0]], [kvals_norm[i,1]]])
+                # and in general (b, -a) dot (a, b) = 0
+                k_transverse = np.array([[kvals_norm[i,1]], [-1.*kvals_norm[i,0]]])
 
-        #     if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
-        #         k_long = np.array([1., 0.])
-        #         # k_long = np.array([1./np.sqrt(2.), 1./np.sqrt(2.)])
+            k_long.shape = (2,1)
+            k_transverse.shape = (2,1)
+            eigvecs_temp[:,which_long] = k_long
+            eigvecs_temp[:,which_transverse] = k_transverse
 
-        #     k_long.shape = (2,1)
-        #     # print(kvals_norm[i].shape, eigvecs_temp[:,which_long].shape, which_long, k_long.shape)
-        #     eigvecs_temp[:,which_long] = k_long
-        #     # now in general (b, -a) dot (a, b) = 0
-        #     k_transverse = np.array([kvals_norm[i,1], -1.*kvals_norm[i,0]])
-
-        #     if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
-        #         k_transverse = np.array([0., 1.])
-
-        #     k_transverse.shape = (2,1)
-        #     eigvecs_temp[:,which_transverse] = k_transverse
-        #     s_ab_eigvecs[i] = eigvecs_temp
+            s_ab_eigvecs[i] = eigvecs_temp
 
         # if dots[which_transverse] >= 0.1:
         #     pass
-        #     # print("Eigvals, dot products, q, eigvecs: ",eigvals_temp,dots,kvals[i],eigvecs_temp)
-        #     # raise Exception("Smallest eigenvalue is too big!")
+            # print("Eigvals, dot products, q, eigvecs: ",eigvals_temp,dots,kvals[i],eigvecs_temp)
+            # raise Exception("Smallest eigenvalue is too big!")
 
-        # now we need to construct the diagonalised matrix with only
-        # the transverse eigenvalue in it, but in the right place:
-        diag = np.zeros(len(dots))
-        diag[which_transverse] = transverse_eigval
-        diag = np.diag(diag)
-        # now, everything should be set up to do the helmholtz decomp: 
-        s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+        # now we need to construct the two components by picking
+        # each eigenvalue individually.
 
-        # and now the irrotational
-        diag = np.zeros(len(dots))
-        diag[which_long] = long_eigval
-        diag = np.diag(diag)
-        s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+        # for Q = 0, we don't do this: we take a straight average of the two
+        # this is a different convention than I use for the real space
+        # decomposition, where I put the harmonic mode with the irrot.
+        if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
+            diag = np.diag(eigvals_temp/2.)
+            s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+            s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+        else:
+            # first the transverse component
+            diag = np.zeros(len(dots))
+            diag[which_transverse] = transverse_eigval
+            diag = np.diag(diag)
+            s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
+
+            # and now the longitudinal
+            diag = np.zeros(len(dots))
+            diag[which_long] = long_eigval
+            diag = np.diag(diag)
+            s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
 fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
 sab_rot_fmt_arr = ['%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E']
