@@ -28,7 +28,7 @@ if ($palette !~ /.*\.pal/) {
 }
 
 # we pass the absolute path to the timestamp directory. now to get parameters:
-my %parameters = get_parameters("$dir/input.in");
+my %parameters = get_parameters("$dir/temp");
 
 my $basedir = File::Spec->curdir();
 my $plotpath = "$basedir/scripts/";

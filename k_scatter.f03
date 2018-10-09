@@ -40,6 +40,8 @@ module k_scatter
           s_ab_rot(2, 1, i + L/2, j + L/2) = cmplx(syx, 0.0)
           s_ab_rot(2, 2, i + L/2, j + L/2) = cmplx(syy, 0.0)
 
+          sxx = 0.0; sxy = 0.0; syx = 0.0; syy = 0.0
+
           read (12, *) kx_float, ky_float,&
           kx_norm_float, ky_norm_float,&
           sxx,sxy,syx,syy

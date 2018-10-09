@@ -32,8 +32,8 @@ core_energy = np.abs(args.e_c)
 dots = args.dpi
 d = 2
 bz = 2
-# threshold for deciding if an eigenvector is transverse to q
-# thresh = 0.05
+# threshold for deciding if eigenvalues are degenerate
+thresh = 0.02
 
 input_file = direc + '/s_ab_total.dat'
 output_dir = direc + '/quadrics_new/'
@@ -51,7 +51,7 @@ s_ab_tot = s_raw[:,d:(d*(d+1))]
 
 for i in range(len(kvals)):
     if kvals[i,0] != 0.0 and kvals[i,1] != 0.0:
-        kn = (kvals[i,0]**2 + kvals[i,1]**2)
+        kn = np.sqrt((kvals[i,0]**2 + kvals[i,1]**2))
     else:
         kn = 1.0
 
@@ -96,12 +96,37 @@ for i in range(len(s_ab_tot)):
         # the corresponding eigenvalue is the transverse one
         transverse_eigval = eigvals_temp[which_transverse]
         # the others are the longitudinal ones
-        which_long = np.arange(len(eigvals_temp))!=which_transverse
-        long_eigvals = eigvals_temp[which_long]
+        # this caused problems with value errors and stuff. removing
+        # which_long = np.arange(len(eigvals_temp))!=which_transverse
+        which_long = np.unravel_index(np.argmax(abs(dots)), dots.shape)
+        long_eigval = eigvals_temp[which_long]
 
-        if dots[which_transverse] >= 0.1:
-            print("Smallest eigenvalue is ",dots,kvals[i])
-            # raise Exception("Smallest eigenvalue is too big!")
+        # if abs(long_eigval - transverse_eigval) <= thresh:
+        #     print("Eigvals, q: ",eigvals_temp,long_eigval, transverse_eigval, abs(long_eigval - transverse_eigval), kvals[i])
+        #     # everything's an eigenvector of an identity matrix!
+        #     k_long = np.array([kvals_norm[i,0], kvals_norm[i,1]])
+
+        #     if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
+        #         k_long = np.array([1., 0.])
+        #         # k_long = np.array([1./np.sqrt(2.), 1./np.sqrt(2.)])
+
+        #     k_long.shape = (2,1)
+        #     # print(kvals_norm[i].shape, eigvecs_temp[:,which_long].shape, which_long, k_long.shape)
+        #     eigvecs_temp[:,which_long] = k_long
+        #     # now in general (b, -a) dot (a, b) = 0
+        #     k_transverse = np.array([kvals_norm[i,1], -1.*kvals_norm[i,0]])
+
+        #     if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
+        #         k_transverse = np.array([0., 1.])
+
+        #     k_transverse.shape = (2,1)
+        #     eigvecs_temp[:,which_transverse] = k_transverse
+        #     s_ab_eigvecs[i] = eigvecs_temp
+
+        # if dots[which_transverse] >= 0.1:
+        #     pass
+        #     # print("Eigvals, dot products, q, eigvecs: ",eigvals_temp,dots,kvals[i],eigvecs_temp)
+        #     # raise Exception("Smallest eigenvalue is too big!")
 
         # now we need to construct the diagonalised matrix with only
         # the transverse eigenvalue in it, but in the right place:
@@ -113,7 +138,7 @@ for i in range(len(s_ab_tot)):
 
         # and now the irrotational
         diag = np.zeros(len(dots))
-        diag[which_long] = long_eigvals
+        diag[which_long] = long_eigval
         diag = np.diag(diag)
         s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 

@@ -66,6 +66,21 @@ $inputfile = "$stampdir/input.in";
 print "Input file: $inputfile\n";
 my %parameters = get_parameters("$inputfile");
 
+# the lines corresponding to the fourier space helmholtz
+# decomposition probably aren't there: add them
+my %extra_params = ();
+$extra_params{"s_ab_t_file"} = "$stampdir/s_ab_t.dat";
+$extra_params{"s_ab_l_file"} = "$stampdir/s_ab_l.dat";
+$extra_params{"s_perp_t_file"} = "$stampdir/s_perp_t.dat";
+$extra_params{"s_perp_l_file"} = "$stampdir/s_perp_l.dat";
+$extra_params{"s_par_t_file"} = "$stampdir/s_par_t.dat";
+$extra_params{"s_par_l_file"} = "$stampdir/s_par_l.dat";
+$extra_params{"charge_generation"} = "DIPOLE";
+
+foreach (keys %extra_params) {
+  $parameters{$_} = $extra_params{$_} unless (exists($parameters{$_}));
+}
+
 foreach (keys %parameters) {
   if ($_ =~ /_file/) {
     my ($fnm,$dirs,$suff) = fileparse($parameters{$_});
@@ -73,7 +88,7 @@ foreach (keys %parameters) {
   }
 }
 
-my $tempinputfile = "$basedir/temp";
+my $tempinputfile = "$stampdir/temp";
 
 open($fh, '>:encoding(UTF-8)', $tempinputfile)
 or die "Unable to create temporary input file:$!\n";
@@ -154,7 +169,7 @@ for my $i (0..$#run) {
   }
 }
 
-unlink $tempinputfile;
+# unlink $tempinputfile;
 
 sub get_parameters {
 
