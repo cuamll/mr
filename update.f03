@@ -603,17 +603,17 @@ module update
         e_in = e_field(2,:,:)
         call fftw_execute_dft_r2c(plan_x,e_in,eyk)
 
-        do j = 0, L - 1
+        do j = 1, L
 
           ! x component has offsets in the x direction (columns)
           ! also it's flattened in the x direction
-          if (j.le.L/2) then
+          if (j.le.(L/2)+1) then
             ! exk(j,:) = exk(j,:) * exp(-(pi/L)*imag*j)
-            exk(j,:) = exk(j,:) * exp(+(pi/L)*imag*neg(j+1))
+            exk(j,:) = exk(j,:) * exp(+(pi/L)*imag*j)
           end if
 
           ! y component has offsets in the y direction (rows)
-          eyk(:,j) = eyk(:,j) * exp(+(pi/L)*imag*neg(j+1))
+          eyk(:,j) = eyk(:,j) * exp(+(pi/L)*imag*j)
 
         end do
 

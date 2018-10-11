@@ -69,12 +69,108 @@ module output
   subroutine write_output
 
     if (do_corr) then
+      call fix_fftw
       call fix_arrays
     end if
 
     call calc_correlations
 
   end subroutine write_output
+
+  subroutine fix_fftw
+    use common
+    implicit none
+    integer :: i, j, j_eff, ri, rj, kx, ky, pmx, pmy, offdiag
+
+    ! normalisation for correct equipartition result
+    sxx = sxx * L**2
+    sxy = sxy * L**2
+    syy = syy * L**2
+
+    ! fftw only does up to pi in the k_x direction: fix that first
+    do i = 1, L/2 + 1
+      do j = 1, L + 1
+
+        if (j.eq.L+1) then
+          j_eff = 1
+        else
+          j_eff = j
+        end if
+
+        ri = ((2*L) + 2) - i
+        rj = ((2*L) + 2) - j
+
+        fftw_s_ab_total(1,1,i+L,j+L)               = sxx(i,j_eff)
+        fftw_s_ab_total(1,1,ri,rj)                 = sxx(i,j_eff)
+
+        fftw_s_ab_total(1,2,i+L,j+L)              = sxy(i,j_eff)
+        fftw_s_ab_total(1,2,ri,rj)                = sxy(i,j_eff)
+
+        ! should really check this?
+        if (i.eq.1.and.(j.eq.1.or.j_eff.eq.1)) then
+          fftw_s_ab_total(1,2,i+L,j+L)  = (-1.0)*&
+          fftw_s_ab_total(1,2,i+L,j+L)
+          fftw_s_ab_total(2,1,i+L,j+L)  = (-1.0)*&
+          fftw_s_ab_total(2,1,i+L,j+L)
+
+          fftw_s_ab_total(1,2,ri,rj)  = (-1.0)*&
+          fftw_s_ab_total(1,2,ri,rj)
+          fftw_s_ab_total(2,1,ri,rj)  = (-1.0)*&
+          fftw_s_ab_total(2,1,ri,rj)
+        end if
+
+        fftw_s_ab_total(2,2,i+L,j+L)              = syy(i,j_eff)
+        fftw_s_ab_total(2,2,ri,rj)                = syy(i,j_eff)
+
+      end do
+    end do
+    
+    ! now out to the other quadrants
+    ! we only have the quadrant [kx, ky] \in [0,2pi]
+    do kx = -L, L
+      do ky = -L, L
+
+        pmx = 0; pmy = 0; offdiag = 1
+        i = kx + 1 + L
+        j = ky + 1 + L
+
+        ! if (kx.ge.(L/2)+1) then
+        !   pmx = -1
+        !   offdiag = -1 * offdiag
+        ! end if
+
+        if (kx.le.0) then
+          pmx = +1
+          offdiag = -1 * offdiag
+        end if
+
+        ! if (ky.ge.(L/2)+1) then
+        !   pmy = -1
+        !   offdiag = -1 * offdiag
+        ! end if
+
+        if (ky.le.0) then
+          pmy = +1
+          offdiag = -1 * offdiag
+        end if
+        
+        fftw_s_ab_total(1,1,i,j) = fftw_s_ab_total(1, 1, i + pmx * L, j + pmy * L)
+        fftw_s_ab_total(2,2,i,j) = fftw_s_ab_total(2, 2, i + pmx * L, j + pmy * L)
+        fftw_s_ab_total(1,2,i,j) = offdiag * fftw_s_ab_total(1, 2, i + pmx * L, j + pmy * L)
+        fftw_s_ab_total(2,1,i,j) = offdiag * fftw_s_ab_total(2, 1, i + pmx * L, j + pmy * L)
+
+        ! s_ab_irrot(1,1,i,j) = s_ab_irrot(1, 1, i + pmx * L, j + pmy * L)
+        ! s_ab_irrot(2,2,i,j) = s_ab_irrot(2, 2, i + pmx * L, j + pmy * L)
+        ! s_ab_irrot(1,2,i,j) = offdiag * s_ab_irrot(1, 2, i + pmx * L, j + pmy * L)
+        ! s_ab_irrot(2,1,i,j) = offdiag * s_ab_irrot(2, 1, i + pmx * L, j + pmy * L)
+
+      end do
+    end do
+
+    fftw_s_ab_total(2,1,:,:) = fftw_s_ab_total(1,2,:,:)
+
+  end subroutine fix_fftw
+
 
   subroutine fix_arrays
     use common
@@ -766,16 +862,19 @@ module output
       close(39)
 
       open(unit=57, file="fftw_sab.dat")
-      do i = 1, L/2 + 1
-        do j = 1, L
+
+      ! do i = 1, L/2 + 1
+      !   do j = 1, L
+      do i = 1, bz*L + 1
+        do j = 1, bz*L + 1
 
           write (57, field_format_string)&
-          2*pi*(i - 1)/(L*lambda),&
-          2*pi*(j - 1)/(L*lambda),&
-          real(sxx(i,j)),&
-          real(sxy(i,j)),&
-          real(sxy(i,j)),&
-          real(syy(i,j))
+          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+          real(fftw_s_ab_total(1,1,i,j)),&
+          real(fftw_s_ab_total(1,2,i,j)),&
+          real(fftw_s_ab_total(2,1,i,j)),&
+          real(fftw_s_ab_total(2,2,i,j))
 
         end do
       end do
