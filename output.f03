@@ -765,6 +765,23 @@ module output
       close(38)
       close(39)
 
+      open(unit=57, file="fftw_sab.dat")
+      do i = 1, L/2 + 1
+        do j = 1, L
+
+          write (57, field_format_string)&
+          2*pi*(i - 1)/(L*lambda),&
+          2*pi*(j - 1)/(L*lambda),&
+          real(sxx(i,j)),&
+          real(sxy(i,j)),&
+          real(sxy(i,j)),&
+          real(syy(i,j))
+
+        end do
+      end do
+
+      close(57)
+
       do i = 1,sp*(L) + 1
         do j = 1,sp*(L) + 1
 

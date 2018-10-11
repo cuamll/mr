@@ -1,4 +1,5 @@
 module common
+  use fftw
   implicit none
 
   integer, public, parameter :: prec = 16
@@ -42,10 +43,10 @@ module common
   e_rot_avg, e_irrot_avg
 
   complex(kind=rk), dimension(:,:,:,:), allocatable, public :: s_ab,&
-  s_ab_rot, s_ab_irrot
+  s_ab_rot, s_ab_irrot, fftw_s_ab_total
 
   complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch,&
-  rho_k_m,rho_k_p, fw, hw
+  rho_k_m,rho_k_p, fw, hw, sxx, sxy, syy
   complex(kind=rk), public :: runtot
 
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file,&
@@ -59,6 +60,11 @@ module common
   s_ab_transverse_file,s_ab_long_file
 
   character(6) :: charge_gen
+
+  type(C_PTR) :: plan_x, plan_y, plan_ch
+  real(C_DOUBLE), dimension(:,:), allocatable :: ch_in, e_in
+  complex(C_DOUBLE_COMPLEX), dimension(:,:), allocatable :: chk
+  complex(C_DOUBLE_COMPLEX), dimension(:,:), allocatable :: exk, eyk
 
   save
 

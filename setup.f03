@@ -25,6 +25,7 @@ module setup
     allocate(lgf(0:L/2,0:L/2))
     if (do_corr) then
       allocate(s_ab(2,2,(bz*L)+1,(bz*L)+1))
+      allocate(fftw_s_ab_total(2,2,(bz*L)+1,(bz*L)+1))
       allocate(s_ab_rot(2,2,(bz*L)+1,(bz*L)+1))
       allocate(s_ab_irrot(2,2,(bz*L)+1,(bz*L)+1))
       allocate(ch_ch((bz*L)+1,(bz*L)+1))
@@ -35,6 +36,14 @@ module setup
       allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
       allocate(fw(L,(bz*L)+1))
       allocate(hw(L,(bz*L)+1))
+      allocate(ch_in(L,L))
+      allocate(e_in(L,L))
+      allocate(chk(L/2+1,L))
+      allocate(exk(L/2+1,L))
+      allocate(eyk(L/2+1,L))
+      allocate(sxx(L/2+1,L))
+      allocate(syy(L/2+1,L))
+      allocate(sxy(L/2+1,L))
     end if
 
     call PBCs
@@ -49,6 +58,7 @@ module setup
 
     if (do_corr) then
       s_ab = (0.0,0.0); s_ab_rot = (0.0,0.0); s_ab_irrot = (0.0,0.0);
+      sxx = (0.0,0.0); syy = (0.0,0.0); sxy = (0.0,0.0);
       ch_ch = (0.0,0.0); rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0)
       dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
     end if
@@ -71,6 +81,11 @@ module setup
         end do
       end do
     end if
+
+  ! FFTW plans -- gonna need them a lot
+  plan_x = fftw_plan_dft_r2c_2d(L,L,e_in,exk,FFTW_ESTIMATE)
+  plan_y = fftw_plan_dft_r2c_2d(L,L,e_in,eyk,FFTW_ESTIMATE)
+  plan_ch = fftw_plan_dft_r2c_2d(L,L,ch_in,chk,FFTW_ESTIMATE)
 
   end subroutine initial_setup
 
