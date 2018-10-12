@@ -109,11 +109,6 @@ module output
         ! should really check this?
         if (j.eq.1.and.i.eq.1) then
 
-          ! fftw_s_ab_total(1,2,i+L,j+L)  = (-1.0)*&
-          ! fftw_s_ab_total(1,2,i+L,j+L)
-          ! fftw_s_ab_total(2,1,i+L,j+L)  = (-1.0)*&
-          ! fftw_s_ab_total(2,1,i+L,j+L)
-
           fftw_s_ab_total(1,2,ri,rj)  = (-1.0)*&
           fftw_s_ab_total(1,2,ri,rj)
           fftw_s_ab_total(2,1,ri,rj)  = (-1.0)*&
@@ -162,6 +157,9 @@ module output
 
         if ((kx).eq.-L.or.(ky).eq.-L) then
           offdiag = -1
+        end if
+        if ((kx.eq.L.and.ky.lt.0).or.(ky.eq.L.and.kx.lt.0)) then
+          offdiag = +1
         end if
         
         fftw_s_ab_total(1,1,i,j) = fftw_s_ab_total(1, 1, i + pmx * L, j + pmy * L)
