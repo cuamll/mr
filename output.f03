@@ -83,8 +83,6 @@ module output
 
     ! normalisation for correct equipartition result
     s_ab = s_ab * L**2
-    ! sxy = sxy * L**2
-    ! syy = syy * L**2
 
     ! fftw only does up to pi in the k_x direction: fix that first
     do i = 1, L/2 + 1
@@ -99,8 +97,8 @@ module output
         ri = ((2*L) + 2) - i
         rj = ((2*L) + 2) - j
 
-        s_ab_large(1,1,i+L,j+L)               = s_ab(i,j_eff, 1)
-        s_ab_large(1,1,ri,rj)                 = s_ab(i,j_eff, 1)
+        s_ab_large(1,1,i+L,j+L)              = s_ab(i, j_eff, 1)
+        s_ab_large(1,1,ri,rj)                = s_ab(i, j_eff, 1)
 
         s_ab_large(1,2,i+L,j+L)              = s_ab(i,j_eff, 2)
         s_ab_large(1,2,ri,rj)                = s_ab(i,j_eff, 2)

@@ -25,7 +25,7 @@ else
 endif
 
 ifeq ($(UNAME), Darwin)
-	LIBS =
+	LIBS = -lfftw3
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 ifeq ($(UNAME), Linux)
@@ -33,7 +33,8 @@ ifeq ($(UNAME), Linux)
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 
-SOURCES = common.f03\
+SOURCES = fftw.f03\
+	  common.f03\
 	  input.f03\
 	  linear_solver.f03\
 	  k_scatter.f03\

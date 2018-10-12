@@ -158,8 +158,8 @@ for i in range(len(s_ab_tot)):
 fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
 sab_rot_fmt_arr = ['%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E']
 concat = np.concatenate((kvals,kvals_norm,s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1)
-s_ab_t_concat = np.concatenate((kvals,kvals_norm,s_ab_t.reshape((-1,d**2))),axis=1)
-s_ab_l_concat = np.concatenate((kvals,kvals_norm,s_ab_l.reshape((-1,d**2))),axis=1)
+s_ab_t_concat = np.concatenate((kvals,s_ab_t.reshape((-1,d**2)),kvals_norm),axis=1)
+s_ab_l_concat = np.concatenate((kvals,s_ab_l.reshape((-1,d**2)),kvals_norm),axis=1)
 np.savetxt(s_ab_output_file, concat, fmt=fmt_arr)
 np.savetxt(chi_output_file, np.concatenate((kvals,kvals_norm,chi_eigvals,chi_eigvecs.reshape((-1,d**2))),axis=1), fmt=fmt_arr)
 

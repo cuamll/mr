@@ -504,29 +504,29 @@ module update
 
       ! get irrotational part of field
       ! this way we can get decomposed parts along with total
-      call linsol
-      e_rot = e_field + mnphi
+      ! call linsol
+      ! e_rot = e_field + mnphi
 
       e_tot_avg =           e_tot_avg + e_field
-      e_rot_avg =           e_rot_avg + e_rot
-      e_irrot_avg =         e_irrot_avg + mnphi
+      ! e_rot_avg =           e_rot_avg + e_rot
+      ! e_irrot_avg =         e_irrot_avg + mnphi
       v_avg =               v_avg + float(v)
       rho_avg =             rho_avg + (dble(sum(abs(v))) / L**2)
       ener_tot =            0.5 * lambda**2 * eps_0 * sum(e_field * e_field)
-      ener_rot =            0.5 * lambda**2 * eps_0 * sum(e_rot * e_rot)
-      ener_irrot =          0.5 * lambda**2 * eps_0 * sum(mnphi * mnphi)
+      ! ener_rot =            0.5 * lambda**2 * eps_0 * sum(e_rot * e_rot)
+      ! ener_irrot =          0.5 * lambda**2 * eps_0 * sum(mnphi * mnphi)
       ener_tot =            ener_tot / L**2
-      ener_rot =            ener_rot / L**2
-      ener_irrot =          ener_irrot / L**2
+      ! ener_rot =            ener_rot / L**2
+      ! ener_irrot =          ener_irrot / L**2
       ener_tot_sq =         ener_tot**2
-      ener_rot_sq =         ener_rot**2
-      ener_irrot_sq =       ener_irrot**2
+      ! ener_rot_sq =         ener_rot**2
+      ! ener_irrot_sq =       ener_irrot**2
       ener_tot_sum =        ener_tot_sum + ener_tot
-      ener_rot_sum =        ener_rot_sum + ener_rot
-      ener_irrot_sum =      ener_irrot_sum + ener_irrot
+      ! ener_rot_sum =        ener_rot_sum + ener_rot
+      ! ener_irrot_sum =      ener_irrot_sum + ener_irrot
       ener_tot_sq_sum =     ener_tot_sq_sum + ener_tot_sq
-      ener_rot_sq_sum =     ener_rot_sq_sum + ener_rot_sq
-      ener_irrot_sq_sum =   ener_irrot_sq_sum + ener_irrot_sq
+      ! ener_rot_sq_sum =     ener_rot_sq_sum + ener_rot_sq
+      ! ener_irrot_sq_sum =   ener_irrot_sq_sum + ener_irrot_sq
 
       do i = 1,2
 
@@ -554,25 +554,13 @@ module update
         ebar_wind(i) = np
 
         avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
-        avg_field_rot(i) = avg_field_rot(i) + sum(abs(real(e_rot(i,:,:))))
-        avg_field_irrot(i) = avg_field_irrot(i) + sum(abs(real(mnphi(i,:,:))))
 
         avg_field_sq_total(i) = avg_field_sq_total(i) + avg_field_total(i)**2
-        avg_field_sq_rot(i)   = avg_field_sq_rot(i)   + avg_field_rot(i)**2
-        avg_field_sq_irrot(i) = avg_field_sq_irrot(i) + avg_field_irrot(i)**2
-
-        e_rot(i,:,:) = e_rot(i,:,:) - ebar(i) / L**2
-        mnphi(i,:,:) = mnphi(i,:,:) + ebar(i) / L**2
-
 
       end do
 
       avg_field_total = avg_field_total / L**2
-      avg_field_rot = avg_field_rot / L**2
-      avg_field_irrot = avg_field_irrot / L**2
       avg_field_sq_total = avg_field_sq_total/ L**2
-      avg_field_sq_rot   = avg_field_sq_rot/ L**2
-      avg_field_sq_irrot = avg_field_sq_irrot/ L**2
       ebar = ebar / L**2
       ebar_dip = ebar_dip / L**2
       ebar_wind = ebar_wind / L**2
@@ -608,7 +596,6 @@ module update
           ! x component has offsets in the x direction (columns)
           ! also it's flattened in the x direction
           if (j.le.(L/2)+1) then
-            ! exk(j,:) = exk(j,:) * exp(-(pi/L)*imag*j)
             exk(j,:) = exk(j,:) * exp(+(pi/L)*imag*j)
           end if
 

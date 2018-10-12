@@ -32,29 +32,29 @@ module k_scatter
 
           ! read (11, input_format_string) kx_float, ky_float,&
           read (11, *) kx_float, ky_float,&
-          kx_norm_float, ky_norm_float,&
-          sxx,sxy,syx,syy
+          sxx,sxy,syx,syy,&
+          kx_norm_float, ky_norm_float
 
-          s_ab_rot(1, 1, i + L/2, j + L/2) = cmplx(sxx, 0.0)
-          s_ab_rot(1, 2, i + L/2, j + L/2) = cmplx(sxy, 0.0)
-          s_ab_rot(2, 1, i + L/2, j + L/2) = cmplx(syx, 0.0)
-          s_ab_rot(2, 2, i + L/2, j + L/2) = cmplx(syy, 0.0)
+          s_ab_rot_large(1, 1, i + L/2, j + L/2) = cmplx(sxx, 0.0)
+          s_ab_rot_large(1, 2, i + L/2, j + L/2) = cmplx(sxy, 0.0)
+          s_ab_rot_large(2, 1, i + L/2, j + L/2) = cmplx(syx, 0.0)
+          s_ab_rot_large(2, 2, i + L/2, j + L/2) = cmplx(syy, 0.0)
 
           sxx = 0.0; sxy = 0.0; syx = 0.0; syy = 0.0
 
           read (12, *) kx_float, ky_float,&
-          kx_norm_float, ky_norm_float,&
-          sxx,sxy,syx,syy
+          sxx,sxy,syx,syy,&
+          kx_norm_float, ky_norm_float
 
           ! real(s_ab_irrot(1, 1, i + L/2, j + L/2)),&
           ! real(s_ab_irrot(1, 2, i + L/2, j + L/2)),&
           ! real(s_ab_irrot(2, 1, i + L/2, j + L/2)),&
           ! real(s_ab_irrot(2, 2, i + L/2, j + L/2))
 
-          s_ab_irrot(1, 1, i + L/2, j + L/2) = cmplx(sxx, 0.0)
-          s_ab_irrot(1, 2, i + L/2, j + L/2) = cmplx(sxy, 0.0)
-          s_ab_irrot(2, 1, i + L/2, j + L/2) = cmplx(syx, 0.0)
-          s_ab_irrot(2, 2, i + L/2, j + L/2) = cmplx(syy, 0.0)
+          s_ab_irrot_large(1, 1, i + L/2, j + L/2) = cmplx(sxx, 0.0)
+          s_ab_irrot_large(1, 2, i + L/2, j + L/2) = cmplx(sxy, 0.0)
+          s_ab_irrot_large(2, 1, i + L/2, j + L/2) = cmplx(syx, 0.0)
+          s_ab_irrot_large(2, 2, i + L/2, j + L/2) = cmplx(syy, 0.0)
 
       end do
     end do
@@ -97,15 +97,15 @@ module k_scatter
           offdiag = -1 * offdiag
         end if
         
-        s_ab_rot(1,1,i,j) = s_ab_rot(1, 1, i + pmx * L, j + pmy * L)
-        s_ab_rot(2,2,i,j) = s_ab_rot(2, 2, i + pmx * L, j + pmy * L)
-        s_ab_rot(1,2,i,j) = offdiag * s_ab_rot(1, 2, i + pmx * L, j + pmy * L)
-        s_ab_rot(2,1,i,j) = offdiag * s_ab_rot(2, 1, i + pmx * L, j + pmy * L)
+        s_ab_rot_large(1,1,i,j) = s_ab_rot_large(1, 1, i + pmx * L, j + pmy * L)
+        s_ab_rot_large(2,2,i,j) = s_ab_rot_large(2, 2, i + pmx * L, j + pmy * L)
+        s_ab_rot_large(1,2,i,j) = offdiag * s_ab_rot_large(1, 2, i + pmx * L, j + pmy * L)
+        s_ab_rot_large(2,1,i,j) = offdiag * s_ab_rot_large(2, 1, i + pmx * L, j + pmy * L)
 
-        s_ab_irrot(1,1,i,j) = s_ab_irrot(1, 1, i + pmx * L, j + pmy * L)
-        s_ab_irrot(2,2,i,j) = s_ab_irrot(2, 2, i + pmx * L, j + pmy * L)
-        s_ab_irrot(1,2,i,j) = offdiag * s_ab_irrot(1, 2, i + pmx * L, j + pmy * L)
-        s_ab_irrot(2,1,i,j) = offdiag * s_ab_irrot(2, 1, i + pmx * L, j + pmy * L)
+        s_ab_irrot_large(1,1,i,j) = s_ab_irrot_large(1, 1, i + pmx * L, j + pmy * L)
+        s_ab_irrot_large(2,2,i,j) = s_ab_irrot_large(2, 2, i + pmx * L, j + pmy * L)
+        s_ab_irrot_large(1,2,i,j) = offdiag * s_ab_irrot_large(1, 2, i + pmx * L, j + pmy * L)
+        s_ab_irrot_large(2,1,i,j) = offdiag * s_ab_irrot_large(2, 1, i + pmx * L, j + pmy * L)
 
       end do
     end do
@@ -206,25 +206,25 @@ module k_scatter
             kx = m + 1 + (bz*(L/2))
           end if
 
-          s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) *  real(s_ab_irrot(1,1,kx,ky))+&
-                          ((-1)*kx_float*ky_float*norm_k) *     real(s_ab_irrot(1,2,kx,ky))+&
-                          ((-1)*ky_float*kx_float*norm_k) *     real(s_ab_irrot(2,1,kx,ky))+&
-                          (1 - ky_float*ky_float*norm_k) *      real(s_ab_irrot(2,2,kx,ky))
+          s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) *  real(s_ab_irrot_large(1,1,kx,ky))+&
+                          ((-1)*kx_float*ky_float*norm_k) *     real(s_ab_irrot_large(1,2,kx,ky))+&
+                          ((-1)*ky_float*kx_float*norm_k) *     real(s_ab_irrot_large(2,1,kx,ky))+&
+                          (1 - ky_float*ky_float*norm_k) *      real(s_ab_irrot_large(2,2,kx,ky))
 
-          s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * real(s_ab_rot(1,1,kx,ky))+&
-                          ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_rot(1,2,kx,ky))+&
-                          ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_rot(2,1,kx,ky))+&
-                          (1 - ky_float*ky_float*norm_k) *   real(s_ab_rot(2,2,kx,ky))
+          s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * real(s_ab_rot_large(1,1,kx,ky))+&
+                          ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_rot_large(1,2,kx,ky))+&
+                          ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_rot_large(2,1,kx,ky))+&
+                          (1 - ky_float*ky_float*norm_k) *   real(s_ab_rot_large(2,2,kx,ky))
 
-          s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_irrot(1,1,kx,ky))+&
-                               (kx_float*ky_float*norm_k)*real(s_ab_irrot(1,2,kx,ky))+&
-                               (ky_float*kx_float*norm_k)*real(s_ab_irrot(2,1,kx,ky))+&
-                               (ky_float*ky_float*norm_k)*real(s_ab_irrot(2,2,kx,ky))
+          s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_irrot_large(1,1,kx,ky))+&
+                               (kx_float*ky_float*norm_k)*real(s_ab_irrot_large(1,2,kx,ky))+&
+                               (ky_float*kx_float*norm_k)*real(s_ab_irrot_large(2,1,kx,ky))+&
+                               (ky_float*ky_float*norm_k)*real(s_ab_irrot_large(2,2,kx,ky))
 
-          s_par_rot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_rot(1,1,kx,ky))+&
-                             (kx_float*ky_float*norm_k)*real(s_ab_rot(1,2,kx,ky))+&
-                             (ky_float*kx_float*norm_k)*real(s_ab_rot(2,1,kx,ky))+&
-                             (ky_float*ky_float*norm_k)*real(s_ab_rot(2,2,kx,ky))
+          s_par_rot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_rot_large(1,1,kx,ky))+&
+                             (kx_float*ky_float*norm_k)*real(s_ab_rot_large(1,2,kx,ky))+&
+                             (ky_float*kx_float*norm_k)*real(s_ab_rot_large(2,1,kx,ky))+&
+                             (ky_float*ky_float*norm_k)*real(s_ab_rot_large(2,2,kx,ky))
 
         end do
       end do ! end p, m loops
