@@ -617,8 +617,8 @@ module update
 
         end do
 
-        exk = exk / (2.0 * L**2)
-        eyk = eyk / (2.0 * L**2)
+        exk = exk / (2.0*L**2)
+        eyk = eyk / (2.0*L**2)
 
         sxx = sxx + (exk * conjg(exk))
         syy = syy + (eyk * conjg(eyk))

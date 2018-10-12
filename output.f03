@@ -155,6 +155,10 @@ module output
           offdiag = -1 * offdiag
         end if
 
+        ! these lines feel a bit off/hacky to me, but they
+        ! exactly reproduce what I had before, which in turn
+        ! came from directly simulating out to some huge k.
+        ! Might be worth rechecking at some point though.
         if ((kx).eq.-L.or.(ky).eq.-L) then
           offdiag = -1
         end if
