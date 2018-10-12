@@ -24,10 +24,12 @@ module setup
     ! allocate(lgf(L,L,L,L))
     allocate(lgf(0:L/2,0:L/2))
     if (do_corr) then
-      allocate(s_ab(2,2,(bz*L)+1,(bz*L)+1))
-      allocate(fftw_s_ab_total(2,2,(bz*L)+1,(bz*L)+1))
-      allocate(s_ab_rot(2,2,(bz*L)+1,(bz*L)+1))
-      allocate(s_ab_irrot(2,2,(bz*L)+1,(bz*L)+1))
+      allocate(s_ab(L/2+1,L,3))
+      allocate(s_ab_rot(L/2+1,L,3))
+      allocate(s_ab_irrot(L/2+1,L,3))
+      allocate(s_ab_large(2,2,(bz*L)+1,(bz*L)+1))
+      allocate(s_ab_rot_large(2,2,(bz*L)+1,(bz*L)+1))
+      allocate(s_ab_irrot_large(2,2,(bz*L)+1,(bz*L)+1))
       allocate(ch_ch((bz*L)+1,(bz*L)+1))
       allocate(rho_k_m((bz*L)+1,(bz*L)+1))
       allocate(rho_k_p((bz*L)+1,(bz*L)+1))
@@ -41,9 +43,6 @@ module setup
       allocate(chk(L/2+1,L))
       allocate(exk(L/2+1,L))
       allocate(eyk(L/2+1,L))
-      allocate(sxx(L/2+1,L))
-      allocate(syy(L/2+1,L))
-      allocate(sxy(L/2+1,L))
     end if
 
     call PBCs
@@ -58,7 +57,8 @@ module setup
 
     if (do_corr) then
       s_ab = (0.0,0.0); s_ab_rot = (0.0,0.0); s_ab_irrot = (0.0,0.0);
-      sxx = (0.0,0.0); syy = (0.0,0.0); sxy = (0.0,0.0);
+      s_ab_large = (0.0,0.0); s_ab_rot_large = (0.0,0.0);
+      s_ab_irrot_large = (0.0,0.0);
       ch_ch = (0.0,0.0); rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0)
       dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
     end if

@@ -330,12 +330,12 @@ subroutine reductions(id)
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, sxx, size(sxx), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, sxy, size(sxy), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, syy, size(syy), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, sxx, size(sxx), MPI_NEW_COMPLEX,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, sxy, size(sxy), MPI_NEW_COMPLEX,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(MPI_IN_PLACE, syy, size(syy), MPI_NEW_COMPLEX,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p),&
@@ -365,12 +365,12 @@ subroutine reductions(id)
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(sxx, sxx, size(sxx), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(sxy, sxy, size(sxy), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(syy, syy, size(syy), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(sxx, sxx, size(sxx), MPI_NEW_COMPLEX,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(sxy, sxy, size(sxy), MPI_NEW_COMPLEX,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+      ! call MPI_Reduce(syy, syy, size(syy), MPI_NEW_COMPLEX,&
+      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(ch_ch, ch_ch, size(ch_ch),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(rho_k_p, rho_k_p, size(rho_k_p),&
@@ -443,9 +443,9 @@ subroutine normalisations(num_procs)
     dir_struc = dir_struc / denom
     dist_r = dist_r / denom
     bin_count = bin_count / denom
-    sxx = sxx / denom
-    sxy = sxy / denom
-    syy = syy / denom
+    ! sxx = sxx / denom
+    ! sxy = sxy / denom
+    ! syy = syy / denom
   end if
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
