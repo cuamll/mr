@@ -624,28 +624,6 @@ module update
         syy = syy + (eyk * conjg(eyk))
         sxy = sxy + (exk * conjg(eyk))
 
-        ! right, we now have s^{ab} with the caveat that
-        ! pi/2 < x < pi are the reverse-order conjugates of the array sxx.
-        ! I think anyway. print and check?
-
-        open(unit=20, file="sxx_test.dat")
-        open(unit=21, file="syy_test.dat")
-        open(unit=22, file="sxy_test.dat")
-
-        do i = 1,L/2 + 1
-          do j = 1,L
-
-            write(20, *) 2*pi*(i-1)/L, 2*pi*(j-1)/L, real(sxx(i,j))
-            write(21, *) 2*pi*(i-1)/L, 2*pi*(j-1)/L, real(syy(i,j))
-            write(22, *) 2*pi*(i-1)/L, 2*pi*(j-1)/L, real(sxy(i,j))
-
-          end do
-        end do
-
-        close(20)
-        close(21)
-        close(22)
-
         ! we actually don't want openmp on the LCN clusters;
         ! there's only one thread per node and adding openmp
         ! just breaks the whole thing and leads to jobs getting killed.
@@ -825,35 +803,6 @@ module update
 
         end do ! end openmp_index loop
         !$omp end parallel do
-
-        open(unit=20, file="old_sxx_test.dat")
-        open(unit=21, file="old_syy_test.dat")
-        open(unit=22, file="old_sxy_test.dat")
-
-        do x = 1,L
-          do y = 1,L
-
-            write(20, *) 2*pi*(x-1)/L, 2*pi*(y-1)/L, real(s_ab(1,1,x + L,y + L))
-            write(21, *) 2*pi*(x-1)/L, 2*pi*(y-1)/L, real(s_ab(2,2,x + L,y + L))
-            write(22, *) 2*pi*(x-1)/L, 2*pi*(y-1)/L, real(s_ab(1,2,x + L,y + L))
-
-          end do
-        end do
-
-        close(20)
-        close(21)
-        close(22)
-
-        ! fftw_s_ab_total(1,1,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) =&
-        ! fftw_s_ab_total(1,1,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) + sxx
-
-        ! fftw_s_ab_total(1,2,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) =&
-        ! fftw_s_ab_total(1,2,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) + sxy
-        ! fftw_s_ab_total(2,1,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) =&
-        ! fftw_s_ab_total(2,1,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) + sxy
-
-        ! fftw_s_ab_total(2,2,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) =&
-        ! fftw_s_ab_total(2,2,L + 1:L + L/2 + 1,L + 1:L + L/2 + 1) + syy
 
       end if
 

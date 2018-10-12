@@ -107,7 +107,22 @@ module output
         fftw_s_ab_total(1,2,ri,rj)                = sxy(i,j_eff)
 
         ! should really check this?
-        if (i.eq.1.and.(j.eq.1.or.j_eff.eq.1)) then
+        if (j.eq.1.and.i.eq.1) then
+
+          ! fftw_s_ab_total(1,2,i+L,j+L)  = (-1.0)*&
+          ! fftw_s_ab_total(1,2,i+L,j+L)
+          ! fftw_s_ab_total(2,1,i+L,j+L)  = (-1.0)*&
+          ! fftw_s_ab_total(2,1,i+L,j+L)
+
+          fftw_s_ab_total(1,2,ri,rj)  = (-1.0)*&
+          fftw_s_ab_total(1,2,ri,rj)
+          fftw_s_ab_total(2,1,ri,rj)  = (-1.0)*&
+          fftw_s_ab_total(2,1,ri,rj)
+
+        end if
+
+        if (j.eq.L+1) then
+
           fftw_s_ab_total(1,2,i+L,j+L)  = (-1.0)*&
           fftw_s_ab_total(1,2,i+L,j+L)
           fftw_s_ab_total(2,1,i+L,j+L)  = (-1.0)*&
@@ -117,6 +132,7 @@ module output
           fftw_s_ab_total(1,2,ri,rj)
           fftw_s_ab_total(2,1,ri,rj)  = (-1.0)*&
           fftw_s_ab_total(2,1,ri,rj)
+
         end if
 
         fftw_s_ab_total(2,2,i+L,j+L)              = syy(i,j_eff)
@@ -134,35 +150,23 @@ module output
         i = kx + 1 + L
         j = ky + 1 + L
 
-        ! if (kx.ge.(L/2)+1) then
-        !   pmx = -1
-        !   offdiag = -1 * offdiag
-        ! end if
-
-        if (kx.le.0) then
+        if (kx.lt.0) then
           pmx = +1
           offdiag = -1 * offdiag
         end if
 
-        ! if (ky.ge.(L/2)+1) then
-        !   pmy = -1
-        !   offdiag = -1 * offdiag
-        ! end if
-
-        if (ky.le.0) then
+        if (ky.lt.0) then
           pmy = +1
           offdiag = -1 * offdiag
+        end if
+
+        if ((kx).eq.-L.or.(ky).eq.-L) then
+          offdiag = -1
         end if
         
         fftw_s_ab_total(1,1,i,j) = fftw_s_ab_total(1, 1, i + pmx * L, j + pmy * L)
         fftw_s_ab_total(2,2,i,j) = fftw_s_ab_total(2, 2, i + pmx * L, j + pmy * L)
         fftw_s_ab_total(1,2,i,j) = offdiag * fftw_s_ab_total(1, 2, i + pmx * L, j + pmy * L)
-        fftw_s_ab_total(2,1,i,j) = offdiag * fftw_s_ab_total(2, 1, i + pmx * L, j + pmy * L)
-
-        ! s_ab_irrot(1,1,i,j) = s_ab_irrot(1, 1, i + pmx * L, j + pmy * L)
-        ! s_ab_irrot(2,2,i,j) = s_ab_irrot(2, 2, i + pmx * L, j + pmy * L)
-        ! s_ab_irrot(1,2,i,j) = offdiag * s_ab_irrot(1, 2, i + pmx * L, j + pmy * L)
-        ! s_ab_irrot(2,1,i,j) = offdiag * s_ab_irrot(2, 1, i + pmx * L, j + pmy * L)
 
       end do
     end do
