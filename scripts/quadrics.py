@@ -33,7 +33,7 @@ dots = args.dpi
 d = 2
 bz = 2
 # threshold for deciding if eigenvalues are degenerate
-thresh = 0.02
+thresh = 0.04
 
 input_file = direc + '/s_ab_total.dat'
 output_dir = direc + '/quadrics_new/'

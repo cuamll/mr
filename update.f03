@@ -508,25 +508,13 @@ module update
       ! e_rot = e_field + mnphi
 
       e_tot_avg =           e_tot_avg + e_field
-      ! e_rot_avg =           e_rot_avg + e_rot
-      ! e_irrot_avg =         e_irrot_avg + mnphi
       v_avg =               v_avg + float(v)
       rho_avg =             rho_avg + (dble(sum(abs(v))) / L**2)
       ener_tot =            0.5 * lambda**2 * eps_0 * sum(e_field * e_field)
-      ! ener_rot =            0.5 * lambda**2 * eps_0 * sum(e_rot * e_rot)
-      ! ener_irrot =          0.5 * lambda**2 * eps_0 * sum(mnphi * mnphi)
       ener_tot =            ener_tot / L**2
-      ! ener_rot =            ener_rot / L**2
-      ! ener_irrot =          ener_irrot / L**2
       ener_tot_sq =         ener_tot**2
-      ! ener_rot_sq =         ener_rot**2
-      ! ener_irrot_sq =       ener_irrot**2
       ener_tot_sum =        ener_tot_sum + ener_tot
-      ! ener_rot_sum =        ener_rot_sum + ener_rot
-      ! ener_irrot_sum =      ener_irrot_sum + ener_irrot
       ener_tot_sq_sum =     ener_tot_sq_sum + ener_tot_sq
-      ! ener_rot_sq_sum =     ener_rot_sq_sum + ener_rot_sq
-      ! ener_irrot_sq_sum =   ener_irrot_sq_sum + ener_irrot_sq
 
       do i = 1,2
 
@@ -583,12 +571,14 @@ module update
       if (do_corr) then
 
         ch_in = v
-        e_in = e_field(1,:,:)
+        ! e_in = e_field(1,:,:)
+        e_in = -1.0 * e_field(2,:,:)
 
         call fftw_execute_dft_r2c(plan_ch,ch_in,chk)
         call fftw_execute_dft_r2c(plan_x,e_in,exk)
 
-        e_in = e_field(2,:,:)
+        ! e_in = e_field(2,:,:)
+        e_in = e_field(1,:,:)
         call fftw_execute_dft_r2c(plan_x,e_in,eyk)
 
         do j = 1, L
@@ -596,11 +586,13 @@ module update
           ! x component has offsets in the x direction (columns)
           ! also it's flattened in the x direction
           if (j.le.(L/2)+1) then
-            exk(j,:) = exk(j,:) * exp(+(pi/L)*imag*j)
+            ! exk(j,:) = exk(j,:) * exp(+(pi/L)*imag*j)
+            eyk(j,:) = eyk(j,:) * exp(+(pi/L)*imag*j)
           end if
 
           ! y component has offsets in the y direction (rows)
-          eyk(:,j) = eyk(:,j) * exp(+(pi/L)*imag*j)
+          ! eyk(:,j) = eyk(:,j) * exp(+(pi/L)*imag*j)
+          exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
 
         end do
 
