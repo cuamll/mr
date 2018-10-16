@@ -83,857 +83,1004 @@ module output
 
   subroutine write_output
 
-    call fix_arrays
+    call fix_fftw
+    ! call fix_arrays
     call calc_correlations
 
   end subroutine write_output
 
-  subroutine fix_arrays
+
+  subroutine fix_fftw
     use common
     implicit none
-    integer :: i, j, k, m, p
-    
-    ! very long and extremely disgusting way of filling up the arrays
-    ! so we can then calculate other correlation functions easily.
-    ! probably won't work yet. also can probably be simplified a lot
-
-    do k = 1,L
-      do j = 1,L
-        do i = 1,L
-
-          if (i.eq.1.and.j.eq.1.and.k.eq.1) then
-
-            ! charge-charge ones
-            rho_k_p(1,1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,L+1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,L+1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,(bz*L)+1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,(bz*L)+1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,L+1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,L+1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,(bz*L)+1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,(bz*L)+1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,L+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,L+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(1,(bz*L)+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(1,(bz*L)+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-
-            rho_k_p(L+1,1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,L+1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,L+1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,(bz*L)+1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,(bz*L)+1,1) = rho_k_m(L+1,L+1,L+1)
-            ! rho_k_p(L+1,L+1,L+1) = rho_k_p(L+1,L+1,L+1)
-            ! rho_k_m(L+1,L+1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,(bz*L)+1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,(bz*L)+1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,L+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,L+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,(bz*L)+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,(bz*L)+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p(L+1,1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m(L+1,1,1) = rho_k_m(L+1,L+1,L+1)
-
-            rho_k_p((bz*L)+1,1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,L+1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,L+1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,(bz*L)+1,1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,(bz*L)+1,1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,L+1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,L+1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,(bz*L)+1,L+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,(bz*L)+1,L+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,L+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,L+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-            rho_k_p((bz*L)+1,(bz*L)+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
-            rho_k_m((bz*L)+1,(bz*L)+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
-
-            ! s_ab
-            do m=1,3
-              do p=1,3
-                s_ab(m,p,1,1,1)               = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,1,L+1)             = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,1,(bz*L)+1)        = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,L+1,1)             = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,L+1,L+1)           = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,L+1,(bz*L)+1)      = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,(bz*L)+1,1)        = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,(bz*L)+1,L+1)      = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,1,(bz*L)+1,(bz*L)+1) = s_ab(m,p,L+1,L+1,L+1)
-
-                s_ab(m,p,L+1,1,1)               = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,L+1,1,L+1)             = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,L+1,1,(bz*L)+1)        = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,L+1,L+1,1)             = s_ab(m,p,L+1,L+1,L+1)
-                !s_ab(m,p,L+1,L+1,L+1)          = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,L+1,L+1,(bz*L)+1)      = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,L+1,(bz*L)+1,1)        = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,L+1,(bz*L)+1,L+1)      = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,L+1,(bz*L)+1,(bz*L)+1) = s_ab(m,p,L+1,L+1,L+1)
-
-                s_ab(m,p,(bz*L)+1,1,1)               = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,1,L+1)             = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,1,(bz*L)+1)        = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,L+1,1)             = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,L+1,L+1)           = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,L+1,(bz*L)+1)      = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,(bz*L)+1,1)        = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,(bz*L)+1,L+1)      = s_ab(m,p,L+1,L+1,L+1)
-                s_ab(m,p,(bz*L)+1,(bz*L)+1,(bz*L)+1) = s_ab(m,p,L+1,L+1,L+1)
-
-                ! s_ab_rot
-                s_ab_rot(m,p,1,1,1)               = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,1,L+1)             = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,1,(bz*L)+1)        = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,L+1,1)             = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,L+1,L+1)           = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,L+1,(bz*L)+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,(bz*L)+1,1)        = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,(bz*L)+1,L+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,1,(bz*L)+1,(bz*L)+1) = s_ab_rot(m,p,L+1,L+1,L+1)
-
-                s_ab_rot(m,p,L+1,1,1)               = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,L+1,1,L+1)             = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,L+1,1,(bz*L)+1)        = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,L+1,L+1,1)             = s_ab_rot(m,p,L+1,L+1,L+1)
-                !s_ab_rot(m,p,L+1,L+1,L+1)          = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,L+1,L+1,(bz*L)+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,L+1,(bz*L)+1,1)        = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,L+1,(bz*L)+1,L+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,L+1,(bz*L)+1,(bz*L)+1) = s_ab_rot(m,p,L+1,L+1,L+1)
-
-                s_ab_rot(m,p,(bz*L)+1,1,1)               = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,1,L+1)             = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,1,(bz*L)+1)        = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,L+1,1)             = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,L+1,L+1)           = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,L+1,(bz*L)+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,(bz*L)+1,1)        = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,(bz*L)+1,L+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
-                s_ab_rot(m,p,(bz*L)+1,(bz*L)+1,(bz*L)+1) = s_ab_rot(m,p,L+1,L+1,L+1)
-
-                ! s_ab_irrot
-                s_ab_irrot(m,p,1,1,1)               = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,1,L+1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,1,(bz*L)+1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,L+1,1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,L+1,L+1)           = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,L+1,(bz*L)+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,(bz*L)+1,1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,(bz*L)+1,L+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,1,(bz*L)+1,(bz*L)+1) = s_ab_irrot(m,p,L+1,L+1,L+1)
-
-                s_ab_irrot(m,p,L+1,1,1)               = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,L+1,1,L+1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,L+1,1,(bz*L)+1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,L+1,L+1,1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
-                !s_ab_irrot(m,p,L+1,L+1,L+1)          = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,L+1,L+1,(bz*L)+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,L+1,(bz*L)+1,1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,L+1,(bz*L)+1,L+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,L+1,(bz*L)+1,(bz*L)+1) = s_ab_irrot(m,p,L+1,L+1,L+1)
-
-                s_ab_irrot(m,p,(bz*L)+1,1,1)               = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,1,L+1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,1,(bz*L)+1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,L+1,1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,L+1,L+1)           = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,L+1,(bz*L)+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,(bz*L)+1,1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,(bz*L)+1,L+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
-                s_ab_irrot(m,p,(bz*L)+1,(bz*L)+1,(bz*L)+1) = s_ab_irrot(m,p,L+1,L+1,L+1)
-
-              end do
-            end do
-
-          ! rows in the z-direction
-          else if (i.eq.1.and.j.eq.1.and.k.gt.1) then
-
-            rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+2*L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+2*L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j+2*L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            do m = 1,3
-              do p = 1,3
-
-                if (m.eq.p) then
-
-                  s_ab(m,p,i,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-
-                  s_ab_rot(m,p,i,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-
-
-                  s_ab_irrot(m,p,i,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-
-                else
-
-                  s_ab(m,p,i,j,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+2*L,k) = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+L)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+2*L,k+L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
-
-                  s_ab_rot(m,p,i,j,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+2*L,k) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+L)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+2*L,k+L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-
-                  s_ab_irrot(m,p,i,j,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+2*L,k) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+L)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+2*L,k+L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-
-                end if
-
-              end do
-            end do
-
-          ! rows in the y direction
-          else if (i.eq.1.and.j.gt.1.and.k.eq.1) then
-
-            rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+2*L,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+2*L,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+2*L,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            do m = 1,3
-              do p = 1,3
-
-                if (m.eq.p) then
-
-                  s_ab(m,p,i,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-
-                  s_ab_rot(m,p,i,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-
-                  s_ab_irrot(m,p,i,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-
-                else
-
-
-                  s_ab(m,p,i,j,k)           = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+L)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+2*L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+2*L,j+L,k+2*L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
-
-                  s_ab_rot(m,p,i,j,k)           = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+L)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+2*L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+2*L,j+L,k+2*L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-
-                  s_ab_irrot(m,p,i,j,k)           = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+L)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+2*L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+2*L,j+L,k+2*L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-
-                end if
-
-              end do
-            end do
-
-          ! rows in x direction
-          else if (i.gt.1.and.j.eq.1.and.k.eq.1) then
-
-            rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+2*L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i,j+2*L,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j+2*L,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j+2*L,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+2*L,k) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
-
-            rho_k_p(i+L,j+2*L,k+2*L) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i+L,j+2*L,k+2*L) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i+L,j+2*L,k+2*L) = ch_ch(i+L,j+L,k+L)
-
-            do m = 1,3
-              do p = 1,3
-
-                if (m.eq.p) then
-
-                  s_ab(m,p,i,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
-
-                  s_ab_rot(m,p,i,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
-
-                  s_ab_irrot(m,p,i,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-
-                else
-
-
-                  s_ab(m,p,i,j,k)           = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+L)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j,k+2*L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+2*L,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+2*L,k+2*L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
-
-                  s_ab_rot(m,p,i,j,k)           = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+L)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j,k+2*L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+2*L,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+2*L,k+2*L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-
-                  s_ab_irrot(m,p,i,j,k)           = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+L)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j,k+2*L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+2*L,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+2*L,k+2*L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-
-                end if
-
-              end do
-            end do
-
+    integer :: i, j, j_eff, k, k_eff, ri, rj, rkk,&
+    kx, ky, kz, pmx, pmy, pmz, offdiag
+
+    ! normalisation for correct equipartition result
+    s_ab = s_ab * L**3
+
+    ! fftw only does up to pi in the k_x direction: fix that first
+    do i = 1, L/2 + 1
+      do j = 1, L + 1
+        do k = 1, L + 1
+
+          if (j.eq.L+1) then
+            j_eff = 1
           else
+            j_eff = j
+          end if
+          if (k.eq.L+1) then
+            k_eff = 1
+          else
+            k_eff = k
+          end if
 
-            rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
-            rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
-            ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
+          ri = ((2*L) + 2) - i
+          rj = ((2*L) + 2) - j
+          rkk = ((2*L) + 2) - k
 
-            do m=1,3
-              do p=1,3
-                ! these ones have the same amplitude
-                s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
+          s_ab_large(1,1,i+L,j+L,k+L)              = s_ab(i, j_eff, k_eff, 1)
+          s_ab_large(1,1,ri,rj,rkk)                 = s_ab(i, j_eff, k_eff, 1)
 
-                s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+          s_ab_large(2,2,i+L,j+L,k+L)              = s_ab(i, j_eff, k_eff, 4)
+          s_ab_large(2,2,ri,rj,rkk)                 = s_ab(i, j_eff, k_eff, 4)
 
-                s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+          s_ab_large(3,3,i+L,j+L,k+L)              = s_ab(i, j_eff, k_eff, 6)
+          s_ab_large(3,3,ri,rj,rkk)                 = s_ab(i, j_eff, k_eff, 6)
 
-                if (m.eq.p) then
-                  ! opposite amplitudes on cross terms
-                  s_ab(m,p,i,j,k)     = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+          ! off diagonals are more annoying
+          s_ab_large(1,2,i+L,j+L,k+L)              = s_ab(i, j_eff, k_eff, 2)
+          s_ab_large(1,2,ri,rj,rkk)                 = s_ab(i, j_eff, k_eff, 2)
 
-                  s_ab_rot(m,p,i,j,k)     = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+          s_ab_large(1,3,i+L,j+L,k+L)              = s_ab(i, j_eff, k_eff, 3)
+          s_ab_large(1,3,ri,rj,rkk)                 = s_ab(i, j_eff, k_eff, 3)
 
-                  s_ab_irrot(m,p,i,j,k)     = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+          s_ab_large(2,3,i+L,j+L,k+L)              = s_ab(i, j_eff, k_eff, 5)
+          s_ab_large(2,3,ri,rj,rkk)                 = s_ab(i, j_eff, k_eff, 5)
 
-                else
+          ! should really check this?
+          if (j.eq.1.and.i.eq.1.and.k.eq.1) then
 
-                  s_ab(m,p,i,j,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i,j+L,k+L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j+L,k) = (-1) * s_ab(m,p,i+L,j+L,k+L)
-                  s_ab(m,p,i+L,j,k+L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+            s_ab_large(1,2,ri,rj,rkk)  = (-1.0)*&
+            s_ab_large(1,2,ri,rj,rkk)
+            s_ab_large(1,3,ri,rj,rkk)  = (-1.0)*&
+            s_ab_large(1,3,ri,rj,rkk)
+            s_ab_large(2,3,ri,rj,rkk)  = (-1.0)*&
+            s_ab_large(2,3,ri,rj,rkk)
 
-                  s_ab_rot(m,p,i,j,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i,j+L,k+L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j+L,k) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
-                  s_ab_rot(m,p,i+L,j,k+L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+          end if
 
-                  s_ab_irrot(m,p,i,j,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i,j+L,k+L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j+L,k) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
-                  s_ab_irrot(m,p,i+L,j,k+L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+          if (j.eq.L+1.or.k.eq.L+1) then
 
-                end if
+            s_ab_large(1,2,i+L,j+L,k+L)  = (-1.0)*&
+            s_ab_large(1,2,i+L,j+L,k+L)
+            s_ab_large(1,3,i+L,j+L,k+L)  = (-1.0)*&
+            s_ab_large(1,3,i+L,j+L,k+L)
+            s_ab_large(2,3,i+L,j+L,k+L)  = (-1.0)*&
+            s_ab_large(2,3,i+L,j+L,k+L)
 
-              end do
-            end do
+            s_ab_large(1,2,ri,rj,rkk)  = (-1.0)*&
+            s_ab_large(1,2,ri,rj,rkk)
+            s_ab_large(1,3,ri,rj,rkk)  = (-1.0)*&
+            s_ab_large(1,3,ri,rj,rkk)
+            s_ab_large(2,3,ri,rj,rkk)  = (-1.0)*&
+            s_ab_large(2,3,ri,rj,rkk)
 
           end if
 
         end do
       end do
     end do
+    
+    ! now out to the other quadrants
+    ! we only have the quadrant [kx, ky] \in [0,2pi]
+    do kx = -L, L
+      do ky = -L, L
+        do kz = -L, L
 
-  end subroutine fix_arrays
+          pmx = 0; pmy = 0; pmz = 0; offdiag = 1
+          i = kx + 1 + L
+          j = ky + 1 + L
+          k = kz + 1 + L
+
+          if (kx.lt.0) then
+            pmx = +1
+            offdiag = -1 * offdiag
+          end if
+
+          if (ky.lt.0) then
+            pmy = +1
+            offdiag = -1 * offdiag
+          end if
+
+          if (kz.lt.0) then
+            pmz = +1
+            offdiag = -1 * offdiag
+          end if
+
+          ! these lines feel a bit off/hacky to me, but they
+          ! exactly reproduce what I had before, which in turn
+          ! came from directly simulating out to some huge k.
+          ! Might be worth rechecking at some point though.
+          if ((kx).eq.-L.or.(ky).eq.-L.or.(kz).eq.-L) then
+            offdiag = -1
+          end if
+          if ((kx.eq.L.and.ky.lt.0.and.kz.lt.0).or.&
+            (ky.eq.L.and.kx.lt.0.and.kz.lt.0).or.&
+            (kz.eq.L.and.ky.lt.0.and.kx.lt.0)) then
+            offdiag = +1
+          end if
+          
+          s_ab_large(1,1,i,j,k) =&
+          s_ab_large(1,1, i + pmx * L, j + pmy * L, k + pmz * L)
+          s_ab_large(2,2,i,j,k) =&
+          s_ab_large(2,2, i + pmx * L, j + pmy * L, k + pmz * L)
+          s_ab_large(3,3,i,j,k) =&
+          s_ab_large(3,3, i + pmx * L, j + pmy * L, k + pmz * L)
+
+          s_ab_large(1,2,i,j,k) = offdiag *&
+          s_ab_large(1,2, i + pmx * L, j + pmy * L, k + pmz * L)
+          s_ab_large(1,3,i,j,k) = offdiag *&
+          s_ab_large(1,3, i + pmx * L, j + pmy * L, k + pmz * L)
+          s_ab_large(2,3,i,j,k) = offdiag *&
+          s_ab_large(2,3, i + pmx * L, j + pmy * L, k + pmz * L)
+
+        end do
+      end do
+    end do
+
+    s_ab_large(2,1,:,:,:) = s_ab_large(1,2,:,:,:)
+    s_ab_large(3,1,:,:,:) = s_ab_large(1,3,:,:,:)
+    s_ab_large(3,2,:,:,:) = s_ab_large(2,3,:,:,:)
+
+  end subroutine fix_fftw
+
+  !subroutine fix_arrays
+  !  use common
+  !  implicit none
+  !  integer :: i, j, k, m, p
+    
+  !  ! very long and extremely disgusting way of filling up the arrays
+  !  ! so we can then calculate other correlation functions easily.
+  !  ! probably won't work yet. also can probably be simplified a lot
+
+  !  do k = 1,L
+  !    do j = 1,L
+  !      do i = 1,L
+
+  !        if (i.eq.1.and.j.eq.1.and.k.eq.1) then
+
+  !          ! charge-charge ones
+  !          rho_k_p(1,1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,L+1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,L+1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,(bz*L)+1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,(bz*L)+1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,L+1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,L+1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,(bz*L)+1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,(bz*L)+1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,L+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,L+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(1,(bz*L)+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(1,(bz*L)+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+
+  !          rho_k_p(L+1,1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,L+1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,L+1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,(bz*L)+1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,(bz*L)+1,1) = rho_k_m(L+1,L+1,L+1)
+  !          ! rho_k_p(L+1,L+1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          ! rho_k_m(L+1,L+1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,(bz*L)+1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,(bz*L)+1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,L+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,L+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,(bz*L)+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,(bz*L)+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p(L+1,1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m(L+1,1,1) = rho_k_m(L+1,L+1,L+1)
+
+  !          rho_k_p((bz*L)+1,1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,L+1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,L+1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,(bz*L)+1,1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,(bz*L)+1,1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,L+1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,L+1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,(bz*L)+1,L+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,(bz*L)+1,L+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,L+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,L+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+  !          rho_k_p((bz*L)+1,(bz*L)+1,(bz*L)+1) = rho_k_p(L+1,L+1,L+1)
+  !          rho_k_m((bz*L)+1,(bz*L)+1,(bz*L)+1) = rho_k_m(L+1,L+1,L+1)
+
+  !          ! s_ab
+  !          do m=1,3
+  !            do p=1,3
+  !              s_ab(m,p,1,1,1)               = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,1,L+1)             = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,1,(bz*L)+1)        = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,L+1,1)             = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,L+1,L+1)           = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,L+1,(bz*L)+1)      = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,(bz*L)+1,1)        = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,(bz*L)+1,L+1)      = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,1,(bz*L)+1,(bz*L)+1) = s_ab(m,p,L+1,L+1,L+1)
+
+  !              s_ab(m,p,L+1,1,1)               = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,L+1,1,L+1)             = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,L+1,1,(bz*L)+1)        = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,L+1,L+1,1)             = s_ab(m,p,L+1,L+1,L+1)
+  !              !s_ab(m,p,L+1,L+1,L+1)          = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,L+1,L+1,(bz*L)+1)      = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,L+1,(bz*L)+1,1)        = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,L+1,(bz*L)+1,L+1)      = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,L+1,(bz*L)+1,(bz*L)+1) = s_ab(m,p,L+1,L+1,L+1)
+
+  !              s_ab(m,p,(bz*L)+1,1,1)               = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,1,L+1)             = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,1,(bz*L)+1)        = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,L+1,1)             = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,L+1,L+1)           = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,L+1,(bz*L)+1)      = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,(bz*L)+1,1)        = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,(bz*L)+1,L+1)      = s_ab(m,p,L+1,L+1,L+1)
+  !              s_ab(m,p,(bz*L)+1,(bz*L)+1,(bz*L)+1) = s_ab(m,p,L+1,L+1,L+1)
+
+  !              ! s_ab_rot
+  !              s_ab_rot(m,p,1,1,1)               = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,1,L+1)             = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,1,(bz*L)+1)        = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,L+1,1)             = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,L+1,L+1)           = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,L+1,(bz*L)+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,(bz*L)+1,1)        = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,(bz*L)+1,L+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,1,(bz*L)+1,(bz*L)+1) = s_ab_rot(m,p,L+1,L+1,L+1)
+
+  !              s_ab_rot(m,p,L+1,1,1)               = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,L+1,1,L+1)             = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,L+1,1,(bz*L)+1)        = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,L+1,L+1,1)             = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              !s_ab_rot(m,p,L+1,L+1,L+1)          = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,L+1,L+1,(bz*L)+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,L+1,(bz*L)+1,1)        = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,L+1,(bz*L)+1,L+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,L+1,(bz*L)+1,(bz*L)+1) = s_ab_rot(m,p,L+1,L+1,L+1)
+
+  !              s_ab_rot(m,p,(bz*L)+1,1,1)               = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,1,L+1)             = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,1,(bz*L)+1)        = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,L+1,1)             = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,L+1,L+1)           = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,L+1,(bz*L)+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,(bz*L)+1,1)        = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,(bz*L)+1,L+1)      = s_ab_rot(m,p,L+1,L+1,L+1)
+  !              s_ab_rot(m,p,(bz*L)+1,(bz*L)+1,(bz*L)+1) = s_ab_rot(m,p,L+1,L+1,L+1)
+
+  !              ! s_ab_irrot
+  !              s_ab_irrot(m,p,1,1,1)               = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,1,L+1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,1,(bz*L)+1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,L+1,1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,L+1,L+1)           = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,L+1,(bz*L)+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,(bz*L)+1,1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,(bz*L)+1,L+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,1,(bz*L)+1,(bz*L)+1) = s_ab_irrot(m,p,L+1,L+1,L+1)
+
+  !              s_ab_irrot(m,p,L+1,1,1)               = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,L+1,1,L+1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,L+1,1,(bz*L)+1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,L+1,L+1,1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              !s_ab_irrot(m,p,L+1,L+1,L+1)          = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,L+1,L+1,(bz*L)+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,L+1,(bz*L)+1,1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,L+1,(bz*L)+1,L+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,L+1,(bz*L)+1,(bz*L)+1) = s_ab_irrot(m,p,L+1,L+1,L+1)
+
+  !              s_ab_irrot(m,p,(bz*L)+1,1,1)               = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,1,L+1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,1,(bz*L)+1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,L+1,1)             = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,L+1,L+1)           = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,L+1,(bz*L)+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,(bz*L)+1,1)        = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,(bz*L)+1,L+1)      = s_ab_irrot(m,p,L+1,L+1,L+1)
+  !              s_ab_irrot(m,p,(bz*L)+1,(bz*L)+1,(bz*L)+1) = s_ab_irrot(m,p,L+1,L+1,L+1)
+
+  !            end do
+  !          end do
+
+  !        ! rows in the z-direction
+  !        else if (i.eq.1.and.j.eq.1.and.k.gt.1) then
+
+  !          rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+2*L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+2*L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j+2*L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          do m = 1,3
+  !            do p = 1,3
+
+  !              if (m.eq.p) then
+
+  !                s_ab(m,p,i,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+
+
+  !                s_ab_irrot(m,p,i,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              else
+
+  !                s_ab(m,p,i,j,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+2*L,k) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+L)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+2*L,k+L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+2*L,k) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+L)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+2*L,k+L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !                s_ab_irrot(m,p,i,j,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+2*L,k) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+L)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+2*L,k+L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              end if
+
+  !            end do
+  !          end do
+
+  !        ! rows in the y direction
+  !        else if (i.eq.1.and.j.gt.1.and.k.eq.1) then
+
+  !          rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+2*L,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+2*L,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+2*L,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          do m = 1,3
+  !            do p = 1,3
+
+  !              if (m.eq.p) then
+
+  !                s_ab(m,p,i,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !                s_ab_irrot(m,p,i,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              else
+
+
+  !                s_ab(m,p,i,j,k)           = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+L)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+2*L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+2*L,j+L,k+2*L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k)           = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+L)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+2*L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+2*L,j+L,k+2*L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !                s_ab_irrot(m,p,i,j,k)           = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+L)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+2*L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+2*L,j+L,k+2*L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              end if
+
+  !            end do
+  !          end do
+
+  !        ! rows in x direction
+  !        else if (i.gt.1.and.j.eq.1.and.k.eq.1) then
+
+  !          rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+2*L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i,j+2*L,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j+2*L,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j+2*L,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+L,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+L,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+L,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+2*L,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+2*L,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+2*L,k) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+2*L,k+L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+2*L,k+L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+2*L,k+L) = ch_ch(i+L,j+L,k+L)
+
+  !          rho_k_p(i+L,j+2*L,k+2*L) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i+L,j+2*L,k+2*L) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i+L,j+2*L,k+2*L) = ch_ch(i+L,j+L,k+L)
+
+  !          do m = 1,3
+  !            do p = 1,3
+
+  !              if (m.eq.p) then
+
+  !                s_ab(m,p,i,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k+2*L) = s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k+2*L) = s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !                s_ab_irrot(m,p,i,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k+2*L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              else
+
+
+  !                s_ab(m,p,i,j,k)           = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+L)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j,k+2*L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+2*L,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k)         = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+2*L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k)       = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+L)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+2*L,k+2*L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k)           = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+L)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j,k+2*L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+2*L,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k)         = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k)       = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+2*L,k+2*L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !                s_ab_irrot(m,p,i,j,k)           = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+L)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j,k+2*L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+2*L,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k)         = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+2*L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k)       = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+L)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k+2*L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k+L)   = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+2*L,k+2*L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              end if
+
+  !            end do
+  !          end do
+
+  !        else
+
+  !          rho_k_p(i,j,k) = rho_k_p(i+L,j+L,k+L)
+  !          rho_k_m(i,j,k) = rho_k_m(i+L,j+L,k+L)
+  !          ch_ch(i,j,k) = ch_ch(i+L,j+L,k+L)
+
+  !          do m=1,3
+  !            do p=1,3
+  !              ! these ones have the same amplitude
+  !              s_ab(m,p,i,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !              s_ab(m,p,i,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !              s_ab(m,p,i+L,j,k) = s_ab(m,p,i+L,j+L,k+L)
+
+  !              s_ab_rot(m,p,i,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !              s_ab_rot(m,p,i,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !              s_ab_rot(m,p,i+L,j,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !              s_ab_irrot(m,p,i,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !              s_ab_irrot(m,p,i,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !              s_ab_irrot(m,p,i+L,j,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              if (m.eq.p) then
+  !                ! opposite amplitudes on cross terms
+  !                s_ab(m,p,i,j,k)     = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k) = s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L) = s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k)     = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k) = s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L) = s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !                s_ab_irrot(m,p,i,j,k)     = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k) = s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L) = s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              else
+
+  !                s_ab(m,p,i,j,k)     = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i,j+L,k+L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j+L,k) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+  !                s_ab(m,p,i+L,j,k+L) = (-1) * s_ab(m,p,i+L,j+L,k+L)
+
+  !                s_ab_rot(m,p,i,j,k)     = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i,j+L,k+L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j+L,k) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+  !                s_ab_rot(m,p,i+L,j,k+L) = (-1) * s_ab_rot(m,p,i+L,j+L,k+L)
+
+  !                s_ab_irrot(m,p,i,j,k)     = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i,j+L,k+L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j+L,k) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+  !                s_ab_irrot(m,p,i+L,j,k+L) = (-1) * s_ab_irrot(m,p,i+L,j+L,k+L)
+
+  !              end if
+
+  !            end do
+  !          end do
+
+  !        end if
+
+  !      end do
+  !    end do
+  !  end do
+
+  !end subroutine fix_arrays
 
   subroutine calc_correlations
     use common
@@ -1051,13 +1198,13 @@ module output
       ! s_ab = s_ab * 3 * L**3
       ! s_ab_rot = s_ab_rot * 3 * L**3
       ! s_ab_irrot = s_ab_irrot * 3 * L**3
-      s_ab = s_ab * L**3
-      s_ab_rot = s_ab_rot * L**3
-      s_ab_irrot = s_ab_irrot * L**3
+      ! s_ab = s_ab * L**3
+      ! s_ab_rot = s_ab_rot * L**3
+      ! s_ab_irrot = s_ab_irrot * L**3
 
-      chi_ab = s_ab / temp
-      chi_ab_rot = s_ab_rot / temp
-      chi_ab_irrot = s_ab_irrot / temp
+      chi_ab = s_ab_large / temp
+      chi_ab_rot = s_ab_rot_large / temp
+      chi_ab_irrot = s_ab_irrot_large / temp
 
       do s = (-L/2)*sp,(L/2)*sp
         do p = (-L/2)*sp,(L/2)*sp
@@ -1071,9 +1218,9 @@ module output
               ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
               charge_struc(i,j,k) = abs(ch_ch(i,j,k) - &
                 rho_k_p(i,j,k) * conjg(rho_k_m(i,j,k)))
-              field_struc(i,j,k) = abs(s_ab(1,1,i,j,k))
-              field_struc_irrot(i,j,k) = abs(s_ab_irrot(1,1,i,j,k))
-              field_struc_rot(i,j,k) = abs(s_ab_rot(1,1,i,j,k))
+              ! field_struc(i,j,k) = abs(s_ab_large(1,1,i,j,k))
+              ! field_struc_irrot(i,j,k) = abs(s_ab_irrot(1,1,i,j,k))
+              ! field_struc_rot(i,j,k) = abs(s_ab_rot(1,1,i,j,k))
             end if
 
             ! use separate variables, we're gonna mess around with values
@@ -1208,70 +1355,70 @@ module output
 
 
             s_perp(i,j,k) = (1 - kx_float*kx_float*norm_k) *&
-                            &real(s_ab(1,1,kx,ky,kz))+&
-            ((-1)*kx_float*ky_float*norm_k) *  real(s_ab(1,2,kx,ky,kz))+&
-            ((-1)*kx_float*kz_float*norm_k) *  real(s_ab(1,3,kx,ky,kz))+&
-            ((-1)*ky_float*kx_float*norm_k) *  real(s_ab(2,1,kx,ky,kz))+&
-            (1 - ky_float*ky_float*norm_k) *   real(s_ab(2,2,kx,ky,kz))+&
-            ((-1)*ky_float*kz_float*norm_k) *  real(s_ab(2,3,kx,ky,kz))+&
-            ((-1)*kz_float*kx_float*norm_k) *  real(s_ab(1,3,kx,ky,kz))+&
-            ((-1)*kz_float*ky_float*norm_k) *  real(s_ab(3,2,kx,ky,kz))+&
-            (1 - kz_float*kz_float*norm_k) *   real(s_ab(3,3,kx,ky,kz))
+                            &real(s_ab_large(1,1,kx,ky,kz))+&
+            ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_large(1,2,kx,ky,kz))+&
+            ((-1)*kx_float*kz_float*norm_k) *  real(s_ab_large(1,3,kx,ky,kz))+&
+            ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_large(2,1,kx,ky,kz))+&
+            (1 - ky_float*ky_float*norm_k) *   real(s_ab_large(2,2,kx,ky,kz))+&
+            ((-1)*ky_float*kz_float*norm_k) *  real(s_ab_large(2,3,kx,ky,kz))+&
+            ((-1)*kz_float*kx_float*norm_k) *  real(s_ab_large(1,3,kx,ky,kz))+&
+            ((-1)*kz_float*ky_float*norm_k) *  real(s_ab_large(3,2,kx,ky,kz))+&
+            (1 - kz_float*kz_float*norm_k) *   real(s_ab_large(3,3,kx,ky,kz))
 
             s_perp_irrot(i,j,k) = (1 - kx_float*kx_float*norm_k) *&
-                                  &real(s_ab_irrot(1,1,kx,ky,kz))+&
-            ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_irrot(1,2,kx,ky,kz))+&
-            ((-1)*kx_float*kz_float*norm_k) *  real(s_ab_irrot(1,3,kx,ky,kz))+&
-            ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_irrot(2,1,kx,ky,kz))+&
-            (1 - ky_float*ky_float*norm_k) *   real(s_ab_irrot(2,2,kx,ky,kz))+&
-            ((-1)*ky_float*kz_float*norm_k) *  real(s_ab_irrot(2,3,kx,ky,kz))+&
-            ((-1)*kz_float*kx_float*norm_k) *  real(s_ab_irrot(1,3,kx,ky,kz))+&
-            ((-1)*kz_float*ky_float*norm_k) *  real(s_ab_irrot(3,2,kx,ky,kz))+&
-            (1 - kz_float*kz_float*norm_k) *   real(s_ab_irrot(3,3,kx,ky,kz))
+                                  &real(s_ab_irrot_large(1,1,kx,ky,kz))+&
+            ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_irrot_large(1,2,kx,ky,kz))+&
+            ((-1)*kx_float*kz_float*norm_k) *  real(s_ab_irrot_large(1,3,kx,ky,kz))+&
+            ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_irrot_large(2,1,kx,ky,kz))+&
+            (1 - ky_float*ky_float*norm_k) *   real(s_ab_irrot_large(2,2,kx,ky,kz))+&
+            ((-1)*ky_float*kz_float*norm_k) *  real(s_ab_irrot_large(2,3,kx,ky,kz))+&
+            ((-1)*kz_float*kx_float*norm_k) *  real(s_ab_irrot_large(1,3,kx,ky,kz))+&
+            ((-1)*kz_float*ky_float*norm_k) *  real(s_ab_irrot_large(3,2,kx,ky,kz))+&
+            (1 - kz_float*kz_float*norm_k) *   real(s_ab_irrot_large(3,3,kx,ky,kz))
 
             s_perp_rot(i,j,k) = (1 - kx_float*kx_float*norm_k) *&
-                                &real(s_ab_rot(1,1,kx,ky,kz))+&
-            ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_rot(1,2,kx,ky,kz))+&
-            ((-1)*kx_float*kz_float*norm_k) *  real(s_ab_rot(1,3,kx,ky,kz))+&
-            ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_rot(2,1,kx,ky,kz))+&
-            (1 - ky_float*ky_float*norm_k) *   real(s_ab_rot(2,2,kx,ky,kz))+&
-            ((-1)*ky_float*kz_float*norm_k) *  real(s_ab_rot(2,3,kx,ky,kz))+&
-            ((-1)*kz_float*kx_float*norm_k) *  real(s_ab_rot(1,3,kx,ky,kz))+&
-            ((-1)*kz_float*ky_float*norm_k) *  real(s_ab_rot(3,2,kx,ky,kz))+&
-            (1 - kz_float*kz_float*norm_k) *   real(s_ab_rot(3,3,kx,ky,kz))
+                                &real(s_ab_rot_large(1,1,kx,ky,kz))+&
+            ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_rot_large(1,2,kx,ky,kz))+&
+            ((-1)*kx_float*kz_float*norm_k) *  real(s_ab_rot_large(1,3,kx,ky,kz))+&
+            ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_rot_large(2,1,kx,ky,kz))+&
+            (1 - ky_float*ky_float*norm_k) *   real(s_ab_rot_large(2,2,kx,ky,kz))+&
+            ((-1)*ky_float*kz_float*norm_k) *  real(s_ab_rot_large(2,3,kx,ky,kz))+&
+            ((-1)*kz_float*kx_float*norm_k) *  real(s_ab_rot_large(1,3,kx,ky,kz))+&
+            ((-1)*kz_float*ky_float*norm_k) *  real(s_ab_rot_large(3,2,kx,ky,kz))+&
+            (1 - kz_float*kz_float*norm_k) *   real(s_ab_rot_large(3,3,kx,ky,kz))
 
             s_par(i,j,k) = (kx_float*kx_float*norm_k) *&
-                            &real(s_ab(1,1,kx,ky,kz))+&
-            (kx_float*ky_float*norm_k) * real(s_ab(1,2,kx,ky,kz))+&
-            (kx_float*kz_float*norm_k) * real(s_ab(1,3,kx,ky,kz))+&
-            (ky_float*kx_float*norm_k) * real(s_ab(2,1,kx,ky,kz))+&
-            (ky_float*ky_float*norm_k) * real(s_ab(2,2,kx,ky,kz))+&
-            (ky_float*kz_float*norm_k) * real(s_ab(2,3,kx,ky,kz))+&
-            (kz_float*kx_float*norm_k) * real(s_ab(3,1,kx,ky,kz))+&
-            (kz_float*ky_float*norm_k) * real(s_ab(3,2,kx,ky,kz))+&
-            (kz_float*kz_float*norm_k) * real(s_ab(3,3,kx,ky,kz))
+                            &real(s_ab_large(1,1,kx,ky,kz))+&
+            (kx_float*ky_float*norm_k) * real(s_ab_large(1,2,kx,ky,kz))+&
+            (kx_float*kz_float*norm_k) * real(s_ab_large(1,3,kx,ky,kz))+&
+            (ky_float*kx_float*norm_k) * real(s_ab_large(2,1,kx,ky,kz))+&
+            (ky_float*ky_float*norm_k) * real(s_ab_large(2,2,kx,ky,kz))+&
+            (ky_float*kz_float*norm_k) * real(s_ab_large(2,3,kx,ky,kz))+&
+            (kz_float*kx_float*norm_k) * real(s_ab_large(3,1,kx,ky,kz))+&
+            (kz_float*ky_float*norm_k) * real(s_ab_large(3,2,kx,ky,kz))+&
+            (kz_float*kz_float*norm_k) * real(s_ab_large(3,3,kx,ky,kz))
 
             s_par_irrot(i,j,k) = (kx_float*kx_float*norm_k) *&
-                               &real(s_ab_irrot(1,1,kx,ky,kz))+&
-            (kx_float*ky_float*norm_k) * real(s_ab_irrot(1,2,kx,ky,kz))+&
-            (kx_float*kz_float*norm_k) * real(s_ab_irrot(1,3,kx,ky,kz))+&
-            (ky_float*kx_float*norm_k) * real(s_ab_irrot(2,1,kx,ky,kz))+&
-            (ky_float*ky_float*norm_k) * real(s_ab_irrot(2,2,kx,ky,kz))+&
-            (ky_float*kz_float*norm_k) * real(s_ab_irrot(2,3,kx,ky,kz))+&
-            (kz_float*kx_float*norm_k) * real(s_ab_irrot(3,1,kx,ky,kz))+&
-            (kz_float*ky_float*norm_k) * real(s_ab_irrot(3,2,kx,ky,kz))+&
-            (kz_float*kz_float*norm_k) * real(s_ab_irrot(3,3,kx,ky,kz))
+                               &real(s_ab_irrot_large(1,1,kx,ky,kz))+&
+            (kx_float*ky_float*norm_k) * real(s_ab_irrot_large(1,2,kx,ky,kz))+&
+            (kx_float*kz_float*norm_k) * real(s_ab_irrot_large(1,3,kx,ky,kz))+&
+            (ky_float*kx_float*norm_k) * real(s_ab_irrot_large(2,1,kx,ky,kz))+&
+            (ky_float*ky_float*norm_k) * real(s_ab_irrot_large(2,2,kx,ky,kz))+&
+            (ky_float*kz_float*norm_k) * real(s_ab_irrot_large(2,3,kx,ky,kz))+&
+            (kz_float*kx_float*norm_k) * real(s_ab_irrot_large(3,1,kx,ky,kz))+&
+            (kz_float*ky_float*norm_k) * real(s_ab_irrot_large(3,2,kx,ky,kz))+&
+            (kz_float*kz_float*norm_k) * real(s_ab_irrot_large(3,3,kx,ky,kz))
 
             s_par_rot(i,j,k) = (kx_float*kx_float*norm_k) *&
-                               &real(s_ab_rot(1,1,kx,ky,kz))+&
-            (kx_float*ky_float*norm_k) * real(s_ab_rot(1,2,kx,ky,kz))+&
-            (kx_float*kz_float*norm_k) * real(s_ab_rot(1,3,kx,ky,kz))+&
-            (ky_float*kx_float*norm_k) * real(s_ab_rot(2,1,kx,ky,kz))+&
-            (ky_float*ky_float*norm_k) * real(s_ab_rot(2,2,kx,ky,kz))+&
-            (ky_float*kz_float*norm_k) * real(s_ab_rot(2,3,kx,ky,kz))+&
-            (kz_float*kx_float*norm_k) * real(s_ab_rot(3,1,kx,ky,kz))+&
-            (kz_float*ky_float*norm_k) * real(s_ab_rot(3,2,kx,ky,kz))+&
-            (kz_float*kz_float*norm_k) * real(s_ab_rot(3,3,kx,ky,kz))
+                               &real(s_ab_rot_large(1,1,kx,ky,kz))+&
+            (kx_float*ky_float*norm_k) * real(s_ab_rot_large(1,2,kx,ky,kz))+&
+            (kx_float*kz_float*norm_k) * real(s_ab_rot_large(1,3,kx,ky,kz))+&
+            (ky_float*kx_float*norm_k) * real(s_ab_rot_large(2,1,kx,ky,kz))+&
+            (ky_float*ky_float*norm_k) * real(s_ab_rot_large(2,2,kx,ky,kz))+&
+            (ky_float*kz_float*norm_k) * real(s_ab_rot_large(2,3,kx,ky,kz))+&
+            (kz_float*kx_float*norm_k) * real(s_ab_rot_large(3,1,kx,ky,kz))+&
+            (kz_float*ky_float*norm_k) * real(s_ab_rot_large(3,2,kx,ky,kz))+&
+            (kz_float*kz_float*norm_k) * real(s_ab_rot_large(3,3,kx,ky,kz))
 
           end do
         end do
@@ -1308,32 +1455,32 @@ module output
       open  (30, file=sphe_sus_file, position='append')
       write (30, '(a)') "# S_ab integrals (* L**2)!"
       write (30, '(a)') "# S_xx: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(1,1,:,:,:))),&
-      sum(real(s_ab_rot(1,1,:,:,:))), sum(real(s_ab_irrot(1,1,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(1,1,:,:,:))),&
+      sum(real(s_ab_rot_large(1,1,:,:,:))), sum(real(s_ab_irrot_large(1,1,:,:,:)))
       write (30, '(a)') "# S_xy: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(1,2,:,:,:))),&
-      sum(real(s_ab_rot(1,2,:,:,:))), sum(real(s_ab_irrot(1,2,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(1,2,:,:,:))),&
+      sum(real(s_ab_rot_large(1,2,:,:,:))), sum(real(s_ab_irrot_large(1,2,:,:,:)))
       write (30, '(a)') "# S_xz: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(1,3,:,:,:))),&
-      sum(real(s_ab_rot(1,3,:,:,:))), sum(real(s_ab_irrot(1,2,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(1,3,:,:,:))),&
+      sum(real(s_ab_rot_large(1,3,:,:,:))), sum(real(s_ab_irrot_large(1,2,:,:,:)))
       write (30, '(a)') "# S_yx: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(2,1,:,:,:))),&
-      sum(real(s_ab_rot(2,1,:,:,:))), sum(real(s_ab_irrot(2,1,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(2,1,:,:,:))),&
+      sum(real(s_ab_rot_large(2,1,:,:,:))), sum(real(s_ab_irrot_large(2,1,:,:,:)))
       write (30, '(a)') "# S_yy: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(2,2,:,:,:))),&
-      sum(real(s_ab_rot(2,2,:,:,:))), sum(real(s_ab_irrot(2,2,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(2,2,:,:,:))),&
+      sum(real(s_ab_rot_large(2,2,:,:,:))), sum(real(s_ab_irrot_large(2,2,:,:,:)))
       write (30, '(a)') "# S_yz: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(2,3,:,:,:))),&
-      sum(real(s_ab_rot(2,3,:,:,:))), sum(real(s_ab_irrot(2,3,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(2,3,:,:,:))),&
+      sum(real(s_ab_rot_large(2,3,:,:,:))), sum(real(s_ab_irrot_large(2,3,:,:,:)))
       write (30, '(a)') "# S_zx: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(3,1,:,:,:))),&
-      sum(real(s_ab_rot(3,1,:,:,:))), sum(real(s_ab_irrot(2,1,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(3,1,:,:,:))),&
+      sum(real(s_ab_rot_large(3,1,:,:,:))), sum(real(s_ab_irrot_large(2,1,:,:,:)))
       write (30, '(a)') "# S_zy: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(3,2,:,:,:))),&
-      sum(real(s_ab_rot(3,2,:,:,:))), sum(real(s_ab_irrot(3,2,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(3,2,:,:,:))),&
+      sum(real(s_ab_rot_large(3,2,:,:,:))), sum(real(s_ab_irrot_large(3,2,:,:,:)))
       write (30, '(a)') "# S_zz: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab(3,3,:,:,:))),&
-      sum(real(s_ab_rot(3,3,:,:,:))), sum(real(s_ab_irrot(3,3,:,:,:)))
+      write (30, '(3f20.8)') sum(real(s_ab_large(3,3,:,:,:))),&
+      sum(real(s_ab_rot_large(3,3,:,:,:))), sum(real(s_ab_irrot_large(3,3,:,:,:)))
       write (30, '(a)') "# S_perp integrals: total, rot, irrot"
       write (30, '(3f20.8)') sum(s_perp), sum(s_perp_rot), sum(s_perp_irrot)
 
@@ -1422,15 +1569,15 @@ module output
               2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
               2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
               2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-              real(s_ab(1,1,i,j,k)),&
-              real(s_ab(1,2,i,j,k)),&
-              real(s_ab(1,3,i,j,k)),&
-              real(s_ab(2,1,i,j,k)),&
-              real(s_ab(2,2,i,j,k)),&
-              real(s_ab(2,3,i,j,k)),&
-              real(s_ab(3,1,i,j,k)),&
-              real(s_ab(3,2,i,j,k)),&
-              real(s_ab(3,3,i,j,k))
+              real(s_ab_large(1,1,i,j,k)),&
+              real(s_ab_large(1,2,i,j,k)),&
+              real(s_ab_large(1,3,i,j,k)),&
+              real(s_ab_large(2,1,i,j,k)),&
+              real(s_ab_large(2,2,i,j,k)),&
+              real(s_ab_large(2,3,i,j,k)),&
+              real(s_ab_large(3,1,i,j,k)),&
+              real(s_ab_large(3,2,i,j,k)),&
+              real(s_ab_large(3,3,i,j,k))
 
               write (26, field_format_string)&
               2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
@@ -1455,15 +1602,15 @@ module output
               2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
               2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
               2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-              real(s_ab_irrot(1,1,i,j,k)),&
-              real(s_ab_irrot(1,2,i,j,k)),&
-              real(s_ab_irrot(1,3,i,j,k)),&
-              real(s_ab_irrot(2,1,i,j,k)),&
-              real(s_ab_irrot(2,2,i,j,k)),&
-              real(s_ab_irrot(2,3,i,j,k)),&
-              real(s_ab_irrot(3,1,i,j,k)),&
-              real(s_ab_irrot(3,2,i,j,k)),&
-              real(s_ab_irrot(3,3,i,j,k))
+              real(s_ab_irrot_large(1,1,i,j,k)),&
+              real(s_ab_irrot_large(1,2,i,j,k)),&
+              real(s_ab_irrot_large(1,3,i,j,k)),&
+              real(s_ab_irrot_large(2,1,i,j,k)),&
+              real(s_ab_irrot_large(2,2,i,j,k)),&
+              real(s_ab_irrot_large(2,3,i,j,k)),&
+              real(s_ab_irrot_large(3,1,i,j,k)),&
+              real(s_ab_irrot_large(3,2,i,j,k)),&
+              real(s_ab_irrot_large(3,3,i,j,k))
 
               write (27, field_format_string)&
               2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
@@ -1488,15 +1635,15 @@ module output
               2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
               2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
               2*pi*(k - 1 - bz*(L/2))/(L*lambda),&
-              real(s_ab_rot(1,1,i,j,k)),&
-              real(s_ab_rot(1,2,i,j,k)),&
-              real(s_ab_rot(1,3,i,j,k)),&
-              real(s_ab_rot(2,1,i,j,k)),&
-              real(s_ab_rot(2,2,i,j,k)),&
-              real(s_ab_rot(2,3,i,j,k)),&
-              real(s_ab_rot(3,1,i,j,k)),&
-              real(s_ab_rot(3,2,i,j,k)),&
-              real(s_ab_rot(3,3,i,j,k))
+              real(s_ab_rot_large(1,1,i,j,k)),&
+              real(s_ab_rot_large(1,2,i,j,k)),&
+              real(s_ab_rot_large(1,3,i,j,k)),&
+              real(s_ab_rot_large(2,1,i,j,k)),&
+              real(s_ab_rot_large(2,2,i,j,k)),&
+              real(s_ab_rot_large(2,3,i,j,k)),&
+              real(s_ab_rot_large(3,1,i,j,k)),&
+              real(s_ab_rot_large(3,2,i,j,k)),&
+              real(s_ab_rot_large(3,3,i,j,k))
 
               write (28, field_format_string)&
               2*pi*(i - 1 - bz*(L/2))/(L*lambda),&

@@ -38,6 +38,7 @@ Session.vim
 # This repo only
 obj*
 mod*
+*.dat
 *temp*
 out/*
 .DS_Store
@@ -47,6 +48,7 @@ michael*
 linso*
 mr*
 hxy2d
+spr_fh
 *_uncorr*
 *_rot*
 lattice.dat

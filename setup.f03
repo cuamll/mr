@@ -21,9 +21,18 @@ module setup
     allocate(e_tot_avg(3,L,L,L))
     allocate(e_rot_avg(3,L,L,L))
     allocate(e_irrot_avg(3,L,L,L))
-    allocate(s_ab(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(s_ab_rot(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
-    allocate(s_ab_irrot(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(ch_in(L,L,L))
+    allocate(chk(L/2+1,L,L))
+    allocate(e_in(L,L,L))
+    allocate(exk(L/2+1,L,L))
+    allocate(eyk(L/2+1,L,L))
+    allocate(ezk(L/2+1,L,L))
+    allocate(s_ab(L/2+1,L,L,6))
+    allocate(s_ab_rot(L/2+1,L,L,6))
+    allocate(s_ab_irrot(L/2+1,L,L,6))
+    allocate(s_ab_large(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(s_ab_rot_large(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
+    allocate(s_ab_irrot_large(3,3,(bz*L)+1,(bz*L)+1,(bz*L)+1))
     allocate(ch_ch((bz*L)+1,(bz*L)+1,(bz*L)+1))
     allocate(rho_k_m((bz*L)+1,(bz*L)+1,(bz*L)+1))
     allocate(rho_k_p((bz*L)+1,(bz*L)+1,(bz*L)+1))
@@ -44,6 +53,8 @@ module setup
     ebar_sum = 0.0; ebar_sq_sum = 0.0; ebar_dip_sum = 0.0;
     ebar_dip_sq_sum = 0.0; ebar_wind_sum = 0.0; ebar_wind_sq_sum = 0.0;
     s_ab = (0.0,0.0); s_ab_rot = (0.0,0.0); s_ab_irrot = (0.0,0.0);
+    s_ab_large = (0.0,0.0); s_ab_rot_large = (0.0,0.0);
+    s_ab_irrot_large = (0.0,0.0);
     ch_ch = (0.0,0.0); rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0); lgf = 0.0
     dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
     windings = 0.0; windings_sq = 0.0
@@ -63,6 +74,12 @@ module setup
         hw(i,k) = prefac * (neg(i) + (1.0/2)) * (k - 1)
       end do
     end do
+
+    ! FFTW plans -- gonna need them a lot
+    plan_x = fftw_plan_dft_r2c_3d(L,L,L,e_in,exk,FFTW_ESTIMATE)
+    plan_y = fftw_plan_dft_r2c_3d(L,L,L,e_in,eyk,FFTW_ESTIMATE)
+    plan_z = fftw_plan_dft_r2c_3d(L,L,L,e_in,ezk,FFTW_ESTIMATE)
+    plan_ch = fftw_plan_dft_r2c_3d(L,L,L,ch_in,chk,FFTW_ESTIMATE)
 
   end subroutine initial_setup
 

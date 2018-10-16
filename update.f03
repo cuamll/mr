@@ -527,209 +527,252 @@ module update
 
       if (do_corr) then
 
-        !$omp parallel do&
-        !$omp& private(i,j,k,m,p,s,kx,ky,kz,x,y,z,rho_k_p_temp,rho_k_m_temp,&
-        !$omp& e_kx,mnphi_kx,e_rot_kx,e_ky,mnphi_ky,e_rot_ky,&
-        !$omp& e_kz,mnphi_kz,e_rot_kz,norm_k,kdotx)&
-        !$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
-        do omp_index = 1, L**3
+        ch_in = v
+        call fftw_execute_dft_r2c(plan_ch,ch_in,chk)
 
-          ! need to check i here
-          i = ((omp_index - 1) / (L**2)) + 1
-          j = mod(((omp_index - 1) / (L)), L) + 1
-          k = mod(omp_index - 1, (L)) + 1
+        e_in = e_field(1,:,:,:)
+        ! e_in = -1.0 * e_field(2,:,:)
 
-          ! repurposing these as the s_ab indices at the end:
-          ! we're gonna fill up the positive half of those arrays
-          ! and then use symmetry properties to fill the rest at the end.
-          ! k_mu = 0 point is at s_ab array index L + 1
-          kx = i + L
-          ky = j + L
-          kz = k + L
+        call fftw_execute_dft_r2c(plan_x,e_in,exk)
 
-          rho_k_p_temp = (0.0,0.0)
-          rho_k_m_temp = (0.0,0.0)
-          e_kx = (0.0,0.0)
-          mnphi_kx = (0.0,0.0)
-          e_rot_kx = (0.0,0.0)
-          e_ky = (0.0,0.0)
-          mnphi_ky = (0.0,0.0)
-          e_rot_ky = (0.0,0.0)
-          e_kz = (0.0,0.0)
-          mnphi_kz = (0.0,0.0)
-          e_rot_kz = (0.0,0.0)
-          kdotx = (0.0,0.0)
-          norm_k = 0.0
+        e_in = e_field(2,:,:,:)
+        ! e_in = e_field(1,:,:)
+        call fftw_execute_dft_r2c(plan_x,e_in,eyk)
 
-          if (kx.eq.0.and.ky.eq.0) then
-            norm_k = 0.0
-          else
-            norm_k = 1.0/(((2*pi/(L*lambda))**3)*dble(kx**2 + ky**2 + kz**2))
+        e_in = e_field(3,:,:,:)
+        call fftw_execute_dft_r2c(plan_x,e_in,ezk)
+
+        do j = 1, L
+
+          ! x component has offsets in the x direction (columns)
+          ! also it's flattened in the x direction
+          if (j.le.(L/2)+1) then
+            exk(j,:,:) = exk(j,:,:) * exp(+(pi/L)*imag*j)
+            ! eyk(j,:) = eyk(j,:) * exp(+(pi/L)*imag*j)
           end if
 
-          do foo = 1,L**3
-            m = ((foo - 1) / L**2) + 1
-            p = mod((foo - 1) / L, L) + 1
-            s = mod(foo - 1, L) + 1
+          ! y component has offsets in the y direction (rows)
+          eyk(:,j,:) = eyk(:,j,:) * exp(+(pi/L)*imag*j)
+          ! exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
 
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
-              !         ((p)*ky)))
-              kdotx = hw(m,i) + fw(p,j) + fw(s,k)
+          ezk(:,:,j) = eyk(:,:,j) * exp(+(pi/L)*imag*j)
 
-              e_kx = e_kx + exp(kdotx)*e_field(1,m,p,s)
-              mnphi_kx = mnphi_kx + exp(kdotx)*mnphi(1,m,p,s)
-              e_rot_kx = e_rot_kx + exp(kdotx)*e_rot(1,m,p,s)
+        end do
 
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
-              !         ((neg(p)+(1.0/2))*ky)))
-              kdotx = fw(m,i) + hw(p,j) + fw(s,k)
+        exk = exk / (3.0*L**3)
+        eyk = eyk / (3.0*L**3)
+        ezk = ezk / (3.0*L**3)
 
-              e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p,s)
-              e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p,s)
-              mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p,s)
+        s_ab(:,:,:,1) = s_ab(:,:,:,1) + (exk * conjg(exk))
+        s_ab(:,:,:,2) = s_ab(:,:,:,2) + (exk * conjg(eyk))
+        s_ab(:,:,:,3) = s_ab(:,:,:,3) + (exk * conjg(ezk))
+        s_ab(:,:,:,4) = s_ab(:,:,:,4) + (eyk * conjg(eyk))
+        s_ab(:,:,:,5) = s_ab(:,:,:,5) + (eyk * conjg(ezk))
+        s_ab(:,:,:,6) = s_ab(:,:,:,6) + (ezk * conjg(ezk))
 
-              ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
-              !         ((neg(p)+(1.0/2))*ky)))
-              kdotx = fw(m,i) + fw(p,j) + hw(s,k)
+        !!$omp parallel do&
+        !!$omp& private(i,j,k,m,p,s,kx,ky,kz,x,y,z,rho_k_p_temp,rho_k_m_temp,&
+        !!$omp& e_kx,mnphi_kx,e_rot_kx,e_ky,mnphi_ky,e_rot_ky,&
+        !!$omp& e_kz,mnphi_kz,e_rot_kz,norm_k,kdotx)&
+        !!$omp& shared(dir_struc,s_ab,s_ab_rot,s_ab_irrot,dist_r,bin_count)
+        !do omp_index = 1, L**3
 
-              e_kz =     e_kz     + exp(kdotx)*e_field(3,m,p,s)
-              e_rot_kz = e_rot_kz + exp(kdotx)*e_rot(3,m,p,s)
-              mnphi_kz = mnphi_kz + exp(kdotx)*mnphi(3,m,p,s)
+        !  ! need to check i here
+        !  i = ((omp_index - 1) / (L**2)) + 1
+        !  j = mod(((omp_index - 1) / (L)), L) + 1
+        !  k = mod(omp_index - 1, (L)) + 1
 
-              if (v(m,p,s).ne.0) then ! calculate <++ + +->!
+        !  ! repurposing these as the s_ab indices at the end:
+        !  ! we're gonna fill up the positive half of those arrays
+        !  ! and then use symmetry properties to fill the rest at the end.
+        !  ! k_mu = 0 point is at s_ab array index L + 1
+        !  kx = i + L
+        !  ky = j + L
+        !  kz = k + L
 
-                ! FT of charge distribution
-                ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
-                !         ((p)*ky/(L*lambda))))
-                kdotx = fw(m,i) + fw(p,j) + fw(s,k)
+        !  rho_k_p_temp = (0.0,0.0)
+        !  rho_k_m_temp = (0.0,0.0)
+        !  e_kx = (0.0,0.0)
+        !  mnphi_kx = (0.0,0.0)
+        !  e_rot_kx = (0.0,0.0)
+        !  e_ky = (0.0,0.0)
+        !  mnphi_ky = (0.0,0.0)
+        !  e_rot_ky = (0.0,0.0)
+        !  e_kz = (0.0,0.0)
+        !  mnphi_kz = (0.0,0.0)
+        !  e_rot_kz = (0.0,0.0)
+        !  kdotx = (0.0,0.0)
+        !  norm_k = 0.0
 
-                if (v(m,p,s).eq.-1) then
-                  rho_k_m_temp = rho_k_m_temp + q * v(m,p,s) * exp(kdotx)
-                end if
+        !  if (kx.eq.0.and.ky.eq.0) then
+        !    norm_k = 0.0
+        !  else
+        !    norm_k = 1.0/(((2*pi/(L*lambda))**3)*dble(kx**2 + ky**2 + kz**2))
+        !  end if
 
-                if (v(m,p,s).eq.1) then ! take away <++>
-                  rho_k_p_temp = rho_k_p_temp + q * v(m,p,s) * exp(kdotx)
-                end if
+        !  do foo = 1,L**3
+        !    m = ((foo - 1) / L**2) + 1
+        !    p = mod((foo - 1) / L, L) + 1
+        !    s = mod(foo - 1, L) + 1
 
-                ! --- real space correlation function ---
+        !      ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((neg(m)+(1.0/2))*kx + &
+        !      !         ((p)*ky)))
+        !      kdotx = hw(m,i) + fw(p,j) + fw(s,k)
 
-                if (v(m,p,s).eq.1) then
-                  if (v(i,j,k).eq.-1) then
+        !      e_kx = e_kx + exp(kdotx)*e_field(1,m,p,s)
+        !      mnphi_kx = mnphi_kx + exp(kdotx)*mnphi(1,m,p,s)
+        !      e_rot_kx = e_rot_kx + exp(kdotx)*e_rot(1,m,p,s)
 
-                    x = abs(m - i)
-                    y = abs(p - j)
-                    z = abs(s - k)
+        !      ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
+        !      !         ((neg(p)+(1.0/2))*ky)))
+        !      kdotx = fw(m,i) + hw(p,j) + fw(s,k)
 
-                    if (x.gt.L/2) then
-                      x = L - x
-                    end if
-                    if (y.gt.L/2) then
-                      y = L - y
-                    end if
-                    if (z.gt.L/2) then
-                      z = L - z
-                    end if
+        !      e_ky =     e_ky     + exp(kdotx)*e_field(2,m,p,s)
+        !      e_rot_ky = e_rot_ky + exp(kdotx)*e_rot(2,m,p,s)
+        !      mnphi_ky = mnphi_ky + exp(kdotx)*mnphi(2,m,p,s)
 
-                    x = x + 1
-                    y = y + 1
-                    z = z + 1
+        !      ! kdotx = (-1)*(imag*(2*pi/(L*lambda))*((m)*kx + &
+        !      !         ((neg(p)+(1.0/2))*ky)))
+        !      kdotx = fw(m,i) + fw(p,j) + hw(s,k)
 
-                    dir_struc(x,y,z) = dir_struc(x,y,z) +&
-                            v(m,p,s) * v(i,j,k)
-                  end if ! neg charge at i,j,k
-                end if ! pos charge at m,p,s
+        !      e_kz =     e_kz     + exp(kdotx)*e_field(3,m,p,s)
+        !      e_rot_kz = e_rot_kz + exp(kdotx)*e_rot(3,m,p,s)
+        !      mnphi_kz = mnphi_kz + exp(kdotx)*mnphi(3,m,p,s)
 
-              end if ! end v != 0 check
+        !      if (v(m,p,s).ne.0) then ! calculate <++ + +->!
 
-          end do ! s
+        !        ! FT of charge distribution
+        !        ! kdotx = (-1)*(imag*2*pi*(((m)*kx/(L*lambda)) + &
+        !        !         ((p)*ky/(L*lambda))))
+        !        kdotx = fw(m,i) + fw(p,j) + fw(s,k)
 
-          rho_k_p_temp = rho_k_p_temp / float(L**3)
-          rho_k_m_temp = rho_k_m_temp / float(L**3)
-          ! try 3*L**3 instead of L**3 bc there are 3N field links
-          e_kx = e_kx / float(3 * L**3)
-          e_ky = e_ky / float(3 * L**3)
-          e_kz = e_kz / float(3 * L**3)
-          mnphi_kx = mnphi_kx / float(3 * L**3)
-          mnphi_ky = mnphi_ky / float(3 * L**3)
-          mnphi_kz = mnphi_kz / float(3 * L**3)
-          e_rot_kx = e_rot_kx / float(3 * L**3)
-          e_rot_ky = e_rot_ky / float(3 * L**3)
-          e_rot_kz = e_rot_kz / float(3 * L**3)
+        !        if (v(m,p,s).eq.-1) then
+        !          rho_k_m_temp = rho_k_m_temp + q * v(m,p,s) * exp(kdotx)
+        !        end if
 
-          rho_k_p(kx,ky,kz) = rho_k_p(kx,ky,kz) + rho_k_p_temp
-          rho_k_m(kx,ky,kz) = rho_k_m(kx,ky,kz) + rho_k_m_temp
-          ch_ch(kx,ky,kz) = ch_ch(kx,ky,kz) +&
-                        (rho_k_p_temp * conjg(rho_k_m_temp))
+        !        if (v(m,p,s).eq.1) then ! take away <++>
+        !          rho_k_p_temp = rho_k_p_temp + q * v(m,p,s) * exp(kdotx)
+        !        end if
 
-          s_ab(1,1,kx,ky,kz) = s_ab(1,1,kx,ky,kz) +&
-          e_kx*conjg(e_kx)
-          s_ab(1,2,kx,ky,kz) = s_ab(1,2,kx,ky,kz) +&
-          e_kx*conjg(e_ky)
-          s_ab(1,3,kx,ky,kz) = s_ab(1,3,kx,ky,kz) +&
-          e_kx*conjg(e_kz)
-          s_ab(2,1,kx,ky,kz) = s_ab(2,1,kx,ky,kz) +&
-          e_ky*conjg(e_kx)
-          s_ab(2,2,kx,ky,kz) = s_ab(2,2,kx,ky,kz) +&
-          e_ky*conjg(e_ky)
-          s_ab(2,3,kx,ky,kz) = s_ab(2,3,kx,ky,kz) +&
-          e_ky*conjg(e_kz)
-          s_ab(3,1,kx,ky,kz) = s_ab(3,1,kx,ky,kz) +&
-          e_kz*conjg(e_kx)
-          s_ab(3,2,kx,ky,kz) = s_ab(3,2,kx,ky,kz) +&
-          e_kz*conjg(e_ky)
-          s_ab(3,3,kx,ky,kz) = s_ab(3,3,kx,ky,kz) +&
-          e_kz*conjg(e_kz)
+        !        ! --- real space correlation function ---
 
-          s_ab_rot(1,1,kx,ky,kz) = s_ab_rot(1,1,kx,ky,kz) +&
-          e_rot_kx*conjg(e_rot_kx)
-          s_ab_rot(1,2,kx,ky,kz) = s_ab_rot(1,2,kx,ky,kz) +&
-          e_rot_kx*conjg(e_rot_ky)
-          s_ab_rot(1,3,kx,ky,kz) = s_ab_rot(1,3,kx,ky,kz) +&
-          e_rot_kx*conjg(e_rot_kz)
-          s_ab_rot(2,1,kx,ky,kz) = s_ab_rot(2,1,kx,ky,kz) +&
-          e_rot_ky*conjg(e_rot_kx)
-          s_ab_rot(2,2,kx,ky,kz) = s_ab_rot(2,2,kx,ky,kz) +&
-          e_rot_ky*conjg(e_rot_ky)
-          s_ab_rot(2,3,kx,ky,kz) = s_ab_rot(2,3,kx,ky,kz) +&
-          e_rot_ky*conjg(e_rot_kz)
-          s_ab_rot(3,1,kx,ky,kz) = s_ab_rot(3,1,kx,ky,kz) +&
-          e_rot_kz*conjg(e_rot_kx)
-          s_ab_rot(3,2,kx,ky,kz) = s_ab_rot(3,2,kx,ky,kz) +&
-          e_rot_kz*conjg(e_rot_ky)
-          s_ab_rot(3,3,kx,ky,kz) = s_ab_rot(3,3,kx,ky,kz) +&
-          e_rot_kz*conjg(e_rot_kz)
+        !        if (v(m,p,s).eq.1) then
+        !          if (v(i,j,k).eq.-1) then
 
-          s_ab_irrot(1,1,kx,ky,kz) = s_ab_irrot(1,1,kx,ky,kz) +&
-          mnphi_kx*conjg(mnphi_kx)
-          s_ab_irrot(1,2,kx,ky,kz) = s_ab_irrot(1,2,kx,ky,kz) +&
-          mnphi_kx*conjg(mnphi_ky)
-          s_ab_irrot(1,3,kx,ky,kz) = s_ab_irrot(1,3,kx,ky,kz) +&
-          mnphi_kx*conjg(mnphi_kz)
-          s_ab_irrot(2,1,kx,ky,kz) = s_ab_irrot(2,1,kx,ky,kz) +&
-          mnphi_ky*conjg(mnphi_kx)
-          s_ab_irrot(2,2,kx,ky,kz) = s_ab_irrot(2,2,kx,ky,kz) +&
-          mnphi_ky*conjg(mnphi_ky)
-          s_ab_irrot(2,3,kx,ky,kz) = s_ab_irrot(2,3,kx,ky,kz) +&
-          mnphi_ky*conjg(mnphi_kz)
-          s_ab_irrot(3,1,kx,ky,kz) = s_ab_irrot(3,1,kx,ky,kz) +&
-          mnphi_kz*conjg(mnphi_kx)
-          s_ab_irrot(3,2,kx,ky,kz) = s_ab_irrot(3,2,kx,ky,kz) +&
-          mnphi_kz*conjg(mnphi_ky)
-          s_ab_irrot(3,3,kx,ky,kz) = s_ab_irrot(3,3,kx,ky,kz) +&
-          mnphi_kz*conjg(mnphi_kz)
+        !            x = abs(m - i)
+        !            y = abs(p - j)
+        !            z = abs(s - k)
 
-          ! direct space one
-          if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
+        !            if (x.gt.L/2) then
+        !              x = L - x
+        !            end if
+        !            if (y.gt.L/2) then
+        !              y = L - y
+        !            end if
+        !            if (z.gt.L/2) then
+        !              z = L - z
+        !            end if
 
-            dist = sqrt(dble((i - 1)**2 + (j - 1)**2 + (k - 1)**2))
-            dist_bin = floor(dist / bin_size) + 1
-            dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j,k)
-            bin_count(dist_bin) = bin_count(dist_bin) + 1
+        !            x = x + 1
+        !            y = y + 1
+        !            z = z + 1
 
-          end if
+        !            dir_struc(x,y,z) = dir_struc(x,y,z) +&
+        !                    v(m,p,s) * v(i,j,k)
+        !          end if ! neg charge at i,j,k
+        !        end if ! pos charge at m,p,s
 
-        end do ! end openmp_index loop
-        !$omp end parallel do
+        !      end if ! end v != 0 check
+
+        !  end do ! s
+
+        !  rho_k_p_temp = rho_k_p_temp / float(L**3)
+        !  rho_k_m_temp = rho_k_m_temp / float(L**3)
+        !  ! try 3*L**3 instead of L**3 bc there are 3N field links
+        !  e_kx = e_kx / float(3 * L**3)
+        !  e_ky = e_ky / float(3 * L**3)
+        !  e_kz = e_kz / float(3 * L**3)
+        !  mnphi_kx = mnphi_kx / float(3 * L**3)
+        !  mnphi_ky = mnphi_ky / float(3 * L**3)
+        !  mnphi_kz = mnphi_kz / float(3 * L**3)
+        !  e_rot_kx = e_rot_kx / float(3 * L**3)
+        !  e_rot_ky = e_rot_ky / float(3 * L**3)
+        !  e_rot_kz = e_rot_kz / float(3 * L**3)
+
+        !  rho_k_p(kx,ky,kz) = rho_k_p(kx,ky,kz) + rho_k_p_temp
+        !  rho_k_m(kx,ky,kz) = rho_k_m(kx,ky,kz) + rho_k_m_temp
+        !  ch_ch(kx,ky,kz) = ch_ch(kx,ky,kz) +&
+        !                (rho_k_p_temp * conjg(rho_k_m_temp))
+
+        !  s_ab(1,1,kx,ky,kz) = s_ab(1,1,kx,ky,kz) +&
+        !  e_kx*conjg(e_kx)
+        !  s_ab(1,2,kx,ky,kz) = s_ab(1,2,kx,ky,kz) +&
+        !  e_kx*conjg(e_ky)
+        !  s_ab(1,3,kx,ky,kz) = s_ab(1,3,kx,ky,kz) +&
+        !  e_kx*conjg(e_kz)
+        !  s_ab(2,1,kx,ky,kz) = s_ab(2,1,kx,ky,kz) +&
+        !  e_ky*conjg(e_kx)
+        !  s_ab(2,2,kx,ky,kz) = s_ab(2,2,kx,ky,kz) +&
+        !  e_ky*conjg(e_ky)
+        !  s_ab(2,3,kx,ky,kz) = s_ab(2,3,kx,ky,kz) +&
+        !  e_ky*conjg(e_kz)
+        !  s_ab(3,1,kx,ky,kz) = s_ab(3,1,kx,ky,kz) +&
+        !  e_kz*conjg(e_kx)
+        !  s_ab(3,2,kx,ky,kz) = s_ab(3,2,kx,ky,kz) +&
+        !  e_kz*conjg(e_ky)
+        !  s_ab(3,3,kx,ky,kz) = s_ab(3,3,kx,ky,kz) +&
+        !  e_kz*conjg(e_kz)
+
+        !  s_ab_rot(1,1,kx,ky,kz) = s_ab_rot(1,1,kx,ky,kz) +&
+        !  e_rot_kx*conjg(e_rot_kx)
+        !  s_ab_rot(1,2,kx,ky,kz) = s_ab_rot(1,2,kx,ky,kz) +&
+        !  e_rot_kx*conjg(e_rot_ky)
+        !  s_ab_rot(1,3,kx,ky,kz) = s_ab_rot(1,3,kx,ky,kz) +&
+        !  e_rot_kx*conjg(e_rot_kz)
+        !  s_ab_rot(2,1,kx,ky,kz) = s_ab_rot(2,1,kx,ky,kz) +&
+        !  e_rot_ky*conjg(e_rot_kx)
+        !  s_ab_rot(2,2,kx,ky,kz) = s_ab_rot(2,2,kx,ky,kz) +&
+        !  e_rot_ky*conjg(e_rot_ky)
+        !  s_ab_rot(2,3,kx,ky,kz) = s_ab_rot(2,3,kx,ky,kz) +&
+        !  e_rot_ky*conjg(e_rot_kz)
+        !  s_ab_rot(3,1,kx,ky,kz) = s_ab_rot(3,1,kx,ky,kz) +&
+        !  e_rot_kz*conjg(e_rot_kx)
+        !  s_ab_rot(3,2,kx,ky,kz) = s_ab_rot(3,2,kx,ky,kz) +&
+        !  e_rot_kz*conjg(e_rot_ky)
+        !  s_ab_rot(3,3,kx,ky,kz) = s_ab_rot(3,3,kx,ky,kz) +&
+        !  e_rot_kz*conjg(e_rot_kz)
+
+        !  s_ab_irrot(1,1,kx,ky,kz) = s_ab_irrot(1,1,kx,ky,kz) +&
+        !  mnphi_kx*conjg(mnphi_kx)
+        !  s_ab_irrot(1,2,kx,ky,kz) = s_ab_irrot(1,2,kx,ky,kz) +&
+        !  mnphi_kx*conjg(mnphi_ky)
+        !  s_ab_irrot(1,3,kx,ky,kz) = s_ab_irrot(1,3,kx,ky,kz) +&
+        !  mnphi_kx*conjg(mnphi_kz)
+        !  s_ab_irrot(2,1,kx,ky,kz) = s_ab_irrot(2,1,kx,ky,kz) +&
+        !  mnphi_ky*conjg(mnphi_kx)
+        !  s_ab_irrot(2,2,kx,ky,kz) = s_ab_irrot(2,2,kx,ky,kz) +&
+        !  mnphi_ky*conjg(mnphi_ky)
+        !  s_ab_irrot(2,3,kx,ky,kz) = s_ab_irrot(2,3,kx,ky,kz) +&
+        !  mnphi_ky*conjg(mnphi_kz)
+        !  s_ab_irrot(3,1,kx,ky,kz) = s_ab_irrot(3,1,kx,ky,kz) +&
+        !  mnphi_kz*conjg(mnphi_kx)
+        !  s_ab_irrot(3,2,kx,ky,kz) = s_ab_irrot(3,2,kx,ky,kz) +&
+        !  mnphi_kz*conjg(mnphi_ky)
+        !  s_ab_irrot(3,3,kx,ky,kz) = s_ab_irrot(3,3,kx,ky,kz) +&
+        !  mnphi_kz*conjg(mnphi_kz)
+
+        !  ! direct space one
+        !  if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
+
+        !    dist = sqrt(dble((i - 1)**2 + (j - 1)**2 + (k - 1)**2))
+        !    dist_bin = floor(dist / bin_size) + 1
+        !    dist_r(dist_bin) = dist_r(dist_bin) + dir_struc(i,j,k)
+        !    bin_count(dist_bin) = bin_count(dist_bin) + 1
+
+        !  end if
+
+        !end do ! end openmp_index loop
+        !!$omp end parallel do
 
       end if ! if do_corr
 

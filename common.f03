@@ -1,4 +1,5 @@
 module common
+  use fftw
   implicit none
 
   integer, public, parameter :: prec = 16
@@ -44,8 +45,11 @@ module common
   complex(kind=rk), dimension(:,:), allocatable, public :: fw, hw
   complex(kind=rk), dimension(:,:,:), allocatable, public :: ch_ch,&
   rho_k_m,rho_k_p
-  complex(kind=rk), dimension(:,:,:,:,:), allocatable, public :: s_ab,&
+  complex(kind=rk), dimension(:,:,:,:), allocatable, public :: s_ab,&
   s_ab_rot, s_ab_irrot
+
+  complex(kind=rk), dimension(:,:,:,:,:), allocatable, public :: s_ab_large,&
+  s_ab_rot_large, s_ab_irrot_large
 
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file,&
   dir_st_file, dir_dist_file, sphe_sus_file, s_ab_file, s_perp_file,&
@@ -53,7 +57,13 @@ module common
   irrot_field_file, irrot_sab_file, irrot_sperp_file, rot_field_file,&
   rot_sab_file, rot_sperp_file, spar_file, rot_spar_file,&
   irrot_spar_file, avg_field_file, equil_file, chi_ab_file, rot_chi_ab_file,&
-  irrot_chi_ab_file, windings_file, windings_sq_file, lgf_path
+  irrot_chi_ab_file, windings_file, windings_sq_file, lgf_path,&
+  s_perp_transverse_file,s_perp_long_file,s_par_transverse_file,s_par_long_file,&
+  s_ab_transverse_file,s_ab_long_file
+
+  type(C_PTR) :: plan_x, plan_y, plan_z, plan_ch
+  real(C_DOUBLE), dimension(:,:,:), allocatable :: ch_in, e_in
+  complex(C_DOUBLE_COMPLEX), dimension(:,:,:), allocatable :: exk, eyk, ezk, chk
 
   character(6) :: charge_gen
 

@@ -17,7 +17,8 @@ module input
     e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
     dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
     r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, ch_g, c_ab_l,&
-    r_cab_l, ir_cab_l, wf_l, wsq_l, lpl
+    r_cab_l, ir_cab_l, wf_l, wsq_l, lpl,&
+    s_perp_t_l,s_perp_l_l,s_par_t_l,s_par_l_l, s_ab_t_l, s_ab_l_l
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -305,6 +306,36 @@ module input
             if (verbose) then
               write (*,*) 'Raw file name for equilibriation check: ',eq_l
             end if
+          case ('s_ab_t_file')
+            read(buffer, '(a)', iostat=ios) s_ab_t_l
+            if (verbose) then
+              write (*,*) 'Raw file name for s_perp transverse file: ',s_ab_t_l
+            end if
+          case ('s_ab_l_file')
+            read(buffer, '(a)', iostat=ios) s_ab_l_l
+            if (verbose) then
+              write (*,*) 'Raw file name for s_perp long. file: ',s_ab_l_l
+            end if
+          case ('s_perp_t_file')
+            read(buffer, '(a)', iostat=ios) s_perp_t_l
+            if (verbose) then
+              write (*,*) 'Raw file name for s_perp transverse file: ',s_perp_t_l
+            end if
+          case ('s_perp_l_file')
+            read(buffer, '(a)', iostat=ios) s_perp_l_l
+            if (verbose) then
+              write (*,*) 'Raw file name for s_perp long. file: ',s_perp_l_l
+            end if
+          case ('s_par_t_file')
+            read(buffer, '(a)', iostat=ios) s_par_t_l
+            if (verbose) then
+              write (*,*) 'Raw file name for s_perp transverse file: ',s_par_t_l
+            end if
+          case ('s_par_l_file')
+            read(buffer, '(a)', iostat=ios) s_par_l_l
+            if (verbose) then
+              write (*,*) 'Raw file name for s_perp long. file: ',s_par_l_l
+            end if
           case ('charge_generation')
             read(buffer, '(a)', iostat=ios) ch_g
             if (verbose) then
@@ -387,7 +418,7 @@ module input
       end if
 
       ! set up other variables, allocations etc.
-      volume = lambda**3
+      volume = lambda**2
       no_measurements = measurement_sweeps / sample_interval
       if (corr_char.eq.'T'.or.corr_char.eq.'Y') then
         do_corr = .true.
@@ -402,8 +433,8 @@ module input
 
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
-      ! eps_0 = 1.0 / (2*pi)
-      eps_0 = 1.0
+      eps_0 = 1.0 / (2*pi)
+      ! eps_0 = 1.0
       !q = 2 * pi * q
       !write (*,*) "q = ",q
       beta = 1.0 / temp
@@ -453,6 +484,12 @@ module input
       irrot_chi_ab_file = trim(adjustl(ir_cab_l))
       windings_file = trim(adjustl(wf_l))
       windings_sq_file = trim(adjustl(wsq_l))
+      s_ab_transverse_file = trim(adjustl(s_ab_t_l))
+      s_ab_long_file = trim(adjustl(s_ab_l_l))
+      s_perp_transverse_file = trim(adjustl(s_perp_t_l))
+      s_perp_long_file = trim(adjustl(s_perp_l_l))
+      s_par_transverse_file = trim(adjustl(s_par_t_l))
+      s_par_long_file = trim(adjustl(s_par_l_l))
       lgf_path = trim(adjustl(lpl))
 
       if (charge_gen.ne."RANDOM".and.charge_gen.ne."DIPOLE".and.charge_gen.ne."CRYSTA") then
