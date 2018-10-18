@@ -472,7 +472,7 @@ module update
       ! use omp_lib
       implicit none
       integer,intent(in) :: step_number
-      integer :: omp_index,i,j,n,kx,ky,m,p,s,x,y,dist_bin
+      integer :: omp_index,i,j,k,n,kx,ky,m,p,s,x,y,dist_bin
       real(kind=8), dimension(2,L,L) :: e_rot
       real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
       real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
@@ -580,6 +580,35 @@ module update
         ! e_in = e_field(2,:,:)
         e_in = e_field(1,:,:)
         call fftw_execute_dft_r2c(plan_x,e_in,eyk)
+
+        do j = 1,L
+          do k = 1,L
+            ! div = div + (-1.0 * e_field(2,j,k)) + e_field(1,j,k) +&
+            !       (-1.0 * e_field(2,j,neg(k))) + e_field(1,neg(j),k)
+            div = div + (e_field(2,j,k)) + e_field(1,j,k) +&
+                  (e_field(2,neg(j),k)) + e_field(1,j,neg(k))
+            divsq = divsq + div**2
+          end do
+        end do
+
+        div = div / L**2
+        divsq = divsq / L**2
+
+        if (n.eq.100) then
+          open(unit=12, file="div_snapshot.dat")
+          do j = 1,L
+            do k = 1,L
+              ! div = (-1.0 * e_field(2,j,k)) + e_field(1,j,k) +&
+              !       (-1.0 * e_field(2,j,neg(k))) + e_field(1,neg(j),k)
+              ener_rot = ener_rot + (e_field(2,j,k)) + e_field(1,j,k) +&
+                    (-1.0 * e_field(2,pos(j),k)) + e_field(1,j,pos(k))
+              ener_rot_sq = ener_rot**2
+              write(12, '(2i4.2, 4f12.6)') j, k, e_field(1,j,k),&
+                                           e_field(2,j,k), ener_rot, ener_rot_sq
+            end do
+          end do
+          close(12)
+        end if
 
         do j = 1, L
 

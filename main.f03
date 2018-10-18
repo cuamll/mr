@@ -280,6 +280,10 @@ subroutine reductions(id)
                        MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, windings_sq, size(windings_sq), MPI_NEW_REAL,&
                        MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, div, 1, MPI_NEW_REAL,&
+                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(MPI_IN_PLACE, divsq, 1, MPI_NEW_REAL,&
+                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   else
 
@@ -317,6 +321,10 @@ subroutine reductions(id)
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(windings_sq, windings_sq, size(windings_sq), MPI_NEW_REAL,&
                     MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(div, div, 1, MPI_NEW_REAL,&
+                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+    call MPI_Reduce(divsq, divsq, 1, MPI_NEW_REAL,&
+                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   end if
 
@@ -432,6 +440,8 @@ subroutine normalisations(num_procs)
   rho_avg = rho_avg / denom
   windings = windings / denom
   windings_sq = windings_sq / denom
+  div = div / denom
+  divsq = divsq / denom
 
   if (do_corr) then
     rho_k_p = rho_k_p / denom
@@ -484,6 +494,9 @@ subroutine normalisations(num_procs)
     sum(windings(2,:))
   write (*,*) "Avg. windings^2: ",sum(windings_sq(1,:)),&
     sum(windings_sq(2,:))
+  write (*,*) "<Div>: ", div
+  write (*,*) "<Divsq>: ",divsq
+  write (*,*) "div_fluct: ", (1.0)*(divsq - div**2)
 
   open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"

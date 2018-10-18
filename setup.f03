@@ -54,6 +54,7 @@ module setup
     ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
     ebar_sum = 0.0; ebar_sq_sum = 0.0; ebar_dip_sum = 0.0; lgf = 0.0;
     ebar_dip_sq_sum = 0.0; ebar_wind_sum = 0.0; ebar_wind_sq_sum = 0.0;
+    div = 0.0; divsq = 0.0
 
     if (do_corr) then
       s_ab = (0.0,0.0); s_ab_rot = (0.0,0.0); s_ab_irrot = (0.0,0.0);

@@ -11,7 +11,7 @@ lattice_spacing 1.0
 charge_value 1.000
 delta_max 0
 charges 0
-e_c -0.000
+e_c 0.000
 charge_generation DIPOLE
 rng_seed 0
 hop_ratio 1.0
