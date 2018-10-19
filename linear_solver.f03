@@ -155,20 +155,20 @@ module linear_solver
 
   nch= sum(abs(v))
 
-  write(*,*)
-  write(*,*) "--- LINEAR SOLVER RESULTS: ---"
-  write(*,*) "n_ch",nch
-  write(*,*) "ebar = ",ebar(1),ebar(2),ebar(3)
-  write(*,*) "nn = ",lgf(1,0,0),lgf(0,0,1),lgf(0,1,0)
-  write(*,*) 'sum of irrotational E_ij^2 =',u_tot
-  write(*,*) "self-energy from lgf(0,0) per charge = ",u_self / nch
-  write(*,*) "self-energy from lgf(0,0) = ",u_self
-  write(*,*) 'interaction energy = ',u_int
-  write(*,*) 'interaction energy * L**3 / 2 = ',u_int * (L**3 / 2)
-  write(*,*) '(unnormalised) u_tot = ',sum(mnphi*mnphi)
-  write(*,*) 'u_tot - u_self = ',u_tot - u_self
-  write(*,*) 'harmonic term in units of 1/L**3 (V*Ebar^2) = '&
-    &,L**3*sum(ebar**2)
+  ! write(*,*)
+  ! write(*,*) "--- LINEAR SOLVER RESULTS: ---"
+  ! write(*,*) "n_ch",nch
+  ! write(*,*) "ebar = ",ebar(1),ebar(2),ebar(3)
+  ! write(*,*) "nn = ",lgf(1,0,0),lgf(0,0,1),lgf(0,1,0)
+  ! write(*,*) 'sum of irrotational E_ij^2 =',u_tot
+  ! write(*,*) "self-energy from lgf(0,0) per charge = ",u_self / nch
+  ! write(*,*) "self-energy from lgf(0,0) = ",u_self
+  ! write(*,*) 'interaction energy = ',u_int
+  ! write(*,*) 'interaction energy * L**3 / 2 = ',u_int * (L**3 / 2)
+  ! write(*,*) '(unnormalised) u_tot = ',sum(mnphi*mnphi)
+  ! write(*,*) 'u_tot - u_self = ',u_tot - u_self
+  ! write(*,*) 'harmonic term in units of 1/L**3 (V*Ebar^2) = '&
+  !   &,L**3*sum(ebar**2)
 
   end subroutine linsol
 

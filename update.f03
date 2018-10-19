@@ -555,7 +555,7 @@ module update
           eyk(:,j,:) = eyk(:,j,:) * exp(+(pi/L)*imag*j)
           ! exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
 
-          ezk(:,:,j) = eyk(:,:,j) * exp(+(pi/L)*imag*j)
+          ezk(:,:,j) = ezk(:,:,j) * exp(+(pi/L)*imag*j)
 
         end do
 
@@ -570,6 +570,18 @@ module update
         s_ab(:,:,:,5) = s_ab(:,:,:,5) + (eyk * conjg(ezk))
         s_ab(:,:,:,6) = s_ab(:,:,:,6) + (ezk * conjg(ezk))
 
+        ! open(unit=12, file="fftw_sab_test.dat")
+        ! do i = 1,L/2+1
+        !   do j = 1,L
+        !     do k = 1,L
+        !       write(12,'(9f12.8)') 2*pi*(i-1)/L, 2*pi*(j-1)/L, 2*pi*(k-1)/L,&
+        !                            real(s_ab(i,j,k,:))
+        !     end do
+        !   end do
+        ! end do
+        ! close(12)
+
+        ! open(unit=12, file="sab_test.dat")
         !!$omp parallel do&
         !!$omp& private(i,j,k,m,p,s,kx,ky,kz,x,y,z,rho_k_p_temp,rho_k_m_temp,&
         !!$omp& e_kx,mnphi_kx,e_rot_kx,e_ky,mnphi_ky,e_rot_ky,&
@@ -704,62 +716,70 @@ module update
         !  ch_ch(kx,ky,kz) = ch_ch(kx,ky,kz) +&
         !                (rho_k_p_temp * conjg(rho_k_m_temp))
 
-        !  s_ab(1,1,kx,ky,kz) = s_ab(1,1,kx,ky,kz) +&
+        !  s_ab_large(1,1,kx,ky,kz) = s_ab_large(1,1,kx,ky,kz) +&
         !  e_kx*conjg(e_kx)
-        !  s_ab(1,2,kx,ky,kz) = s_ab(1,2,kx,ky,kz) +&
+        !  s_ab_large(1,2,kx,ky,kz) = s_ab_large(1,2,kx,ky,kz) +&
         !  e_kx*conjg(e_ky)
-        !  s_ab(1,3,kx,ky,kz) = s_ab(1,3,kx,ky,kz) +&
+        !  s_ab_large(1,3,kx,ky,kz) = s_ab_large(1,3,kx,ky,kz) +&
         !  e_kx*conjg(e_kz)
-        !  s_ab(2,1,kx,ky,kz) = s_ab(2,1,kx,ky,kz) +&
+        !  s_ab_large(2,1,kx,ky,kz) = s_ab_large(2,1,kx,ky,kz) +&
         !  e_ky*conjg(e_kx)
-        !  s_ab(2,2,kx,ky,kz) = s_ab(2,2,kx,ky,kz) +&
+        !  s_ab_large(2,2,kx,ky,kz) = s_ab_large(2,2,kx,ky,kz) +&
         !  e_ky*conjg(e_ky)
-        !  s_ab(2,3,kx,ky,kz) = s_ab(2,3,kx,ky,kz) +&
+        !  s_ab_large(2,3,kx,ky,kz) = s_ab_large(2,3,kx,ky,kz) +&
         !  e_ky*conjg(e_kz)
-        !  s_ab(3,1,kx,ky,kz) = s_ab(3,1,kx,ky,kz) +&
+        !  s_ab_large(3,1,kx,ky,kz) = s_ab_large(3,1,kx,ky,kz) +&
         !  e_kz*conjg(e_kx)
-        !  s_ab(3,2,kx,ky,kz) = s_ab(3,2,kx,ky,kz) +&
+        !  s_ab_large(3,2,kx,ky,kz) = s_ab_large(3,2,kx,ky,kz) +&
         !  e_kz*conjg(e_ky)
-        !  s_ab(3,3,kx,ky,kz) = s_ab(3,3,kx,ky,kz) +&
+        !  s_ab_large(3,3,kx,ky,kz) = s_ab_large(3,3,kx,ky,kz) +&
         !  e_kz*conjg(e_kz)
 
-        !  s_ab_rot(1,1,kx,ky,kz) = s_ab_rot(1,1,kx,ky,kz) +&
+        !  s_ab_rot_large(1,1,kx,ky,kz) = s_ab_rot_large(1,1,kx,ky,kz) +&
         !  e_rot_kx*conjg(e_rot_kx)
-        !  s_ab_rot(1,2,kx,ky,kz) = s_ab_rot(1,2,kx,ky,kz) +&
+        !  s_ab_rot_large(1,2,kx,ky,kz) = s_ab_rot_large(1,2,kx,ky,kz) +&
         !  e_rot_kx*conjg(e_rot_ky)
-        !  s_ab_rot(1,3,kx,ky,kz) = s_ab_rot(1,3,kx,ky,kz) +&
+        !  s_ab_rot_large(1,3,kx,ky,kz) = s_ab_rot_large(1,3,kx,ky,kz) +&
         !  e_rot_kx*conjg(e_rot_kz)
-        !  s_ab_rot(2,1,kx,ky,kz) = s_ab_rot(2,1,kx,ky,kz) +&
+        !  s_ab_rot_large(2,1,kx,ky,kz) = s_ab_rot_large(2,1,kx,ky,kz) +&
         !  e_rot_ky*conjg(e_rot_kx)
-        !  s_ab_rot(2,2,kx,ky,kz) = s_ab_rot(2,2,kx,ky,kz) +&
+        !  s_ab_rot_large(2,2,kx,ky,kz) = s_ab_rot_large(2,2,kx,ky,kz) +&
         !  e_rot_ky*conjg(e_rot_ky)
-        !  s_ab_rot(2,3,kx,ky,kz) = s_ab_rot(2,3,kx,ky,kz) +&
+        !  s_ab_rot_large(2,3,kx,ky,kz) = s_ab_rot_large(2,3,kx,ky,kz) +&
         !  e_rot_ky*conjg(e_rot_kz)
-        !  s_ab_rot(3,1,kx,ky,kz) = s_ab_rot(3,1,kx,ky,kz) +&
+        !  s_ab_rot_large(3,1,kx,ky,kz) = s_ab_rot_large(3,1,kx,ky,kz) +&
         !  e_rot_kz*conjg(e_rot_kx)
-        !  s_ab_rot(3,2,kx,ky,kz) = s_ab_rot(3,2,kx,ky,kz) +&
+        !  s_ab_rot_large(3,2,kx,ky,kz) = s_ab_rot_large(3,2,kx,ky,kz) +&
         !  e_rot_kz*conjg(e_rot_ky)
-        !  s_ab_rot(3,3,kx,ky,kz) = s_ab_rot(3,3,kx,ky,kz) +&
+        !  s_ab_rot_large(3,3,kx,ky,kz) = s_ab_rot_large(3,3,kx,ky,kz) +&
         !  e_rot_kz*conjg(e_rot_kz)
 
-        !  s_ab_irrot(1,1,kx,ky,kz) = s_ab_irrot(1,1,kx,ky,kz) +&
+        !  s_ab_irrot_large(1,1,kx,ky,kz) = s_ab_irrot_large(1,1,kx,ky,kz) +&
         !  mnphi_kx*conjg(mnphi_kx)
-        !  s_ab_irrot(1,2,kx,ky,kz) = s_ab_irrot(1,2,kx,ky,kz) +&
+        !  s_ab_irrot_large(1,2,kx,ky,kz) = s_ab_irrot_large(1,2,kx,ky,kz) +&
         !  mnphi_kx*conjg(mnphi_ky)
-        !  s_ab_irrot(1,3,kx,ky,kz) = s_ab_irrot(1,3,kx,ky,kz) +&
+        !  s_ab_irrot_large(1,3,kx,ky,kz) = s_ab_irrot_large(1,3,kx,ky,kz) +&
         !  mnphi_kx*conjg(mnphi_kz)
-        !  s_ab_irrot(2,1,kx,ky,kz) = s_ab_irrot(2,1,kx,ky,kz) +&
+        !  s_ab_irrot_large(2,1,kx,ky,kz) = s_ab_irrot_large(2,1,kx,ky,kz) +&
         !  mnphi_ky*conjg(mnphi_kx)
-        !  s_ab_irrot(2,2,kx,ky,kz) = s_ab_irrot(2,2,kx,ky,kz) +&
+        !  s_ab_irrot_large(2,2,kx,ky,kz) = s_ab_irrot_large(2,2,kx,ky,kz) +&
         !  mnphi_ky*conjg(mnphi_ky)
-        !  s_ab_irrot(2,3,kx,ky,kz) = s_ab_irrot(2,3,kx,ky,kz) +&
+        !  s_ab_irrot_large(2,3,kx,ky,kz) = s_ab_irrot_large(2,3,kx,ky,kz) +&
         !  mnphi_ky*conjg(mnphi_kz)
-        !  s_ab_irrot(3,1,kx,ky,kz) = s_ab_irrot(3,1,kx,ky,kz) +&
+        !  s_ab_irrot_large(3,1,kx,ky,kz) = s_ab_irrot_large(3,1,kx,ky,kz) +&
         !  mnphi_kz*conjg(mnphi_kx)
-        !  s_ab_irrot(3,2,kx,ky,kz) = s_ab_irrot(3,2,kx,ky,kz) +&
+        !  s_ab_irrot_large(3,2,kx,ky,kz) = s_ab_irrot_large(3,2,kx,ky,kz) +&
         !  mnphi_kz*conjg(mnphi_ky)
-        !  s_ab_irrot(3,3,kx,ky,kz) = s_ab_irrot(3,3,kx,ky,kz) +&
+        !  s_ab_irrot_large(3,3,kx,ky,kz) = s_ab_irrot_large(3,3,kx,ky,kz) +&
         !  mnphi_kz*conjg(mnphi_kz)
+
+        !  ! write(12,'(9f12.8)') 2*pi*(i-1)/L, 2*pi*(j-1)/L, 2*pi*(k-1)/L,&
+        !  !                         real(s_ab_large(1,1,kx,ky,kz)),&
+        !  !                         real(s_ab_large(1,2,kx,ky,kz)),&
+        !  !                         real(s_ab_large(1,3,kx,ky,kz)),&
+        !  !                         real(s_ab_large(2,2,kx,ky,kz)),&
+        !  !                         real(s_ab_large(2,3,kx,ky,kz)),&
+        !  !                         real(s_ab_large(3,3,kx,ky,kz))
 
         !  ! direct space one
         !  if (i.le.L/2+1.and.j.le.L/2+1.and.k.le.L/2+1) then
@@ -773,6 +793,7 @@ module update
 
         !end do ! end openmp_index loop
         !!$omp end parallel do
+        !! close(12)
 
       end if ! if do_corr
 
