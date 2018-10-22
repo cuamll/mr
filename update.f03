@@ -570,16 +570,16 @@ module update
         s_ab(:,:,:,5) = s_ab(:,:,:,5) + (eyk * conjg(ezk))
         s_ab(:,:,:,6) = s_ab(:,:,:,6) + (ezk * conjg(ezk))
 
-        ! open(unit=12, file="fftw_sab_test.dat")
-        ! do i = 1,L/2+1
-        !   do j = 1,L
-        !     do k = 1,L
-        !       write(12,'(9f12.8)') 2*pi*(i-1)/L, 2*pi*(j-1)/L, 2*pi*(k-1)/L,&
-        !                            real(s_ab(i,j,k,:))
-        !     end do
-        !   end do
-        ! end do
-        ! close(12)
+        open(unit=12, file="fftw_sab_test.dat")
+        do i = 1,L/2+1
+          do j = 1,L
+            do k = 1,L
+              write(12,'(9f12.8)') 2*pi*(i-1)/L, 2*pi*(j-1)/L, 2*pi*(k-1)/L,&
+                                   real(s_ab(i,j,k,:))
+            end do
+          end do
+        end do
+        close(12)
 
         ! open(unit=12, file="sab_test.dat")
         !!$omp parallel do&
