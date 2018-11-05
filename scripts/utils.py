@@ -9,6 +9,7 @@ rd = "#99001A"
 grn = "#145E00"
 yl = "#F2D33C"
 orng = "#E88427"
+levels = 128
 
 def s_p(x, y, G_x, G_y):
     '''
@@ -49,18 +50,35 @@ def do_plots(no_plots, plot_titles, output_file, dots, X, Y, Z):
     import colormaps as cm
     fig, axes = plt.subplots(ncols=int(no_plots), nrows=1, figsize=(5 * int(no_plots),4))
     # chonk
-    for chonk in range(int(no_plots)):
-        axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-        axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-        axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-        axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-        ax = axes[chonk]
+    if (no_plots > 1):
 
-        ax.set_title(plot_titles[chonk])
-        cs = ax.contourf(X[chonk], Y[chonk], Z[chonk], cmap=cm.inferno)
-        fig.colorbar(cs, ax=ax)
+        for chonk in range(int(no_plots)):
+            axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+            axes[chonk].xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+            axes[chonk].yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+            axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+            ax = axes[chonk]
 
-    fig.tight_layout()
-    fig.savefig(output_file, format='eps', dpi=dots)
-    plt.close(fig)
+            ax.set_title(plot_titles[chonk])
+            cs = ax.contourf(X[chonk], Y[chonk], Z[chonk], levels, cmap=cm.inferno)
+            fig.colorbar(cs, ax=ax)
+
+        fig.tight_layout()
+        fig.savefig(output_file, format='eps', dpi=dots)
+        plt.close(fig)
+
+    else:
+
+        axes.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+        axes.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+        axes.yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+        axes.yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+
+        axes.set_title(plot_titles)
+        cs = axes.contourf(X, Y, Z, levels, cmap=cm.inferno)
+        fig.colorbar(cs, ax=axes)
+
+        fig.tight_layout()
+        fig.savefig(output_file, format='eps', dpi=dots)
+        plt.close(fig)
 
