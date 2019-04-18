@@ -232,7 +232,7 @@ module setup
       call linsol
     end if
 
-    ! set e_field to irrotational - temporary solution
+    ! implicitly set E_rot = 0 at t = 0
     e_field = mnphi
 
   end subroutine arrays_init
@@ -241,7 +241,6 @@ module setup
     integer, intent(in) :: n
 
     ! wrapper for convenience in main
-    ! call read_input
     call randinit(n)
     call allocations
     call latt_init

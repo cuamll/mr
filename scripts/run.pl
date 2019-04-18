@@ -1,6 +1,13 @@
 #!/opt/local/bin/perl
 # perl script to run maggs-rossetto code
 # then do some bookkeeping with the output
+#
+# Reads in the input file for the fortran program and also the
+# command-line arguments provided to it, then generates input files
+# for every combination thereof and executes them one by one.
+# Most useful for submitting batches of jobs to the HPC cluster,
+# hence the hardcoded job script halfway down which is also generated.
+
 use strict;
 use warnings;
 use Env;
@@ -9,7 +16,6 @@ use Getopt::Long;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Basename;
-# use JSON::MaybeXS qw(encode_json decode_json);
 use Data::Dumper qw(Dumper);
 
 my $row;
@@ -87,6 +93,8 @@ if ($help || !$input) {
   exit $input;
 }
 
+# note: could make an array of references to these and then
+# iterate over that, would clean up a couple of bits here
 if (@lengths) {
   @lengths = split(/,/,join(',',@lengths));
   shift(@lengths);
@@ -117,11 +125,6 @@ if (@spacings) {
   shift(@spacings);
 }
 
-#foreach (@temperatures) {
-#  print "$_\n";
-#}
-
-
 # useful directories to keep track of
 my $basedir = getcwd();
 my $outdir = "$basedir/out";
@@ -131,7 +134,6 @@ make_path($logdir);
 
 
 my %parameters = get_parameters("$inputfile");
-# print Dumper %parameters;
 
 # ensures that none of the lists will be empty
 push @lengths, $parameters{L};
@@ -228,11 +230,6 @@ for( my $i = 0; $i < @temperatures; $i++) {
             }
             close $fh;
 
-            # write_to_file("$stampdir/parameters.json", "$parameters_json\n", "write");
-            # # keep a list of every run and its parameters
-            # my $jsondb = "$logdir/db.json";
-            # write_to_file($jsondb, "$parameters_json\n", "append");
-
             # generate job file
             my $genjobfile = 0;
             if ($genjobfile) {
@@ -292,34 +289,6 @@ exit 0
               system(qq[$analysis_script -d=$stampdir --plot=$doplots --contour=$docontour --quiver=$doquiver --lorentz=$dolorentz --quadrics=$doquadrics --helmholtz=$dohelmholtz]);
             }
 
-            # then gnuplot
-            #if ($doplots) {
-            #  my $plotfile = "$basedir/scripts/plot.pl";
-            #  my $measurements = $parameters{measurement_sweeps} / $parameters{sample_interval};
-            #  my $kz = 0;
-            #  my $palette = "~/.config/gnuplot/inferno.pal";
-            #  #my $plotcmd = qq[$plotfile -l=$parameters{L} -t=$parameters{temperature} -m=$measurements -s=$parameters{measurement_sweeps} -c=$parameters{charges} -k=$kz -fp="$stamp" -o="$stampdir/plots/" -p="$palette"];
-            #  my $plotcmd = qq[$plotfile -d=$stampdir -p="$palette"];
-            #  system($plotcmd);
-            #}
-
-            #if ($docontour) {
-            #  my $contourfile = "$basedir/scripts/s_perp_contours.py";
-            #  my $contourcmd = qq[python $contourfile $stampdir $parameters{L} $dpi];
-            #  system($contourcmd);
-            #}
-
-            #if ($doquiver) {
-            #  my $quiverfile = "$basedir/scripts/quiver.py";
-            #  my $quivercmd = qq[python $quiverfile $stampdir $parameters{L} $arrow_width $dpi];
-            #  system($quivercmd);
-            #}
-
-            #if ($dolorentz) {
-            #  my $lorentzfile = "$basedir/scripts/lorentz.py";
-            #  my $lorentzcmd = qq[python $lorentzfile $stampdir $parameters{L} $parameters{temperature} $dpi];
-            #  system($lorentzcmd);
-            #}
             
           }
         }
@@ -327,9 +296,6 @@ exit 0
     }
   }
 }
-
-
-  ########
 
 sub get_timestamp {
 
@@ -391,15 +357,6 @@ sub get_parameters {
   return %parameters;
 
 }
-
-# sub create_json {
-
-#   # print "\ncreate_json\n";
-#   my %input = @_;
-#   my $json = encode_json[%input];
-#   return $json;
-
-# }
 
 sub write_to_file {
 

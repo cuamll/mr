@@ -37,114 +37,82 @@ module linear_solver
         sum_x=0.0
         sum_y=0.0
 
-        !write (*,*) sum_x,sum_y,ebar(1),ebar(2),mnphi(1,a,b),mnphi(2,a,b)
-          do y=1,L
-            do x=1,L
+        do y=1,L
+          do x=1,L
 
-              rx = (a - x)
-              if (rx.gt.(L/2)) then
-                rx = rx - L
-              else if (rx.le.(-L/2)) then
-                rx = rx + L
-              end if
-              rx = abs(rx)
+            rx = (a - x)
+            if (rx.gt.(L/2)) then
+              rx = rx - L
+            else if (rx.le.(-L/2)) then
+              rx = rx + L
+            end if
+            rx = abs(rx)
 
-              ! had a thought
-              ! rpx = pos(rx + 1) - 1
-              ! rpx = mod(rx + 1, L/2 + 1)
+            ! get (x + 1), respecting PBCs
+            rpx = (a - pos(x))
+            if (rpx.gt.(L/2)) then
+              rpx = rpx - L
+            else if (rpx.le.(-L/2)) then
+              rpx = rpx + L
+            end if
+            rpx = abs(rpx)
 
-              rpx = (a - pos(x))
-              if (rpx.gt.(L/2)) then
-                rpx = rpx - L
-              else if (rpx.le.(-L/2)) then
-                rpx = rpx + L
-              end if
-              rpx = abs(rpx)
+            ry = (b - y)
+            if (ry.gt.(L/2)) then
+              ry = ry - L
+            else if (ry.le.(-L/2)) then
+              ry = ry + L
+            end if
+            ry = abs(ry)
 
-              ry = (b - y)
-              if (ry.gt.(L/2)) then
-                ry = ry - L
-              else if (ry.le.(-L/2)) then
-                ry = ry + L
-              end if
-              ry = abs(ry)
+            rpy = (b - pos(y))
+            if (rpy.gt.(L/2)) then
+              rpy = rpy - L
+            else if (rpy.le.(-L/2)) then
+              rpy = rpy + L
+            end if
+            rpy = abs(rpy)
 
-              ! rpy = mod(ry + 1, L/2) - 1
-              ! rpy = mod(pos(ry), L/2 +  1)
+            if (a.eq.x.and.b.eq.y) then
+              g0 = g0 + lgf(rx,ry)
+            end if
 
-              rpy = (b - pos(y))
-              if (rpy.gt.(L/2)) then
-                rpy = rpy - L
-              else if (rpy.le.(-L/2)) then
-                rpy = rpy + L
-              end if
-              rpy = abs(rpy)
+            if (v(x,y).ne.0) then ! non-zero charge at (x,y,z)
 
-              if (a.eq.x.and.b.eq.y) then
-                g0 = g0 + lgf(rx,ry)
-                ! g0 = g0 + lgf(a,b,x,y)
-              end if
+              charge = q * v(x,y)
+              nch = nch + 1
 
-              if (v(x,y).ne.0) then ! non-zero charge at (x,y,z)
-                !write (*,*) lgf(a,b,x,y)
+              ! POSITIVE GRAD i.e. - \tilde{\nabla} \phi
+              sum_x = sum_x + charge * (+1)&
+                    * (lgf(rpx,ry) - lgf(rx,ry))
+              sum_y = sum_y + charge * (+1)&
+                    * (lgf(rx,rpy) - lgf(rx,ry))
 
-                charge = q * v(x,y)
-                nch = nch + 1
-
-                ! POSITIVE GRAD i.e. - \tilde{\nabla} \phi
-                ! sum_x = sum_x + charge * (-1)&
-                !       * (lgf(a,b,x,y) - lgf(a,b,pos(x),y))
-                ! sum_y = sum_y + charge * (-1)&
-                !       * (lgf(a,b,x,y) - lgf(a,b,x,pos(y)))
-
-                ! four index
-                ! sum_x = sum_x + charge * (+1)&
-                !       * (lgf(a,b,pos(x),y) - lgf(a,b,x,y))
-                ! sum_y = sum_y + charge * (+1)&
-                !       * (lgf(a,b,x,pos(y)) - lgf(a,b,x,y))
-
-                ! two index
-                sum_x = sum_x + charge * (+1)&
-                      * (lgf(rpx,ry) - lgf(rx,ry))
-                sum_y = sum_y + charge * (+1)&
-                      * (lgf(rx,rpy) - lgf(rx,ry))
-
-                ! NEGATIVE GRAD i.e. - \hat{\nabla} \phi
-                ! sum_x = sum_x + charge * (-1) *&
-                !       (lgf(a,b,x,y) - lgf(a,b,neg(x),y))
-                ! sum_y = sum_y + charge * (-1) *&
-                !       (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
-                if (v(a,b).ne.0) then
-                  if (a.eq.x.and.b.eq.y) then
-                    u_self = u_self + charge**2 * lgf(rx,ry)
-                    ! u_self = u_self + charge**2 * lgf(a,b,x,y)
-                  else
-                    u_int = u_int + q * v(a,b) * charge * lgf(rx,ry)
-                    ! u_int = u_int + q * v(a,b) * charge * lgf(a,b,x,y)
-                  end if
+              ! NEGATIVE GRAD i.e. - \hat{\nabla} \phi
+              ! old four-index form - left as an example
+              ! sum_x = sum_x + charge * (-1) *&
+              !       (lgf(a,b,x,y) - lgf(a,b,neg(x),y))
+              ! sum_y = sum_y + charge * (-1) *&
+              !       (lgf(a,b,x,y) - lgf(a,b,x,neg(y)))
+              if (v(a,b).ne.0) then
+                if (a.eq.x.and.b.eq.y) then
+                  u_self = u_self + charge**2 * lgf(rx,ry)
+                else
+                  u_int = u_int + q * v(a,b) * charge * lgf(rx,ry)
                 end if
+              end if
 
-              end if ! if v(x,y,z).ne.0
+            end if ! if v(x,y,z).ne.0
 
-          end do ! y do loop
-        end do ! x do loop
-
-        ! mnphi(1,a,b)=sum_x
-        ! mnphi(2,a,b)=sum_y
+          end do
+        end do ! x,y loops
 
         ! already multiplied by q
         mnphi(1,a,b)=(1 / eps_0) * sum_x
         mnphi(2,a,b)=(1 / eps_0) * sum_y
 
-        ! ebar(1)=ebar(1)+mnphi(1,a,b)
-        ! ebar(2)=ebar(2)+mnphi(2,a,b)
-        !write (*,*) sum_x,sum_y,ebar(1),ebar(2),mnphi(1,a,b),mnphi(2,a,b)
-
-        ! u_tot=u_tot+0.5*(mnphi(1,a,b)**2&
-        !       +mnphi(2,a,b)**2)
-
-      end do ! b do loop
-    end do ! a do loop
+      end do
+    end do ! a,b loops
 
   end if
 
@@ -157,15 +125,6 @@ module linear_solver
   g0 = g0 / L**2
 
   nch=nch/L**2 ! bc we count nch once for each abc
-
-  !write (*,*) "ebar = ",ebar(1),ebar(2),ebar(3)
-  !write(*,*)
-  !write(*,*) "--- LINEAR SOLVER RESULTS: ---"
-  !write (*,*) 'sum of irrotational E_ij^2 =',u_tot
-  !write(*,*) "self-energy from lgf(0,0) * n charges = ",u_self
-  !write(*,*) 'interaction energy = ',u_int
-  !write (*,*) 'harmonic term in units of 1/L**3 (V*Ebar^2) = '&
-  !  &,L**3*sum(ebar**2)
 
   end subroutine linsol
 
@@ -184,7 +143,8 @@ module linear_solver
     if (lgf_there) then
 
       write (*,*) "Reading in LGF from ",lgf_file
-      open(30, file=lgf_file, status="old", action="read", access="stream", form="unformatted")
+      open(30, file=lgf_file, status="old",
+           action="read", access="stream", form="unformatted")
       read(30) lgf
       close(30)
 
@@ -192,160 +152,59 @@ module linear_solver
 
       write(*,*) "Calculating LGF"
 
-      ! do y=1,L
-      !   do x=1,L
-      !     do b=1,L
-      !       do a=1,L
+      do ry=0,L/2
+        do rx=0,L/2
 
-      !         ! these need to be real, for cos to work later
-      !         p1=float(a-x)
-      !         q1=float(b-y)
+          ! these need to be real, for cos to work later
+          p1=float(rx)
+          q1=float(ry)
 
-      !         rx = (a - x)
-      !         if (rx.gt.(L/2)) then
-      !           rx = rx - L
-      !         else if (rx.le.(-L/2)) then
-      !           rx = rx + L
-      !         end if
-      !         rx = abs(rx)
+          ! these need to be within [L/2,-L/2]. The Green's
+          ! function is even though because we use cosines, so it
+          ! doesn't matter whether it's positive or negative.
 
-      !         ry = (b - y)
-      !         if (ry.gt.(L/2)) then
-      !           ry = ry - L
-      !         else if (ry.le.(-L/2)) then
-      !           ry = ry + L
-      !         end if
-      !         ry = abs(ry)
+          if (p1.gt.float(L/2)) then
+            p1=p1-float(L)
+          else if (p1.lt.(-float(L/2))) then
+            p1=p1+float(L)
+          end if
 
-      !         ! these need to be within [L/2,-L/2]. The Green's
-      !         ! function is even though because we use cosines, so it
-      !         ! doesn't matter whether it's positive or negative.
+          if (q1.gt.float(L/2)) then
+            q1=q1-float(L)
+          else if (q1.lt.(-float(L/2))) then
+            q1=q1+float(L)
+          end if
 
-      !         if (p1.gt.float(L/2)) then
-      !           p1=p1-float(L)
-      !         else if (p1.lt.(-float(L/2))) then
-      !           p1=p1+float(L)
-      !         end if
+          do ky=-(L-1)/2, L/2
+            do kx=-(L-1)/2, L/2
+              fky=2*pi*ky/L
+              fkx=2*pi*kx/L
 
-      !         if (q1.gt.float(L/2)) then
-      !           q1=q1-float(L)
-      !         else if (q1.lt.(-float(L/2))) then
-      !           q1=q1+float(L)
-      !         end if
+              if ((kx.eq.0).and.(ky.eq.0)) then
 
-      !           do ky=-(L-1)/2,L/2
-      !             do kx=-(L-1)/2,L/2
-      !           ! do ky=0,L
-      !           !   do kx=0,L
-      !               fky=2*pi*ky/L
-      !               fkx=2*pi*kx/L
+              else
 
-      !               if ((kx.eq.0).and.(ky.eq.0)) then
-      !               ! if ((kx.eq.(L/2)+1).and.(ky.eq.(L/2)+1)) then
+                lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
+                  *cos(fky*q1))/(2-cos(fkx)-cos(fky))
 
-      !               else
+              end if ! end of kx=ky=kz=0 block
+            end do ! end kx loop
+          end do ! end ky loop
 
-      !                 lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
-      !                   *cos(fky*q1))/(2-cos(fkx)-cos(fky))
-      !                 ! lgf(rx,ry)=lgf(rx,ry)+(cos(fk(kx)*p1)&
-      !                 !   *cos(fk(ky)*q1))/(2-cosine(kx)-cosine(ky))
+          lgf(rx,ry)=lgf(rx,ry)/(2*L**2)
 
-      !               end if ! end of kx=ky=kz=0 block
-      !             end do ! end kx loop
-      !           end do ! end ky loop
+          if (rx.eq.0.and.ry.eq.0) then
+            g0 = g0 + lgf(rx,ry)
+          end if
 
-      !         lgf(rx,ry)=lgf(rx,ry)/(2*L**2)
+        end do ! end x loop
+      end do ! end y loop
 
-      !         if (a.eq.x.and.b.eq.y) then
-      !           g0 = g0 + lgf(rx,ry)
-      !         end if
-
-      !       end do ! end a loop
-      !     end do ! end b loop
-      !   end do ! end x loop
-      ! end do ! end y loop
-
-      ! g0 = g0 / L**2
-
-      !!write (*,*) "g(0) = ",g0
-      !!write (*,*) "mu = ",-1 * g0 * ((q**2) / (eps_0))
-
-      !! open(30, file=lgf_file, status="new",&
-      !!      action="write", access="stream", form="unformatted")
-      !open(30, file=lgf_file, status="new", action="write")
-      !do rx = 0, L/2
-      !  do ry = 0, L/2
-      !    write(30, '(2i4.2, f12.8)') rx, ry, lgf(rx, ry)
-      !  end do
-      !end do
-      !write (*,*) "Written LGF"
-      !close(30)
-
-    do ry=0,L/2
-      do rx=0,L/2
-
-        ! these need to be real, for cos to work later
-        p1=float(rx)
-        q1=float(ry)
-
-        ! these need to be within [L/2,-L/2]. The Green's
-        ! function is even though because we use cosines, so it
-        ! doesn't matter whether it's positive or negative.
-
-        if (p1.gt.float(L/2)) then
-          p1=p1-float(L)
-        else if (p1.lt.(-float(L/2))) then
-          p1=p1+float(L)
-        end if
-
-        if (q1.gt.float(L/2)) then
-          q1=q1-float(L)
-        else if (q1.lt.(-float(L/2))) then
-          q1=q1+float(L)
-        end if
-
-        do ky=-(L-1)/2, L/2
-          do kx=-(L-1)/2, L/2
-        ! do ky=0,L
-        !   do kx=0,L
-            fky=2*pi*ky/L
-            fkx=2*pi*kx/L
-
-            if ((kx.eq.0).and.(ky.eq.0)) then
-            ! if ((kx.eq.(L/2)+1).and.(ky.eq.(L/2)+1)) then
-
-            else
-
-              lgf(rx,ry)=lgf(rx,ry)+(cos(fkx*p1)&
-                *cos(fky*q1))/(2-cos(fkx)-cos(fky))
-              ! lgf(rx,ry)=lgf(rx,ry)+(cos(fk(kx)*p1)&
-              !   *cos(fk(ky)*q1))/(2-cosine(kx)-cosine(ky))
-
-            end if ! end of kx=ky=kz=0 block
-          end do ! end kx loop
-        end do ! end ky loop
-
-        lgf(rx,ry)=lgf(rx,ry)/(2*L**2)
-
-        if (rx.eq.0.and.ry.eq.0) then
-          g0 = g0 + lgf(rx,ry)
-        end if
-
-      end do ! end x loop
-    end do ! end y loop
-
-    open(30, file=lgf_file, status="new",&
-         action="write", access="stream", form="unformatted")
-    write(30) lgf
-
-    ! open(30, file=lgf_file//"_fast", status="new", action="write")
-    ! do rx = 0, L/2
-    !   do ry = 0, L/2
-    !     write(30, '(2i4.2, f12.8)') rx, ry, lgf(rx, ry)
-    !   end do
-    ! end do
-    write (*,*) "Written LGF to ",lgf_file
-    close(30)
+      open(30, file=lgf_file, status="new",&
+           action="write", access="stream", form="unformatted")
+      write(30) lgf
+      write (*,*) "Written LGF to ",lgf_file
+      close(30)
 
     end if
 

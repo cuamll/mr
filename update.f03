@@ -7,43 +7,6 @@ module update
 
   contains
 
-    subroutine harm_fluct(n)
-      use common
-      implicit none
-      integer, intent(in) :: n
-      integer :: i, mu
-      real(kind=8) :: increment, delta_e, harm_delt
-
-      ! --- HARMONIC FLUCTUATION UPDATE ---
-
-      ! just testing
-      harm_delt = 0.5 * rot_delt
-
-      do i = 1, n
-
-        ! pick at random from interval [-Delta_max, +Delta_max]
-        increment = 2 * harm_delt * (rand() - 0.5)
-
-        mu = floor(2 * rand()) + 1
-
-        ! expression for an arbitrary increment
-        delta_e = ((eps_0 * lambda**2) / 2.0) *&
-                  (L**2 * increment) * (increment + 2 * ebar(mu))
-
-        attempts(6) = attempts(6) + 1
-
-        if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
-
-          accepts(6) = accepts(6) + 1
-          ebar(mu) = ebar(mu) + increment
-          e_field(mu,:,:) = e_field(mu,:,:) + increment
-
-        end if ! end of Metropolis check
-
-      end do ! i loop
-
-    end subroutine harm_fluct
-
     subroutine hop_canonical(n)
       implicit none
       integer, intent(in) :: n
@@ -84,18 +47,6 @@ module update
 
             attempts(1) = attempts(1) + 1
 
-            ! -----------------
-            ! OLD WAY - TESTING
-            ! get negative in the mu direction
-            ! site(mu) = neg(site(mu))
-            ! eo = e_field(mu,site(1),site(2))
-            ! en = eo + increment
-            ! old_e = 0.5 * eps_0 * eo**2
-            ! new_e = 0.5 * eps_0 * en**2
-            ! delta_e = new_e - old_e
-
-            ! -----------------
-            ! NEW WAY - THOUGHT THIS WAS RIGHT
             eo = e_field(mu,site(1),site(2))
             en = eo + increment
             old_e = 0.5 * eps_0 * lambda**2 * eo**2
@@ -106,8 +57,6 @@ module update
             if (v(site(1),site(2)).eq.0) then
               if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-                ! -----------------
-                ! NEW WAY - THOUGHT THIS WAS RIGHT
                 v(site(1),site(2)) = charge
                 ebar(mu) = ebar(mu) + (increment / L**2)
 
@@ -115,16 +64,6 @@ module update
                 site(mu) = pos(site(mu))
                 e_field(mu,site(1),site(2)) = en
                 v(site(1),site(2)) = 0
-
-                ! -----------------
-                ! OLD WAY - TESTING
-                ! v(site(1),site(2)) = charge
-                ! e_field(mu,site(1),site(2)) = en
-                ! ebar(mu) = ebar(mu) + (increment / L**2)
-
-                ! ! go back to the original site and set the charge to 0
-                ! site(mu) = pos(site(mu))
-                ! v(site(1),site(2)) = 0
 
                 accepts(1) = accepts(1) + 1
                 u_tot = u_tot + delta_e
@@ -136,8 +75,6 @@ module update
 
             attempts(1) = attempts(1) + 1
 
-            ! -----------------
-            ! NEW WAY - THOUGHT THIS WAS RIGHT
             site(mu) = pos(site(mu))
             eo = e_field(mu,site(1),site(2))
             en = eo - increment
@@ -145,32 +82,9 @@ module update
             new_e = 0.5 * eps_0 * lambda**2 * en**2
             delta_e = new_e - old_e
 
-            ! -----------------
-            ! OLD WAY - TESTING
-            ! eo = e_field(mu,site(1),site(2))
-            ! en = eo - increment
-            ! old_e = 0.5 * eps_0 * lambda**2 * eo**2
-            ! new_e = 0.5 * eps_0 * lambda**2 * en**2
-            ! delta_e = new_e - old_e
-            ! site(mu) = pos(site(mu))
-
-            ! get pos in the mu direction
-
             if (v(site(1),site(2)).eq.0) then
               if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
 
-                ! ---------------------
-                ! OLD WAY - TESTING
-                ! v(site(1),site(2)) = charge
-                ! ! go back to the original site and set the charge to 0
-                ! site(mu) = neg(site(mu))
-
-                ! v(site(1),site(2)) = 0
-                ! e_field(mu,site(1),site(2)) = en
-                ! ebar(mu) = ebar(mu) - (increment / L**2)
-
-                ! ---------------------
-                ! NEW WAY - THOUGHT THIS WAS RIGHT
                 v(site(1),site(2)) = charge
                 e_field(mu,site(1),site(2)) = en
                 ebar(mu) = ebar(mu) - (increment / L**2)
@@ -189,12 +103,6 @@ module update
         end if ! end charge.ne.0 block
 
       end do ! end charge hop sweep
-
-      ! if (ebar(mu).gt.(g_thr).or.ebar(mu).lt.((-1)*g_thr)) then
-        glob = 1
-      ! else
-        ! glob = 0
-      ! end if
 
       mu = 0; increment = 0.0;
       u_tot = 0.0
@@ -234,8 +142,6 @@ module update
           stop
         end if
 
-        ! grand canonical now
-
         ! charge = v(site(1),site(2))
         increment = q / (eps_0 * lambda)
 
@@ -271,15 +177,6 @@ module update
           attempts(5) = attempts(5) + 1
         end if
         
-        ! IDEA: if both charges we should preferentially have annihilation
-        ! if (v1o.eq.1.and.v2o.eq.-1) then
-        !   pm = 1
-        !   en = eo
-        ! else if (v1o.eq.-1.and.v2o.eq.1) then
-        !   pm = -1
-        !   en = eo
-        ! end if
-
         ! actually we only need the difference in core energies, really
         old_u_core = (abs(v1o) + abs(v2o)) * e_c * q**2
         new_u_core = (abs(v1n) + abs(v2n)) * e_c * q**2
@@ -287,12 +184,6 @@ module update
         old_e = (0.5 * eps_0 * lambda**2 * eo**2) + old_u_core
         new_e = (0.5 * eps_0 * lambda**2 * en**2) + new_u_core
         delta_e = new_e - old_e
-
-        if (abs(v1o).eq.1.and.abs(v2o).eq.1) then
-          ! ANNIHILATION
-          ! write (*,'(a,a,7i3.1,5f8.3)') "x_1, mu, rho(x_1), rho(x_2), eo, en, old_e",&
-          ! ", new_e, delta_e:",site(1),site(2),mu,v1o,v2o,v1n,v2n,eo,en,old_e,new_e,delta_e
-        end if
 
         if (abs(v1n).le.1.and.abs(v2n).le.1) then
           if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
@@ -324,8 +215,6 @@ module update
           end if
 
       end do ! end charge hop sweep
-
-      glob = 1
 
       mu = 0; increment = 0.0;
       u_tot = 0.0
@@ -502,11 +391,6 @@ module update
 
       n = step_number / sample_interval
 
-      ! get irrotational part of field
-      ! this way we can get decomposed parts along with total
-      ! call linsol
-      ! e_rot = e_field + mnphi
-
       e_tot_avg =           e_tot_avg + e_field
       v_avg =               v_avg + float(v)
       rho_avg =             rho_avg + (dble(sum(abs(v))) / L**2)
@@ -571,20 +455,20 @@ module update
       if (do_corr) then
 
         ch_in = v
-        ! e_in = e_field(1,:,:)
-        e_in = -1.0 * e_field(2,:,:)
+        e_in = e_field(1,:,:)
+        ! testing pi/2 field rotation
+        ! e_in = -1.0 * e_field(2,:,:)
 
         call fftw_execute_dft_r2c(plan_ch,ch_in,chk)
         call fftw_execute_dft_r2c(plan_x,e_in,exk)
 
-        ! e_in = e_field(2,:,:)
-        e_in = e_field(1,:,:)
+        e_in = e_field(2,:,:)
+        ! rotated one
+        ! e_in = e_field(1,:,:)
         call fftw_execute_dft_r2c(plan_x,e_in,eyk)
 
         do j = 1,L
           do k = 1,L
-            ! div = div + (-1.0 * e_field(2,j,k)) + e_field(1,j,k) +&
-            !       (-1.0 * e_field(2,j,neg(k))) + e_field(1,neg(j),k)
             div = div + (e_field(2,j,k)) + e_field(1,j,k) +&
                   (e_field(2,neg(j),k)) + e_field(1,j,neg(k))
             divsq = divsq + div**2
@@ -598,8 +482,6 @@ module update
           open(unit=12, file="div_snapshot.dat")
           do j = 1,L
             do k = 1,L
-              ! div = (-1.0 * e_field(2,j,k)) + e_field(1,j,k) +&
-              !       (-1.0 * e_field(2,j,neg(k))) + e_field(1,neg(j),k)
               ener_rot = ener_rot + (e_field(2,j,k)) + e_field(1,j,k) +&
                     (-1.0 * e_field(2,pos(j),k)) + e_field(1,j,pos(k))
               ener_rot_sq = ener_rot**2
@@ -615,12 +497,10 @@ module update
           ! x component has offsets in the x direction (columns)
           ! also it's flattened in the x direction
           if (j.le.(L/2)+1) then
-            ! exk(j,:) = exk(j,:) * exp(+(pi/L)*imag*j)
             eyk(j,:) = eyk(j,:) * exp(+(pi/L)*imag*j)
           end if
 
           ! y component has offsets in the y direction (rows)
-          ! eyk(:,j) = eyk(:,j) * exp(+(pi/L)*imag*j)
           exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
 
         end do

@@ -1,6 +1,16 @@
 #!/opt/local/bin/perl
 # plot.pl: gnuplot plotting of output from maggs-rossetto CG code.
 # called from analyse script with parameters included automatically
+#
+# Basically this script takes all the output files from the fortran code
+# and generates a set of parameters which are then passed to gnuplot,
+# and from there to latex -> dvips -> ps2pdf, in order to generate a set of
+# labelled PDFs automatically. A lot of the script was taken up generating
+# correct titles which render properly in latex, which makes it a lot less
+# readable; I then turned off the titles to put the figures in my thesis,
+# so this script could probably be tidied up a lot. But as it is I still
+# have the option of turning the titles back on, so I've left it as is.
+
 use strict;
 use warnings;
 use Env;
@@ -62,9 +72,6 @@ foreach my $key (keys %parameters) {
 
 my @titles;
 my $s_string; my $field_string; my $linetitle; my $plottitle;
-# $plottitle = qq(Grand canonical: L = $parameters{L}, T = $parameters{temperature}, $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
-# my $chgen = lc $parameters{charge_generation};
-# $plottitle = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), $linetitle\n\n$meas_c measurements from $steps_c MC steps.);
 my $plottitle_base;
 if ($parameters{canon} =~ /T/ || $parameters{canon} =~ /Y/) {
   $plottitle_base = qq(Canonical: L = $parameters{L}, T = $parameters{temperature}, $parameters{charges} charges ($chgen), );
@@ -197,13 +204,18 @@ for my $i (0..$#filenames) {
 warn "Different number of titles and files!\n" unless @inputfiles == @outputfiles;
 
 for my $i (0..$#inputfiles) {
+  # build up the command to run gnuplot with parameters
+  # that match the data file we're plotting
   push @gnuplotargs, qq(FILE='$inputfiles[$i]'; OUTPUT='$outputfiles[$i]$plotsuffix'; COLUMN='$columns[$i]'; LINETITLE = ''; PALETTE = '$palette';);
+
+  # now we need to run latex to get a DVI, dvips for a PS, ps2pdf for a PDF
+  # so generate the correct set of commands to do this for a given output file
   push @latexargs, qq(latex -interaction=batchmode -output-directory=$outpath $outputfiles[$i]$plotsuffix > /dev/null);
   push @dvipsargs, qq(dvips -q -D10000 -o $outputfiles[$i].ps $outputfiles[$i].dvi);
   push @ps2pdfargs, qq(ps2pdf -dPDFSETTINGS=/prepress -dColorImageResolution=600 $outputfiles[$i].ps $outputfiles[$i].pdf 2> /dev/null);
 
   if (index($inputfiles[$i],'s_direct') != -1) {
-    # $gnuplotargs[$i] .= qq( PITICS = 'N';);
+
   } else {
     $gnuplotargs[$i] .= qq( PITICS = 'Y';);
   }
@@ -212,8 +224,12 @@ for my $i (0..$#inputfiles) {
     $gnuplotargs[$i] .= qq( PLOTTITLE = '$titles[$i]';);
   }
 
+  # because of the syntax of the gnuplot commands and the extra
+  # switches just above, need to finally concatenate everything
   my $syscall = qq(gnuplot -e "$gnuplotargs[$i]" $gnuplotscript);
   print "Plotting $outputfiles[$i] with column $columns[$i]\n";
+
+  # now actually run gnuplot, latex, dvips, ps2pdf
   system($syscall);
   system($latexargs[$i]);
   system($dvipsargs[$i]);

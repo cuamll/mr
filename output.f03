@@ -103,7 +103,8 @@ module output
         s_ab_large(1,2,i+L,j+L)              = s_ab(i,j_eff, 2)
         s_ab_large(1,2,ri,rj)                = s_ab(i,j_eff, 2)
 
-        ! should really check this?
+        ! now extend the FFTW ouput out to be symmetrical
+        ! to make plotting in gnuplot easier later
         if (j.eq.1.and.i.eq.1) then
 
           s_ab_large(1,2,ri,rj)  = (-1.0)*&
@@ -152,8 +153,8 @@ module output
           offdiag = -1 * offdiag
         end if
 
-        ! these lines feel a bit off/hacky to me, but they
-        ! exactly reproduce what I had before, which in turn
+        ! these lines seem hacky to me but they exactly
+        ! reproduce what I had before, which in turn
         ! came from directly simulating out to some huge k.
         ! Might be worth rechecking at some point though.
         if ((kx).eq.-L.or.(ky).eq.-L) then
@@ -414,26 +415,6 @@ module output
       close(11)
       close(38)
       close(39)
-
-      ! open(unit=57, file="fftw_sab.dat")
-
-      ! ! do i = 1, L/2 + 1
-      ! !   do j = 1, L
-      ! do i = 1, bz*L + 1
-      !   do j = 1, bz*L + 1
-
-      !     write (57, field_format_string)&
-      !     2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-      !     2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-      !     real(fftw_s_ab_total(1,1,i,j)),&
-      !     real(fftw_s_ab_total(1,2,i,j)),&
-      !     real(fftw_s_ab_total(2,1,i,j)),&
-      !     real(fftw_s_ab_total(2,2,i,j))
-
-      !   end do
-      ! end do
-
-      ! close(57)
 
       do i = 1,sp*(L) + 1
         do j = 1,sp*(L) + 1

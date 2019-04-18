@@ -33,7 +33,7 @@ program mr
   if (rank.eq.0) then
     call cpu_time(start_time)
 
-    write (*,*) "Maggs-Rossetto algorithm on the simple cubic lattice."
+    write (*,*) "Maggs-Rossetto algorithm on the square lattice."
     write (*,*) "Callum Gray, University College London, 2017."
     write (*,*) "Git revision ",revision
     write (*,*) "Repo at http://github.com/cuamll/mr"
@@ -43,7 +43,6 @@ program mr
     write (*,'(a24,I2.2,a1,I2.2,a1,I4.2,a1,I2.2,a1,I2.2,a1,I2.2)')&
       &" Current date and time: ",values(3),"/",values(2),"/"&
       &,values(1)," ",values(5),":",values(6),":",values(7)
-    !write (*,'(a,i2.1)') "Max OpenMP threads: ",omp_get_max_threads()
   end if
 
   call read_input
@@ -60,7 +59,7 @@ program mr
     call cpu_time(timings(1))
 
     ! every proc/sample combination should have a different seed,
-    ! otherwise we're averaging identical data. i choose to start @ 0
+    ! otherwise we're averaging identical data. start @ 0
     call setup_wrapper((rank * no_samples) + k - 1)
 
     call cpu_time(timings(2))
@@ -154,9 +153,7 @@ program mr
 
     call normalisations(num_procs)
 
-    ! if (do_corr) then
-      call write_output
-    ! end if
+    call write_output
 
     call cpu_time(end_time)
 
@@ -225,15 +222,9 @@ subroutine mc_sweep
   use update
   implicit none
 
-  ! call harm_fluct(int(L**2 * hop_ratio))
-
   call hop(int(L**2 * hop_ratio))
-
   call rot(int(L**2 * rot_ratio))
-
-  if (glob.eq.1) then
-    call harm(int(L**2 * g_ratio))
-  end if
+  call harm(int(L**2 * g_ratio))
 
 end subroutine mc_sweep
 
@@ -338,12 +329,6 @@ subroutine reductions(id)
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      ! call MPI_Reduce(MPI_IN_PLACE, sxx, size(sxx), MPI_NEW_COMPLEX,&
-      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      ! call MPI_Reduce(MPI_IN_PLACE, sxy, size(sxy), MPI_NEW_COMPLEX,&
-      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      ! call MPI_Reduce(MPI_IN_PLACE, syy, size(syy), MPI_NEW_COMPLEX,&
-      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p),&
@@ -373,12 +358,6 @@ subroutine reductions(id)
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      ! call MPI_Reduce(sxx, sxx, size(sxx), MPI_NEW_COMPLEX,&
-      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      ! call MPI_Reduce(sxy, sxy, size(sxy), MPI_NEW_COMPLEX,&
-      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      ! call MPI_Reduce(syy, syy, size(syy), MPI_NEW_COMPLEX,&
-      !                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(ch_ch, ch_ch, size(ch_ch),&
                          MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(rho_k_p, rho_k_p, size(rho_k_p),&
@@ -419,6 +398,9 @@ subroutine normalisations(num_procs)
   ! average over measurements/samples, then MPI_Reduce() and
   ! average over procs as well to get a final measurement
 
+  ! do this in main so that I don't have to include MPI and worry
+  ! about passing proc ranks etc. to a different module
+
   denom = dble(no_samples * num_procs * no_measurements)
 
   ener_tot_sum = ener_tot_sum / denom
@@ -453,9 +435,6 @@ subroutine normalisations(num_procs)
     dir_struc = dir_struc / denom
     dist_r = dist_r / denom
     bin_count = bin_count / denom
-    ! sxx = sxx / denom
-    ! sxy = sxy / denom
-    ! syy = syy / denom
   end if
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
@@ -498,6 +477,9 @@ subroutine normalisations(num_procs)
   write (*,*) "<Divsq>: ",divsq
   write (*,*) "div_fluct: ", (1.0)*(divsq - div**2)
 
+  ! in principle this block could be removed, actually.
+  ! I run through tee so could print everything to stdin.
+  ! can i be bothered to change it at this point though
   open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
   write (30,'(4ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
@@ -550,11 +532,6 @@ subroutine normalisations(num_procs)
   accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
   write (30,'(a,2i12.1,es18.9)') "Harm: total, attempts, rate: ",&
   accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
-
-  ! comment this out for now; not doing harmonic fluctuations
-  ! write (*,'(a,2i12.1,es18.9)') "# Harmonic fluctuations: &
-  ! &total, attempts, rate: ",&
-  ! accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
 
   if (.not.canon) then
 

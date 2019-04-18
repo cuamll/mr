@@ -115,7 +115,7 @@ my @arr = split(/\//,$directories);
 my $jobfile = "$directories$arr[-1].job";
 print "Job file = $jobfile\n";
 
-# grab the number of MPI slots used. Hacky af hehe
+# grab the number of MPI slots used. Bit of a hack but ¯\_(ツ)_/¯
 if (-f $jobfile) {
   open $fh, '<', $jobfile;
   while ($line = <$fh>) {
