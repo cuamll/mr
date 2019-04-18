@@ -34,6 +34,8 @@ d = 2
 bz = 2
 # threshold for deciding if eigenvalues are degenerate
 thresh = 0.04
+plt.rc('text',usetex=True)
+plt.rc('font',**{'family': 'sans-serif', 'size' : 24, 'sans-serif': ['Computer Modern']})
 
 input_file = direc + '/s_ab_total.dat'
 output_dir = direc + '/quadrics_new/'
@@ -80,16 +82,16 @@ for i in range(len(s_ab_tot)):
     idx = np.argsort(eigvals_temp)
     eigvals_temp = eigvals_temp[idx]
     # eigenvalues of inverse tensor!
-    eigvals_temp = 1. / eigvals_temp
+    # eigvals_temp = 1. / eigvals_temp
     eigvecs_temp = eigvecs_temp[:,idx]
     s_ab_eigvals[i] = eigvals_temp
     s_ab_eigvecs[i] = eigvecs_temp
 
     if all(abs(kvals[i]) <= (0.00001 + (np.pi))):
         # now, we dot the normalised k's with each of the eigenvectors
-        dots = np.zeros(len(eigvals_temp))
+        dot_prods = np.zeros(len(eigvals_temp))
         for row in range(len(eigvecs_temp)):
-            dots[row] = np.dot(kvals_norm[i],eigvecs_temp[:,row])
+            dot_prods[row] = np.dot(kvals_norm[i],eigvecs_temp[:,row])
 
         # at q = 0 both dot products are zero, but the tensor is
         # a circle; just pick one. otherwise check the dot products
@@ -97,8 +99,8 @@ for i in range(len(s_ab_tot)):
             which_transverse = (0,)
             which_long = (1,)
         else:
-            which_transverse = np.unravel_index(np.argmin(abs(dots)), dots.shape)
-            which_long = np.unravel_index(np.argmax(abs(dots)), dots.shape)
+            which_transverse = np.unravel_index(np.argmin(abs(dot_prods)), dot_prods.shape)
+            which_long = np.unravel_index(np.argmax(abs(dot_prods)), dot_prods.shape)
 
         # the smallest dot product is the transverse one
         transverse_eigval = eigvals_temp[which_transverse]
@@ -127,9 +129,9 @@ for i in range(len(s_ab_tot)):
 
             s_ab_eigvecs[i] = eigvecs_temp
 
-        # if dots[which_transverse] >= 0.1:
+        # if dot_prods[which_transverse] >= 0.1:
         #     pass
-            # print("Eigvals, dot products, q, eigvecs: ",eigvals_temp,dots,kvals[i],eigvecs_temp)
+            # print("Eigvals, dot products, q, eigvecs: ",eigvals_temp,dot_prods,kvals[i],eigvecs_temp)
             # raise Exception("Smallest eigenvalue is too big!")
 
         # now we need to construct the two components by picking
@@ -144,13 +146,13 @@ for i in range(len(s_ab_tot)):
             s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
         else:
             # first the transverse component
-            diag = np.zeros(len(dots))
+            diag = np.zeros(len(dot_prods))
             diag[which_transverse] = transverse_eigval
             diag = np.diag(diag)
             s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
             # and now the longitudinal
-            diag = np.zeros(len(dots))
+            diag = np.zeros(len(dot_prods))
             diag[which_long] = long_eigval
             diag = np.diag(diag)
             s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
@@ -192,10 +194,10 @@ Relevant peaks in the total S^{ab} tensor are at:
 The difficult thing is getting the right limits on the mesh
 """
 
-xpeaks = [0, np.pi/8, np.pi/6, np.pi/4]
-ypeaks = [0, np.pi/8, np.pi/3, np.pi/4]
-stringpeaks = ['0_0', 'pi8_pi8', 'pi6_pi3', 'pi4_pi4']
-latexpeaks = ['(0,0)','(\pi/8, \pi/8)','(\pi/6, \pi/3)', '(\pi/4, \pi/4)']
+xpeaks = [0, np.pi/8, np.pi/8, np.pi/4, np.pi]
+ypeaks = [0, np.pi/8, np.pi/4, np.pi/4, np.pi]
+stringpeaks = ['0_0', 'pi8_pi8', 'pi6_pi3', 'pi4_pi4', 'pi_pi']
+latexpeaks = ['(0,0)','(\pi/8, \pi/8)','(\pi/6, \pi/3)', '(\pi/4, \pi/4)', '(\pi, \pi)']
 # print s_ab_inv[test,:,:]
 
 if d == 2:
@@ -207,10 +209,10 @@ if d == 2:
         # as a string for pretty printing later
         cen_tuple = np.where((np.abs(kvals[:,1] - ypeaks[i]) < 0.01) & (np.abs(kvals[:,0] - xpeaks[i]) < 0.01))
         index = cen_tuple[0]
-        print(xpeaks[i],ypeaks[i],index,s_ab_eigvals[index,:])
+
         kv = kvals[cen_tuple]
         kv_str = r' $ q = ' + latexpeaks[i] + r' $'
-        # print(s_ab_eigvals[cen_tuple,:],chi_eigvals[cen_tuple,:])
+        print(xpeaks[i],ypeaks[i],index,s_ab_eigvals[cen_tuple,:])
 
         # by inspection we can see that the eigenvalues should correspond
         # to the intercepts of the contour, so they're our x and y limits.
@@ -218,6 +220,8 @@ if d == 2:
         # linspace doesn't work at all and just prints x/ymax n times
         s_xmax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,0]),decimals=2))
         s_ymax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,1]),decimals=2))
+        # s_xmax = 1. + 1.1*float(s_ab_eigvals[cen_tuple,0])
+        # s_ymax = 1. + 1.1*float(s_ab_eigvals[cen_tuple,1])
         if (s_xmax > s_ymax):
             s_max = s_xmax
         else:
@@ -228,25 +232,24 @@ if d == 2:
         # s_xlist = np.linspace(-s_xmax,s_xmax)
         # s_ylist = np.linspace(-s_ymax,s_ymax)
         s_X, s_Y = np.meshgrid(s_xlist,s_ylist)
-        C = quadric(s_X, s_Y, s_ab_eigvals[cen_tuple,0], s_ab_eigvals[cen_tuple,1])
+        C = quadric(s_X, s_Y, float(s_ab_eigvals[cen_tuple,0]), float(s_ab_eigvals[cen_tuple,1]))
 
         # chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
-        chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
-        chi_ymax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,1]),decimals=2))
-        chi_xlist = np.linspace(-chi_xmax,chi_xmax, num=150)
-        chi_ylist = np.linspace(-chi_ymax,chi_ymax, num=150)
-        chi_X, chi_Y = np.meshgrid(chi_xlist,chi_ylist)
-        C2 = quadric(chi_X, chi_Y, chi_eigvals[cen_tuple,0], chi_eigvals[cen_tuple,1])
+        # chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
+        # chi_ymax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,1]),decimals=2))
+        # chi_xlist = np.linspace(-chi_xmax,chi_xmax, num=150)
+        # chi_ylist = np.linspace(-chi_ymax,chi_ymax, num=150)
+        # chi_X, chi_Y = np.meshgrid(chi_xlist,chi_ylist)
+        # C2 = quadric(chi_X, chi_Y, chi_eigvals[cen_tuple,0], chi_eigvals[cen_tuple,1])
 
-        plt.rc('text',usetex=True)
-        plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
         fig, axes = plt.subplots(figsize=(10, 10))
 
-        legend_elements = [Line2D([0], [0], color=utils.rd, lw=1, label=r' $ \bar{S}^{\alpha\beta}_{tot} $ ')]
+        legend_elements = [Line2D([0], [0], color=utils.rd, lw=2, label=r' $ \bar{S}^{\alpha\beta}_{tot} $ ')]
         # legend_elements = [Line2D([0], [0], color=utils.blu, lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
         #                    Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
         # axes.contour(chi_X, chi_Y, C2, colors=utils.blu, levels=[0])
         axes.grid()
+        axes.tick_params(length=1, labelsize=24)
         axes.axhline(0, color='black', lw=1.5)
         axes.axvline(0, color='black', lw=1.5)
         axes.contour(s_X, s_Y, C, colors=utils.rd, levels=[0])
@@ -257,6 +260,7 @@ if d == 2:
         output_file = output_dir + stringpeaks[i] + '.eps'
         plt.legend()
         plt.savefig(output_file, format='eps', dpi=dots)
+        # plt.savefig(output_file, format='eps')
         plt.close()
 
 elif d == 3:

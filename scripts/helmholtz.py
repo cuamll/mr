@@ -47,7 +47,7 @@ total_data = np.loadtxt(total_input_file)
 irrot_data = np.loadtxt(irrot_input_file)
 rot_data = np.loadtxt(rot_input_file)
 plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
+plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
 
 '''
 Function definitions
@@ -156,6 +156,7 @@ popt, pcov = curve_fit(two_lor, dists, cut_trace, guess, bounds=(0,np.inf))
 perr = np.sqrt(np.diag(pcov))
 
 dists = np.insert(dists,small_zero_index,0,axis=0)
+cut_trace = np.insert(cut_trace,small_zero_index,0,axis=0)
 
 # increase the mesh size to get decent resolution in the plots.
 # also, note that since the fit goes over (-pi, pi) to (pi, -pi),
@@ -165,17 +166,20 @@ fine_mesh = np.linspace(-np.pi*np.sqrt(2.), np.pi*np.sqrt(2.), 300, endpoint=Tru
 # lay the fit over the finer mesh
 fitted_data = two_lor(fine_mesh, *popt)
 
-tr_array = np.column_stack((Qx.flatten(),Qy.flatten(),itr.flatten()))
 lor1 = lor(fine_mesh, popt[0],popt[1],popt[4])
 lor2 = lor(fine_mesh, popt[2],popt[3],0.)
+
 cut = np.column_stack((fine_mesh,fitted_data,lor1,lor2))
 
 output_file = output_dir + 'fit_params.dat'
 f = open(output_file,'w')
 
 # print(cut)
-f.write("\nIrrot cut: Qx, Qy, fitted, simulated, lor1, lor2\n")
+print(dists.shape, cut_trace.shape)
+f.write("\nIrrot cut: Qx = -Qy, fitted, simulated, lor1, lor2\n")
 f.write(np.array2string(cut))
+f.write("\nSimulated data: Qx = -Qy, data\n")
+f.write(np.array2string(np.column_stack((dists,cut_trace)) ))
 
 # again, this one's for the two lorentzians
 f.write("# chi1    chi1_err    kappa1    kappa1_err    chi2    chi2_err    kappa2    kappa2_err    gamma    gamma_err\n{:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}\n".format(popt[0],perr[0],popt[1],perr[1],popt[2],perr[2],popt[3],perr[3],popt[4],perr[4]))
@@ -221,6 +225,7 @@ ftr = big_fit.reshape((side,side))
 itr = irrot_trace.reshape((side, side))
 ttr = total_trace.reshape((side, side))
 rtr = rot_trace.reshape((side, side))
+tr_array = np.column_stack((Qx.flatten(),Qy.flatten(),itr.flatten()))
 
 # plot the results
 plot_titles = []

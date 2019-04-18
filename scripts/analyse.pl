@@ -33,6 +33,7 @@ my $stampdir = '';
 # Get command line options; they all have (hopefully) sensible defaults
 $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
+                     "spr=i"=> \$dospr,
                      "contour=i"=> \$docontour,
                      "quiver=i"=> \$doquiver,
                      "multiplot=i"=> \$domultiplot,

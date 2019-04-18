@@ -93,14 +93,15 @@ for i in range(len(xpeaks)):
     # plot the results
     output_file = output_dir + stringpeaks[i] + '.eps'
     plt.rc('text',usetex=True)
-    plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
+    plt.rc('font',**{'family': 'sans-serif', 'size' : 14, 'sans-serif': ['Computer Modern']})
     fig, ax = plt.subplots()
     peak_loc = '(' + str(int((xpeaks[i]+0.01)/np.pi)) + '$ \pi $, ' + str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $).'
     ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
     ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+    ax.tick_params(length=1, labelsize=18)
     # plt.plot(small_line[:,0] / np.pi, result.init_fit, 'k--', label='initial fit')
-    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'o', color=utils.blu, ms=8, label='simulation data')
-    plt.plot(small_line[:,0] / np.pi, result.best_fit, 'o-', color=utils.rd, ms=4, linewidth=2, label='Lorentzian fit')
+    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'o', color=utils.blu, ms=8, label='Simulation')
+    plt.plot(small_line[:,0] / np.pi, result.best_fit, 'o-', color=utils.rd, ms=4, linewidth=2, label='Fit')
     plt.xlabel('$ Q_x $')
     # ax = plt.axes()
     # tick_locs = [centre-np.pi,centre,centre+np.pi]

@@ -49,6 +49,8 @@ irrot_intens = s_p_irrot_raw[:,d:d+1]
 side = int(np.sqrt(len(intens)) + 0.01) # ensure it doesn't round down too far
 intens = intens.reshape((side,side))
 irrot_intens = irrot_intens.reshape((side,side))
+plt.rc('text',usetex=True)
+plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
 
 def g_to_index(x,y):
     '''
@@ -115,8 +117,6 @@ for i in range(-1*(int((sp/2) + 0.01)) + 1, (int((sp/2) + 0.01))):
         # quot = np.divide(sim_int, ana_int, where=ana_int!=0)
 
         fig, axes = plt.subplots(ncols=3, nrows=1, figsize=(15,4))
-        plt.rc('text',usetex=True)
-        plt.rc('font',family='sans-serif')
         # chonk
         for chonk in range(3):
             axes[chonk].xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
@@ -125,17 +125,20 @@ for i in range(-1*(int((sp/2) + 0.01)) + 1, (int((sp/2) + 0.01))):
             axes[chonk].yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
 
         ax = axes[0]
-        ax.set_title('Simulated $ S_{\perp}^{irrotational} $')
+        ax.tick_params(length=1, labelsize=16)
+        # ax.set_title('Simulated $ S_{\perp}^{irrotational} $')
         cs = ax.contourf(Qx / np.pi, Qy / np.pi, irrot_sim_int.T, cmap=cm.inferno)
         fig.colorbar(cs, ax=ax)
 
         ax = axes[1]
-        ax.set_title('Simulated $ S_{\perp}^{total} $')
+        ax.tick_params(length=1, labelsize=16)
+        # ax.set_title('Simulated $ S_{\perp}^{total} $')
         cs = ax.contourf(Qx / np.pi, Qy / np.pi, sim_int.T, cmap=cm.inferno)
         fig.colorbar(cs, ax=ax)
 
         ax = axes[2]
-        ax.set_title('Analytical $ S_{\perp} $')
+        ax.tick_params(length=1, labelsize=16)
+        # ax.set_title('Analytical $ S_{\perp} $')
         cs = ax.contourf(Qx / np.pi, Qy / np.pi, ana_int, cmap=cm.inferno)
         fig.colorbar(cs, ax=ax)
 

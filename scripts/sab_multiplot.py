@@ -75,7 +75,7 @@ plot_t = r" $ S^{\alpha \beta}_{\text{rot.}}(\mathbf{q}), " + common
 plot_titles.append(plot_t)
 
 plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif','sans-serif': ['Computer Modern']})
+plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
 params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
 plt.rcParams.update(params)
 
@@ -86,17 +86,17 @@ dotitle = ''
 for i in range(len(files)):
     # Set up figure and image grid
     fig = plt.figure(figsize=(10, 8))
-    if dotitle: fig.suptitle(plot_titles[i], fontsize=18)
+    if dotitle: fig.suptitle(plot_titles[i], fontsize=16)
 
     grid = ImageGrid(fig, 111,          # as in plt.subplot(111)
                      nrows_ncols=(2,2),
-                     axes_pad=0.48,
+                     axes_pad=(0.80,0.30),
                      share_all=True,
                      cbar_location="right",
                      # cbar_mode="single",
                      cbar_mode="each",
-                     cbar_size="7%",
-                     cbar_pad=0.05,
+                     cbar_size="9%",
+                     cbar_pad=0.04,
                      )
     xx = dats[i][:,dim].reshape((len(small_q),len(small_q))).T
     xy = dats[i][:,dim+1].reshape((len(small_q),len(small_q))).T
@@ -114,7 +114,7 @@ for i in range(len(files)):
         im = ax.contourf(qx, qy, tens[j], cmap=cm.inferno)
         # im = ax.pcolormesh(qx, qy, tens[j], cmap=cm.inferno, edgecolors='None')
         ax.cax.colorbar(im)
-        ax.cax.tick_params(length=1, labelsize=9)
+        ax.cax.tick_params(length=1, labelsize=16)
         ax.cax.toggle_label(True)
 
     # ax.cax.colorbar(im)
