@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+'''
+    sab_multiplot.py: plot the four (really only three are independent
+    but it looks weird if you just plot the three) components of the
+    S^{ab} correlation tensor for the lattice Coulomb gas.
+    Uses matplotlib with latex to get nice labels and titles.
+'''
 import os
 import errno
 import argparse
@@ -44,6 +50,10 @@ output_dir = direc + '/plots/'
 total_output_file = output_dir + '/s_ab_total_mpl.eps'
 irrot_output_file = output_dir + '/s_ab_irrot_mpl.eps'
 rot_output_file = output_dir + '/s_ab_rot_mpl.eps'
+plt.rc('text',usetex=True)
+plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
+params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
+plt.rcParams.update(params)
 
 mkdir_p(output_dir)
 total_data = np.loadtxt(total_input_file)
@@ -56,16 +66,12 @@ Qx, Qy = np.meshgrid(small_q, small_q)
 qx = (Qx / np.pi)
 qy = (Qy / np.pi)
 qy_stack = np.stack((Qy / np.pi, Qy / np.pi))
-# qx_stack = np.stack((Qx / np.pi, Qx / np.pi))
-# qy_stack = np.stack((Qy / np.pi, Qy / np.pi))
-# s_ab_tot = total_data[:,dim:(dim*(dim+1))].reshape((-1,dim,dim))
-# s_ab_irrot = irrot_data[:,dim:(dim*(dim+1))].reshape((-1,dim,dim))
-# s_ab_rot = rot_data[:,dim:(dim*(dim+1))].reshape((-1,dim,dim))
 
 files = [total_input_file, irrot_input_file, rot_input_file]
 output_files = [total_output_file, irrot_output_file, rot_output_file]
 dats = [total_data, irrot_data, rot_data]
 plot_titles = []
+# again, I want LaTeX text output
 common = r" \; T = {:.4f}, \; u = {:.4f} $ ".format(temp, core_energy)
 plot_t = r" $ S^{\alpha \beta}_{\text{total}}(\mathbf{q}), " + common
 plot_titles.append(plot_t)
@@ -74,13 +80,7 @@ plot_titles.append(plot_t)
 plot_t = r" $ S^{\alpha \beta}_{\text{rot.}}(\mathbf{q}), " + common
 plot_titles.append(plot_t)
 
-plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
-params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
-plt.rcParams.update(params)
-
-# empty string evaluates to false; comment/uncomment to plot titles or not
-# dotitle = 'True'
+# empty string evaluates to false; insert something to plot titles
 dotitle = ''
 
 for i in range(len(files)):
@@ -103,8 +103,6 @@ for i in range(len(files)):
     yx = dats[i][:,dim+2].reshape((len(small_q),len(small_q))).T
     yy = dats[i][:,dim+3].reshape((len(small_q),len(small_q))).T
     tens = [xx,xy,yx,yy]
-    # print(xx.shape)
-    # print(qx.shape)
     for j in range(4):
         ax = grid[j]
         ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
@@ -112,14 +110,10 @@ for i in range(len(files)):
         ax.yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
         ax.yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
         im = ax.contourf(qx, qy, tens[j], cmap=cm.inferno)
-        # im = ax.pcolormesh(qx, qy, tens[j], cmap=cm.inferno, edgecolors='None')
         ax.cax.colorbar(im)
         ax.cax.tick_params(length=1, labelsize=16)
         ax.cax.toggle_label(True)
 
-    # ax.cax.colorbar(im)
-    # ax.cax.toggle_label(True)
     fig.tight_layout()
     fig.subplots_adjust(top=0.92)
-    # plt.show()
     plt.savefig(output_files[i], format='eps', dpi=dots)

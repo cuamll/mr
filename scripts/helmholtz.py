@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+'''
+    helmholtz.py: 
+'''
 import os
 import errno
 import argparse
@@ -53,19 +56,6 @@ plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer M
 Function definitions
 '''
 
-# still a bit confused about this
-# Steve says that chi and rot_avg differ only by a factor of T
-# but then says that they're both free parameters??
-def irrot(dist, gamma, chi, kappa):
-    """ 1d lorentzian: centred on x0, peak amplitude chi, fwhm kappa """
-    # return ( ( (chi * temp) / const) / (1 + (chi) / (1 + kappa**2/(x - x0)**2)) )
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        eps = 1 + (kappa**2 / dist)
-        result = ( (gamma) / (1 + (chi) / (eps)) )
-
-    return result.ravel()
-
 def lor(dist, chi, kappa, gamma):
     """ 1d lorentzian """
     result = ((chi * kappa**2)/(kappa**2 + (dist)**2) + gamma)
@@ -73,15 +63,8 @@ def lor(dist, chi, kappa, gamma):
 
 def two_lor(dist, chi1, kappa1, chi2, kappa2, gamma):
     """ two 1d lorentzians: both centred on x0, different chi and kappa """
-    result = ((chi1 * kappa1**2)/(kappa1**2 + (dist)**2) + (chi2 * kappa2**2)/(kappa2**2 + (dist)**2) + gamma)
-    return result.ravel()
-
-def arctans(dist, A, B, C):
-    """ can be shown to be equivalent to a distribution of Lorentzians """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        result = A * ((np.arctan(B * dist) - np.arctan(C * dist)) / (dist)) + gamma_init
-
+    result = ((chi1 * kappa1**2)/(kappa1**2 + (dist)**2) +
+              (chi2 * kappa2**2)/(kappa2**2 + (dist)**2) + gamma)
     return result.ravel()
 
 # these are messy, but they do the job of picking out
@@ -144,13 +127,12 @@ guess = np.array([chi1_init, kappa1_init, chi2_init, kappa2_init, gamma_init])
 
 # we want to pull out the q values for the cut along q_x = -q_y
 small_q = kvals[0:length+1,1]
-# these are just to tidy up the plot call further down, very hacky
 Qx, Qy = np.meshgrid(small_q, small_q)
 qx_stack = np.stack((Qx / np.pi, Qx / np.pi))
 qy_stack = np.stack((Qy / np.pi, Qy / np.pi))
 
 
-# this actually does the fit
+# actually do the fit
 dists = np.sqrt(cut[:,0]**2 + cut[:,1]**2)
 popt, pcov = curve_fit(two_lor, dists, cut_trace, guess, bounds=(0,np.inf))
 perr = np.sqrt(np.diag(pcov))
@@ -182,26 +164,39 @@ f.write("\nSimulated data: Qx = -Qy, data\n")
 f.write(np.array2string(np.column_stack((dists,cut_trace)) ))
 
 # again, this one's for the two lorentzians
-f.write("# chi1    chi1_err    kappa1    kappa1_err    chi2    chi2_err    kappa2    kappa2_err    gamma    gamma_err\n{:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}\n".format(popt[0],perr[0],popt[1],perr[1],popt[2],perr[2],popt[3],perr[3],popt[4],perr[4]))
+f.write("# chi1    chi1_err    kappa1    kappa1_err    "
+        "chi2    chi2_err    kappa2    kappa2_err    gamma    gamma_err"
+        "\n{:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}     {:.4f}    "
+        "{:.4f}    {:.4f}    {:.4f}    {:.4f}\n".format(popt[0],perr[0],
+        popt[1],perr[1],popt[2],perr[2],popt[3],perr[3],popt[4],perr[4]))
 
 
 # these two are latex'd titles for the plots. v ugly, i know
-pat = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $, $\chi_2 = {:.4f}, \kappa_2 = {:.4f}, \gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
-pat2 = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $,\n$\chi_2 = {:.4f}, \kappa_2 = {:.4f}, \gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
+pat = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $,"
+      "$\chi_2 = {:.4f}, \kappa_2 = {:.4f}, "
+      "\gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
+pat2 = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $,"
+       "\n$\chi_2 = {:.4f}, \kappa_2 = {:.4f}, "
+       "\gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
 print(pat)
 
 # plot the cut
+# simulation data compared to the fit, plus the decomposed Lorentzian parts
 fig, ax = plt.subplots()
 ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
 ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-plt.plot(cut[:,0] / np.pi, cut[:,1], 'o', color=utils.blu, ms=8, label='Simulation data')
-plt.plot(cut[:,0] / np.pi, fitted_data, 'o-', color=utils.rd, ms=4, linewidth=2, label='Fitted data')
-plt.plot(cut[:,0] / np.pi, cut[:,2], 'o-', color=utils.grn, ms=2, label='Lorentzian 1')
-plt.plot(cut[:,0] / np.pi, cut[:,3], 'o-', color=utils.purp, ms=2, label='Lorentzian 2')
+plt.plot(cut[:,0] / np.pi, cut[:,1], 'o',
+         color=utils.blu, ms=8, label='Simulation data')
+plt.plot(cut[:,0] / np.pi, fitted_data, 'o-',
+         color=utils.rd, ms=4, linewidth=2, label='Fitted data')
+plt.plot(cut[:,0] / np.pi, cut[:,2], 'o-',
+         color=utils.grn, ms=2, label='Lorentzian 1')
+plt.plot(cut[:,0] / np.pi, cut[:,3], 'o-',
+         color=utils.purp, ms=2, label='Lorentzian 2')
 plt.xlabel('$ q $')
-# temp_str = "{:.4f}".format(temp / (2 * np.pi))
 temp_str = "{:.4f}".format(temp)
-plot_title = r"Cut through $ q_y = - q_x $ for $ S^{\alpha \alpha}_{irrot.} $. T = " +  temp_str + '\n' + pat
+plot_title = r"Cut through $ q_y = - q_x $ for $ "
+              "S^{\alpha \alpha}_{irrot.} $. T = " +  temp_str + '\n' + pat
 plt.legend()
 plt.title('')
 plt.ylim(ymin=0,ymax=1.1*max(cut[:,1]))
@@ -241,9 +236,13 @@ ind_sim = np.unravel_index(np.nanargmax(itr, axis=None), itr.shape)
 print(ind_fit, ftr[ind_fit]/4, ind_sim, itr[ind_sim]/4, (ftr[ind_fit]/4)/(itr[ind_sim]/4))
 
 
-# Now we've plotted the fit over the whole BZ, try simulating the projections
+'''
+   Now we've plotted the fit over the whole BZ, try calculating the
+   perpendicular projections using the fit, and compare them to the
+   simulated neutron scattering data S^{perp}
+'''
 
-# try (1,1)
+# G = (1,1) chosen because I took the qx = -qy cut
 Gx = 1
 Gy = 1
 qx = small_q + (Gx * 2 * np.pi)
@@ -259,10 +258,12 @@ def g_to_index(x,y):
         goes from the reciprocal lattice vector \vec{G} at the zone centre
         to an array index for the simulation data.
     '''
-    tup = (int(0.001 + ((sp + 2*x) * (length / 2))),int(0.001 + ((sp + 2*y) * (length / 2))))
+    tup = (int(0.001 + ((sp + 2*x) * (length / 2))),
+           int(0.001 + ((sp + 2*y) * (length / 2))))
     return tup
 
 gx, gy = g_to_index(Gx, Gy)
+# simulated s_perp output
 total_perp_data = np.loadtxt(total_perp_file)
 irrot_perp_data = np.loadtxt(irrot_perp_file)
 intens = total_perp_data[:,d:d+1]
@@ -270,9 +271,10 @@ irrot_intens = irrot_perp_data[:,d:d+1]
 side = int(np.sqrt(len(intens)) + 0.01) # ensure it doesn't round down too far
 intens = intens.reshape((side,side))
 irrot_intens = irrot_intens.reshape((side,side))
-# again there's a normalisation issue
-sim_int = 0.25 * intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1]
-irrot_sim_int = 0.25 * irrot_intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1]
+# same normalisation issue as before
+sim_int = (0.25 * intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
+irrot_sim_int = (0.25 *
+              irrot_intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
 
 qx_stack = np.stack((Qx / np.pi, Qx / np.pi, Qx / np.pi))
 qy_stack = np.stack((Qy / np.pi, Qy / np.pi, Qy / np.pi))
@@ -283,17 +285,22 @@ scatt_func = s_p(Qx, Qy, Gx * 2 * np.pi, Gy * 2 * np.pi)
 s_irrot_fit = ftr * (1.0 - scatt_func)
 s_irrot_sim = itr * (1.0 - scatt_func)
 Z_irrot = np.stack((s_irrot_fit, s_irrot_sim, irrot_sim_int))
-ind_fit = np.unravel_index(np.nanargmax(s_irrot_fit, axis=None), s_irrot_fit.shape)
-ind_sim1 = np.unravel_index(np.nanargmax(s_irrot_sim, axis=None), s_irrot_sim.shape)
-ind_sim2 = np.unravel_index(np.argmax(irrot_sim_int, axis=None), irrot_sim_int.shape)
-print(ind_fit, s_irrot_fit[ind_fit], ind_sim1, s_irrot_sim[ind_sim1], ind_sim2, irrot_sim_int[ind_sim2], irrot_sim_int[ind_sim1])
+ind_fit = np.unravel_index(np.nanargmax(s_irrot_fit, axis=None),
+                           s_irrot_fit.shape)
+ind_sim1 = np.unravel_index(np.nanargmax(s_irrot_sim, axis=None),
+                            s_irrot_sim.shape)
+ind_sim2 = np.unravel_index(np.argmax(irrot_sim_int, axis=None),
+                            irrot_sim_int.shape)
+print(ind_fit, s_irrot_fit[ind_fit], ind_sim1, s_irrot_sim[ind_sim1],
+      ind_sim2, irrot_sim_int[ind_sim2], irrot_sim_int[ind_sim1])
 
 s_total_fit = (rtr * (scatt_func)) + s_irrot_fit
 s_total_sim = (rtr * (scatt_func)) + s_irrot_sim
 Z_total = np.stack((s_total_fit, s_total_sim, sim_int))
 
 f.write("\n\nTotal s_perp: Qx, Qy, fitted, simulated\n")
-tr_array = np.column_stack((Qx.flatten(),Qy.flatten(),s_total_fit.flatten(),sim_int.flatten()))
+tr_array = np.column_stack((Qx.flatten(),Qy.flatten(),
+                            s_total_fit.flatten(),sim_int.flatten()))
 cut = tr_array[np.where(tr_array[:,0] + tr_array[:,1] == 4*np.pi)]
 f.write(np.array2string(cut))
 f.close()
@@ -301,11 +308,14 @@ f.close()
 fig, ax = plt.subplots()
 ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
 ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-plt.plot(cut[:,0] / np.pi, cut[:,3], 'o', color=utils.blu, ms=8, label='Simulation data')
-plt.plot(cut[:,0] / np.pi, cut[:,2], 'o-', color=utils.rd, ms=4, linewidth=2, label='Fitted data')
+plt.plot(cut[:,0] / np.pi, cut[:,3], 'o',
+         color=utils.blu, ms=8, label='Simulation data')
+plt.plot(cut[:,0] / np.pi, cut[:,2], 'o-',
+         color=utils.rd, ms=4, linewidth=2, label='Fitted data')
 plt.xlabel('$ q $')
 plt.legend()
-plot_title = r"Cut through $ q_y + q_x = 4\pi $ for $ S^{\perp}_{total} $. T = " +  temp_str + '\n' + pat
+plot_title = r"Cut through $ q_y + q_x = 4\pi $ "
+              "for $ S^{\perp}_{total} $. T = " +  temp_str + '\n' + pat
 plt.ylim(ymin=0,ymax=1.1*max(cut[:,3]))
 plt.savefig(output_dir + 's_perp_total_cut.eps', format='eps', dpi=dots)
 plt.close()
@@ -324,8 +334,6 @@ do_plots(3, plot_titles, output_file, dots, qx_stack, qy_stack, Z_irrot)
 
 # plot of total scattering
 plot_titles = []
-# plot_t = r"Fitted $ S^{\perp}_{total}: " + pat
-# plot_titles.append(plot_t)
 plot_t = r"Fitted $ S^{\perp}_{total} $ with analytic function:" + "\n" + pat
 plot_titles.append(plot_t)
 plot_t = r'Measured $ S^{\perp}_{total} $ with analytic function'

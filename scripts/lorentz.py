@@ -47,7 +47,6 @@ data = np.column_stack((kvals,sum_data))
 def lor(x, x0, chi, kappa, bg):
     """ 1d lorentzian: centred on x0, peak amplitude chi, fwhm kappa """
     return ((chi * kappa**2)/(kappa**2 + (x - x0)**2) + bg)
-    # return ((chi * kappa**2)/(kappa**2 + (x - x0)**2))
 
 """
 Relevant peaks are at (among other places, in descending order of amplidtude):
@@ -69,9 +68,15 @@ for i in range(len(xpeaks)):
 
     # initialise the model and do the fit
     gmodel = Model(lor)
-    result = gmodel.fit(small_line[:,1], x=small_line[:,0], x0=ypeaks[i], chi=data[centre,2], kappa=kappa_test, bg = min(small_line[:,1]))
-    # result = gmodel.fit(small_line[:,1], x=small_line[:,0], x0=ypeaks[i], chi=data[centre,2], kappa=kappa_test)
-    final_ys = ((result.params['chi'].value * result.params['kappa'].value**2)/(result.params['kappa'].value**2 + (small_line[:,0] - result.params['x0'].value)**2) + result.params['bg'].value)
+    result = gmodel.fit(small_line[:,1], x=small_line[:,0],
+           x0=ypeaks[i], chi=data[centre,2], kappa=kappa_test,
+           bg = min(small_line[:,1]))
+    # generate fitted points for the same k-values as simulation
+    final_ys = ((result.params['chi'].value * result.params['kappa'].value**2)/
+            (result.params['kappa'].value**2 +
+            (small_line[:,0] - result.params['x0'].value)**2)
+            + result.params['bg'].value)
+    # various simple statistics
     ybar = np.sum(small_line[:,1])/len(small_line[:,1])
     residuals = (final_ys - ybar)
     ssreg = np.sum((final_ys - ybar)**2)
@@ -80,12 +85,14 @@ for i in range(len(xpeaks)):
     std_err = np.sum((small_line[:,1] - final_ys)**2)/len(final_ys)
 
     # write out the fit report
+    # ugly, but I use this output in various ways
     output_file = output_dir + stringpeaks[i] + '.fit'
     f = open(output_file,'w')
     f.write(result.fit_report())
     f.write('\nybar = {:.6f}\n'.format(ybar))
     f.write('\nk_y          ys          fitted_ys            residuals\n')
-    f.write(np.array2string(np.column_stack((small_line[:,0],small_line[:,1],final_ys,residuals))))
+    f.write(np.array2string(
+    np.column_stack((small_line[:,0],small_line[:,1],final_ys,residuals))))
     f.write('\nSS_reg = {:.4f}, SS_tot = {:.4f}, R^2 = {:.4f}'.format(ssreg,sstot,rsq))
     f.write('\nS = sum((ys - final_ys)^2)/len(ys) = {:.4f}'.format(std_err))
     result.plot()
@@ -93,24 +100,26 @@ for i in range(len(xpeaks)):
     # plot the results
     output_file = output_dir + stringpeaks[i] + '.eps'
     plt.rc('text',usetex=True)
-    plt.rc('font',**{'family': 'sans-serif', 'size' : 14, 'sans-serif': ['Computer Modern']})
+    plt.rc('font',**{'family': 'sans-serif', 'size' : 14,
+           'sans-serif': ['Computer Modern']})
     fig, ax = plt.subplots()
-    peak_loc = '(' + str(int((xpeaks[i]+0.01)/np.pi)) + '$ \pi $, ' + str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $).'
+    # LaTeX text output
+    peak_loc = '(' + str(int((xpeaks[i]+0.01)/np.pi)) + \
+            '$ \pi $, ' + str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $).'
     ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
     ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
     ax.tick_params(length=1, labelsize=18)
-    # plt.plot(small_line[:,0] / np.pi, result.init_fit, 'k--', label='initial fit')
-    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'o', color=utils.blu, ms=8, label='Simulation')
-    plt.plot(small_line[:,0] / np.pi, result.best_fit, 'o-', color=utils.rd, ms=4, linewidth=2, label='Fit')
+    plt.plot(small_line[:,0] / np.pi, small_line[:,1], 'o',
+             color=utils.blu, ms=8, label='Simulation')
+    plt.plot(small_line[:,0] / np.pi, result.best_fit, 'o-',
+             color=utils.rd, ms=4, linewidth=2, label='Fit')
     plt.xlabel('$ Q_x $')
-    # ax = plt.axes()
-    # tick_locs = [centre-np.pi,centre,centre+np.pi]
-    # tick_labels = [str(int(((ypeaks[i]+0.01)/np.pi) - 1)) + '$ \pi $', str(int((ypeaks[i]+0.01)/np.pi)) + '$ \pi $', str(int(((ypeaks[i]+0.01)/np.pi) + 1)) + '$ \pi $']
-    # plt.xticks(tick_locs, tick_labels)
-    param_title = 'Final parameters: $ \chi $ = {:.4f}, $ \kappa $ = {:.4f}, $ \gamma $ = {:.4f}'.format(result.params['chi'].value, result.params['kappa'].value, result.params['bg'].value)
+    param_title = 'Final parameters: $ \chi $ = {:.4f}, ' 
+    '$ \kappa $ = {:.4f}, $ \gamma $ = {:.4f}'.format(
+    result.params['chi'].value, result.params['kappa'].value,
+    result.params['bg'].value)
     temp_str = ' $ T $ = {:.4f}, $ \epsilon_c $ = {:.4f}'.format(temp, core_energy)
     plot_title = '$ S_{\perp}^{total}$' + peak_loc + temp_str + '\n' + param_title
     plt.legend()
-    # plt.title(plot_title)
     plt.savefig(output_file, format='eps', dpi=dots)
     plt.close()

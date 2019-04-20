@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+'''
+    quadrics.py: basically do an eigendecomposition on the S^{ab}
+    tensor and pick out the transverse and longitudinal eigenvectors.
+    Use those to Helmholtz decompose the tensor as well as plotting
+    the representation quadric of the tensor.
+'''
 import os
 import errno
 import argparse
@@ -35,7 +41,8 @@ bz = 2
 # threshold for deciding if eigenvalues are degenerate
 thresh = 0.04
 plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif', 'size' : 24, 'sans-serif': ['Computer Modern']})
+plt.rc('font',**{'family': 'sans-serif',
+       'size' : 24, 'sans-serif': ['Computer Modern']})
 
 input_file = direc + '/s_ab_total.dat'
 output_dir = direc + '/quadrics_new/'
@@ -62,7 +69,6 @@ for i in range(len(kvals)):
 
 # reshape to be a list of dxd matrices
 s_ab_tot = s_ab_tot.reshape((-1,d,d))
-# s_ab_tot = s_ab_tot / ((length**2 * bz**2) + 1
 chi_tot = s_ab_tot / temp
 
 s_ab_inv = np.zeros(s_ab_tot.shape)
@@ -110,7 +116,6 @@ for i in range(len(s_ab_tot)):
         long_eigval = eigvals_temp[which_long]
 
         if abs(long_eigval - transverse_eigval) <= thresh:
-            # print("Eigvals, q: ",eigvals_temp,long_eigval, transverse_eigval, abs(long_eigval - transverse_eigval), kvals[i])
             if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
                 print(which_long, which_transverse)
                 k_long = np.array([[1.], [0.]])
@@ -128,11 +133,6 @@ for i in range(len(s_ab_tot)):
             eigvecs_temp[:,which_transverse] = k_transverse
 
             s_ab_eigvecs[i] = eigvecs_temp
-
-        # if dot_prods[which_transverse] >= 0.1:
-        #     pass
-            # print("Eigvals, dot products, q, eigvecs: ",eigvals_temp,dot_prods,kvals[i],eigvecs_temp)
-            # raise Exception("Smallest eigenvalue is too big!")
 
         # now we need to construct the two components by picking
         # each eigenvalue individually.
@@ -157,13 +157,20 @@ for i in range(len(s_ab_tot)):
             diag = np.diag(diag)
             s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
-fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
-sab_rot_fmt_arr = ['%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E']
-concat = np.concatenate((kvals,kvals_norm,s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1)
-s_ab_t_concat = np.concatenate((kvals,s_ab_t.reshape((-1,d**2)),kvals_norm),axis=1)
-s_ab_l_concat = np.concatenate((kvals,s_ab_l.reshape((-1,d**2)),kvals_norm),axis=1)
+fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', 
+           '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
+sab_rot_fmt_arr = ['%+.10E', '%+.10E', '%+.10E',
+                   '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E']
+concat = np.concatenate((kvals,kvals_norm,
+         s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1)
+s_ab_t_concat = np.concatenate((kvals,
+                s_ab_t.reshape((-1,d**2)),kvals_norm),axis=1)
+s_ab_l_concat = np.concatenate((kvals,
+                s_ab_l.reshape((-1,d**2)),kvals_norm),axis=1)
 np.savetxt(s_ab_output_file, concat, fmt=fmt_arr)
-np.savetxt(chi_output_file, np.concatenate((kvals,kvals_norm,chi_eigvals,chi_eigvecs.reshape((-1,d**2))),axis=1), fmt=fmt_arr)
+np.savetxt(chi_output_file,
+           np.concatenate((kvals,kvals_norm,chi_eigvals,
+           chi_eigvecs.reshape((-1,d**2))),axis=1), fmt=fmt_arr)
 
 # this should not be this hard, probably
 size = int((length + 1)**2)
@@ -182,7 +189,6 @@ for i in range(len(concat)):
 concat_small = np.array(concat_small)
 s_ab_t_concat_small = np.array(s_ab_t_concat_small)
 s_ab_l_concat_small = np.array(s_ab_l_concat_small)
-# np.savetxt(s_ab_small_output_file, concat_small, fmt=fmt_arr)
 np.savetxt(s_ab_t_output_file, s_ab_t_concat_small, fmt=sab_rot_fmt_arr)
 np.savetxt(s_ab_l_output_file, s_ab_l_concat_small, fmt=sab_rot_fmt_arr)
 
@@ -197,8 +203,8 @@ The difficult thing is getting the right limits on the mesh
 xpeaks = [0, np.pi/8, np.pi/8, np.pi/4, np.pi]
 ypeaks = [0, np.pi/8, np.pi/4, np.pi/4, np.pi]
 stringpeaks = ['0_0', 'pi8_pi8', 'pi6_pi3', 'pi4_pi4', 'pi_pi']
-latexpeaks = ['(0,0)','(\pi/8, \pi/8)','(\pi/6, \pi/3)', '(\pi/4, \pi/4)', '(\pi, \pi)']
-# print s_ab_inv[test,:,:]
+latexpeaks = ['(0,0)','(\pi/8, \pi/8)',
+              '(\pi/6, \pi/3)', '(\pi/4, \pi/4)', '(\pi, \pi)']
 
 if d == 2:
     for i in range(len(xpeaks)):
@@ -207,7 +213,8 @@ if d == 2:
 
         # get the array index we want and also store the relevant k-value
         # as a string for pretty printing later
-        cen_tuple = np.where((np.abs(kvals[:,1] - ypeaks[i]) < 0.01) & (np.abs(kvals[:,0] - xpeaks[i]) < 0.01))
+        cen_tuple = (np.where((np.abs(kvals[:,1] - ypeaks[i]) < 0.01)
+                     & (np.abs(kvals[:,0] - xpeaks[i]) < 0.01)))
         index = cen_tuple[0]
 
         kv = kvals[cen_tuple]
@@ -218,10 +225,10 @@ if d == 2:
         # to the intercepts of the contour, so they're our x and y limits.
         # also, for some reason, if we don't cast them to float,
         # linspace doesn't work at all and just prints x/ymax n times
-        s_xmax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,0]),decimals=2))
-        s_ymax = 1.1*float(np.round(np.sqrt(s_ab_eigvals[cen_tuple,1]),decimals=2))
-        # s_xmax = 1. + 1.1*float(s_ab_eigvals[cen_tuple,0])
-        # s_ymax = 1. + 1.1*float(s_ab_eigvals[cen_tuple,1])
+        s_xmax = 1.1*float(np.round(
+                 np.sqrt(s_ab_eigvals[cen_tuple,0]),decimals=2))
+        s_ymax = 1.1*float(np.round(
+                 np.sqrt(s_ab_eigvals[cen_tuple,1]),decimals=2))
         if (s_xmax > s_ymax):
             s_max = s_xmax
         else:
@@ -229,25 +236,14 @@ if d == 2:
 
         s_xlist = np.linspace(-s_max,s_max, num=150)
         s_ylist = np.linspace(-s_max,s_max, num=150)
-        # s_xlist = np.linspace(-s_xmax,s_xmax)
-        # s_ylist = np.linspace(-s_ymax,s_ymax)
         s_X, s_Y = np.meshgrid(s_xlist,s_ylist)
-        C = quadric(s_X, s_Y, float(s_ab_eigvals[cen_tuple,0]), float(s_ab_eigvals[cen_tuple,1]))
-
-        # chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
-        # chi_xmax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,0]),decimals=2))
-        # chi_ymax = 1.1*float(np.round(np.sqrt(chi_eigvals[cen_tuple,1]),decimals=2))
-        # chi_xlist = np.linspace(-chi_xmax,chi_xmax, num=150)
-        # chi_ylist = np.linspace(-chi_ymax,chi_ymax, num=150)
-        # chi_X, chi_Y = np.meshgrid(chi_xlist,chi_ylist)
-        # C2 = quadric(chi_X, chi_Y, chi_eigvals[cen_tuple,0], chi_eigvals[cen_tuple,1])
+        C = quadric(s_X, s_Y,
+            float(s_ab_eigvals[cen_tuple,0]), float(s_ab_eigvals[cen_tuple,1]))
 
         fig, axes = plt.subplots(figsize=(10, 10))
 
-        legend_elements = [Line2D([0], [0], color=utils.rd, lw=2, label=r' $ \bar{S}^{\alpha\beta}_{tot} $ ')]
-        # legend_elements = [Line2D([0], [0], color=utils.blu, lw=1, label=r' $ \chi^{\alpha\beta}_{tot} $ '),
-        #                    Line2D([0], [0], color=utils.rd, lw=1, label=r' $ S^{\alpha\beta}_{tot} $ ')]
-        # axes.contour(chi_X, chi_Y, C2, colors=utils.blu, levels=[0])
+        legend_elements = [Line2D([0], [0], color=utils.rd,
+                lw=2, label=r' $ \bar{S}^{\alpha\beta}_{tot} $ ')]
         axes.grid()
         axes.tick_params(length=1, labelsize=24)
         axes.axhline(0, color='black', lw=1.5)
@@ -255,12 +251,11 @@ if d == 2:
         axes.contour(s_X, s_Y, C, colors=utils.rd, levels=[0])
         axes.legend(handles=legend_elements)
 
-        param_title = 'Parameters: $ T $ = {:.4f}, $ \epsilon_c $ = {:.4f}'.format(temp, core_energy)
-        # plt.title(r'$ \chi^{\alpha\beta}_{tot} $ and $ S^{\alpha\beta}_{tot} $ quadrics, ' + kv_str + '\n' + param_title)
+        param_title = 'Parameters: $ T $ = {:.4f}, '
+                      '$ \epsilon_c $ = {:.4f}'.format(temp, core_energy)
         output_file = output_dir + stringpeaks[i] + '.eps'
         plt.legend()
         plt.savefig(output_file, format='eps', dpi=dots)
-        # plt.savefig(output_file, format='eps')
         plt.close()
 
 elif d == 3:

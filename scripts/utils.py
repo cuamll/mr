@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+'''
+    utils.py: a few functions I use in various places and
+    colours I use in my matplotlib plots.
+'''
 import numpy as np
 import warnings
 
@@ -29,10 +33,6 @@ def s_p(x, y, G_x, G_y):
         Bit of a hack, but whatever.
 
     '''
-    # the zone centre throws a warning because x = G_x and y = G_y,
-    # but I can't find an easy way of using meshgrid below and
-    # only picking out the zone centre to skip; it complains about
-    # truthiness being ambiguous for arrays. hence, ignore the warning.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         res = (((G_x - x)*x + (G_y - y)*y)**2)/((x**2 + y**2)*((x - G_x)**2 + (y - G_y)**2))
