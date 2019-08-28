@@ -1,12 +1,12 @@
 # set terminal cairolatex standalone size 15cm,15cm 
-set terminal cairolatex standalone size 14cm,12cm header "\\usepackage[T1]{fontenc}\n\\usepackage{amsmath}\n\\renewcommand*\\familydefault{\\sfdefault}"
+set terminal cairolatex standalone size 14cm,12cm header "\\usepackage[T1]{fontenc}\n\\usepackage[fleqn]{amsmath}\n\\renewcommand*\\familydefault{\\sfdefault}"
 set output OUTPUT
 set grid xtics ytics dt 2 lt 2 lc rgb '#666666'
 set print "-"
 set autoscale fix
 load PALETTE
 # set cbrange [0:2.0]
-# set logscale cb
+set logscale cb
 
 if (exists("PLOTTITLE")) {
   set title PLOTTITLE
@@ -24,9 +24,9 @@ if (exists("PITICS")) {
   set ytics pi offset -1.75,0;
   set format x '{\Large $ \mathsf{ %- .0P } $}';
   set format y '{\Large $ \mathsf{ %- .0P } $}';
-  set xlabel offset 0,-2.5 "{\\Large $ \\mathsf{G_x} $}";
-  set ylabel offset 2.5,0 "{\\Large $ \\mathsf{G_y} $}";
-  set format cb '{\Large $ \mathsf{ %g } $}'
+  set xlabel offset 0,-1.5 "{\\Large $ \\mathsf{G_x} $}";
+  set ylabel offset 3.5,0 "{\\Large $ \\mathsf{G_y} $}";
+  set format cb '{\Large \raggedright $ \mathsf{ %g } $}'
   # set format cb '{\Large $ \mathsf{ % 5.3f } $}'
   set cbtics offset 3.5,0
 }

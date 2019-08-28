@@ -424,6 +424,8 @@ module update
 
         ebar_dip(i) = dp
         ebar_wind(i) = np
+        write(*,'(a, i9.1, 4f12.6)') "i, ebar, ebar_dip, ebar_wind",&
+            i, ebar, ebar_dip, ebar_wind
 
         avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
 
@@ -505,8 +507,8 @@ module update
 
         end do
 
-        exk = exk / (2.0*L**2)
-        eyk = eyk / (2.0*L**2)
+        exk = exk / sqrt(L**2)
+        eyk = eyk / sqrt(L**2)
 
         s_ab(:,:,1) = s_ab(:,:,1) + (exk * conjg(exk))
         s_ab(:,:,2) = s_ab(:,:,2) + (exk * conjg(eyk))

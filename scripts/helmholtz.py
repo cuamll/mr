@@ -50,7 +50,7 @@ total_data = np.loadtxt(total_input_file)
 irrot_data = np.loadtxt(irrot_input_file)
 rot_data = np.loadtxt(rot_input_file)
 plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
+plt.rc('font',**{'family': 'sans-serif', 'size' : 14, 'sans-serif': ['Computer Modern']})
 
 '''
 Function definitions
@@ -173,11 +173,11 @@ f.write("# chi1    chi1_err    kappa1    kappa1_err    "
 
 # these two are latex'd titles for the plots. v ugly, i know
 pat = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $,"
-      "$\chi_2 = {:.4f}, \kappa_2 = {:.4f}, "
-      "\gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
+"$\chi_2 = {:.4f}, \kappa_2 = {:.4f}, "
+"\gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
 pat2 = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $,"
-       "\n$\chi_2 = {:.4f}, \kappa_2 = {:.4f}, "
-       "\gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
+"\n$\chi_2 = {:.4f}, \kappa_2 = {:.4f}, "
+"\gamma = {:.4f}, $".format(popt[0],popt[1],popt[2],popt[3],popt[4])
 print(pat)
 
 # plot the cut
@@ -196,7 +196,7 @@ plt.plot(cut[:,0] / np.pi, cut[:,3], 'o-',
 plt.xlabel('$ q $')
 temp_str = "{:.4f}".format(temp)
 plot_title = r"Cut through $ q_y = - q_x $ for $ "
-              "S^{\alpha \alpha}_{irrot.} $. T = " +  temp_str + '\n' + pat
+"S^{\alpha \alpha}_{irrot.} $. T = " +  temp_str + '\n' + pat
 plt.legend()
 plt.title('')
 plt.ylim(ymin=0,ymax=1.1*max(cut[:,1]))
@@ -315,7 +315,7 @@ plt.plot(cut[:,0] / np.pi, cut[:,2], 'o-',
 plt.xlabel('$ q $')
 plt.legend()
 plot_title = r"Cut through $ q_y + q_x = 4\pi $ "
-              "for $ S^{\perp}_{total} $. T = " +  temp_str + '\n' + pat
+"for $ S^{\perp}_{total} $. T = " +  temp_str + '\n' + pat
 plt.ylim(ymin=0,ymax=1.1*max(cut[:,3]))
 plt.savefig(output_dir + 's_perp_total_cut.eps', format='eps', dpi=dots)
 plt.close()

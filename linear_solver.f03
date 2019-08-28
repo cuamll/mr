@@ -143,7 +143,7 @@ module linear_solver
     if (lgf_there) then
 
       write (*,*) "Reading in LGF from ",lgf_file
-      open(30, file=lgf_file, status="old",
+      open(30, file=lgf_file, status="old",&
            action="read", access="stream", form="unformatted")
       read(30) lgf
       close(30)

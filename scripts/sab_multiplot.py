@@ -109,6 +109,8 @@ for i in range(len(files)):
         ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
         ax.yaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
         ax.yaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+        # adding locator=tck.LogLocator() changes the cb to logcale
+        # but also masks the negative bits in offdiag component
         im = ax.contourf(qx, qy, tens[j], cmap=cm.inferno)
         ax.cax.colorbar(im)
         ax.cax.tick_params(length=1, labelsize=16)
