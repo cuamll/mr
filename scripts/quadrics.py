@@ -31,11 +31,7 @@ parser.add_argument("temperature",type=float, help="Temperature")
 parser.add_argument("e_c",type=float, help="Core-energy constant")
 parser.add_argument("dpi",type=int, help="DPI for plots")
 args = parser.parse_args()
-direc = args.directory
-length = args.length
-temp = args.temperature
 core_energy = np.abs(args.e_c)
-dots = args.dpi
 d = 2
 bz = 2
 # threshold for deciding if eigenvalues are degenerate
@@ -44,13 +40,13 @@ plt.rc('text',usetex=True)
 plt.rc('font',**{'family': 'sans-serif',
        'size' : 24, 'sans-serif': ['Computer Modern']})
 
-input_file = direc + '/s_ab_total.dat'
-output_dir = direc + '/quadrics_new/'
-s_ab_output_file = output_dir + 's_ab_total_eig.dat'
-chi_output_file = output_dir + 'chi_ab_total_eig.dat'
+s_ab_t_output_file     = args.directory + '/s_ab_t.dat'
+s_ab_l_output_file     = args.directory + '/s_ab_l.dat'
+input_file             = args.directory + '/s_ab_total.dat'
+output_dir             = args.directory + '/quadrics_new/'
+s_ab_output_file       = output_dir + 's_ab_total_eig.dat'
+chi_output_file        = output_dir + 'chi_ab_total_eig.dat'
 s_ab_small_output_file = output_dir + 's_ab_small_total_eig.dat'
-s_ab_t_output_file = direc + '/s_ab_t.dat'
-s_ab_l_output_file = direc + '/s_ab_l.dat'
 mkdir_p(output_dir)
 
 s_raw = np.loadtxt(input_file)
@@ -69,10 +65,7 @@ for i in range(len(kvals)):
 
 # reshape to be a list of dxd matrices
 s_ab_tot = s_ab_tot.reshape((-1,d,d))
-chi_tot = s_ab_tot / temp
-
-s_ab_inv = np.zeros(s_ab_tot.shape)
-chi_inv = np.zeros(s_ab_tot.shape)
+chi_tot = s_ab_tot / args.temperature
 
 s_ab_eigvals = np.zeros((len(s_ab_tot),d))
 s_ab_eigvecs = np.zeros(s_ab_tot.shape)
@@ -157,23 +150,19 @@ for i in range(len(s_ab_tot)):
             diag = np.diag(diag)
             s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
-fmt_arr = ['%+.8f', '%+.8f', '%+.8f', '%+.8f', 
-           '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f', '%+.8f']
-sab_rot_fmt_arr = ['%+.10E', '%+.10E', '%+.10E',
-                   '%+.10E', '%+.10E', '%+.10E', '%+.10E', '%+.10E']
 concat = np.concatenate((kvals,kvals_norm,
          s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1)
 s_ab_t_concat = np.concatenate((kvals,
                 s_ab_t.reshape((-1,d**2)),kvals_norm),axis=1)
 s_ab_l_concat = np.concatenate((kvals,
                 s_ab_l.reshape((-1,d**2)),kvals_norm),axis=1)
-np.savetxt(s_ab_output_file, concat, fmt=fmt_arr)
+np.savetxt(s_ab_output_file, concat, fmt='%+.8f')
 np.savetxt(chi_output_file,
            np.concatenate((kvals,kvals_norm,chi_eigvals,
-           chi_eigvecs.reshape((-1,d**2))),axis=1), fmt=fmt_arr)
+           chi_eigvecs.reshape((-1,d**2))),axis=1), fmt='%+.8f')
 
 # this should not be this hard, probably
-size = int((length + 1)**2)
+size = int((args.length + 1)**2)
 concat_small = np.empty(shape=(size,10))
 s_ab_t_concat_small = np.empty(shape=(size,8))
 s_ab_l_concat_small = np.empty(shape=(size,8))
@@ -189,8 +178,8 @@ for i in range(len(concat)):
 concat_small = np.array(concat_small)
 s_ab_t_concat_small = np.array(s_ab_t_concat_small)
 s_ab_l_concat_small = np.array(s_ab_l_concat_small)
-np.savetxt(s_ab_t_output_file, s_ab_t_concat_small, fmt=sab_rot_fmt_arr)
-np.savetxt(s_ab_l_output_file, s_ab_l_concat_small, fmt=sab_rot_fmt_arr)
+np.savetxt(s_ab_t_output_file, s_ab_t_concat_small, fmt='%+.10E')
+np.savetxt(s_ab_l_output_file, s_ab_l_concat_small, fmt='%+.10E')
 
 
 """
@@ -252,10 +241,11 @@ if d == 2:
         axes.legend(handles=legend_elements)
 
         param_title = 'Parameters: $ T $ = {:.4f}, '
-                      '$ \epsilon_c $ = {:.4f}'.format(temp, core_energy)
+                      '$ \epsilon_c $ = {:.4f}'.format(
+                      args.temperature, core_energy)
         output_file = output_dir + stringpeaks[i] + '.eps'
         plt.legend()
-        plt.savefig(output_file, format='eps', dpi=dots)
+        plt.savefig(output_file, format='eps', dpi=args.dpi)
         plt.close()
 
 elif d == 3:
