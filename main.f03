@@ -493,7 +493,7 @@ subroutine normalisations(num_procs)
   write (30,'(4ES18.9)') temp,ener_tot_sq_sum,ener_rot_sq_sum,ener_irrot_sq_sum
   write (30,'(a)') "# Temp, avg_field_tot, avg_field_rot, avg_field_irrot"
   write (30,*) temp, sum(avg_field_total)/2, sum(avg_field_rot)/2,&
-  sum(avg_field_irrot)/3
+  sum(avg_field_irrot)/2
   write (30,'(a)') "# Temp, avg_field^2_tot, avg_field^2_rot, avg_field^2_irrot"
   write (30,*) temp, sum(avg_field_sq_total)/2,&
   sum(avg_field_sq_rot)/2, sum(avg_field_sq_irrot)/2

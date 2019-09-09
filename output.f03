@@ -173,6 +173,9 @@ module output
 
     s_ab_large(2,1,:,:) = s_ab_large(1,2,:,:)
 
+    ! test my idea
+    s_ab_large = s_ab_large * (avg_field_total**2)
+
   end subroutine fix_fftw
 
 
