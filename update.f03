@@ -424,8 +424,6 @@ module update
 
         ebar_dip(i) = dp
         ebar_wind(i) = np
-        write(*,'(a, i9.1, 4f12.6)') "i, ebar, ebar_dip, ebar_wind",&
-            i, ebar, ebar_dip, ebar_wind
 
         avg_field_total(i) = avg_field_total(i) + sum(abs(real(e_field(i,:,:))))
 
