@@ -507,8 +507,8 @@ module update
 
         end do
 
-        exk = exk / (2.0*L**2)
-        eyk = eyk / (2.0*L**2)
+        exk = exk / float(L**2)
+        eyk = eyk / float(L**2)
 
         s_ab(:,:,1) = s_ab(:,:,1) + (exk * conjg(exk))
         s_ab(:,:,2) = s_ab(:,:,2) + (exk * conjg(eyk))

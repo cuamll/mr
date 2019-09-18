@@ -100,10 +100,10 @@ small_zero_index = int((len(cut)/2))
 
 # this stems from a normalisation issue in the XY unit results.
 # for Lee units results comment these four lines out.
-total_trace = 0.25 * total_trace
-irrot_trace = 0.25 * irrot_trace
-rot_trace = 0.25 * rot_trace
-cut_trace = 0.25 * cut_trace
+# total_trace = 0.25 * total_trace
+# irrot_trace = 0.25 * irrot_trace
+# rot_trace = 0.25 * rot_trace
+# cut_trace = 0.25 * cut_trace
 
 # this should be a good estimate for gamma
 rot_avg = np.sum(rot_trace) / len(rot_trace)
