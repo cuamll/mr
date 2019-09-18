@@ -2,11 +2,11 @@ L 16
 omp_threads 0
 no_samples 1
 do_corr T
-canon T
-thermalisation_sweeps 500000
-measurement_sweeps 250000
+canon F
+thermalisation_sweeps 50000
+measurement_sweeps 25000
 sample_interval 10
-temperature 0.200
+temperature 1.000
 lattice_spacing 1.0
 charge_value 1.000
 delta_max 0

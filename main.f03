@@ -556,3 +556,18 @@ subroutine normalisations(num_procs)
   close (30)
 
 end subroutine normalisations
+
+function mpi_int_add(inp, inop, length, mpi_dtype)
+  implicit none
+  integer(kind=ik), dimension(length), intent(in) :: inp
+  integer(kind=ik), dimension(length), intent(inout) :: inop
+  integer(kind=ik), dimension(length) :: s
+  integer, intent(in) :: length, mpi_dtype
+  integer :: i
+
+  do i = 1, length
+    s(i) = inp(i) + inop(i) 
+  end do
+  inop = s
+
+end function mpi_int_add

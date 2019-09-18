@@ -2,10 +2,11 @@ module common
   use fftw
   implicit none
 
-  integer, public, parameter :: prec = 16
-  integer, public, parameter :: expo = 50
+  integer, public, parameter :: iprec = 19
+  integer, public, parameter :: prec = 15
+  integer, public, parameter :: expo = 300
   integer, public, parameter :: rk = selected_real_kind(prec, expo)
-  integer, public, parameter :: ik = selected_int_kind(prec)
+  integer, public, parameter :: ik = selected_int_kind(iprec)
   integer, public, parameter :: bz=2
 
   real(kind=8), parameter, public :: pi=3.141592653589793
