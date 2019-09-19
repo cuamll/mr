@@ -361,15 +361,10 @@ module update
       ! use omp_lib
       implicit none
       integer,intent(in) :: step_number
-      integer :: omp_index,i,j,k,n,kx,ky,m,p,s,x,y,dist_bin
-      real(kind=8), dimension(2,L,L) :: e_rot
-      real(kind=8) :: norm_k, dist, ener_tot, ener_rot, ener_irrot
-      real(kind=8) :: ener_tot_sq, ener_rot_sq, ener_irrot_sq, dp, np
-      complex(kind=rk) :: rho_k_p_temp, rho_k_m_temp
-      complex(kind=rk) :: e_kx_temp, e_ky
-      complex(kind=rk) :: mnphi_kx_temp, mnphi_ky
-      complex(kind=rk) :: e_rot_kx_temp, e_rot_ky
-      complex(kind=rk) :: imag, kdotx
+      integer :: omp_index, i, j, k, n
+      real(kind=8) :: ener_tot, ener_rot, ener_irrot
+      real(kind=8) :: ener_tot_sq, ener_rot_sq, dp, np
+      complex(kind=rk) :: imag
 
       ! | --------------- SUBROUTINE MEASURE(STEP_NUMBER) --------------- |
       ! |                 "MEASURES" RELEVANT QUANTITIES                  |
@@ -382,12 +377,6 @@ module update
       ! | --------------------------------------------------------------- |
 
       ebar = 0.0; ebar_dip = 0.0; ebar_wind = 0.0; dp = 0.0; np = 0.0
-      norm_k = 0.0; dist = 0.0
-      rho_k_p_temp = (0.0,0.0); rho_k_m_temp = (0.0,0.0)
-      e_kx_temp = (0.0,0.0); mnphi_kx_temp = (0.0,0.0)
-      e_rot_kx_temp = (0.0,0.0)
-      e_ky = (0.0,0.0); mnphi_ky = (0.0,0.0); e_rot_ky = (0.0,0.0)
-      kdotx = (0.0,0.0); imag = (0.0, 1.0)
 
       n = step_number / sample_interval
 
