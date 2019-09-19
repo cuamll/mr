@@ -493,11 +493,13 @@ module update
           ! x component has offsets in the x direction (columns)
           ! also it's flattened in the x direction
           if (j.le.(L/2)+1) then
-            eyk(j,:) = eyk(j,:) * exp(+(pi/L)*imag*j)
+            ! eyk(j,:) = eyk(j,:) * exp(+(pi/L)*imag*j)
+            exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
           end if
 
           ! y component has offsets in the y direction (rows)
-          exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
+          ! exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
+          eyk(j,:) = eyk(j,:) * exp(+(pi/L)*imag*j)
 
         end do
 
