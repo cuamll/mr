@@ -26,7 +26,6 @@ my $help = '';
 my $dorun = 1;
 my $doplots = 1;
 my $doanalysis = 1;
-my $docontour = 1;
 my $doquiver = 1;
 my $dolorentz = 1;
 my $doquadrics = 1;
@@ -52,7 +51,6 @@ $input = GetOptions ("help"=> \$help,
                      "run=i"=> \$dorun,
                      "analysis=i"=> \$doanalysis,
                      "plot=i"=> \$doplots,
-                     "contour=i"=> \$docontour,
                      "quiver=i"=> \$doquiver,
                      "quadrics=i"=> \$doquadrics,
                      "helmholtz=i"=> \$dohelmholtz,
@@ -286,7 +284,7 @@ exit 0
             if ($doanalysis) {
               print "Doing analysis\n";
               my $analysis_script = "$basedir/scripts/analyse.pl";
-              system(qq[$analysis_script -d=$stampdir --plot=$doplots --contour=$docontour --quiver=$doquiver --lorentz=$dolorentz --quadrics=$doquadrics --helmholtz=$dohelmholtz]);
+              system(qq[$analysis_script -d=$stampdir --plot=$doplots --quiver=$doquiver --lorentz=$dolorentz --quadrics=$doquadrics --helmholtz=$dohelmholtz]);
             }
 
             
