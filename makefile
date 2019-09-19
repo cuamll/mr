@@ -23,11 +23,11 @@ else
 endif
 
 ifeq ($(UNAME), Darwin)
-	LIBS = -lfftw3
+	LIBS = -L/opt/local/lib -lfftw3
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 ifeq ($(UNAME), Linux)
-	LIBS = -llapack
+	LIBS = -lfftw3
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 
@@ -53,7 +53,6 @@ $(EXECNAME) : $(OBJECTS)
 $(OBJ_DIR)/%.o : %.f03
 	$(GF) $(CFLAGS) $(DEBUGFLAGS) -o $@ -c $<
 
-# add this if need be, can't be arsed to fuck around rn
 .PHONY: clean cleaner all remake clean_obj clean_mod
 
 clean:

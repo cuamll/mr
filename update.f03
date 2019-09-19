@@ -456,15 +456,11 @@ module update
 
         ch_in = v
         e_in = e_field(1,:,:)
-        ! testing pi/2 field rotation
-        ! e_in = -1.0 * e_field(2,:,:)
 
         call fftw_execute_dft_r2c(plan_ch,ch_in,chk)
         call fftw_execute_dft_r2c(plan_x,e_in,exk)
 
         e_in = e_field(2,:,:)
-        ! rotated one
-        ! e_in = e_field(1,:,:)
         call fftw_execute_dft_r2c(plan_x,e_in,eyk)
 
         do j = 1,L
