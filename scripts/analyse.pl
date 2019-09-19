@@ -18,7 +18,6 @@ my $doplots = 1;
 my $domultiplot = 1;
 my $dorun = 1;
 my $dospr = 1;
-my $docontour = 1;
 my $doquiver = 1;
 my $dolorentz = 1;
 my $doquadrics = 1;
@@ -34,7 +33,6 @@ my $stampdir = '';
 $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
                      "spr=i"=> \$dospr,
-                     "contour=i"=> \$docontour,
                      "quiver=i"=> \$doquiver,
                      "multiplot=i"=> \$domultiplot,
                      "lorentz=i"=> \$dolorentz,
@@ -132,7 +130,6 @@ my @run = (
   $doquadrics,
   $dospr,
   $doplots,
-  $docontour,
   $doquiver,
   $domultiplot,
   $dolorentz,
@@ -143,7 +140,6 @@ my @file = (
  "$basedir/scripts/quadrics.py",
  "$basedir/spr_fh",
  "$basedir/scripts/plot.pl",
- "$basedir/scripts/s_perp_contours.py",
  "$basedir/scripts/quiver.py",
  "$basedir/scripts/sab_multiplot.py",
  "$basedir/scripts/lorentz.py",
@@ -156,11 +152,10 @@ my @cmd = (
   qq[python $file[0] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[$file[1] $tempinputfile],
   qq[$file[2] -d=$stampdir -s="$no_slots"],
-  qq[python $file[3] $stampdir $parameters{L} $dpi],
-  qq[python $file[4] $stampdir $parameters{L} $arrow_width $dpi],
+  qq[python $file[3] $stampdir $parameters{L} $arrow_width $dpi],
+  qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[python $file[5] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[python $file[6] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
-  qq[python $file[7] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
 );
 
 for my $i (0..$#run) {
