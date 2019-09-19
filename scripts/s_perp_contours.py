@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-import colormaps as cm
+from matplotlib import cm
 # ignore the runtimewarning from zeros in arrays
 # there's definitely a nicer way of doing this but whatever
 import warnings

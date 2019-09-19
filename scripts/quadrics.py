@@ -240,9 +240,9 @@ if d == 2:
         axes.contour(s_X, s_Y, C, colors=utils.rd, levels=[0])
         axes.legend(handles=legend_elements)
 
-        param_title = 'Parameters: $ T $ = {:.4f}, '
-                      '$ \epsilon_c $ = {:.4f}'.format(
-                      args.temperature, core_energy)
+        param_title = r'Parameters: $ T $ = {:.4f}, '\
+                      r'$ \epsilon_c $ = {:.4f}'.format(
+                          args.temperature, core_energy)
         output_file = output_dir + stringpeaks[i] + '.eps'
         plt.legend()
         plt.savefig(output_file, format='eps', dpi=args.dpi)
@@ -251,13 +251,13 @@ if d == 2:
 elif d == 3:
 
     # for 3D
-    def quadric(x,y,z,a,b,c):
+    def quadric(x, y, z, a, b, c):
         return (x**2 / a) + (y**2 / b) + (z**2 / c) - 1
-    xlist = np.linspace(-1.0,1.0,200)
-    ylist = np.linspace(-1.0,1.0,200)
-    zlist = np.linspace(-1.0,1.0,200)
-    X, Y, Z = np.meshgrid(xlist,ylist, zlist)
-    C = quadric(X, Y, Z, eigvals[test,0], eigvals[test,1], eigvals[test,2])
+    xlist = np.linspace(-1.0, 1.0, 200)
+    ylist = np.linspace(-1.0, 1.0, 200)
+    zlist = np.linspace(-1.0, 1.0, 200)
+    X, Y, Z = np.meshgrid(xlist, ylist, zlist)
+    C = quadric(X, Y, Z, eigvals[test, 0], eigvals[test, 1], eigvals[test, 2])
     # need to check some mplot3d docs before finishing this!
 
 else:

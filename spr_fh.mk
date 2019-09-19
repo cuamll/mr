@@ -25,11 +25,11 @@ else
 endif
 
 ifeq ($(UNAME), Darwin)
-	LIBS = -lfftw3
+	LIBS = -L/opt/local/lib -lfftw3
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 ifeq ($(UNAME), Linux)
-	LIBS =
+	LIBS = -lfftw3
 	LFLAGS = $(DEBUGFLAGS) $(LIBS)
 endif
 

@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-import colormaps as cm
+from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import curve_fit
 from utils import s_p, do_plots
