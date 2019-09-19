@@ -268,7 +268,7 @@ exit 0
             } else {
 
               # run program
-              my $np = 1;
+              my $np = 2;
               # my $mpi_args = '--bind-to none';
               my $mpi_args = '';
               my $verbose = '-v';

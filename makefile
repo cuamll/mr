@@ -1,9 +1,9 @@
 # maggs-rossetto makefile
-GF = mpif90
+GF = mpifort
 EXECNAME = mr2d
 MOD_DIR = mod
 OBJ_DIR = obj
-CFLAGS = -J$(MOD_DIR) -std=f2003 -fopenmp
+CFLAGS = -J$(MOD_DIR) -std=f2008 -fopenmp
 
 $(shell mkdir -p $(MOD_DIR))
 $(shell mkdir -p $(OBJ_DIR))

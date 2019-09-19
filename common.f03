@@ -2,7 +2,7 @@ module common
   use fftw
   implicit none
 
-  integer, public, parameter :: iprec = 19
+  integer, public, parameter :: iprec = 15
   integer, public, parameter :: prec = 15
   integer, public, parameter :: expo = 300
   integer, public, parameter :: rk = selected_real_kind(prec, expo)

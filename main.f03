@@ -2,6 +2,61 @@
 ! 2d, square lattice
 ! i'll write proper docs at some point
 ! callum gray, UCL / ENS Lyon, 2016. do wat u like
+
+module mpi_functions
+  use common
+  implicit none
+
+  contains
+
+  ! don't know how to condense these into one function
+  function mpi_int_add(inp, inop, length, mpi_dtype)
+    integer, intent(in) :: length, mpi_dtype
+    integer :: i
+    integer(kind=ik) :: mpi_int_add
+    integer(kind=ik), dimension(length), intent(in) :: inp
+    integer(kind=ik), dimension(length), intent(inout) :: inop
+    integer(kind=ik), dimension(length) :: s
+
+    do i = 1, length
+      s(i) = inp(i) + inop(i) 
+    end do
+    inop = s
+
+  end function mpi_int_add
+
+  function mpi_real_add(inp, inop, length, mpi_dtype)
+    integer, intent(in) :: length, mpi_dtype
+    integer :: i
+    real(kind=rk) :: mpi_real_add
+    real(kind=rk), dimension(length), intent(in) :: inp
+    real(kind=rk), dimension(length), intent(inout) :: inop
+    real(kind=rk), dimension(length) :: s
+
+    do i = 1, length
+      s(i) = inp(i) + inop(i) 
+    end do
+    inop = s
+
+  end function mpi_real_add
+
+  function mpi_complex_add(inp, inop, length, mpi_dtype)
+    integer, intent(in) :: length, mpi_dtype
+    integer :: i
+    complex(kind=rk) :: mpi_complex_add
+    complex(kind=rk), dimension(length), intent(in) :: inp
+    complex(kind=rk), dimension(length), intent(inout) :: inop
+    complex(kind=rk), dimension(length) :: s
+
+    do i = 1, length
+      s(i) = inp(i) + inop(i) 
+    end do
+    inop = s
+
+  end function mpi_complex_add
+
+end module mpi_functions
+
 program mr
 
   use common
@@ -12,6 +67,7 @@ program mr
   use update
   use omp_lib
   use mpi
+  use mpi_functions
   implicit none
   include 'rev.inc'
   integer(kind=4) :: i, j, k, tot_q, rank, num_procs, mpierr
@@ -19,14 +75,18 @@ program mr
   real(kind=8) :: start_time, end_time
   real(kind=8), dimension(8) :: timings
   integer, dimension(8) :: values
+  integer :: MPI_INT_SUM, MPI_REAL_SUM, MPI_COMPLEX_SUM
 
   call MPI_Init(mpierr)
-  call MPI_TYPE_CREATE_F90_INTEGER(prec, MPI_NEW_INT, mpierr)
-  call MPI_TYPE_CREATE_F90_REAL(prec, expo, MPI_NEW_REAL, mpierr)
+  call MPI_TYPE_CREATE_F90_INTEGER(iprec,      MPI_NEW_INT,     mpierr)
+  call MPI_TYPE_CREATE_F90_REAL(prec, expo,    MPI_NEW_REAL,    mpierr)
   call MPI_TYPE_CREATE_F90_COMPLEX(prec, expo, MPI_NEW_COMPLEX, mpierr)
 
-  call MPI_Comm_rank(MPI_COMM_WORLD, rank, mpierr)
+  call MPI_Comm_rank(MPI_COMM_WORLD, rank,      mpierr)
   call MPI_Comm_size(MPI_COMM_WORLD, num_procs, mpierr)
+  call MPI_Op_create(mpi_int_add,     .true., MPI_INT_SUM,     mpierr)
+  call MPI_Op_create(mpi_real_add,    .true., MPI_REAL_SUM,    mpierr)
+  call MPI_Op_create(mpi_complex_add, .true., MPI_COMPLEX_SUM, mpierr)
 
   write (*,'(a,i2.1,a,i2.1)') "Proc. number ", rank, " out of ",num_procs
 
@@ -238,84 +298,84 @@ subroutine reductions(id)
   if (id.eq.0) then
 
     call MPI_Reduce(MPI_IN_PLACE, accepts, 5, MPI_NEW_INT,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, attempts, 5, MPI_NEW_INT,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_tot_sum, 1, MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_rot_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_tot_sq_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_rot_sq_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sq_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_sq_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_dip_sq_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_wind_sq_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, rho_avg, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, windings, size(windings), MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, windings_sq, size(windings_sq), MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, div, 1, MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, divsq, 1, MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   else
 
     call MPI_Reduce(accepts, accepts, 5, MPI_NEW_INT,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(attempts, attempts, 5, MPI_NEW_INT,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_tot_sum, ener_tot_sum, 1, MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_rot_sum, ener_rot_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_irrot_sum, ener_irrot_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_tot_sq_sum, ener_tot_sq_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_rot_sq_sum, ener_rot_sq_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_irrot_sq_sum, ener_irrot_sq_sum, 1, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_sum, ebar_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_sq_sum, ebar_sq_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_dip_sum, ebar_dip_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_dip_sq_sum, ebar_dip_sq_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_wind_sum, ebar_wind_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_wind_sq_sum, ebar_wind_sq_sum, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(rho_avg, rho_avg, 2, MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(windings, windings, size(windings), MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(windings_sq, windings_sq, size(windings_sq), MPI_NEW_REAL,&
-                    MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(div, div, 1, MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(divsq, divsq, 1, MPI_NEW_REAL,&
-                       MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
 
   end if
 
@@ -324,60 +384,60 @@ subroutine reductions(id)
     if (id.eq.0) then
 
       call MPI_Reduce(MPI_IN_PLACE, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_rot, size(s_ab_rot),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, rho_k_m, size(rho_k_m),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, dir_struc, size(dir_struc),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, dist_r, size(dist_r),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, s_ab_rot, size(s_ab_rot), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, rho_k_m, size(rho_k_m), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, dir_struc, size(dir_struc), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, dist_r, size(dist_r), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, v_avg, size(v_avg), MPI_NEW_REAL,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_tot_avg, size(e_tot_avg),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_rot_avg, size(e_rot_avg),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_irrot_avg, size(e_irrot_avg),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, bin_count, size(bin_count),&
-                         MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, e_tot_avg, size(e_tot_avg), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, e_rot_avg, size(e_rot_avg), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, e_irrot_avg, size(e_irrot_avg), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(MPI_IN_PLACE, bin_count, size(bin_count), MPI_NEW_INT,&
+                      MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
 
     else
 
       call MPI_Reduce(s_ab, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(ch_ch, ch_ch, size(ch_ch),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(rho_k_p, rho_k_p, size(rho_k_p),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(rho_k_m, rho_k_m, size(rho_k_m),&
-                         MPI_NEW_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(dir_struc, dir_struc, size(dir_struc),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(dist_r, dist_r, size(dist_r),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(ch_ch, ch_ch, size(ch_ch), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(rho_k_p, rho_k_p, size(rho_k_p), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(rho_k_m, rho_k_m, size(rho_k_m), MPI_NEW_COMPLEX,&
+                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(dir_struc, dir_struc, size(dir_struc), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(dist_r, dist_r, size(dist_r), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(v_avg, v_avg, size(v_avg), MPI_NEW_REAL,&
-                         MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_tot_avg, e_tot_avg, size(e_tot_avg),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_rot_avg, e_rot_avg, size(e_rot_avg),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_irrot_avg, e_irrot_avg, size(e_irrot_avg),&
-                         MPI_NEW_REAL, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(bin_count, bin_count, size(bin_count),&
-                         MPI_NEW_INT, MPI_SUM, 0, MPI_COMM_WORLD, mpierr)
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(e_tot_avg, e_tot_avg, size(e_tot_avg), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(e_rot_avg, e_rot_avg, size(e_rot_avg), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(e_irrot_avg, e_irrot_avg, size(e_irrot_avg), MPI_NEW_REAL,&
+                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
+      call MPI_Reduce(bin_count, bin_count, size(bin_count), MPI_NEW_INT,&
+                      MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
 
     end if
 
@@ -556,54 +616,5 @@ subroutine normalisations(num_procs)
   close (30)
 
 end subroutine normalisations
-
-! don't know how to condense these into one function
-function mpi_int_add(inp, inop, length, mpi_dtype)
-  implicit none
-  integer, intent(in) :: length, mpi_dtype
-  integer :: i
-  integer(kind=ik) :: mpi_int_add
-  integer(kind=ik), dimension(length), intent(in) :: inp
-  integer(kind=ik), dimension(length), intent(inout) :: inop
-  integer(kind=ik), dimension(length) :: s
-
-  do i = 1, length
-    s(i) = inp(i) + inop(i) 
-  end do
-  inop = s
-
-end function mpi_int_add
-
-function mpi_real_add(inp, inop, length, mpi_dtype)
-  implicit none
-  integer, intent(in) :: length, mpi_dtype
-  integer :: i
-  real(kind=rk) :: mpi_real_add
-  real(kind=rk), dimension(length), intent(in) :: inp
-  real(kind=rk), dimension(length), intent(inout) :: inop
-  real(kind=rk), dimension(length) :: s
-
-  do i = 1, length
-    s(i) = inp(i) + inop(i) 
-  end do
-  inop = s
-
-end function mpi_real_add
-
-function mpi_complex_add(inp, inop, length, mpi_dtype)
-  implicit none
-  integer, intent(in) :: length, mpi_dtype
-  integer :: i
-  complex(kind=rk) :: mpi_complex_add
-  complex(kind=rk), dimension(length), intent(in) :: inp
-  complex(kind=rk), dimension(length), intent(inout) :: inop
-  complex(kind=rk), dimension(length) :: s
-
-  do i = 1, length
-    s(i) = inp(i) + inop(i) 
-  end do
-  inop = s
-
-end function mpi_complex_add
 
 end program mr
