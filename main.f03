@@ -557,6 +557,7 @@ subroutine normalisations(num_procs)
 
 end subroutine normalisations
 
+! don't know how to condense these into one function
 function mpi_int_add(inp, inop, length, mpi_dtype)
   implicit none
   integer(kind=ik), dimension(length), intent(in) :: inp
@@ -571,3 +572,33 @@ function mpi_int_add(inp, inop, length, mpi_dtype)
   inop = s
 
 end function mpi_int_add
+
+function mpi_real_add(inp, inop, length, mpi_dtype)
+  implicit none
+  real(kind=rk), dimension(length), intent(in) :: inp
+  real(kind=rk), dimension(length), intent(inout) :: inop
+  real(kind=rk), dimension(length) :: s
+  integer, intent(in) :: length, mpi_dtype
+  integer :: i
+
+  do i = 1, length
+    s(i) = inp(i) + inop(i) 
+  end do
+  inop = s
+
+end function mpi_real_add
+
+function mpi_complex_add(inp, inop, length, mpi_dtype)
+  implicit none
+  complex(kind=rk), dimension(length), intent(in) :: inp
+  complex(kind=rk), dimension(length), intent(inout) :: inop
+  complex(kind=rk), dimension(length) :: s
+  integer, intent(in) :: length, mpi_dtype
+  integer :: i
+
+  do i = 1, length
+    s(i) = inp(i) + inop(i) 
+  end do
+  inop = s
+
+end function mpi_complex_add
