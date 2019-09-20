@@ -3,6 +3,7 @@
     helmholtz.py: 
 '''
 import os
+import sys
 import errno
 import argparse
 import warnings
@@ -25,7 +26,7 @@ def mkdir_p(path):
         else:
             raise
 
-np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=sys.maxsize)
 parser = argparse.ArgumentParser()
 parser.add_argument("directory", help="Directory containing field snapshots. Don't add the / at the end!")
 parser.add_argument("length",type=int, help="System size L")
@@ -40,10 +41,10 @@ core_energy = np.abs(args.e_c)
 dim = 2
 dots = args.dpi
 total_input_file = direc + '/s_ab_total.dat'
-irrot_input_file = direc + '/s_ab_irrot.dat'
-rot_input_file = direc + '/s_ab_rot.dat'
+irrot_input_file = direc + '/s_ab_l.dat'
+rot_input_file = direc + '/s_ab_t.dat'
 total_perp_file = direc + '/s_perp_total.dat'
-irrot_perp_file = direc + '/s_perp_irrot.dat'
+irrot_perp_file = direc + '/s_perp_l.dat'
 output_dir = direc + '/helmholtz_twolor/'
 mkdir_p(output_dir)
 total_data = np.loadtxt(total_input_file)
@@ -97,13 +98,6 @@ cut_trace = cut[:,dim] + cut[:,(dim * (dim + 1) - 1)]
 
 # we want the q_x = -q_y cut to fit to
 small_zero_index = int((len(cut)/2))
-
-# this stems from a normalisation issue in the XY unit results.
-# for Lee units results comment these four lines out.
-# total_trace = 0.25 * total_trace
-# irrot_trace = 0.25 * irrot_trace
-# rot_trace = 0.25 * rot_trace
-# cut_trace = 0.25 * cut_trace
 
 # this should be a good estimate for gamma
 rot_avg = np.sum(rot_trace) / len(rot_trace)
