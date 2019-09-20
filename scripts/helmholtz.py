@@ -68,13 +68,9 @@ def two_lor(dist, chi1, kappa1, chi2, kappa2, gamma):
               (chi2 * kappa2**2)/(kappa2**2 + (dist)**2) + gamma)
     return result.ravel()
 
-# these are messy, but they do the job of picking out
-# the tensors for the central BZ only.
-start_index = int((2 * length + 1) * (length / 2) + 1 + 0.01) - 1
-end_index = int(3 * (start_index) + (length * (3/2)) + 1 + 0.01)
-total_red = total_data[start_index:end_index]
-irrot_red = irrot_data[start_index:end_index]
-rot_red = rot_data[start_index:end_index]
+total_red = total_data[np.where(np.abs(total_data[:,0]) - 0.0001 <= np.pi)]
+irrot_red = irrot_data[np.where(np.abs(irrot_data[:,0]) - 0.0001 <= np.pi)]
+rot_red = rot_data[np.where(np.abs(rot_data[:,0]) - 0.0001 <= np.pi)]
 
 total_red = total_red[np.where(np.abs(total_red[:,1]) - 0.0001 <= np.pi)]
 irrot_red = irrot_red[np.where(np.abs(irrot_red[:,1]) - 0.0001 <= np.pi)]
@@ -86,6 +82,7 @@ big_zero_index = int((len(total_red)/2))
 total_red = np.delete(total_red,(big_zero_index),axis=0)
 irrot_red = np.delete(irrot_red,(big_zero_index),axis=0)
 rot_red = np.delete(rot_red,(big_zero_index),axis=0)
+print("Current size of irrot_red: {0}".format(len(irrot_red)))
 
 # now, pick out the q_x = -q_y line
 cut = irrot_red[np.where(irrot_red[:,0] + irrot_red[:,1] == 0.0)]
