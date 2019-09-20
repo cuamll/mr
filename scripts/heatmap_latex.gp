@@ -6,7 +6,7 @@ set print "-"
 set autoscale fix
 load PALETTE
 # set cbrange [0:2.0]
-set logscale cb
+# set logscale cb
 
 if (exists("PLOTTITLE")) {
   set title PLOTTITLE

@@ -35,7 +35,7 @@ core_energy = np.abs(args.e_c)
 d = 2
 bz = 2
 # threshold for deciding if eigenvalues are degenerate
-thresh = 0.04
+thresh = 0.1
 plt.rc('text',usetex=True)
 plt.rc('font',**{'family': 'sans-serif',
        'size' : 24, 'sans-serif': ['Computer Modern']})
@@ -55,8 +55,8 @@ kvals_norm = np.zeros_like(kvals)
 s_ab_tot = s_raw[:,d:(d*(d+1))]
 
 for i in range(len(kvals)):
-    if kvals[i,0] != 0.0 and kvals[i,1] != 0.0:
-        kn = np.sqrt((kvals[i,0]**2 + kvals[i,1]**2))
+    if kvals[i, 0] != 0.0 and kvals[i, 1] != 0.0:
+        kn = np.sqrt((kvals[i, 0]**2 + kvals[i, 1]**2))
     else:
         kn = 1.0
 
@@ -64,12 +64,12 @@ for i in range(len(kvals)):
 
 
 # reshape to be a list of dxd matrices
-s_ab_tot = s_ab_tot.reshape((-1,d,d))
+s_ab_tot = s_ab_tot.reshape((-1, d, d))
 chi_tot = s_ab_tot / args.temperature
 
-s_ab_eigvals = np.zeros((len(s_ab_tot),d))
+s_ab_eigvals = np.zeros((len(s_ab_tot), d))
 s_ab_eigvecs = np.zeros(s_ab_tot.shape)
-chi_eigvals = np.zeros((len(s_ab_tot),d))
+chi_eigvals = np.zeros((len(s_ab_tot), d))
 chi_eigvecs = np.zeros(s_ab_tot.shape)
 # gonna do the helmholtz decomp in fourier space
 s_ab_t = np.zeros(s_ab_tot.shape)
@@ -78,6 +78,7 @@ s_ab_l = np.zeros(s_ab_tot.shape)
 for i in range(len(s_ab_tot)):
     # Doing eig of the inverse is actually probably unnecessary?
     eigvals_temp, eigvecs_temp = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
+    # eigvals_temp, eigvecs_temp = np.linalg.eig((s_ab_tot[i]))
     idx = np.argsort(eigvals_temp)
     eigvals_temp = eigvals_temp[idx]
     # eigenvalues of inverse tensor!
@@ -90,11 +91,11 @@ for i in range(len(s_ab_tot)):
         # now, we dot the normalised k's with each of the eigenvectors
         dot_prods = np.zeros(len(eigvals_temp))
         for row in range(len(eigvecs_temp)):
-            dot_prods[row] = np.dot(kvals_norm[i],eigvecs_temp[:,row])
+            dot_prods[row] = np.dot(kvals_norm[i], eigvecs_temp[:, row])
 
         # at q = 0 both dot products are zero, but the tensor is
         # a circle; just pick one. otherwise check the dot products
-        if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
+        if (kvals_norm[i, 0] == 0.0 and kvals_norm[i, 1] == 0.0):
             which_transverse = (0,)
             which_long = (1,)
         else:
@@ -103,27 +104,23 @@ for i in range(len(s_ab_tot)):
 
         # the smallest dot product is the transverse one
         transverse_eigval = eigvals_temp[which_transverse]
-        # the others are the longitudinal ones
-        # this caused problems with value errors and stuff. removing
-        # which_long = np.arange(len(eigvals_temp))!=which_transverse
         long_eigval = eigvals_temp[which_long]
 
         if abs(long_eigval - transverse_eigval) <= thresh:
-            if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
-                print(which_long, which_transverse)
+            if (kvals_norm[i, 0] == 0.0 and kvals_norm[i, 1] == 0.0):
                 k_long = np.array([[1.], [0.]])
                 k_transverse = np.array([[0.], [1.]])
             else:
                 # everything's an eigenvector of an identity matrix! so
                 # we're fine to set k to be the longitudinal eigenvector
-                k_long = np.array([[kvals_norm[i,0]], [kvals_norm[i,1]]])
+                k_long = np.array([[kvals_norm[i, 0]], [kvals_norm[i, 1]]])
                 # and in general (b, -a) dot (a, b) = 0
-                k_transverse = np.array([[kvals_norm[i,1]], [-1.*kvals_norm[i,0]]])
+                k_transverse = np.array([[kvals_norm[i, 1]], [-1.*kvals_norm[i, 0]]])
 
-            k_long.shape = (2,1)
-            k_transverse.shape = (2,1)
-            eigvecs_temp[:,which_long] = k_long
-            eigvecs_temp[:,which_transverse] = k_transverse
+            k_long.shape = (2, 1)
+            k_transverse.shape = (2, 1)
+            eigvecs_temp[:, which_long] = k_long
+            eigvecs_temp[:, which_transverse] = k_transverse
 
             s_ab_eigvecs[i] = eigvecs_temp
 
@@ -133,33 +130,39 @@ for i in range(len(s_ab_tot)):
         # for Q = 0, we don't do this: we take a straight average of the two
         # this is a different convention than I use for the real space
         # decomposition, where I put the harmonic mode with the irrot.
-        if (kvals_norm[i,0] == 0.0 and kvals_norm[i,1] == 0.0):
+        if (kvals_norm[i, 0] == 0.0 and kvals_norm[i, 1] == 0.0):
             diag = np.diag(eigvals_temp/2.)
             s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
             s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
         else:
+            # we want to do \lambda -> 1/\lambda because we did the
+            # eigendecomposition on the inverse tensor. however, if we
+            # do it straight away, the eigenvalues are too similar at
+            # high temperature and they get mixed up at low Q. Hence,
+            # figure out which one's which first, then just invert here.
+
             # first the transverse component
             diag = np.zeros(len(dot_prods))
-            diag[which_transverse] = transverse_eigval
+            diag[which_transverse] = 1. / transverse_eigval
             diag = np.diag(diag)
             s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
             # and now the longitudinal
             diag = np.zeros(len(dot_prods))
-            diag[which_long] = long_eigval
+            diag[which_long] = 1. / long_eigval
             diag = np.diag(diag)
             s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
 
 concat = np.concatenate((kvals,kvals_norm,
-         s_ab_eigvals,s_ab_eigvecs.reshape((-1,d**2))),axis=1)
+         s_ab_eigvals,s_ab_eigvecs.reshape((-1, d**2))), axis=1)
 s_ab_t_concat = np.concatenate((kvals,
-                s_ab_t.reshape((-1,d**2)),kvals_norm),axis=1)
+                s_ab_t.reshape((-1, d**2)), kvals_norm), axis=1)
 s_ab_l_concat = np.concatenate((kvals,
-                s_ab_l.reshape((-1,d**2)),kvals_norm),axis=1)
+                s_ab_l.reshape((-1, d**2)), kvals_norm), axis=1)
 np.savetxt(s_ab_output_file, concat, fmt='%+.8f')
 np.savetxt(chi_output_file,
-           np.concatenate((kvals,kvals_norm,chi_eigvals,
-           chi_eigvecs.reshape((-1,d**2))),axis=1), fmt='%+.8f')
+           np.concatenate((kvals, kvals_norm, chi_eigvals,
+           chi_eigvecs.reshape((-1, d**2))), axis=1), fmt='%+.8f')
 
 # this should not be this hard, probably
 size = int((args.length + 1)**2)
@@ -169,10 +172,10 @@ s_ab_l_concat_small = np.empty(shape=(size,8))
 j = 0
 
 for i in range(len(concat)):
-    if abs(concat[i,0]) <= (0.000001 + np.pi) and abs(concat[i,1]) <= (0.000001 + np.pi):
-        concat_small[j] = concat[i,:]
-        s_ab_t_concat_small[j] = s_ab_t_concat[i,:]
-        s_ab_l_concat_small[j] = s_ab_l_concat[i,:]
+    if abs(concat[i, 0]) <= (0.000001 + np.pi) and abs(concat[i, 1]) <= (0.000001 + np.pi):
+        concat_small[j] = concat[i, :]
+        s_ab_t_concat_small[j] = s_ab_t_concat[i, :]
+        s_ab_l_concat_small[j] = s_ab_l_concat[i, :]
         j = j + 1
 
 concat_small = np.array(concat_small)
@@ -215,9 +218,9 @@ if d == 2:
         # also, for some reason, if we don't cast them to float,
         # linspace doesn't work at all and just prints x/ymax n times
         s_xmax = 1.1*float(np.round(
-                 np.sqrt(s_ab_eigvals[cen_tuple,0]),decimals=2))
+                 np.sqrt(s_ab_eigvals[cen_tuple, 0]),decimals=2))
         s_ymax = 1.1*float(np.round(
-                 np.sqrt(s_ab_eigvals[cen_tuple,1]),decimals=2))
+                 np.sqrt(s_ab_eigvals[cen_tuple, 1]),decimals=2))
         if (s_xmax > s_ymax):
             s_max = s_xmax
         else:
