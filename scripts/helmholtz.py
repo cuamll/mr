@@ -82,16 +82,18 @@ big_zero_index = int((len(total_red)/2))
 total_red = np.delete(total_red,(big_zero_index),axis=0)
 irrot_red = np.delete(irrot_red,(big_zero_index),axis=0)
 rot_red = np.delete(rot_red,(big_zero_index),axis=0)
-print("Current size of irrot_red: {0}".format(len(irrot_red)))
 
 # now, pick out the q_x = -q_y line
 cut = irrot_red[np.where(irrot_red[:,0] + irrot_red[:,1] == 0.0)]
+total_cut = total_red[np.where(total_red[:,0] + total_red[:,1] == 0.0)]
 
 # and take the traces, since they're invariant
 rot_trace = rot_red[:,dim] + rot_red[:,(dim * (dim + 1) - 1)]
 irrot_trace = irrot_red[:,dim] + irrot_red[:,(dim * (dim + 1) - 1)]
 total_trace = total_red[:,dim] + total_red[:,(dim * (dim + 1) - 1)]
 cut_trace = cut[:,dim] + cut[:,(dim * (dim + 1) - 1)]
+total_cut_trace = total_cut[:,dim] + total_cut[:,(dim * (dim + 1) - 1)]
+print(total_cut_trace)
 
 # we want the q_x = -q_y cut to fit to
 small_zero_index = int((len(cut)/2))
@@ -194,6 +196,21 @@ plt.ylim(ymin=0,ymax=1.1*max(cut[:,1]))
 plt.savefig(output_dir + 'sab_irrot_cut.eps', format='eps', dpi=dots)
 plt.close()
 
+fig, ax = plt.subplots()
+ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
+ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
+plt.plot(total_cut[:,0] / np.pi, total_cut_trace, 'o',
+         color=utils.rd, ms=8)
+         # color=utils.blu, ms=8, label = r"$S^{\alpha \alpha}_{\text{total}}$")
+plt.xlabel('$ q $')
+temp_str = "{:.4f}".format(temp)
+plot_title = r"Cut through $ q_y = - q_x $ for $ "
+"S^{\alpha \alpha}_{irrot.} $. T = " +  temp_str + '\n' + pat
+plt.legend()
+plt.title('')
+plt.ylim(ymin=0,ymax=1.1*max(total_cut_trace))
+plt.savefig(output_dir + 'sab_total_cut.eps', format='eps', dpi=dots)
+plt.close()
 
 # Now to plot the fit over the whole central BZ
 
@@ -263,9 +280,8 @@ side = int(np.sqrt(len(intens)) + 0.01) # ensure it doesn't round down too far
 intens = intens.reshape((side,side))
 irrot_intens = irrot_intens.reshape((side,side))
 # same normalisation issue as before
-sim_int = (0.25 * intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
-irrot_sim_int = (0.25 *
-              irrot_intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
+sim_int = (intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
+irrot_sim_int = (irrot_intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
 
 qx_stack = np.stack((Qx / np.pi, Qx / np.pi, Qx / np.pi))
 qy_stack = np.stack((Qy / np.pi, Qy / np.pi, Qy / np.pi))
