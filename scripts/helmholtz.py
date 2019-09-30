@@ -154,7 +154,8 @@ print(dists.shape, cut_trace.shape)
 f.write("\nIrrot cut: Qx = -Qy, fitted, simulated, lor1, lor2\n")
 f.write(np.array2string(cut))
 f.write("\nSimulated data: Qx = -Qy, data\n")
-f.write(np.array2string(np.column_stack((dists,cut_trace)) ))
+qs = np.linspace(-np.pi*np.sqrt(2.), np.pi*np.sqrt(2.), length + 1, endpoint=True)
+f.write(np.array2string(np.column_stack((qs,cut_trace)) ))
 
 # again, this one's for the two lorentzians
 f.write("# chi1    chi1_err    kappa1    kappa1_err    "
