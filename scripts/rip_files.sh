@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mrdir=/Users/cgray/code/mr/mr
-for dir in ${mrdir}/out/salviati/out/*
+mrdir=/Users/cgray/code/mr/
+for dir in ${mrdir}/out/salviati/*
 do
   # obviously change this to do canonical results
   if [[ $dir =~ "gce" ]]
