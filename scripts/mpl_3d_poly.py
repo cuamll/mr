@@ -43,12 +43,12 @@ parser.add_argument("-i", "--input_file", nargs="+",
                     help="List of data files")
 parser.add_argument("-o", "--output_file", help="Output filename")
 parser.add_argument("-c", "--cmap", default='viridis', help="Colour map to use")
-parser.add_argument("-l", type=int, default=0,
-                    help="Plot legend - 0 or 1")
 parser.add_argument("-x", "--x_label",
                     help="String for x-axis")
 parser.add_argument("-y", "--y_label",
                     help="String for y-axis")
+parser.add_argument("-z", "--z_label",
+                    help="String for z-axis")
 
 args = parser.parse_args()
 
@@ -69,15 +69,25 @@ poly = PolyCollection(verts, facecolors=fc, alpha=.4)
 
 # plot the results
 fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+ax = fig.gca(projection='3d')
 ax.add_collection3d(poly, zs=temps, zdir='y')
 ax.scatter(x, y, z, cmap=args.cmap, c=y, s=2)
-plt.grid()
+
+# now some hacks to make the grid nicer - no idea why these aren't exposed
+pane_colour = '#FAFAFA'
+grid_params = {'grid' : {'color': "#999999", 'linewidth' : 0.4, 'linestyle' : '--'}}
+ax.w_xaxis.pane.set_color(pane_colour)
+ax.w_xaxis.pane.set_color(pane_colour)
+ax.w_xaxis.pane.set_color(pane_colour)
+ax.w_xaxis._axinfo.update(grid_params)
+ax.w_yaxis._axinfo.update(grid_params)
+ax.w_zaxis._axinfo.update(grid_params)
+
 plt.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{sfmath}')
-plt.legend(fontsize=6)
-ax.set_xlabel(r' $ \mathbf{q} $ ')
-ax.set_ylabel(r' $ T (K) $ ')
-ax.set_zlabel(r' $ S^{\alpha \alpha}_{L}(\mathbf{q}_x + \mathbf{q}_y = 0) $ ')
+ax.set_xlabel(args.x_label)
+ax.set_ylabel(args.y_label)
+ax.set_zlabel(args.z_label)
+
 # all temps have the same q values
 ax.set_xlim(min(data[0][:,0]), max(data[0][:,0]))
 ax.set_ylim(min(temps), max(temps))
