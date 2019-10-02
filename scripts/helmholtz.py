@@ -16,43 +16,6 @@ from scipy.optimize import curve_fit
 import utils
 from utils import s_p, do_plots
 
-# shouldn't need this anymore but using it for now
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
-
-np.set_printoptions(threshold=sys.maxsize)
-parser = argparse.ArgumentParser()
-parser.add_argument("directory", help="Directory containing field snapshots. Don't add the / at the end!")
-parser.add_argument("length",type=int, help="System size L")
-parser.add_argument("temperature",type=float, help="Temperature")
-parser.add_argument("e_c",type=float, help="Core-energy constant")
-parser.add_argument("dpi",type=int, help="DPI for plots")
-args = parser.parse_args()
-direc = args.directory
-length = args.length
-temp = args.temperature
-core_energy = np.abs(args.e_c)
-dim = 2
-dots = args.dpi
-total_input_file = direc + '/s_ab_total.dat'
-irrot_input_file = direc + '/s_ab_l.dat'
-rot_input_file = direc + '/s_ab_t.dat'
-total_perp_file = direc + '/s_perp_total.dat'
-irrot_perp_file = direc + '/s_perp_l.dat'
-output_dir = direc + '/helmholtz_twolor/'
-mkdir_p(output_dir)
-total_data = np.loadtxt(total_input_file)
-irrot_data = np.loadtxt(irrot_input_file)
-rot_data = np.loadtxt(rot_input_file)
-plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif', 'size' : 14, 'sans-serif': ['Computer Modern']})
-
 '''
 Function definitions
 '''
@@ -67,6 +30,35 @@ def two_lor(dist, chi1, kappa1, chi2, kappa2, gamma):
     result = ((chi1 * kappa1**2)/(kappa1**2 + (dist)**2) +
               (chi2 * kappa2**2)/(kappa2**2 + (dist)**2) + gamma)
     return result.ravel()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("directory", help="Directory containing field snapshots. Don't add the / at the end!")
+parser.add_argument("length",type=int, help="System size L")
+parser.add_argument("temperature",type=float, help="Temperature")
+parser.add_argument("e_c",type=float, help="Core-energy constant")
+parser.add_argument("dpi",type=int, help="DPI for plots")
+args = parser.parse_args()
+plt.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{sfmath}')
+plt.rc('font',**{'family': 'sans-serif', 'size' : 14, 'sans-serif': ['Computer Modern']})
+
+length = args.length
+temp = args.temperature
+core_energy = np.abs(args.e_c)
+dots = args.dpi
+total_input_file = args.directory + '/s_ab_total.dat'
+irrot_input_file = args.directory + '/s_ab_l.dat'
+rot_input_file = args.directory + '/s_ab_t.dat'
+total_perp_file = args.directory + '/s_perp_total.dat'
+irrot_perp_file = args.directory + '/s_perp_l.dat'
+output_dir = args.directory + '/helmholtz_twolor/'
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
+
+raw_data = [np.loadtxt(total_input_file), np.loadtxt(irrot_input_file), np.loadtxt(rot_input_file)]
+
+for f in raw_data:
+    f = f[np.where(np.abs(f[:,0]) - 0.0001 <= np.pi)]
+    f = f[np.where(np.abs(f[:,1]) - 0.0001 <= np.pi)]
 
 total_red = total_data[np.where(np.abs(total_data[:,0]) - 0.0001 <= np.pi)]
 irrot_red = irrot_data[np.where(np.abs(irrot_data[:,0]) - 0.0001 <= np.pi)]
@@ -212,142 +204,3 @@ plt.title('')
 plt.ylim(ymin=0,ymax=1.1*max(total_cut_trace))
 plt.savefig(output_dir + 'sab_total_cut.eps', format='eps', dpi=dots)
 plt.close()
-
-# Now to plot the fit over the whole central BZ
-
-# we want nans here because the neutron form factor
-# is singular at the zone centre
-total_trace = np.insert(total_trace,big_zero_index,np.nan,axis=0)
-irrot_trace = np.insert(irrot_trace,big_zero_index,np.nan,axis=0)
-rot_trace = np.insert(rot_trace,big_zero_index,np.nan,axis=0)
-
-side = length + 1
-big_dists = kvals[:,0]**2 + kvals[:,1]**2
-big_dists = np.insert(big_dists,big_zero_index,0.,axis=0)
-big_fit = two_lor(big_dists, *popt)
-ftr = big_fit.reshape((side,side))
-itr = irrot_trace.reshape((side, side))
-ttr = total_trace.reshape((side, side))
-rtr = rot_trace.reshape((side, side))
-tr_array = np.column_stack((Qx.flatten(),Qy.flatten(),itr.flatten()))
-
-# plot the results
-plot_titles = []
-plot_t = r"Fitted $ S^{\alpha \alpha}_{irrotational}$:" + '\n' + pat
-plot_titles.append(plot_t)
-plot_t = r'Measured $ S^{\alpha \alpha}_{irrotational} $'
-plot_titles.append(plot_t)
-plot_titles = ['','']
-output_file = output_dir + 'Helmholtz_sab_irrot' + '.eps'
-do_plots(2, plot_titles, output_file, dots, qx_stack, qy_stack, np.stack((ftr,itr)))
-ind_fit = np.unravel_index(np.nanargmax(ftr, axis=None), ftr.shape)
-ind_sim = np.unravel_index(np.nanargmax(itr, axis=None), itr.shape)
-print(ind_fit, ftr[ind_fit]/4, ind_sim, itr[ind_sim]/4, (ftr[ind_fit]/4)/(itr[ind_sim]/4))
-
-
-'''
-   Now we've plotted the fit over the whole BZ, try calculating the
-   perpendicular projections using the fit, and compare them to the
-   simulated neutron scattering data S^{perp}
-'''
-
-# G = (1,1) chosen because I took the qx = -qy cut
-Gx = 1
-Gy = 1
-qx = small_q + (Gx * 2 * np.pi)
-qy = small_q + (Gy * 2 * np.pi)
-Qx, Qy = np.meshgrid(qx,qy)
-
-d = 2
-sp = 8
-dim = int((length/2) + 0.01)
-def g_to_index(x,y):
-    '''
-        Basically I'm looping over Brillouin zones below and this function
-        goes from the reciprocal lattice vector \vec{G} at the zone centre
-        to an array index for the simulation data.
-    '''
-    tup = (int(0.001 + ((sp + 2*x) * (length / 2))),
-           int(0.001 + ((sp + 2*y) * (length / 2))))
-    return tup
-
-gx, gy = g_to_index(Gx, Gy)
-# simulated s_perp output
-total_perp_data = np.loadtxt(total_perp_file)
-irrot_perp_data = np.loadtxt(irrot_perp_file)
-intens = total_perp_data[:,d:d+1]
-irrot_intens = irrot_perp_data[:,d:d+1]
-side = int(np.sqrt(len(intens)) + 0.01) # ensure it doesn't round down too far
-intens = intens.reshape((side,side))
-irrot_intens = irrot_intens.reshape((side,side))
-# same normalisation issue as before
-sim_int = (intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
-irrot_sim_int = (irrot_intens[gx - dim : gx + dim + 1, gy - dim : gy + dim + 1])
-
-qx_stack = np.stack((Qx / np.pi, Qx / np.pi, Qx / np.pi))
-qy_stack = np.stack((Qy / np.pi, Qy / np.pi, Qy / np.pi))
-
-# this does f; now we need to add/subtract it in the right ways
-scatt_func = s_p(Qx, Qy, Gx * 2 * np.pi, Gy * 2 * np.pi)
-
-s_irrot_fit = ftr * (1.0 - scatt_func)
-s_irrot_sim = itr * (1.0 - scatt_func)
-Z_irrot = np.stack((s_irrot_fit, s_irrot_sim, irrot_sim_int))
-ind_fit = np.unravel_index(np.nanargmax(s_irrot_fit, axis=None),
-                           s_irrot_fit.shape)
-ind_sim1 = np.unravel_index(np.nanargmax(s_irrot_sim, axis=None),
-                            s_irrot_sim.shape)
-ind_sim2 = np.unravel_index(np.argmax(irrot_sim_int, axis=None),
-                            irrot_sim_int.shape)
-print(ind_fit, s_irrot_fit[ind_fit], ind_sim1, s_irrot_sim[ind_sim1],
-      ind_sim2, irrot_sim_int[ind_sim2], irrot_sim_int[ind_sim1])
-
-s_total_fit = (rtr * (scatt_func)) + s_irrot_fit
-s_total_sim = (rtr * (scatt_func)) + s_irrot_sim
-Z_total = np.stack((s_total_fit, s_total_sim, sim_int))
-
-f.write("\n\nTotal s_perp: Qx, Qy, fitted, simulated\n")
-tr_array = np.column_stack((Qx.flatten(),Qy.flatten(),
-                            s_total_fit.flatten(),sim_int.flatten()))
-cut = tr_array[np.where(tr_array[:,0] + tr_array[:,1] == 4*np.pi)]
-f.write(np.array2string(cut))
-f.close()
-# plot the cut
-fig, ax = plt.subplots()
-ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
-ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-plt.plot(cut[:,0] / np.pi, cut[:,3], 'o',
-         color=utils.blu, ms=8, label='Simulation data')
-plt.plot(cut[:,0] / np.pi, cut[:,2], 'o-',
-         color=utils.rd, ms=4, linewidth=2, label='Fitted data')
-plt.xlabel('$ q $')
-plt.legend()
-plot_title = r"Cut through $ q_y + q_x = 4\pi $ "
-"for $ S^{\perp}_{total} $. T = " +  temp_str + '\n' + pat
-plt.ylim(ymin=0,ymax=1.1*max(cut[:,3]))
-plt.savefig(output_dir + 's_perp_total_cut.eps', format='eps', dpi=dots)
-plt.close()
-
-# plot of irrotational scattering
-plot_titles = []
-plot_t = r"Fitted $ S^{\perp}_{irrot.} $ with analytic function:" + "\n" + pat
-plot_titles.append(plot_t)
-plot_t = r'Measured $ S^{\perp}_{irrot.} $ with analytic function'
-plot_titles.append(plot_t)
-plot_t = r'Simulated $ S^{\perp}_{irrot.} $'
-plot_titles.append(plot_t)
-plot_titles = ['','','']
-output_file = output_dir + 'Helmholtz_irrot' + '.eps'
-do_plots(3, plot_titles, output_file, dots, qx_stack, qy_stack, Z_irrot)
-
-# plot of total scattering
-plot_titles = []
-plot_t = r"Fitted $ S^{\perp}_{total} $ with analytic function:" + "\n" + pat
-plot_titles.append(plot_t)
-plot_t = r'Measured $ S^{\perp}_{total} $ with analytic function'
-plot_titles.append(plot_t)
-plot_t = r'Simulated $ S^{\perp}_{total} $'
-plot_titles.append(plot_t)
-plot_titles = ['','','']
-output_file = output_dir + 'Helmholtz_total' + '.eps'
-do_plots(3, plot_titles, output_file, dots, qx_stack, qy_stack, Z_total)
