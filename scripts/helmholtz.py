@@ -67,10 +67,13 @@ chi2_init = temp
 kappa1_init = 1./length
 kappa2_init = 1.
 guess = np.array([chi1_init, kappa1_init, chi2_init, kappa2_init, temp])
+dist = np.sqrt(cut[0][:,0]**2 + cut[0][:,1]**2)
+# weighting if necessary
+sigma = np.ones(dist.shape)
+sigma[length] = 1.
 
 # actually do the fit
-dist = np.sqrt(cut[0][:,0]**2 + cut[0][:,1]**2)
-popt, pcov = curve_fit(two_lor, dist, tc[1], bounds=(0,np.inf))
+popt, pcov = curve_fit(two_lor, dist, tc[1], sigma=sigma, bounds=(0,np.inf))
 perr = np.sqrt(np.diag(pcov))
 
 # increase the mesh size to get decent resolution in the plots.
@@ -121,7 +124,8 @@ plt.plot(fine_mesh / np.pi, lor1, 'o-',
          color=utils.grn, ms=2, label='Lorentzian 1')
 plt.plot(fine_mesh / np.pi, lor2, 'o-',
          color=utils.purp, ms=2, label='Lorentzian 2')
-plt.xlabel('$ q $')
+plt.xlabel('$ \mathbf{q} $')
+plt.ylabel(r'$ S^{\alpha \alpha}_{L}(\mathbf{q}_x + \mathbf{q}_y = 0) $')
 temp_str = "{:.4f}".format(temp)
 plot_title = r"Cut through $ q_y = - q_x $ for $ "
 "S^{\alpha \alpha}_{irrot.} $. T = " +  temp_str + '\n' + pat
