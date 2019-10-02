@@ -61,19 +61,15 @@ tr = [(f[:,2] + f[:,5]) for f in raw_data]
 cut = [(f[np.where(f[:,0] + f[:,1] == 0.0)]) for f in raw_data]
 tc = [(f[:,2] + f[:,5]) for f in cut]
 
-# initial parameter guesses: never had a problem with them
-chi1_init = temp
-chi2_init = temp
-kappa1_init = 1./length
-kappa2_init = 1.
-guess = np.array([chi1_init, kappa1_init, chi2_init, kappa2_init, temp])
+# initial parameter guesses: chi1, kappa1, chi2, kappa2, gamma
+guess = np.array([temp, 1., 0.5 * temp, 1./length, sum(tr[2]) / len(tr[2])])
 dist = np.sqrt(cut[0][:,0]**2 + cut[0][:,1]**2)
 # weighting if necessary
 sigma = np.ones(dist.shape)
 sigma[length] = 1.
 
 # actually do the fit
-popt, pcov = curve_fit(two_lor, dist, tc[1], sigma=sigma, bounds=(0,np.inf))
+popt, pcov = curve_fit(two_lor, dist, tc[1], guess, sigma=sigma, bounds=(0,np.inf))
 perr = np.sqrt(np.diag(pcov))
 
 # increase the mesh size to get decent resolution in the plots.
@@ -88,15 +84,21 @@ lor2 = lor(fine_mesh, popt[2], popt[3], 0.)
 
 output_file = output_dir + 'fit_params.dat'
 f = open(output_file,'w')
-f.write("\n# Irrot cut: Qx = -Qy, fitted, simulated, lor1, lor2\n")
+f.write("# Irrot cut: Qx = -Qy, fitted, simulated, lor1, lor2\n")
 f.write(np.array2string(
         np.column_stack((fine_mesh, fitted_data, lor1, lor2))))
-f.write("\n# Simulated data: Qx = -Qy, data\n")
+f.write("\n\n# Simulated data: Qx = -Qy, data\n")
 qs = np.linspace(-np.pi*np.sqrt(2.), np.pi*np.sqrt(2.), length + 1, endpoint=True)
 f.write(np.array2string( np.column_stack((qs, tc[1])) ))
+f.write("\n\n")
 
 # again, this one's for the two lorentzians
 f.write("# chi1    chi1_err    kappa1    kappa1_err    "
+        "chi2    chi2_err    kappa2    kappa2_err    gamma    gamma_err"
+        "\n{:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}     {:.4f}    "
+        "{:.4f}    {:.4f}    {:.4f}    {:.4f}\n".format(popt[0],perr[0],
+        popt[1],perr[1],popt[2],perr[2],popt[3],perr[3],popt[4],perr[4]))
+print("# chi1    chi1_err    kappa1    kappa1_err    "
         "chi2    chi2_err    kappa2    kappa2_err    gamma    gamma_err"
         "\n{:.4f}    {:.4f}    {:.4f}    {:.4f}    {:.4f}     {:.4f}    "
         "{:.4f}    {:.4f}    {:.4f}    {:.4f}\n".format(popt[0],perr[0],
