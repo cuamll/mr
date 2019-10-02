@@ -116,7 +116,7 @@ pat2 = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $,"
 fig, ax = plt.subplots()
 ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
 ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-plt.plot(cut[1][:,0] / np.pi, tc[1], 'o',
+plt.plot(np.sqrt(2.) * cut[1][:,0] / np.pi, tc[1], 'o',
          color=utils.blu, ms=8, label='Simulation data')
 plt.plot(fine_mesh / np.pi, fitted_data, 'o-',
          color=utils.rd, ms=4, linewidth=2, label='Fitted data')

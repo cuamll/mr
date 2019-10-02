@@ -1,13 +1,14 @@
 #!/bin/bash
 
-for dir in ../out/salviati/out/*
+mrdir=/Users/cgray/code/mr/mr
+for dir in ${mrdir}/out/salviati/out/*
 do
   # obviously change this to do canonical results
   if [[ $dir =~ "gce" ]]
   then
     # ensures the cut data is actually there - 
     # can turn off if analysis is already done
-    ./scripts/analyse.pl -spr=1 -quadrics=1 -helmholtz=1 -plot=0 -multiplot=0 -lorentz=0 -quiver=0 -d=$dir
+    ./scripts/analyse.pl -spr=0 -quadrics=0 -helmholtz=1 -plot=0 -multiplot=0 -lorentz=0 -quiver=0 -d=$dir
     rho_t=$(grep -A 1 "Avg. charge" $dir/sphe_sus.dat)
     temp=$(printf "$rho_t" | sed -e '/#.*/d' | awk '{print $1}')
     rho=$(printf "$rho_t" | sed -e '/#.*/d' | awk '{print $2}')

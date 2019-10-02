@@ -124,6 +124,8 @@ if (-f $jobfile) {
     }
   }
   close $fh;
+} else {
+  $no_slots = 1;
 }
 
 my @run = (
@@ -151,7 +153,7 @@ my @file = (
 my @cmd = (
   qq[python $file[0] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[$file[1] $tempinputfile],
-  qq[$file[2] -d=$stampdir -s="$no_slots"],
+  qq[$file[2] -d=$stampdir],
   qq[python $file[3] $stampdir $parameters{L} $arrow_width $dpi],
   qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
   qq[python $file[5] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
