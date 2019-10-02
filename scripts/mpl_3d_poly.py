@@ -42,6 +42,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input_file", nargs="+",
                     help="List of data files")
 parser.add_argument("-o", "--output_file", help="Output filename")
+parser.add_argument("-c", "--cmap", default='viridis', help="Colour map to use")
 parser.add_argument("-l", type=int, default=0,
                     help="Plot legend - 0 or 1")
 parser.add_argument("-x", "--x_label",
@@ -58,7 +59,7 @@ z = np.concatenate([f[:,1] for f in data])
 y = np.concatenate([temps[v] * np.ones(f[:,0].shape) for v, f in enumerate(data)])
 
 verts = []
-COL = MplColorHelper('viridis', min(temps), max(temps))
+COL = MplColorHelper(args.cmap, min(temps), max(temps))
 fc = [COL.get_rgb(t) for t in temps]
 
 for i in range(len(data)):
@@ -70,7 +71,7 @@ poly = PolyCollection(verts, facecolors=fc, alpha=.4)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.add_collection3d(poly, zs=temps, zdir='y')
-ax.scatter(x, y, z, cmap=cm.viridis, c=y, s=2)
+ax.scatter(x, y, z, cmap=args.cmap, c=y, s=2)
 plt.grid()
 plt.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{sfmath}')
 plt.legend(fontsize=6)
