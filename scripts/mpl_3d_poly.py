@@ -53,6 +53,9 @@ args = parser.parse_args()
 
 temps = [float(f[2:-10]) for f in args.input_file]
 data = [np.loadtxt(f, skiprows=4) for f in args.input_file]
+x = np.concatenate([f[:,0] for f in data])
+z = np.concatenate([f[:,1] for f in data])
+y = np.concatenate([temps[v] * np.ones(f[:,0].shape) for v, f in enumerate(data)])
 
 verts = []
 COL = MplColorHelper('viridis', min(temps), max(temps))
@@ -61,12 +64,13 @@ fc = [COL.get_rgb(t) for t in temps]
 for i in range(len(data)):
     verts.append(polygon_under_graph(data[i][:,0], data[i][:,1]))
 
-poly = PolyCollection(verts, facecolors=fc, alpha=.5)
+poly = PolyCollection(verts, facecolors=fc, alpha=.4)
 
 # plot the results
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.add_collection3d(poly, zs=temps, zdir='y')
+ax.scatter(x, y, z, cmap=cm.viridis, c=y, s=2)
 plt.grid()
 plt.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{sfmath}')
 plt.legend(fontsize=6)
