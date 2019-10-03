@@ -87,7 +87,6 @@ ax.w_xaxis._axinfo.update(grid_params)
 ax.w_yaxis._axinfo.update(grid_params)
 ax.w_zaxis._axinfo.update(grid_params)
 
-plt.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{sfmath}')
 ax.set_xlabel(args.x_label)
 ax.set_ylabel(args.y_label)
 ax.set_zlabel(args.z_label)
