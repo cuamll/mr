@@ -33,7 +33,8 @@ def polygon_under_graph(xlist, ylist):
     """
     Construct the vertex list which defines the polygon filling the space under
     the (xlist, ylist) line graph.  Assumes the xs are in ascending order.
-    Stolen from the matplotlib documentation lmao
+    Stolen from the matplotlib documentation at
+    https://matplotlib.org/gallery/mplot3d/polys3d.html
     """
     return [(xlist[0], 0.), *zip(xlist, ylist), (xlist[-1], 0.)]
 
@@ -52,6 +53,7 @@ parser.add_argument("-z", "--z_label",
 
 args = parser.parse_args()
 
+# these four lines are specific to the file formatting I've used
 temps = [float(f[2:-10]) for f in args.input_file]
 data = [np.loadtxt(f, skiprows=4) for f in args.input_file]
 x = np.concatenate([f[:,0] for f in data])
@@ -59,6 +61,8 @@ z = np.concatenate([f[:,1] for f in data])
 y = np.concatenate([temps[v] * np.ones(f[:,0].shape) for v, f in enumerate(data)])
 
 verts = []
+# assign colours to each line we're gonna plot from the
+# relevant colourmap, normalised by the temperatures
 COL = MplColorHelper(args.cmap, min(temps), max(temps))
 fc = [COL.get_rgb(t) for t in temps]
 
@@ -74,8 +78,8 @@ ax.add_collection3d(poly, zs=temps, zdir='y')
 ax.scatter(x, y, z, cmap=args.cmap, c=y, s=2)
 
 # now some hacks to make the grid nicer - no idea why these aren't exposed
-pane_colour = '#FAFAFA'
-grid_params = {'grid' : {'color': "#999999", 'linewidth' : 0.4, 'linestyle' : '--'}}
+pane_colour = '#FBFBFB'
+grid_params = {'grid' : {'color': "#AAAAAA", 'linewidth' : 0.3, 'linestyle' : '--'}}
 ax.w_xaxis.pane.set_color(pane_colour)
 ax.w_xaxis.pane.set_color(pane_colour)
 ax.w_xaxis.pane.set_color(pane_colour)
