@@ -86,6 +86,8 @@ ax.w_xaxis.pane.set_color(pane_colour)
 ax.w_xaxis._axinfo.update(grid_params)
 ax.w_yaxis._axinfo.update(grid_params)
 ax.w_zaxis._axinfo.update(grid_params)
+ax.set_xticks([-np.pi, -np.pi/2., 0, np.pi/2., np.pi])
+ax.set_xticklabels([r'$ -\pi $', r'$ -\frac{\pi}{2} $', r'$ 0 $', r'$ \frac{\pi}{2} $', r'$ \pi $'])
 
 ax.set_xlabel(args.x_label)
 ax.set_ylabel(args.y_label)
