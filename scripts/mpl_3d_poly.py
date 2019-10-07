@@ -12,6 +12,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 from matplotlib.collections import PolyCollection
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
 
 class MplColorHelper:
@@ -54,7 +55,7 @@ parser.add_argument("-z", "--z_label",
 args = parser.parse_args()
 
 # these four lines are specific to the file formatting I've used
-temps = [float(f[2:-10]) for f in args.input_file]
+temps = [float(os.path.basename(f)[2:-10]) for f in args.input_file]
 data = [np.loadtxt(f, skiprows=4) for f in args.input_file]
 x = np.concatenate([f[:,0] for f in data])
 z = np.concatenate([f[:,1] for f in data])
@@ -63,7 +64,12 @@ y = np.concatenate([temps[v] * np.ones(f[:,0].shape) for v, f in enumerate(data)
 verts = []
 # assign colours to each line we're gonna plot from the
 # relevant colourmap, normalised by the temperatures
-COL = MplColorHelper(args.cmap, min(temps), max(temps))
+
+# define custom colour map
+my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A', '#F2D33C'])
+# my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A'])
+
+COL = MplColorHelper(my_cmap, min(temps), max(temps))
 fc = [COL.get_rgb(t) for t in temps]
 
 for i in range(len(data)):
@@ -75,7 +81,7 @@ poly = PolyCollection(verts, facecolors=fc, alpha=.4)
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.add_collection3d(poly, zs=temps, zdir='y')
-ax.scatter(x, y, z, cmap=args.cmap, c=y, s=2)
+ax.scatter(x, y, z, cmap=my_cmap, c=y, s=2)
 
 # now some hacks to make the grid nicer - no idea why these aren't exposed
 pane_colour = '#FBFBFB'
@@ -86,7 +92,7 @@ ax.w_xaxis.pane.set_color(pane_colour)
 ax.w_xaxis._axinfo.update(grid_params)
 ax.w_yaxis._axinfo.update(grid_params)
 ax.w_zaxis._axinfo.update(grid_params)
-ax.set_xticks([-np.pi, -np.pi/2., 0, np.pi/2., np.pi])
+ax.set_xticks([-np.pi * np.sqrt(2.), -np.pi/2. * np.sqrt(2.), 0, np.pi/2. * np.sqrt(2.), np.pi * np.sqrt(2.)])
 ax.set_xticklabels([r'$ -\pi $', r'$ -\frac{\pi}{2} $', r'$ 0 $', r'$ \frac{\pi}{2} $', r'$ \pi $'])
 
 ax.set_xlabel(args.x_label)
