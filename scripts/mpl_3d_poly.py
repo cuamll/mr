@@ -62,13 +62,13 @@ z = np.concatenate([f[:,1] for f in data])
 y = np.concatenate([temps[v] * np.ones(f[:,0].shape) for v, f in enumerate(data)])
 
 verts = []
-# assign colours to each line we're gonna plot from the
-# relevant colourmap, normalised by the temperatures
 
 # define custom colour map
 my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A', '#F2D33C'])
 # my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A'])
 
+# assign colours to each line we're gonna plot from the
+# relevant colourmap, normalised by the temperatures
 COL = MplColorHelper(my_cmap, min(temps), max(temps))
 fc = [COL.get_rgb(t) for t in temps]
 
@@ -92,8 +92,6 @@ ax.w_xaxis.pane.set_color(pane_colour)
 ax.w_xaxis._axinfo.update(grid_params)
 ax.w_yaxis._axinfo.update(grid_params)
 ax.w_zaxis._axinfo.update(grid_params)
-ax.set_xticks([-np.pi * np.sqrt(2.), -np.pi/2. * np.sqrt(2.), 0, np.pi/2. * np.sqrt(2.), np.pi * np.sqrt(2.)])
-ax.set_xticklabels([r'$ -\pi $', r'$ -\frac{\pi}{2} $', r'$ 0 $', r'$ \frac{\pi}{2} $', r'$ \pi $'])
 
 ax.set_xlabel(args.x_label)
 ax.set_ylabel(args.y_label)
