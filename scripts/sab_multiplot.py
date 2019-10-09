@@ -51,9 +51,9 @@ total_output_file = output_dir + '/s_ab_total_mpl.eps'
 irrot_output_file = output_dir + '/s_ab_irrot_mpl.eps'
 rot_output_file = output_dir + '/s_ab_rot_mpl.eps'
 plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
-params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
-plt.rcParams.update(params)
+# plt.rc('font',**{'family': 'sans-serif', 'size' : 18, 'sans-serif': ['Computer Modern']})
+# params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
+# plt.rcParams.update(params)
 
 mkdir_p(output_dir)
 total_data = np.loadtxt(total_input_file)
@@ -67,10 +67,11 @@ qx, qy = np.meshgrid(tot_q, tot_q)
 qx = (qx / np.pi)
 qy = (qy / np.pi)
 # s_ab_t/l only have 1st BZ
-sml_q = kvals[0:(length)+1,1]
+# sml_q = kvals[0:(length)+1,1]
+sml_q = np.linspace(-np.pi, np.pi, length + 1, endpoint=True)
 sqx, sqy = np.meshgrid(sml_q, sml_q)
-sqx = (sqx / np.pi)
-sqy = (sqy / np.pi)
+# sqx = (sqx / np.pi)
+# sqy = (sqy / np.pi)
 
 files = [total_input_file, irrot_input_file, rot_input_file]
 output_files = [total_output_file, irrot_output_file, rot_output_file]
@@ -123,3 +124,14 @@ for i in range(len(files)):
     fig.tight_layout()
     fig.subplots_adjust(top=0.92)
     plt.savefig(output_files[i], format='eps', dpi=dots)
+
+
+fig, ax = plt.subplots()
+plt.xlabel(r'$ q_{x} $')
+plt.ylabel(r'$ q_{y} $')
+ltrace = dats[1][:, 2].reshape((len(qs[1][2]),len(qs[1][2]))).T + dats[1][:, 5].reshape((len(qs[1][2]),len(qs[1][2]))).T
+im = ax.contourf(qs[1][0], qs[1][1], ltrace, cmap=cm.inferno)
+cbar = fig.colorbar(im)
+# ax.cax.tick_params(length=1, labelsize=16)
+fig.tight_layout()
+plt.savefig(output_dir + 's_trace_l_contour.eps', format='eps', dpi=dots)
