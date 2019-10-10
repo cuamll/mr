@@ -116,18 +116,23 @@ pat2 = "$ \chi_1 = {:.4f}, \kappa_1 = {:.4f} $,"
 # plot the cut
 # simulation data compared to the fit, plus the decomposed Lorentzian parts
 fig, ax = plt.subplots()
+'''
+to restore the pi tics, add these two lines back:
 ax.xaxis.set_major_formatter(tck.FormatStrFormatter('%g $\pi$'))
 ax.xaxis.set_major_locator(tck.MultipleLocator(base=1.0))
-plt.plot(np.sqrt(2.) * cut[1][:,0] / np.pi, tc[1], 'o',
-         color=utils.blu, ms=8, label='Simulation data')
-plt.plot(fine_mesh / np.pi, fitted_data, 'o-',
-         color=utils.rd, ms=4, linewidth=2, label='Fitted data')
-plt.plot(fine_mesh / np.pi, lor1, 'o-',
-         color=utils.grn, ms=2, label='Lorentzian 1')
-plt.plot(fine_mesh / np.pi, lor2, 'o-',
-         color=utils.purp, ms=2, label='Lorentzian 2')
+and then add / np.pi in the first argument of each of the plot calls
+'''
+plt.plot(np.sqrt(2.) * cut[1][:,0], tc[1], 'o',
+         color=utils.blu, ms=8, label='Simulation')
+plt.plot(fine_mesh, fitted_data, 'o-',
+         color=utils.rd, ms=4, linewidth=2, label=r'$ \mathcal{L} $')
+plt.plot(fine_mesh, lor1, 'o-',
+         color=utils.grn, ms=2, label=r'$ \mathcal{L}_1 $')
+plt.plot(fine_mesh, lor2, 'o-',
+         color=utils.purp, ms=2, label=r'$ \mathcal{L}_2 $')
 plt.xlabel('$ \mathbf{q} $')
-plt.ylabel(r'$ S^{\alpha \alpha}_{L}(\mathbf{q}_x + \mathbf{q}_y = 0) $')
+# plt.ylabel(r'$ S^{\alpha \alpha}_{L}(\mathbf{q}_x + \mathbf{q}_y = 0) $')
+plt.ylabel(r'$ S^{\text{L}}(\mathbf{q}) $')
 temp_str = "{:.4f}".format(temp)
 plot_title = r"Cut through $ q_y = - q_x $ for $ "
 "S^{\alpha \alpha}_{irrot.} $. T = " +  temp_str + '\n' + pat
