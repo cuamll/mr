@@ -127,6 +127,7 @@ for i in range(len(files)):
 
 
 fig, ax = plt.subplots()
+ax.set_aspect('equal')
 plt.xlabel(r'$ q_{x} $')
 plt.ylabel(r'$ q_{y} $')
 ltrace = dats[1][:, 2].reshape((len(qs[1][2]),len(qs[1][2]))).T + dats[1][:, 5].reshape((len(qs[1][2]),len(qs[1][2]))).T
