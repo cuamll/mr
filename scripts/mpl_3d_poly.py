@@ -64,8 +64,8 @@ y = np.concatenate([temps[v] * np.ones(f[:,0].shape) for v, f in enumerate(data)
 verts = []
 
 # define custom colour map
-my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A', '#F2D33C'])
-# my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A'])
+# my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A', '#F2D33C'])
+my_cmap = LinearSegmentedColormap.from_list('mycmap',['#2D2F96', '#99001A'])
 
 # assign colours to each line we're gonna plot from the
 # relevant colourmap, normalised by the temperatures
