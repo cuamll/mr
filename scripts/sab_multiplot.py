@@ -124,6 +124,7 @@ for i in range(len(files)):
     fig.tight_layout()
     fig.subplots_adjust(top=0.92)
     plt.savefig(output_files[i], format='eps', dpi=dots)
+    plt.savefig(output_files[i][:-4] + '.pdf', format='pdf')
 
 
 fig, ax = plt.subplots()
@@ -136,3 +137,5 @@ cbar = fig.colorbar(im)
 # ax.cax.tick_params(length=1, labelsize=16)
 fig.tight_layout()
 plt.savefig(output_dir + 's_trace_l_contour.eps', format='eps', dpi=dots)
+plt.savefig(output_dir + 's_trace_l_contour.pdf', format='pdf', dpi=dots)
+plt.close()
