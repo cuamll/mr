@@ -43,63 +43,34 @@ module update
           ! this takes care of sign issues when hopping
           increment = q * charge / (eps_0 * lambda)
 
-          if (rand().lt.0.5) then ! move it "negative"
+          pm = 1 - (2 * nint(rand()))
 
-            attempts(1) = attempts(1) + 1
+          attempts(1) = attempts(1) + 1
 
-            eo = e_field(mu,site(1),site(2))
-            en = eo + increment
-            old_e = 0.5 * eps_0 * lambda**2 * eo**2
-            new_e = 0.5 * eps_0 * lambda**2 * en**2
-            delta_e = new_e - old_e
-            site(mu) = neg(site(mu))
+          eo = e_field(mu,site(1),site(2))
+          en = eo + (pm * increment)
+          old_e = 0.5 * eps_0 * lambda**2 * eo**2
+          new_e = 0.5 * eps_0 * lambda**2 * en**2
+          delta_e = new_e - old_e
+          site(mu) = neg(site(mu))
 
-            if (v(site(1),site(2)).eq.0) then
-              if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
+          if (v(site(1),site(2)).eq.0) then
+            if ((delta_e.lt.0.0).or.(exp((-beta)*delta_e).gt.rand())) then
 
-                v(site(1),site(2)) = charge
-                ebar(mu) = ebar(mu) + (increment / L**2)
+              v(site(1),site(2)) = charge
+              ebar(mu) = ebar(mu) + (pm * increment / L**2)
 
-                ! go back to the original site and set the charge to 0
-                site(mu) = pos(site(mu))
-                e_field(mu,site(1),site(2)) = en
-                v(site(1),site(2)) = 0
+              ! go back to the original site and set the charge to 0
+              site(mu) = pos(site(mu))
+              e_field(mu,site(1),site(2)) = en
+              v(site(1),site(2)) = 0
 
-                accepts(1) = accepts(1) + 1
-                u_tot = u_tot + delta_e
+              accepts(1) = accepts(1) + 1
+              u_tot = u_tot + delta_e
 
-                end if
-              end if
-
-          else ! move it "positive"
-
-            attempts(1) = attempts(1) + 1
-
-            site(mu) = pos(site(mu))
-            eo = e_field(mu,site(1),site(2))
-            en = eo - increment
-            old_e = 0.5 * eps_0 * lambda**2 * eo**2
-            new_e = 0.5 * eps_0 * lambda**2 * en**2
-            delta_e = new_e - old_e
-
-            if (v(site(1),site(2)).eq.0) then
-              if ((delta_e.lt.0.0).or.(exp((-beta) * delta_e).gt.rand())) then
-
-                v(site(1),site(2)) = charge
-                e_field(mu,site(1),site(2)) = en
-                ebar(mu) = ebar(mu) - (increment / L**2)
-
-                ! go back to the original site and set the charge to 0
-                site(mu) = neg(site(mu))
-                v(site(1),site(2)) = 0
-
-                accepts(1) = accepts(1) + 1
-                u_tot = u_tot + delta_e
-
-              end if
             end if
+          end if
 
-          end if ! end "positive" / "negative" choice
         end if ! end charge.ne.0 block
 
       end do ! end charge hop sweep
