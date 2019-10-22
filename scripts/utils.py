@@ -47,7 +47,7 @@ def do_plots(no_plots, plot_titles, output_file, dots, X, Y, Z):
     '''
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tck
-    import colormaps as cm
+    from matplotlib import cm
     fig, axes = plt.subplots(ncols=int(no_plots), nrows=1, figsize=(5 * int(no_plots),4))
     # chonk
     for chonk in range(int(no_plots)):

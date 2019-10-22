@@ -76,19 +76,17 @@ s_ab_t = np.zeros(s_ab_tot.shape)
 s_ab_l = np.zeros(s_ab_tot.shape)
 
 for i in range(len(s_ab_tot)):
-    # Doing eig of the inverse is actually probably unnecessary?
+    # eig the inverse; more stable at small q
     eigvals_temp, eigvecs_temp = np.linalg.eig(np.linalg.inv(s_ab_tot[i]))
-    # eigvals_temp, eigvecs_temp = np.linalg.eig((s_ab_tot[i]))
     idx = np.argsort(eigvals_temp)
+    # invert the eigenvalues later - comment below to explain
     eigvals_temp = eigvals_temp[idx]
-    # eigenvalues of inverse tensor!
-    # eigvals_temp = 1. / eigvals_temp
     eigvecs_temp = eigvecs_temp[:,idx]
     s_ab_eigvals[i] = eigvals_temp
     s_ab_eigvecs[i] = eigvecs_temp
 
     if all(abs(kvals[i]) <= (0.00001 + (np.pi))):
-        # now, we dot the normalised k's with each of the eigenvectors
+        # now dot normalised k's with each eigenvector
         dot_prods = np.zeros(len(eigvals_temp))
         for row in range(len(eigvecs_temp)):
             dot_prods[row] = np.dot(kvals_norm[i], eigvecs_temp[:, row])
@@ -131,7 +129,7 @@ for i in range(len(s_ab_tot)):
         # this is a different convention than I use for the real space
         # decomposition, where I put the harmonic mode with the irrot.
         if (kvals_norm[i, 0] == 0.0 and kvals_norm[i, 1] == 0.0):
-            diag = np.diag(eigvals_temp/2.)
+            diag = np.diag((1. / eigvals_temp)/2.)
             s_ab_t[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
             s_ab_l[i] = eigvecs_temp @ diag @ np.linalg.inv(eigvecs_temp)
         else:

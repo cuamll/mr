@@ -45,16 +45,16 @@ module output
       do j = 1, L
         
         ! x component
-        write (10,'(4f16.12)') real(i + 0.5), real(j), e_field(1,i,j), 0.0
-        write (11,'(4f16.12)') real(i + 0.5), real(j), mnphi(1,i,j), 0.0
-        write (12,'(4f16.12)') real(i + 0.5), real(j), e_rot(1,i,j), 0.0
+        write (10,'(4f18.10)') real(i + 0.5), real(j), e_field(1,i,j), 0.0
+        write (11,'(4f18.10)') real(i + 0.5), real(j), mnphi(1,i,j), 0.0
+        write (12,'(4f18.10)') real(i + 0.5), real(j), e_rot(1,i,j), 0.0
         ! y component
-        write (10,'(4f16.12)') real(i), real(j + 0.5), 0.0, e_field(2,i,j)
-        write (11,'(4f16.12)') real(i), real(j + 0.5), 0.0, mnphi(2,i,j)
-        write (12,'(4f16.12)') real(i), real(j + 0.5), 0.0, e_rot(2,i,j)
+        write (10,'(4f18.10)') real(i), real(j + 0.5), 0.0, e_field(2,i,j)
+        write (11,'(4f18.10)') real(i), real(j + 0.5), 0.0, mnphi(2,i,j)
+        write (12,'(4f18.10)') real(i), real(j + 0.5), 0.0, e_rot(2,i,j)
 
         ! charges
-        write (13,'(2f16.12, i3.1)') real(i), real(j), v(i,j)
+        write (13,'(2f18.12, i3.1)') real(i), real(j), v(i,j)
 
       end do
     end do
