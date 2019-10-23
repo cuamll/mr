@@ -31,7 +31,7 @@ parser.add_argument("-le", "--length", type=int, help="system size L")
 args = parser.parse_args()
 # files = [args.total_file, args.longitudinal_file, args.transverse_file]
 files = [args.total_file]
-bz = 1
+bz = 2
 thresh = 0.001
 ext = [-bz, bz, -bz, bz]
 
@@ -43,24 +43,26 @@ Qhatx = Qx / np.sqrt(Qx**2 + Qy**2)
 Qhaty = Qy / np.sqrt(Qx**2 + Qy**2)
 sml_q = np.linspace(-np.pi, np.pi, args.length + 1, endpoint=True)
 Qs = np.dstack((Qx, Qy)).reshape(-1, 2)
-print(Qs)
-bqsq = [Q_q(q) for q in Q]
-bqQs = [Q_q(q) for q in Qs]
-print(len(bqQs))
-# qx = Q_q(qx)
-# qy = Q_q(qy)
+# print(Qs)
+# bqsq = [Q_q(q) for q in Q]
+bqsq = np.mod(Q, np.pi)
+# print(sml_q)
+# print(bqsq2)
 # qx, qy = np.meshgrid(np.array(bqsq).flatten(), np.array(bqsq).flatten())
 test_indices = [np.argwhere(np.abs(sml_q - i) < thresh) for i in bqsq]
+# test_indices = [np.argwhere(np.abs(sml_q - i) < thresh) for i in bqsq2]
+# print(test_indices)
+# print(ti2)
 indx, indy = np.meshgrid(np.array(test_indices).flatten(), np.array(test_indices).flatten())
 index = (indx.flatten() + (args.length + 1) * indy.flatten()).reshape(Qx.shape)
 
 for f in files:
     data = np.loadtxt(f)
-    xx = (data[:, 2][index]).reshape(Qx.shape).T
-    print(xx)
-    print(data[:,2])
-    xy = (data[:, 3][index]).reshape(Qx.shape).T
-    yy = (data[:, 5][index]).reshape(Qx.shape).T
+    xx = (data[:, 2][index]).reshape(Qx.shape)
+    np.savetxt("S_xx_reorder.dat", xx.flatten())
+    np.savetxt("S_xx_orig.dat", data[:,2])
+    xy = (data[:, 3][index]).reshape(Qx.shape)
+    yy = (data[:, 5][index]).reshape(Qx.shape)
     s_perp = (1. - Qhatx * Qhatx) * xx + \
             2. * (Qhatx * Qhaty) * xy + \
             (1 - Qhaty * Qhaty) * yy
