@@ -16,9 +16,11 @@ def plot(arr, filename, plotargs):
     fig, ax = plt.subplots()
     im = ax.imshow(arr, **plotargs)
     plt.imshow(arr, **plotargs)
+    plt.xlabel(r'$ G_x $')
+    plt.ylabel(r'$ G_y $')
     plt.colorbar(im)
     fig.tight_layout()
-    plt.savefig(filename, format="pdf")
+    plt.savefig(filename, bbox_inches='tight')
     plt.close()
 
 parser = argparse.ArgumentParser()
@@ -188,7 +190,7 @@ for v, ar in enumerate([s_perp_tot, s_perp_t, s_perp_l]):
 for v, ar in enumerate([s_par_tot, s_par_t, s_par_l]):
     plot(ar, "{0}s_par_{1}.pdf".format(path, abbrev[v]), plotargs)
 
-ext = [-1, 1, -1, 1]
+plotargs.update(extent=[-1, 1, -1, 1])
 for v, ar in enumerate([s_ab_tot, s_ab_t, s_ab_l]):
     plot(ar[:,:,0,0].T, "{0}s_xx_{1}.pdf".format(path, abbrev[v]), plotargs)
     plot(ar[:,:,0,1].T, "{0}s_xy_{1}.pdf".format(path, abbrev[v]), plotargs)
