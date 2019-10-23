@@ -36,9 +36,6 @@ d = 2
 bz = 2
 # threshold for deciding if eigenvalues are degenerate
 thresh = 0.1
-plt.rc('text',usetex=True)
-plt.rc('font',**{'family': 'sans-serif',
-       'size' : 24, 'sans-serif': ['Computer Modern']})
 
 s_ab_t_output_file     = args.directory + '/s_ab_t.dat'
 s_ab_l_output_file     = args.directory + '/s_ab_l.dat'
@@ -228,25 +225,28 @@ if d == 2:
         s_ylist = np.linspace(-s_max,s_max, num=150)
         s_X, s_Y = np.meshgrid(s_xlist,s_ylist)
         C = quadric(s_X, s_Y,
-            float(s_ab_eigvals[cen_tuple,0]), float(s_ab_eigvals[cen_tuple,1]))
+            float(s_ab_eigvals[cen_tuple,which_transverse]),\
+            float(s_ab_eigvals[cen_tuple,which_long]))
 
-        fig, axes = plt.subplots(figsize=(10, 10))
+        fig, axes = plt.subplots(figsize=(8, 8))
 
         legend_elements = [Line2D([0], [0], color=utils.rd,
                 lw=2, label=r' $ \bar{S}^{\alpha\beta}_{tot} $ ')]
         axes.grid()
-        axes.tick_params(length=1, labelsize=24)
+        axes.set_xlabel(r'$ 1/\lambda_\text{t} $', fontsize=20)
+        axes.set_ylabel(r'$ 1/\lambda_\text{l} $', fontsize=20)
+        axes.tick_params(length=1, labelsize=20)
         axes.axhline(0, color='black', lw=1.5)
         axes.axvline(0, color='black', lw=1.5)
         axes.contour(s_X, s_Y, C, colors=utils.rd, levels=[0])
-        axes.legend(handles=legend_elements)
+        # axes.legend(handles=legend_elements)
 
         param_title = r'Parameters: $ T $ = {:.4f}, '\
                       r'$ \epsilon_c $ = {:.4f}'.format(
                           args.temperature, core_energy)
-        output_file = output_dir + stringpeaks[i] + '.eps'
-        plt.legend()
-        plt.savefig(output_file, format='eps', dpi=args.dpi)
+        output_file = output_dir + stringpeaks[i] + '.pdf'
+        # plt.legend()
+        plt.savefig(output_file, format='pdf', dpi=args.dpi)
         plt.close()
 
 elif d == 3:
