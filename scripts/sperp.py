@@ -6,6 +6,7 @@ projections of correlation tensors S_{\alpha \beta}(\mathbf{q}).
 Make PDF contour plots of the results.
 '''
 
+import os
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,6 +30,12 @@ parser.add_argument("-tr", "--transverse_file", help="S_ab^t filename")
 parser.add_argument("-le", "--length", type=int, help="system size L")
 
 args = parser.parse_args()
+path = os.path.dirname(args.total_file) + '/python_plots/'
+if not os.path.exists(path):
+    os.mkdir(path)
+
+names = [os.path.basename(f) for f in [args.total_file, args.transverse_file, args.longitudinal_file]]
+abbrev = [s[5:-4] for s in names]
 sp = 8
 lim = int(sp * (args.length/2))
 
@@ -43,6 +50,9 @@ s_ab_l = np.zeros(s_ab_tot.shape)
 
 t_raw = t_raw[:,2:6].reshape((args.length + 1, args.length + 1, 2, 2))
 l_raw = l_raw[:,2:6].reshape((args.length + 1, args.length + 1, 2, 2))
+s_ab_tot = np.transpose(s_ab_tot, (1, 0, 2, 3))
+t_raw = np.transpose(t_raw, (1, 0, 2, 3))
+l_raw = np.transpose(l_raw, (1, 0, 2, 3))
 
 for i in range(args.length + 1):
     for j in range(args.length + 1):
@@ -177,96 +187,42 @@ for p in range(-lim, lim):
 ext = [-sp, sp, -sp, sp]
 plotargs = {'interpolation': 'None', 'cmap': 'inferno', 'extent': ext}
 
-fig, ax = plt.subplots()
-im = ax.imshow(s_perp_tot, **plotargs)
-plt.imshow(s_perp_tot, **plotargs)
-plt.colorbar(im)
-plt.savefig("sperp_test.pdf", format="pdf")
-plt.close()
+for v, ar in enumerate([s_perp_tot, s_perp_t, s_perp_l]):
 
-fig, ax = plt.subplots()
-im = ax.imshow(s_perp_t, **plotargs)
-plt.imshow(s_perp_t, **plotargs)
-plt.colorbar(im)
-plt.savefig("sperp_t_test.pdf", format="pdf")
-plt.close()
+    fig, ax = plt.subplots()
+    im = ax.imshow(ar, **plotargs)
+    plt.imshow(ar, **plotargs)
+    plt.colorbar(im)
+    plt.savefig("{0}s_perp_{1}.pdf".format(path, abbrev[v]), format="pdf")
+    plt.close()
 
-fig, ax = plt.subplots()
-im = ax.imshow(s_perp_l, **plotargs)
-plt.imshow(s_perp_l, **plotargs)
-plt.colorbar(im)
-plt.savefig("sperp_l_test.pdf", format="pdf")
-plt.close()
+for v, ar in enumerate([s_par_tot, s_par_t, s_par_l]):
 
-fig, ax = plt.subplots()
-im = ax.imshow(s_ab_tot[:,:,0,0].T, **plotargs)
-plt.imshow(s_ab_tot[:,:,0,0].T, **plotargs)
-plt.colorbar(im)
-plt.savefig("sxx_test.pdf", format="pdf")
-plt.close()
+    fig, ax = plt.subplots()
+    im = ax.imshow(ar, **plotargs)
+    plt.imshow(ar, **plotargs)
+    plt.colorbar(im)
+    print("{0}s_par_{1}.pdf".format(path, abbrev[v]))
+    plt.savefig("{0}s_par_{1}.pdf".format(path, abbrev[v]), format="pdf")
+    plt.close()
 
-fig, ax = plt.subplots()
-im = ax.imshow(s_ab_t[:,:,0,0].T, **plotargs)
-plt.imshow(s_ab_t[:,:,0,0].T, **plotargs)
-plt.colorbar(im)
-plt.savefig("sxx_t_test.pdf", format="pdf")
-plt.close()
-
-fig, ax = plt.subplots()
-im = ax.imshow(s_ab_t[:,:,0,1].T, **plotargs)
-plt.imshow(s_ab_t[:,:,0,1].T, **plotargs)
-plt.colorbar(im)
-plt.savefig("sxy_t_test.pdf", format="pdf")
-plt.close()
-
-fig, ax = plt.subplots()
-im = ax.imshow(s_ab_t[:,:,1,1].T, **plotargs)
-plt.imshow(s_ab_t[:,:,1,1].T, **plotargs)
-plt.colorbar(im)
-plt.savefig("syy_t_test.pdf", format="pdf")
-plt.close()
-
-fig, ax = plt.subplots()
-im = ax.imshow(s_ab_tot[:,:,0,1].T, **plotargs)
-plt.imshow(s_ab_tot[:,:,0,1].T, **plotargs)
-plt.colorbar(im)
-plt.savefig("sxy_test.pdf", format="pdf")
-plt.close()
-
-fig, ax = plt.subplots()
-im = ax.imshow(s_ab_tot[:,:,1,0].T, **plotargs)
-plt.imshow(s_ab_tot[:,:,1,0].T, **plotargs)
-plt.colorbar(im)
-plt.savefig("syx_test.pdf", format="pdf")
-plt.close()
-
-fig, ax = plt.subplots()
-im = ax.imshow(s_ab_tot[:,:,1,1].T, **plotargs)
-plt.imshow(s_ab_tot[:,:,1,1].T, **plotargs)
-plt.colorbar(im)
-plt.savefig("syy_test.pdf", format="pdf")
-plt.close()
-
-# for f in files:
-#     data = np.loadtxt(f)
-#     xx = (data[:, 2][index]).reshape(Qx.shape)
-#     np.savetxt("S_xx_reorder.dat", xx.flatten())
-#     np.savetxt("S_xx_orig.dat", data[:,2])
-#     xy = (data[:, 3][index]).reshape(Qx.shape)
-#     yy = (data[:, 5][index]).reshape(Qx.shape)
-#     s_perp = (1. - Qhatx * Qhatx) * xx + \
-#             2. * (Qhatx * Qhaty) * xy + \
-#             (1 - Qhaty * Qhaty) * yy
-#     s_par = (Qhatx * Qhatx) * xx + \
-#             2. * (Qhatx * Qhaty) * xy + \
-#             (Qhaty * Qhaty) * yy
-#     fig, ax = plt.subplots()
-#     im = ax.imshow(s_perp, interpolation='None', cmap=cm.inferno, extent=ext)
-#     plt.imshow(s_perp, interpolation='None', cmap=cm.inferno, extent=ext)
-#     plt.colorbar(im)
-#     plt.savefig("sperp_test.pdf", format="pdf")
-#     plt.close()
-#     plt.subplots()
-#     plt.imshow(s_par, interpolation='None', cmap=cm.inferno, extent=ext)
-#     plt.savefig("spar_test.pdf", format="pdf")
-#     plt.close()
+ext = [-2, 2, -2, 2]
+for v, ar in enumerate([s_ab_tot, s_ab_t, s_ab_l]):
+    fig, ax = plt.subplots()
+    im = ax.imshow(ar[:,:,0,0], **plotargs)
+    plt.imshow(ar[:,:,0,0], **plotargs)
+    plt.colorbar(im)
+    plt.savefig("{0}s_xx_{1}.pdf".format(path, abbrev[v]), format="pdf")
+    plt.close()
+    fig, ax = plt.subplots()
+    im = ax.imshow(ar[:,:,0,1], **plotargs)
+    plt.imshow(ar[:,:,0,1], **plotargs)
+    plt.colorbar(im)
+    plt.savefig("{0}s_xy_{1}.pdf".format(path, abbrev[v]), format="pdf")
+    plt.close()
+    fig, ax = plt.subplots()
+    im = ax.imshow(ar[:,:,1,1], **plotargs)
+    plt.imshow(ar[:,:,1,1], **plotargs)
+    plt.colorbar(im)
+    plt.savefig("{0}s_yy_{1}.pdf".format(path, abbrev[v]), format="pdf")
+    plt.close()
