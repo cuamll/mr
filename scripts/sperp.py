@@ -12,16 +12,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
-def Q_q(big_q):
-    sml_q = big_q
-    while np.abs(sml_q + 0.0001) > np.pi:
-        if sml_q < 0.0:
-            sml_q = sml_q + 2 * np.pi
-        else:
-            sml_q = sml_q - 2 * np.pi
-
-    
-    return sml_q
+def plot(arr, filename, plotargs):
+    fig, ax = plt.subplots()
+    im = ax.imshow(arr, **plotargs)
+    plt.imshow(arr, **plotargs)
+    plt.colorbar(im)
+    fig.tight_layout()
+    plt.savefig(filename, format="pdf")
+    plt.close()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-to", "--total_file", help="S_ab^total filename")
@@ -50,9 +48,6 @@ s_ab_l = np.zeros(s_ab_tot.shape)
 
 t_raw = t_raw[:,2:6].reshape((args.length + 1, args.length + 1, 2, 2))
 l_raw = l_raw[:,2:6].reshape((args.length + 1, args.length + 1, 2, 2))
-s_ab_tot = np.transpose(s_ab_tot, (1, 0, 2, 3))
-t_raw = np.transpose(t_raw, (1, 0, 2, 3))
-l_raw = np.transpose(l_raw, (1, 0, 2, 3))
 
 for i in range(args.length + 1):
     for j in range(args.length + 1):
@@ -184,45 +179,17 @@ for p in range(-lim, lim):
                                  (kyf * kxf * kn) * s_ab_l[kx, ky, 1, 0] + \
                                  (kyf * kyf * kn) * s_ab_l[kx, ky, 1, 1]
 
-ext = [-sp, sp, -sp, sp]
-plotargs = {'interpolation': 'None', 'cmap': 'inferno', 'extent': ext}
+ext = [-sp/2, sp/2, -sp/2, sp/2]
+plotargs = {'interpolation': 'None', 'cmap': 'inferno', 'origin': 'lower', 'extent': ext}
 
 for v, ar in enumerate([s_perp_tot, s_perp_t, s_perp_l]):
-
-    fig, ax = plt.subplots()
-    im = ax.imshow(ar, **plotargs)
-    plt.imshow(ar, **plotargs)
-    plt.colorbar(im)
-    plt.savefig("{0}s_perp_{1}.pdf".format(path, abbrev[v]), format="pdf")
-    plt.close()
+    plot(ar, "{0}s_perp_{1}.pdf".format(path, abbrev[v]), plotargs)
 
 for v, ar in enumerate([s_par_tot, s_par_t, s_par_l]):
+    plot(ar, "{0}s_par_{1}.pdf".format(path, abbrev[v]), plotargs)
 
-    fig, ax = plt.subplots()
-    im = ax.imshow(ar, **plotargs)
-    plt.imshow(ar, **plotargs)
-    plt.colorbar(im)
-    print("{0}s_par_{1}.pdf".format(path, abbrev[v]))
-    plt.savefig("{0}s_par_{1}.pdf".format(path, abbrev[v]), format="pdf")
-    plt.close()
-
-ext = [-2, 2, -2, 2]
+ext = [-1, 1, -1, 1]
 for v, ar in enumerate([s_ab_tot, s_ab_t, s_ab_l]):
-    fig, ax = plt.subplots()
-    im = ax.imshow(ar[:,:,0,0], **plotargs)
-    plt.imshow(ar[:,:,0,0], **plotargs)
-    plt.colorbar(im)
-    plt.savefig("{0}s_xx_{1}.pdf".format(path, abbrev[v]), format="pdf")
-    plt.close()
-    fig, ax = plt.subplots()
-    im = ax.imshow(ar[:,:,0,1], **plotargs)
-    plt.imshow(ar[:,:,0,1], **plotargs)
-    plt.colorbar(im)
-    plt.savefig("{0}s_xy_{1}.pdf".format(path, abbrev[v]), format="pdf")
-    plt.close()
-    fig, ax = plt.subplots()
-    im = ax.imshow(ar[:,:,1,1], **plotargs)
-    plt.imshow(ar[:,:,1,1], **plotargs)
-    plt.colorbar(im)
-    plt.savefig("{0}s_yy_{1}.pdf".format(path, abbrev[v]), format="pdf")
-    plt.close()
+    plot(ar[:,:,0,0].T, "{0}s_xx_{1}.pdf".format(path, abbrev[v]), plotargs)
+    plot(ar[:,:,0,1].T, "{0}s_xy_{1}.pdf".format(path, abbrev[v]), plotargs)
+    plot(ar[:,:,1,1].T, "{0}s_yy_{1}.pdf".format(path, abbrev[v]), plotargs)
