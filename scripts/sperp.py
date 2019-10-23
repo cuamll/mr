@@ -192,6 +192,7 @@ for v, ar in enumerate([s_par_tot, s_par_t, s_par_l]):
 
 plotargs.update(extent=[-1, 1, -1, 1])
 for v, ar in enumerate([s_ab_tot, s_ab_t, s_ab_l]):
+    # python reshape works the opposite way to my fortran output - row-major vs column-major
     plot(ar[:,:,0,0].T, "{0}s_xx_{1}.pdf".format(path, abbrev[v]), plotargs)
     plot(ar[:,:,0,1].T, "{0}s_xy_{1}.pdf".format(path, abbrev[v]), plotargs)
     plot(ar[:,:,1,1].T, "{0}s_yy_{1}.pdf".format(path, abbrev[v]), plotargs)
