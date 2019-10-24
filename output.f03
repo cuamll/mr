@@ -457,37 +457,37 @@ module output
             real(chi_ab(2,1,i,j)),&
             real(chi_ab(2,2,i,j))
 
-            write (17, field_format_string)&
-            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            real(s_ab_irrot_large(1,1,i,j)),&
-            real(s_ab_irrot_large(1,2,i,j)),&
-            real(s_ab_irrot_large(2,1,i,j)),&
-            real(s_ab_irrot_large(2,2,i,j))
+            ! write (17, field_format_string)&
+            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            ! real(s_ab_irrot_large(1,1,i,j)),&
+            ! real(s_ab_irrot_large(1,2,i,j)),&
+            ! real(s_ab_irrot_large(2,1,i,j)),&
+            ! real(s_ab_irrot_large(2,2,i,j))
 
-            write (27, field_format_string)&
-            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            real(chi_ab_irrot(1,1,i,j)),&
-            real(chi_ab_irrot(1,2,i,j)),&
-            real(chi_ab_irrot(2,1,i,j)),&
-            real(chi_ab_irrot(2,2,i,j))
+            ! write (27, field_format_string)&
+            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+            ! real(chi_ab_irrot(1,1,i,j)),&
+            ! real(chi_ab_irrot(1,2,i,j)),&
+            ! real(chi_ab_irrot(2,1,i,j)),&
+            ! real(chi_ab_irrot(2,2,i,j))
 
-            write (20,field_format_string)&
-            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            real(s_ab_rot_large(1,1,i,j)),&
-            real(s_ab_rot_large(1,2,i,j)),&
-            real(s_ab_rot_large(2,1,i,j)),&
-            real(s_ab_rot_large(2,2,i,j))
+            ! write (20,field_format_string)&
+            ! 2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+            ! 2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+            ! real(s_ab_rot_large(1,1,i,j)),&
+            ! real(s_ab_rot_large(1,2,i,j)),&
+            ! real(s_ab_rot_large(2,1,i,j)),&
+            ! real(s_ab_rot_large(2,2,i,j))
 
-            write (28,field_format_string)&
-            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            real(chi_ab_rot(1,1,i,j)),&
-            real(chi_ab_rot(1,2,i,j)),&
-            real(chi_ab_rot(2,1,i,j)),&
-            real(chi_ab_rot(2,2,i,j))
+            ! write (28,field_format_string)&
+            ! 2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+            ! 2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+            ! real(chi_ab_rot(1,1,i,j)),&
+            ! real(chi_ab_rot(1,2,i,j)),&
+            ! real(chi_ab_rot(2,1,i,j)),&
+            ! real(chi_ab_rot(2,2,i,j))
 
           end if
 
@@ -496,30 +496,30 @@ module output
           2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
           s_perp(i,j)
 
-          write (18, field_format_string)&
-          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          s_perp_irrot(i,j)
+          ! write (18, field_format_string)&
+          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          ! s_perp_irrot(i,j)
 
-          write (21, field_format_string)&
-          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          s_perp_rot(i,j)
+          ! write (21, field_format_string)&
+          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          ! s_perp_rot(i,j)
 
           write (22, field_format_string)&
           2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
           2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
           s_par(i,j)
 
-          write (23, field_format_string)&
-          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          s_par_irrot(i,j)
+          ! write (23, field_format_string)&
+          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          ! s_par_irrot(i,j)
 
-          write (24, field_format_string)&
-          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          s_par_rot(i,j)
+          ! write (24, field_format_string)&
+          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
+          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
+          ! s_par_rot(i,j)
 
         end do
       end do
@@ -528,17 +528,17 @@ module output
       close(12)
       close(14)
       close(15)
-      close(17)
-      close(18)
-      close(20)
-      close(21)
+      ! close(17)
+      ! close(18)
+      ! close(20)
+      ! close(21)
       close(22)
-      close(23)
-      close(24)
+      ! close(23)
+      ! close(24)
       close(25)
       close(26)
-      close(27)
-      close(28)
+      ! close(27)
+      ! close(28)
 
       deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
       deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);
