@@ -179,10 +179,8 @@ module output
   subroutine calc_correlations
     use common
     implicit none
-    integer :: i, j, kx, ky, m, p, x, y, dist_bin, sp
-    real(kind=rk) :: norm_k, kx_float, ky_float, dist,&
-    sp_he_tot, sp_he_rot, sp_he_irrot, prefac,&
-    ebar_sus, ebar_dip_sus, ebar_wind_sus
+    integer :: i, j, m, p, dist_bin
+    real(kind=rk) :: sp_he_tot, prefac, ebar_sus, ebar_dip_sus, ebar_wind_sus
     real(kind=rk), dimension(2,2,(bz*L)+1,(bz*L)+1) :: chi_ab,&
     chi_ab_rot, chi_ab_irrot
     real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: charge_struc
@@ -201,8 +199,6 @@ module output
     prefac = 1.0 * L**2 / (temp**2)
 
     sp_he_tot = prefac * (ener_tot_sq_sum - (ener_tot_sum)**2)
-    sp_he_rot = prefac * (ener_rot_sq_sum - (ener_rot_sum)**2)
-    sp_he_irrot = prefac * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
     ebar_sus = L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
     - (ebar_sum(1)**2 + ebar_sum(2)**2))
     ebar_dip_sus = L**2 * beta * (ebar_dip_sq_sum(1) + ebar_dip_sq_sum(2)&
@@ -213,7 +209,7 @@ module output
     write(*,*)
     write (*,'(a)') "# Specific heat: total, rot., irrot."
     write (*,'(ES18.9, ES18.9, ES18.9, ES18.9)') temp,&
-    sp_he_tot, sp_he_rot, sp_he_irrot
+    sp_he_tot
     write(*,*) "E^bar averages:"
     write(*,'(a)') "<E^bar_x>, <E^bar_y>, <|E^bar|>"
     write (*,*) ebar_sum(1), ebar_sum(2),&
@@ -230,20 +226,14 @@ module output
 
       chi_ab = s_ab_large / temp
 
-      do p = (-L/2)*sp,(L/2)*sp
-        do m = (-L/2)*sp,(L/2)*sp
+      do p = (-L/2)*bz,(L/2)*bz
+        do m = (-L/2)*bz,(L/2)*bz
 
-          i = m + 1 + sp*(L/2)
-          j = p + 1 + sp*(L/2)
+          i = m + 1 + bz*(L/2)
+          j = p + 1 + bz*(L/2)
 
-          ! leaving this here in case I decide to reinstate
-          ! charge structure factor calculation
-          ! can change loop extents now that s_perp is gone
-          if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
-            ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
-            charge_struc(i,j) = abs(ch_ch(i,j) - &
-              rho_k_p(i,j) * conjg(rho_k_m(i,j)))
-          end if
+          charge_struc(i,j) = abs(ch_ch(i,j) - &
+            rho_k_p(i,j) * conjg(rho_k_m(i,j)))
 
         end do
       end do ! end p, m loops
