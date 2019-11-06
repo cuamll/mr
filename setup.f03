@@ -11,7 +11,6 @@ module setup
   subroutine initial_setup
     ! various things which can't be zeroed
     ! at the start of every sample
-    complex(kind=rk) :: prefac, imag
 
     allocate(pos(L))
     allocate(neg(L))
@@ -21,23 +20,16 @@ module setup
     allocate(e_tot_avg(2,L,L))
     allocate(e_rot_avg(2,L,L))
     allocate(e_irrot_avg(2,L,L))
-    ! allocate(lgf(L,L,L,L))
     allocate(lgf(0:L/2,0:L/2))
     if (do_corr) then
       allocate(s_ab(L/2+1,L,3))
-      allocate(s_ab_rot(L/2+1,L,3))
-      allocate(s_ab_irrot(L/2+1,L,3))
       allocate(s_ab_large(2,2,(bz*L)+1,(bz*L)+1))
-      allocate(s_ab_rot_large(2,2,(bz*L)+1,(bz*L)+1))
-      allocate(s_ab_irrot_large(2,2,(bz*L)+1,(bz*L)+1))
       allocate(ch_ch((bz*L)+1,(bz*L)+1))
       allocate(rho_k_m((bz*L)+1,(bz*L)+1))
       allocate(rho_k_p((bz*L)+1,(bz*L)+1))
       allocate(dir_struc((L/2) + 1,(L/2) + 1))
       allocate(dist_r(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
       allocate(bin_count(ceiling(sqrt(float(3*(((L/2)**2))))*(1 / bin_size))))
-      allocate(fw(L,(bz*L)+1))
-      allocate(hw(L,(bz*L)+1))
       allocate(ch_in(L,L))
       allocate(e_in(L,L))
       allocate(chk(L/2+1,L))
@@ -57,9 +49,7 @@ module setup
     div = 0.0; divsq = 0.0
 
     if (do_corr) then
-      s_ab = (0.0,0.0); s_ab_rot = (0.0,0.0); s_ab_irrot = (0.0,0.0);
-      s_ab_large = (0.0,0.0); s_ab_rot_large = (0.0,0.0);
-      s_ab_irrot_large = (0.0,0.0);
+      s_ab = (0.0,0.0); s_ab_large = (0.0,0.0);
       ch_ch = (0.0,0.0); rho_k_p = (0.0,0.0); rho_k_m = (0.0,0.0)
       dir_struc = 0.0; dist_r = 0.0; bin_count = 0.0;
     end if
@@ -70,18 +60,6 @@ module setup
       no_samples * L**2 * rot_ratio
     attempts(3) = (therm_sweeps + measurement_sweeps) *&
       no_samples * L**2 * g_ratio
-
-    imag = (0.0, 1.0)
-    prefac = (-1)*imag*((2*pi)/(L*lambda))
-
-    if (do_corr) then
-      do i = 1,L
-        do k = 1,(L*bz)+1
-          fw(i,k) = prefac * i * (k - 1)
-          hw(i,k) = prefac * (neg(i) + (1.0/2)) * (k - 1)
-        end do
-      end do
-    end if
 
   ! FFTW plans -- gonna need them a lot
   plan_x = fftw_plan_dft_r2c_2d(L,L,e_in,exk,FFTW_ESTIMATE)

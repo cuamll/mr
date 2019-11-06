@@ -243,11 +243,6 @@ program mr
     write (*,'(a,2i12.1,es18.9)') "Harm: total, attempts, rate: ",&
     accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
 
-    ! comment this out for now; not doing harmonic fluctuations
-    ! write (*,'(a,2i12.1,es18.9)') "# Harmonic fluctuations: &
-    ! &total, attempts, rate: ",&
-    ! accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
-
     if (.not.canon) then
 
       if (attempts(4).eq.0) then
@@ -385,10 +380,6 @@ subroutine reductions(id)
 
       call MPI_Reduce(MPI_IN_PLACE, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_rot, size(s_ab_rot), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p), MPI_NEW_COMPLEX,&
@@ -413,10 +404,6 @@ subroutine reductions(id)
     else
 
       call MPI_Reduce(s_ab, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(ch_ch, ch_ch, size(ch_ch), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -490,8 +477,6 @@ subroutine normalisations(num_procs)
     rho_k_m = rho_k_m / denom
     ch_ch = ch_ch / denom
     s_ab = s_ab / denom
-    s_ab_irrot = s_ab_irrot / denom
-    s_ab_rot = s_ab_rot / denom
     dir_struc = dir_struc / denom
     dist_r = dist_r / denom
     bin_count = bin_count / denom
@@ -537,9 +522,6 @@ subroutine normalisations(num_procs)
   write (*,*) "<Divsq>: ",divsq
   write (*,*) "div_fluct: ", (1.0)*(divsq - div**2)
 
-  ! in principle this block could be removed, actually.
-  ! I run through tee so could print everything to stdin.
-  ! can i be bothered to change it at this point though
   open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
   write (30,'(4ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
