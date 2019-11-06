@@ -398,20 +398,18 @@ module update
       ebar_dip = ebar_dip / L**2
       ebar_wind = ebar_wind / L**2
 
-      ebar_sum(1) = ebar_sum(1) + ebar(1)
-      ebar_sum(2) = ebar_sum(2) + ebar(2)
-      ebar_sq_sum(1) = ebar_sq_sum(1) + (ebar(1) * ebar(1))
-      ebar_sq_sum(2) = ebar_sq_sum(2) + (ebar(2) * ebar(2))
+      do i = 1,2
 
-      ebar_dip_sum(1) = ebar_dip_sum(1) + ebar_dip(1)
-      ebar_dip_sum(2) = ebar_dip_sum(2) + ebar_dip(2)
-      ebar_dip_sq_sum(1) = ebar_dip_sq_sum(1) + (ebar_dip(1) * ebar_dip(1))
-      ebar_dip_sq_sum(2) = ebar_dip_sq_sum(2) + (ebar_dip(2) * ebar_dip(2))
+        ebar_sum(i) = ebar_sum(i) + ebar(i)
+        ebar_sq_sum(i) = ebar_sq_sum(i) + (ebar(i) * ebar(i))
 
-      ebar_wind_sum(1) = ebar_wind_sum(1) + ebar_wind(1)
-      ebar_wind_sum(2) = ebar_wind_sum(2) + ebar_wind(2)
-      ebar_wind_sq_sum(1) = ebar_wind_sq_sum(1) + (ebar_wind(1) * ebar_wind(1))
-      ebar_wind_sq_sum(2) = ebar_wind_sq_sum(2) + (ebar_wind(2) * ebar_wind(2))
+        ebar_dip_sum(i) = ebar_dip_sum(i) + ebar_dip(i)
+        ebar_dip_sq_sum(i) = ebar_dip_sq_sum(i) + (ebar_dip(i) * ebar_dip(i))
+
+        ebar_wind_sum(i) = ebar_wind_sum(i) + ebar_wind(i)
+        ebar_wind_sq_sum(i) = ebar_wind_sq_sum(i) + (ebar_wind(i) * ebar_wind(i))
+
+      end do
 
       if (do_corr) then
 
@@ -438,20 +436,6 @@ module update
 
         div = div / L**2
         divsq = divsq / L**2
-
-        if (n.eq.100) then
-          open(unit=12, file="div_snapshot.dat")
-          do j = 1,L
-            do k = 1,L
-              ener_rot = ener_rot + (e_field(2,j,k)) + e_field(1,j,k) +&
-                    (-1.0 * e_field(2,pos(j),k)) + e_field(1,j,pos(k))
-              ener_rot_sq = ener_rot**2
-              write(12, '(2i4.2, 4f12.6)') j, k, e_field(1,j,k),&
-                                           e_field(2,j,k), ener_rot, ener_rot_sq
-            end do
-          end do
-          close(12)
-        end if
 
         do j = 1, L
 

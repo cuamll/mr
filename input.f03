@@ -211,12 +211,12 @@ module input
             if (verbose) then
               write (*,*) 'Total field-field structure factor file name: ',fi_st_l
             end if
-          case ('total_s^(alpha_beta)_file')
+          case ('s_ab_total_file')
             read(buffer, '(a)', iostat=ios) s_ab_l
             if (verbose) then
               write (*,*) 'Total S^(α β) file name: ',s_ab_l
             end if
-          case ('total_chi^(alpha_beta)_file')
+          case ('chi_ab_total_file')
             read(buffer, '(a)', iostat=ios) c_ab_l
             if (verbose) then
               write (*,*) 'Total chi^(α β) file name: ',c_ab_l
