@@ -189,8 +189,7 @@ module output
     s_par_irrot, s_par_rot
     real(kind=rk), dimension(2,2,(bz*L)+1,(bz*L)+1) :: chi_ab,&
     chi_ab_rot, chi_ab_irrot
-    real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: charge_struc,&
-    field_struc, field_struc_irrot, field_struc_rot
+    real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: charge_struc
     character(100) :: struc_format_string, field_format_string,&
     vertex_format, avg_field_format,dir_format_string, dir_dist_format_string
 
@@ -201,8 +200,7 @@ module output
     vertex_format = "(I6, I3, I3, 6ES18.9, I3)"
     dir_dist_format_string = "(ES18.9, I9.6, ES18.9)"
 
-    field_struc = 0.0; field_struc_rot = 0.0;
-    charge_struc = 0.0; field_struc_irrot = 0.0;
+    charge_struc = 0.0
 
     prefac = 1.0 * L**2 / (temp**2)
 
@@ -258,9 +256,6 @@ module output
             ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
             charge_struc(i,j) = abs(ch_ch(i,j) - &
               rho_k_p(i,j) * conjg(rho_k_m(i,j)))
-            field_struc(i,j) = abs(s_ab_large(1,1,i,j))
-            field_struc_irrot(i,j) = abs(s_ab_irrot_large(1,1,i,j))
-            field_struc_rot(i,j) = abs(s_ab_rot_large(1,1,i,j))
           end if
 
           ! use separate variables, we're gonna mess around with values
@@ -323,30 +318,10 @@ module output
                         ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_large(2,1,kx,ky))+&
                         (1 - ky_float*ky_float*norm_k) *   real(s_ab_large(2,2,kx,ky))
 
-          s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) *  real(s_ab_irrot_large(1,1,kx,ky))+&
-                          ((-1)*kx_float*ky_float*norm_k) *     real(s_ab_irrot_large(1,2,kx,ky))+&
-                          ((-1)*ky_float*kx_float*norm_k) *     real(s_ab_irrot_large(2,1,kx,ky))+&
-                          (1 - ky_float*ky_float*norm_k) *      real(s_ab_irrot_large(2,2,kx,ky))
-
-          s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * real(s_ab_rot_large(1,1,kx,ky))+&
-                          ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_rot_large(1,2,kx,ky))+&
-                          ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_rot_large(2,1,kx,ky))+&
-                          (1 - ky_float*ky_float*norm_k) *   real(s_ab_rot_large(2,2,kx,ky))
-
           s_par(i,j) = (kx_float*kx_float*norm_k) *   real(s_ab_large(1,1,kx,ky))+&
                          (kx_float*ky_float*norm_k) * real(s_ab_large(1,2,kx,ky))+&
                          (ky_float*kx_float*norm_k) * real(s_ab_large(2,1,kx,ky))+&
                          (ky_float*ky_float*norm_k) * real(s_ab_large(2,2,kx,ky))
-
-          s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_irrot_large(1,1,kx,ky))+&
-                               (kx_float*ky_float*norm_k)*real(s_ab_irrot_large(1,2,kx,ky))+&
-                               (ky_float*kx_float*norm_k)*real(s_ab_irrot_large(2,1,kx,ky))+&
-                               (ky_float*ky_float*norm_k)*real(s_ab_irrot_large(2,2,kx,ky))
-
-          s_par_rot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_rot_large(1,1,kx,ky))+&
-                             (kx_float*ky_float*norm_k)*real(s_ab_rot_large(1,2,kx,ky))+&
-                             (ky_float*kx_float*norm_k)*real(s_ab_rot_large(2,1,kx,ky))+&
-                             (ky_float*ky_float*norm_k)*real(s_ab_rot_large(2,2,kx,ky))
 
         end do
       end do ! end p, m loops
@@ -457,38 +432,6 @@ module output
             real(chi_ab(2,1,i,j)),&
             real(chi_ab(2,2,i,j))
 
-            ! write (17, field_format_string)&
-            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            ! real(s_ab_irrot_large(1,1,i,j)),&
-            ! real(s_ab_irrot_large(1,2,i,j)),&
-            ! real(s_ab_irrot_large(2,1,i,j)),&
-            ! real(s_ab_irrot_large(2,2,i,j))
-
-            ! write (27, field_format_string)&
-            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            ! real(chi_ab_irrot(1,1,i,j)),&
-            ! real(chi_ab_irrot(1,2,i,j)),&
-            ! real(chi_ab_irrot(2,1,i,j)),&
-            ! real(chi_ab_irrot(2,2,i,j))
-
-            ! write (20,field_format_string)&
-            ! 2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            ! real(s_ab_rot_large(1,1,i,j)),&
-            ! real(s_ab_rot_large(1,2,i,j)),&
-            ! real(s_ab_rot_large(2,1,i,j)),&
-            ! real(s_ab_rot_large(2,2,i,j))
-
-            ! write (28,field_format_string)&
-            ! 2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            ! real(chi_ab_rot(1,1,i,j)),&
-            ! real(chi_ab_rot(1,2,i,j)),&
-            ! real(chi_ab_rot(2,1,i,j)),&
-            ! real(chi_ab_rot(2,2,i,j))
-
           end if
 
           write (15, field_format_string)&
@@ -496,30 +439,10 @@ module output
           2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
           s_perp(i,j)
 
-          ! write (18, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_perp_irrot(i,j)
-
-          ! write (21, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_perp_rot(i,j)
-
           write (22, field_format_string)&
           2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
           2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
           s_par(i,j)
-
-          ! write (23, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_par_irrot(i,j)
-
-          ! write (24, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_par_rot(i,j)
 
         end do
       end do
@@ -528,17 +451,9 @@ module output
       close(12)
       close(14)
       close(15)
-      ! close(17)
-      ! close(18)
-      ! close(20)
-      ! close(21)
       close(22)
-      ! close(23)
-      ! close(24)
       close(25)
       close(26)
-      ! close(27)
-      ! close(28)
 
       deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
       deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);
