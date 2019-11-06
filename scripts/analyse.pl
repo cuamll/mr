@@ -17,7 +17,7 @@ my $help = '';
 my $doplots = 1;
 my $domultiplot = 1;
 my $dorun = 1;
-my $dospr = 1;
+my $dosperp = 1;
 my $doquiver = 1;
 my $dolorentz = 1;
 my $doquadrics = 1;
@@ -32,7 +32,7 @@ my $stampdir = '';
 # Get command line options; they all have (hopefully) sensible defaults
 $input = GetOptions ("help"=> \$help,
                      "plot=i"=> \$doplots,
-                     "spr=i"=> \$dospr,
+                     "sperp=i"=> \$dosperp,
                      "quiver=i"=> \$doquiver,
                      "multiplot=i"=> \$domultiplot,
                      "lorentz=i"=> \$dolorentz,
@@ -68,6 +68,7 @@ my %parameters = get_parameters("$inputfile");
 # the lines corresponding to the fourier space helmholtz
 # decomposition probably aren't there: add them
 my %extra_params = ();
+$extra_params{"s_ab_total_file"} = "$stampdir/s_ab_total.dat";
 $extra_params{"s_ab_t_file"} = "$stampdir/s_ab_t.dat";
 $extra_params{"s_ab_l_file"} = "$stampdir/s_ab_l.dat";
 $extra_params{"s_perp_t_file"} = "$stampdir/s_perp_t.dat";
@@ -130,7 +131,7 @@ if (-f $jobfile) {
 
 my @run = (
   $doquadrics,
-  $dospr,
+  $dosperp,
   $doplots,
   $doquiver,
   $domultiplot,
@@ -140,7 +141,7 @@ my @run = (
 
 my @file = (
  "$basedir/scripts/quadrics.py",
- "$basedir/spr_fh",
+ "$basedir/scripts/sperp.py",
  "$basedir/scripts/plot.pl",
  "$basedir/scripts/quiver.py",
  "$basedir/scripts/sab_multiplot.py",
@@ -152,7 +153,7 @@ my @file = (
 # I use the defaults here but check the plot file if they need changing
 my @cmd = (
   qq[python $file[0] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
-  qq[$file[1] $tempinputfile],
+  qq[python $file[1] --length $parameters{L} --total_file $parameters{s_ab_total_file} --transverse_file $parameters{s_ab_t_file} --longitudinal_file $parameters{s_ab_l_file}],
   qq[$file[2] -d=$stampdir],
   qq[python $file[3] $stampdir $parameters{L} $arrow_width $dpi],
   qq[python $file[4] $stampdir $parameters{L} $parameters{temperature} $core_energy $dpi],
@@ -163,6 +164,7 @@ my @cmd = (
 for my $i (0..$#run) {
   if ($run[$i]) {
     print "Running $file[$i]\n";
+    print "Command $cmd[$i]\n";
     system($cmd[$i]);
   }
 }

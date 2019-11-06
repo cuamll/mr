@@ -283,8 +283,8 @@ module output
       close(38)
       close(39)
 
-      do i = 1,sp*(L) + 1
-        do j = 1,sp*(L) + 1
+      do i = 1,bz*(L) + 1
+        do j = 1,bz*(L) + 1
 
           ! output is kx, ky, kz, S(\vec{k})
 
@@ -299,30 +299,26 @@ module output
             v_avg(i,j)
           end if
 
-          if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
+          write (12, struc_format_string)&
+          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+          charge_struc(i,j)
 
-            write (12, struc_format_string)&
-            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            charge_struc(i,j)
+          write (14, field_format_string)&
+          2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+          real(s_ab_large(1,1,i,j)),&
+          real(s_ab_large(1,2,i,j)),&
+          real(s_ab_large(2,1,i,j)),&
+          real(s_ab_large(2,2,i,j))
 
-            write (14, field_format_string)&
-            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            real(s_ab_large(1,1,i,j)),&
-            real(s_ab_large(1,2,i,j)),&
-            real(s_ab_large(2,1,i,j)),&
-            real(s_ab_large(2,2,i,j))
-
-            write (26, field_format_string)&
-            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            real(chi_ab(1,1,i,j)),&
-            real(chi_ab(1,2,i,j)),&
-            real(chi_ab(2,1,i,j)),&
-            real(chi_ab(2,2,i,j))
-
-          end if
+          write (26, field_format_string)&
+          2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+          real(chi_ab(1,1,i,j)),&
+          real(chi_ab(1,2,i,j)),&
+          real(chi_ab(2,1,i,j)),&
+          real(chi_ab(2,2,i,j))
 
         end do
       end do
