@@ -18,8 +18,6 @@ module setup
     allocate(windings(2,no_measurements))
     allocate(windings_sq(2,no_measurements))
     allocate(e_tot_avg(2,L,L))
-    allocate(e_rot_avg(2,L,L))
-    allocate(e_irrot_avg(2,L,L))
     allocate(lgf(0:L/2,0:L/2))
     if (do_corr) then
       allocate(s_ab(L/2+1,L,3))

@@ -394,10 +394,6 @@ subroutine reductions(id)
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, e_tot_avg, size(e_tot_avg), MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_rot_avg, size(e_rot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_irrot_avg, size(e_irrot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, bin_count, size(bin_count), MPI_NEW_INT,&
                       MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
 
@@ -418,10 +414,6 @@ subroutine reductions(id)
       call MPI_Reduce(v_avg, v_avg, size(v_avg), MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(e_tot_avg, e_tot_avg, size(e_tot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_rot_avg, e_rot_avg, size(e_rot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_irrot_avg, e_irrot_avg, size(e_irrot_avg), MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(bin_count, bin_count, size(bin_count), MPI_NEW_INT,&
                       MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -463,8 +455,6 @@ subroutine normalisations(num_procs)
   ebar_wind_sum = ebar_wind_sum / denom
   ebar_wind_sq_sum = ebar_wind_sq_sum / denom
   e_tot_avg = e_tot_avg / denom
-  e_rot_avg = e_rot_avg / denom
-  e_irrot_avg = e_irrot_avg / denom
   v_avg = v_avg / denom
   rho_avg = rho_avg / denom
   windings = windings / denom
