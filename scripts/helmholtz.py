@@ -139,7 +139,7 @@ plot_title = r"Cut through $ q_y = - q_x $ for $ "
 plt.legend()
 plt.title('')
 plt.ylim(ymin=0,ymax=1.1*max(fitted_data))
-plt.savefig(output_dir + 'sab_irrot_cut_new.eps', format='eps', dpi=dots)
+plt.savefig(output_dir + 'sab_irrot_cut_new.pdf', format='pdf', dpi=dots)
 plt.close()
 
 fig, ax = plt.subplots()
