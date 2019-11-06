@@ -196,7 +196,7 @@ latexpeaks = ['(0,0)','(\pi/8, \pi/8)',
 if d == 2:
     for i in range(len(xpeaks)):
         def quadric(x, y, a, b):
-            return (x**2 / a) + (y**2 / b) - 1
+            return (x**2 * a) + (y**2 * b) - 1
 
         # get the array index we want and also store the relevant k-value
         # as a string for pretty printing later
@@ -213,9 +213,9 @@ if d == 2:
         # also, for some reason, if we don't cast them to float,
         # linspace doesn't work at all and just prints x/ymax n times
         s_xmax = 1.1*float(np.round(
-                 np.sqrt(s_ab_eigvals[cen_tuple, 0]),decimals=2))
+                 np.sqrt(1./s_ab_eigvals[cen_tuple, 0]),decimals=2))
         s_ymax = 1.1*float(np.round(
-                 np.sqrt(s_ab_eigvals[cen_tuple, 1]),decimals=2))
+                 np.sqrt(1./s_ab_eigvals[cen_tuple, 1]),decimals=2))
         if (s_xmax > s_ymax):
             s_max = s_xmax
         else:
@@ -233,8 +233,8 @@ if d == 2:
         legend_elements = [Line2D([0], [0], color=utils.rd,
                 lw=2, label=r' $ \bar{S}^{\alpha\beta}_{tot} $ ')]
         axes.grid()
-        axes.set_xlabel(r'$ 1/\lambda_\text{t} $', fontsize=20)
-        axes.set_ylabel(r'$ 1/\lambda_\text{l} $', fontsize=20)
+        axes.set_xlabel(r'$ \lambda_\text{t} $', fontsize=20)
+        axes.set_ylabel(r'$ \lambda_\text{l} $', fontsize=20)
         axes.tick_params(length=1, labelsize=20)
         axes.axhline(0, color='black', lw=1.5)
         axes.axvline(0, color='black', lw=1.5)
