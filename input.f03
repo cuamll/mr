@@ -13,12 +13,9 @@ module input
   subroutine read_input
     use common
     implicit none
-    character(len=200) :: lattfile_long, en_long, sq_en_long,&
-    e_field_long, arg_long, ch_st_l, fi_st_l, s_ab_l, s_p_l, dir_st_l,&
-    dir_d_s_l, fe_ch_l, ir_fe_l, ir_sab_l, ir_sp_l, r_fe_l, r_sab_l,&
-    r_sp_l, spa_l, r_spa_l, ir_spa_l, sp_su_l, av_fe_l, eq_l, ch_g, c_ab_l,&
-    r_cab_l, ir_cab_l, wf_l, wsq_l, lpl,&
-    s_perp_t_l,s_perp_l_l,s_par_t_l,s_par_l_l, s_ab_t_l, s_ab_l_l
+    character(len=200) :: lattfile_long, e_field_long,&
+    arg_long, ch_st_l, s_ab_l, dir_st_l, dir_d_s_l,&
+    sp_su_l, av_fe_l, ch_g, c_ab_l, wf_l, wsq_l, lpl
 
     if (command_argument_count().eq.2) then
       call get_command_argument(1, verb_arg)
@@ -176,16 +173,6 @@ module input
             if (verbose) then
               write (*,*) 'Lattice file name: ',lattfile_long
             end if
-          case ('energy_file')
-            read(buffer, '(a)', iostat=ios) en_long
-            if (verbose) then
-              write (*,*) 'Energy file name: ',en_long
-            end if
-          case ('squared_energy_file')
-            read(buffer, '(a)', iostat=ios) sq_en_long
-            if (verbose) then
-              write (*,*) 'Squared energy file name: ',sq_en_long
-            end if
           case ('electric_field_file')
             read(buffer, '(a)', iostat=ios) e_field_long
             if (verbose) then
@@ -206,11 +193,6 @@ module input
             if (verbose) then
               write (*,*) 'Charge-charge structure factor file name: ',ch_st_l
             end if
-          case ('total_field_structure_factor_file')
-            read(buffer, '(a)', iostat=ios) fi_st_l
-            if (verbose) then
-              write (*,*) 'Total field-field structure factor file name: ',fi_st_l
-            end if
           case ('s_ab_total_file')
             read(buffer, '(a)', iostat=ios) s_ab_l
             if (verbose) then
@@ -220,71 +202,6 @@ module input
             read(buffer, '(a)', iostat=ios) c_ab_l
             if (verbose) then
               write (*,*) 'Total chi^(α β) file name: ',c_ab_l
-            end if
-          case ('rot_chi^(alpha_beta)_file')
-            read(buffer, '(a)', iostat=ios) r_cab_l
-            if (verbose) then
-              write (*,*) 'Rotational chi^(α β) file name: ',r_cab_l
-            end if
-          case ('irrot_chi^(alpha_beta)_file')
-            read(buffer, '(a)', iostat=ios) ir_cab_l
-            if (verbose) then
-              write (*,*) 'Irrotational chi^(α β) file name: ',ir_cab_l
-            end if
-          case ('total_s_(perp)_file')
-            read(buffer, '(a)', iostat=ios) s_p_l
-            if (verbose) then
-              write (*,*) 'Total S_(⊥) file name: ',s_p_l
-            end if
-          case ('total_s_(par)_file')
-            read(buffer, '(a)', iostat=ios) spa_l
-            if (verbose) then
-              write (*,*) 'Total S_(//) file name: ',spa_l
-            end if
-          case ('irrot_field_structure_factor_file')
-            read(buffer, '(a)', iostat=ios) ir_fe_l
-            if (verbose) then
-              write (*,*) 'Irrotational field-field structure factor file name: ',ir_fe_l
-            end if
-          case ('irrot_s^(alpha_beta)_file')
-            read(buffer, '(a)', iostat=ios) ir_sab_l
-            if (verbose) then
-              write (*,*) 'Irrotational S^(α β) file name: ',ir_sab_l
-            end if
-          case ('irrot_s_(perp)_file')
-            read(buffer, '(a)', iostat=ios) ir_sp_l
-            if (verbose) then
-              write (*,*) 'Irrotational S_(⊥) file name: ',ir_sp_l
-            end if
-          case ('irrot_s_(par)_file')
-            read(buffer, '(a)', iostat=ios) ir_spa_l
-            if (verbose) then
-              write (*,*) 'Irrotational S_(//) file name: ',ir_spa_l
-            end if
-          case ('rot_field_structure_factor_file')
-            read(buffer, '(a)', iostat=ios) r_fe_l
-            if (verbose) then
-              write (*,*) 'Rotational field-field structure factor file name: ',r_fe_l
-            end if
-          case ('rot_s^(alpha_beta)_file')
-            read(buffer, '(a)', iostat=ios) r_sab_l
-            if (verbose) then
-              write (*,*) 'Rotational S^(α β) file name: ',r_sab_l
-            end if
-          case ('rot_s_(perp)_file')
-            read(buffer, '(a)', iostat=ios) r_sp_l
-            if (verbose) then
-              write (*,*) 'Rotational S_(⊥) file name: ',r_sp_l
-            end if
-          case ('rot_s_(par)_file')
-            read(buffer, '(a)', iostat=ios) r_spa_l
-            if (verbose) then
-              write (*,*) 'Rotational S_(//) file name: ',r_spa_l
-            end if
-          case ('field_charge_file')
-            read(buffer, '(a)', iostat=ios) fe_ch_l
-            if (verbose) then
-              write (*,*) 'Raw file name for binary fields/charges output: ',fe_ch_l
             end if
           case ('average_field_file')
             read(buffer, '(a)', iostat=ios) av_fe_l
@@ -300,41 +217,6 @@ module input
             read(buffer, '(a)', iostat=ios) lpl
             if (verbose) then
               write (*,*) 'Path to LGF binary file:',lpl
-            end if
-          case ('equil_file')
-            read(buffer, '(a)', iostat=ios) eq_l
-            if (verbose) then
-              write (*,*) 'Raw file name for equilibriation check: ',eq_l
-            end if
-          case ('s_ab_t_file')
-            read(buffer, '(a)', iostat=ios) s_ab_t_l
-            if (verbose) then
-              write (*,*) 'Raw file name for s_perp transverse file: ',s_ab_t_l
-            end if
-          case ('s_ab_l_file')
-            read(buffer, '(a)', iostat=ios) s_ab_l_l
-            if (verbose) then
-              write (*,*) 'Raw file name for s_perp long. file: ',s_ab_l_l
-            end if
-          case ('s_perp_t_file')
-            read(buffer, '(a)', iostat=ios) s_perp_t_l
-            if (verbose) then
-              write (*,*) 'Raw file name for s_perp transverse file: ',s_perp_t_l
-            end if
-          case ('s_perp_l_file')
-            read(buffer, '(a)', iostat=ios) s_perp_l_l
-            if (verbose) then
-              write (*,*) 'Raw file name for s_perp long. file: ',s_perp_l_l
-            end if
-          case ('s_par_t_file')
-            read(buffer, '(a)', iostat=ios) s_par_t_l
-            if (verbose) then
-              write (*,*) 'Raw file name for s_perp transverse file: ',s_par_t_l
-            end if
-          case ('s_par_l_file')
-            read(buffer, '(a)', iostat=ios) s_par_l_l
-            if (verbose) then
-              write (*,*) 'Raw file name for s_perp long. file: ',s_par_l_l
             end if
           case ('charge_generation')
             read(buffer, '(a)', iostat=ios) ch_g
@@ -434,9 +316,6 @@ module input
       ! --- NOTE TO SELF ---
       ! is the dimensional analysis sorted out?
       eps_0 = 1.0 / (2*pi)
-      ! eps_0 = 1.0
-      !q = 2 * pi * q
-      !write (*,*) "q = ",q
       beta = 1.0 / temp
       g_thr = 1 / real(L)
 
@@ -456,40 +335,17 @@ module input
       end if
 
       lattfile = trim(adjustl(lattfile_long))
-      energy_file = trim(adjustl(en_long))
-      sq_energy_file = trim(adjustl(sq_en_long))
       e_field_file = trim(adjustl(e_field_long))
       dir_st_file = trim(adjustl(dir_st_l))
       dir_dist_file = trim(adjustl(dir_d_s_l))
       charge_st_file = trim(adjustl(ch_st_l))
-      field_st_file = trim(adjustl(fi_st_l))
       s_ab_file = trim(adjustl(s_ab_l))
-      s_perp_file = trim(adjustl(s_p_l))
-      spar_file = trim(adjustl(spa_l))
-      irrot_field_file = trim(adjustl(ir_fe_l))
-      irrot_sab_file = trim(adjustl(ir_sab_l))
-      irrot_sperp_file = trim(adjustl(ir_sp_l))
-      irrot_spar_file = trim(adjustl(ir_spa_l))
-      rot_field_file = trim(adjustl(r_fe_l))
-      rot_sab_file = trim(adjustl(r_sab_l))
-      rot_sperp_file = trim(adjustl(r_sp_l))
-      rot_spar_file = trim(adjustl(r_spa_l))
-      field_charge_file = trim(adjustl(fe_ch_l))
       avg_field_file = trim(adjustl(av_fe_l))
       sphe_sus_file = trim(adjustl(sp_su_l))
-      equil_file = trim(adjustl(eq_l))
       charge_gen = trim(adjustl(ch_g))
       chi_ab_file = trim(adjustl(c_ab_l))
-      rot_chi_ab_file = trim(adjustl(r_cab_l))
-      irrot_chi_ab_file = trim(adjustl(ir_cab_l))
       windings_file = trim(adjustl(wf_l))
       windings_sq_file = trim(adjustl(wsq_l))
-      s_ab_transverse_file = trim(adjustl(s_ab_t_l))
-      s_ab_long_file = trim(adjustl(s_ab_l_l))
-      s_perp_transverse_file = trim(adjustl(s_perp_t_l))
-      s_perp_long_file = trim(adjustl(s_perp_l_l))
-      s_par_transverse_file = trim(adjustl(s_par_t_l))
-      s_par_long_file = trim(adjustl(s_par_l_l))
       lgf_path = trim(adjustl(lpl))
 
       if (charge_gen.ne."RANDOM".and.charge_gen.ne."DIPOLE".and.charge_gen.ne."CRYSTA") then
