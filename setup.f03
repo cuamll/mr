@@ -38,8 +38,8 @@ module setup
     call PBCs
 
     v_avg = 0.0; rho_avg = 0.0; runtot = 0.0
-    avg_field_total = 0.0; avg_field_rot = 0.0; avg_field_irrot = 0.0
-    e_tot_avg = 0.0; e_rot_avg = 0.0; e_irrot_avg = 0.0
+    avg_field_total = 0.0; avg_field_sq_total = 0.0
+    e_tot_avg = 0.0
     ener_tot_sum = 0.0; ener_rot_sum = 0.0; ener_irrot_sum = 0.0;
     ener_tot_sq_sum = 0.0; ener_rot_sq_sum = 0.0; ener_irrot_sq_sum = 0.0;
     ebar_sum = 0.0; ebar_sq_sum = 0.0; ebar_dip_sum = 0.0; lgf = 0.0;

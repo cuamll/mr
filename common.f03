@@ -29,19 +29,16 @@ module common
   real(kind=8), public :: q, lambda, volume, temp, beta, u_tot, eps_0,&
   bin_size, rot_delt, g0, rot_ratio, g_ratio, hop_ratio, g_thr, e_c
   real(kind=8), dimension(:,:,:), allocatable, public :: e_field, mnphi
-  ! real(kind=8), dimension(:,:,:,:), allocatable, public :: lgf
   real(kind=8), dimension(:,:), allocatable, public :: lgf
   real(kind=rk), public :: ener_tot_sum, ener_rot_sum, ener_irrot_sum,&
   ener_tot_sq_sum, ener_rot_sq_sum, ener_irrot_sq_sum,rho_avg, div, divsq
   real(kind=rk), dimension(2), public :: ebar, ebar_dip, ebar_wind, ebar_sum,&
   ebar_sq_sum, ebar_dip_sum, ebar_dip_sq_sum, ebar_wind_sum, ebar_wind_sq_sum,&
-  avg_field_total, avg_field_rot, avg_field_irrot,&
-  avg_field_sq_total, avg_field_sq_rot, avg_field_sq_irrot
+  avg_field_total, avg_field_sq_total
   real(kind=rk), dimension(:), allocatable, public :: dist_r
   real(kind=rk), dimension(:,:), allocatable, public :: v_avg, dir_struc,&
   windings, windings_sq
-  real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg,&
-  e_rot_avg, e_irrot_avg
+  real(kind=rk), dimension(:,:,:), allocatable, public :: e_tot_avg
 
   complex(kind=rk), dimension(:,:,:), allocatable, public :: s_ab,&
   s_ab_rot, s_ab_irrot
@@ -50,7 +47,7 @@ module common
   s_ab_rot_large, s_ab_irrot_large
 
   complex(kind=rk), dimension(:,:), allocatable, public :: ch_ch,&
-  rho_k_m,rho_k_p, fw, hw
+  rho_k_m,rho_k_p
   complex(kind=rk), public :: runtot
 
   character(:), allocatable :: lattfile, arg, charge_st_file, field_st_file,&

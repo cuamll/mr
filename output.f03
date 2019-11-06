@@ -306,8 +306,6 @@ module output
           if (i.le.L.and.j.le.L) then
             write (25, avg_field_format)&
             i,j,e_tot_avg(1,i,j),e_tot_avg(2,i,j),&
-            e_rot_avg(1,i,j),e_rot_avg(2,i,j),&
-            e_irrot_avg(1,i,j),e_irrot_avg(2,i,j),&
             v_avg(i,j)
           end if
 
