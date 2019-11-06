@@ -348,6 +348,7 @@ module update
       ! | --------------------------------------------------------------- |
 
       ebar = 0.0; ebar_dip = 0.0; ebar_wind = 0.0; dp = 0.0; np = 0.0
+      imag = (0.0, 1.0)
 
       n = step_number / sample_interval
 
