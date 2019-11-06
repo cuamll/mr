@@ -417,7 +417,11 @@ module update
         ch_in = v
         e_in = e_field(1,:,:)
 
-        call fftw_execute_dft_r2c(plan_ch,ch_in,chk)
+        ! NB: commented out charge structure factor FFT
+        ! because it was really uninteresting. might be more interesting
+        ! to calculate <rho+ rho-> - <rho+> <rho-> - need to add + and -
+        ! arrays and FFT them separately if so.
+        ! call fftw_execute_dft_r2c(plan_ch,ch_in,chk)
         call fftw_execute_dft_r2c(plan_x,e_in,exk)
 
         e_in = e_field(2,:,:)
@@ -453,12 +457,10 @@ module update
           ! x component has offsets in the x direction (columns)
           ! also it's flattened in the x direction
           if (j.le.(L/2)+1) then
-            ! eyk(j,:) = eyk(j,:) * exp(+(pi/L)*imag*j)
             exk(j,:) = exk(j,:) * exp(+(pi/L)*imag*j)
           end if
 
           ! y component has offsets in the y direction (rows)
-          ! exk(:,j) = exk(:,j) * exp(+(pi/L)*imag*j)
           eyk(:,j) = eyk(:,j) * exp(+(pi/L)*imag*j)
 
         end do

@@ -197,11 +197,7 @@ program mr
     if (verbose) then
       write (*,*) "--- MPI_Reduce done: unnormalised results ---"
       write (*,*) "Total: ",ener_tot_sum
-      write (*,*) "Rotational: ",ener_rot_sum
-      write (*,*) "Irrotational: ",ener_irrot_sum
       write (*,*) "Total^2: ",ener_tot_sq_sum
-      write (*,*) "Rotational^2: ",ener_rot_sq_sum
-      write (*,*) "Irrotational^2: ",ener_irrot_sq_sum
       write (*,*) "Ebar sum: ",ebar_sum(1), ebar_sum(2)
       write (*,*) "Ebar^2 sum: ",ebar_sq_sum(1), ebar_sq_sum(2)
       write (*,*) "Current susc: ",((L**2 * beta) *&
@@ -242,11 +238,6 @@ program mr
     accepts(2), attempts(2), dble(accepts(2)) / dble(attempts(2))
     write (*,'(a,2i12.1,es18.9)') "Harm: total, attempts, rate: ",&
     accepts(3), attempts(3), dble(accepts(3)) / dble(attempts(3))
-
-    ! comment this out for now; not doing harmonic fluctuations
-    ! write (*,'(a,2i12.1,es18.9)') "# Harmonic fluctuations: &
-    ! &total, attempts, rate: ",&
-    ! accepts(6), attempts(6), dble(accepts(6)) / dble(attempts(6))
 
     if (.not.canon) then
 
@@ -303,15 +294,7 @@ subroutine reductions(id)
                       MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_tot_sum, 1, MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_rot_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ener_tot_sq_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_rot_sq_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(MPI_IN_PLACE, ener_irrot_sq_sum, 1, MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(MPI_IN_PLACE, ebar_sum, 2, MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -344,15 +327,7 @@ subroutine reductions(id)
                       MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_tot_sum, ener_tot_sum, 1, MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_rot_sum, ener_rot_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_irrot_sum, ener_irrot_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ener_tot_sq_sum, ener_tot_sq_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_rot_sq_sum, ener_rot_sq_sum, 1, MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-    call MPI_Reduce(ener_irrot_sq_sum, ener_irrot_sq_sum, 1, MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
     call MPI_Reduce(ebar_sum, ebar_sum, 2, MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -385,10 +360,6 @@ subroutine reductions(id)
 
       call MPI_Reduce(MPI_IN_PLACE, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_rot, size(s_ab_rot), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, s_ab_irrot, size(s_ab_irrot), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, ch_ch, size(ch_ch), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, rho_k_p, size(rho_k_p), MPI_NEW_COMPLEX,&
@@ -403,20 +374,12 @@ subroutine reductions(id)
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, e_tot_avg, size(e_tot_avg), MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_rot_avg, size(e_rot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(MPI_IN_PLACE, e_irrot_avg, size(e_irrot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(MPI_IN_PLACE, bin_count, size(bin_count), MPI_NEW_INT,&
                       MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
 
     else
 
       call MPI_Reduce(s_ab, s_ab, size(s_ab), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_rot, s_ab_rot, size(s_ab_rot), MPI_NEW_COMPLEX,&
-                      MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(s_ab_irrot, s_ab_irrot, size(s_ab_irrot), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(ch_ch, ch_ch, size(ch_ch), MPI_NEW_COMPLEX,&
                       MPI_COMPLEX_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -431,10 +394,6 @@ subroutine reductions(id)
       call MPI_Reduce(v_avg, v_avg, size(v_avg), MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(e_tot_avg, e_tot_avg, size(e_tot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_rot_avg, e_rot_avg, size(e_rot_avg), MPI_NEW_REAL,&
-                      MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
-      call MPI_Reduce(e_irrot_avg, e_irrot_avg, size(e_irrot_avg), MPI_NEW_REAL,&
                       MPI_REAL_SUM, 0, MPI_COMM_WORLD, mpierr)
       call MPI_Reduce(bin_count, bin_count, size(bin_count), MPI_NEW_INT,&
                       MPI_INT_SUM, 0, MPI_COMM_WORLD, mpierr)
@@ -464,11 +423,7 @@ subroutine normalisations(num_procs)
   denom = dble(no_samples * num_procs * no_measurements)
 
   ener_tot_sum = ener_tot_sum / denom
-  ener_rot_sum = ener_rot_sum / denom
-  ener_irrot_sum = ener_irrot_sum / denom
   ener_tot_sq_sum = ener_tot_sq_sum / denom
-  ener_rot_sq_sum = ener_rot_sq_sum / denom
-  ener_irrot_sq_sum = ener_irrot_sq_sum / denom
   ebar_sum = ebar_sum / denom
   ebar_sq_sum = ebar_sq_sum / denom
   ebar_dip_sum = ebar_dip_sum / denom
@@ -476,8 +431,6 @@ subroutine normalisations(num_procs)
   ebar_wind_sum = ebar_wind_sum / denom
   ebar_wind_sq_sum = ebar_wind_sq_sum / denom
   e_tot_avg = e_tot_avg / denom
-  e_rot_avg = e_rot_avg / denom
-  e_irrot_avg = e_irrot_avg / denom
   v_avg = v_avg / denom
   rho_avg = rho_avg / denom
   windings = windings / denom
@@ -490,16 +443,12 @@ subroutine normalisations(num_procs)
     rho_k_m = rho_k_m / denom
     ch_ch = ch_ch / denom
     s_ab = s_ab / denom
-    s_ab_irrot = s_ab_irrot / denom
-    s_ab_rot = s_ab_rot / denom
     dir_struc = dir_struc / denom
     dist_r = dist_r / denom
     bin_count = bin_count / denom
   end if
 
   sp_he_tot = L**2 * beta**2 * (ener_tot_sq_sum - (ener_tot_sum)**2)
-  sp_he_rot = L**2 * beta**2 * (ener_rot_sq_sum - (ener_rot_sum)**2)
-  sp_he_irrot = L**2 * beta**2 * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
 
   ebar_sus = L**2 * beta * (sum(ebar_sq_sum) - sum(ebar_sum * ebar_sum))
   ebar_dip_sus = L**2 * beta *&
@@ -510,8 +459,6 @@ subroutine normalisations(num_procs)
   write (*,*) "END. MPI_Reduce done, averages calculated."
   write (*,*) "--- Energies: ---"
   write (*,*) "Total: ",ener_tot_sum, ener_tot_sq_sum
-  write (*,*) "Rotational: ",ener_rot_sum, ener_rot_sq_sum
-  write (*,*) "Irrotational: ",ener_irrot_sum, ener_irrot_sq_sum
   write (*,*) "--- Specific heats: ---"
   write (*,*) "Total: ",sp_he_tot
   write (*,*) "Rotational: ",sp_he_rot
@@ -537,9 +484,6 @@ subroutine normalisations(num_procs)
   write (*,*) "<Divsq>: ",divsq
   write (*,*) "div_fluct: ", (1.0)*(divsq - div**2)
 
-  ! in principle this block could be removed, actually.
-  ! I run through tee so could print everything to stdin.
-  ! can i be bothered to change it at this point though
   open  (30, file=sphe_sus_file)
   write (30,'(a)') "# Temp., sp_he^total, sp_he^rot., sp_he^irrot"
   write (30,'(4ES18.9)') temp, sp_he_tot, sp_he_rot, sp_he_irrot
@@ -547,22 +491,16 @@ subroutine normalisations(num_procs)
   write (30,'(4ES18.9)') temp, ebar_sus, ebar_dip_sus, ebar_wind_sus
   write (30,'(a)') "# Avg. charge density"
   write (30,'(2ES18.9)') temp, rho_avg
-  write (30,'(a)') "# Temp, avg_e_tot, avg_e_rot, avg_e_irrot"
-  write (30,'(4ES18.9)') temp, ener_tot_sum, ener_rot_sum, ener_irrot_sum
-  write (30,'(a)') "# Temp, avg_e_tot^2, avg_e_rot^2, avg_e_irrot^2"
-  write (30,'(4ES18.9)') temp,ener_tot_sq_sum,ener_rot_sq_sum,ener_irrot_sq_sum
-  write (30,'(a)') "# Temp, avg_field_tot, avg_field_rot, avg_field_irrot"
-  write (30,*) temp, sum(avg_field_total)/2, sum(avg_field_rot)/2,&
-  sum(avg_field_irrot)/2
-  write (30,'(a)') "# Temp, avg_field^2_tot, avg_field^2_rot, avg_field^2_irrot"
-  write (30,*) temp, sum(avg_field_sq_total)/2,&
-  sum(avg_field_sq_rot)/2, sum(avg_field_sq_irrot)/2
+  write (30,'(a)') "# Temp, avg_e_tot"
+  write (30,'(4ES18.9)') temp, ener_tot_sum
+  write (30,'(a)') "# Temp, avg_e_tot^2"
+  write (30,'(4ES18.9)') temp,ener_tot_sq_sum
+  write (30,'(a)') "# Temp, avg_field_tot"
+  write (30,*) temp, sum(avg_field_total)/2
+  write (30,'(a)') "# Temp, avg_field^2_tot"
+  write (30,*) temp, sum(avg_field_sq_total)/2
   write (30,*) "# Temp, chi(total field)", temp,&
   L**3 * beta * (sum(avg_field_sq_total) - sum(avg_field_total)**2)
-  write (30,*) "# Temp, chi(rot field)", temp,&
-  L**3 * beta * (sum(avg_field_sq_rot) - sum(avg_field_rot)**2)
-  write (30,*) "# Temp, chi(irrot field)", temp,&
-  L**3 * beta * (sum(avg_field_sq_irrot) - sum(avg_field_irrot)**2)
   write (30,*) "Ebar_sum: ",ebar_sum(1),ebar_sum(2)
   write (30,*) "Ebar_sq_sum: ",ebar_sq_sum(1),ebar_sq_sum(2)
   write (30,*) "Ebar susceptibility: ",ebar_sus

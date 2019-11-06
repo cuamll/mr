@@ -179,18 +179,11 @@ module output
   subroutine calc_correlations
     use common
     implicit none
-    integer :: i, j, kx, ky, m, p, x, y, dist_bin, sp
-    real(kind=rk) :: norm_k, kx_float, ky_float, dist,&
-    sp_he_tot, sp_he_rot, sp_he_irrot, prefac,&
-    ebar_sus, ebar_dip_sus, ebar_wind_sus
-    real(kind=rk), dimension(:,:), allocatable :: s_perp,&
-    s_perp_irrot, s_perp_rot
-    real(kind=rk), dimension(:,:), allocatable :: s_par,&
-    s_par_irrot, s_par_rot
+    integer :: i, j, m, p, dist_bin
+    real(kind=rk) :: sp_he_tot, prefac, ebar_sus, ebar_dip_sus, ebar_wind_sus
     real(kind=rk), dimension(2,2,(bz*L)+1,(bz*L)+1) :: chi_ab,&
     chi_ab_rot, chi_ab_irrot
-    real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: charge_struc,&
-    field_struc, field_struc_irrot, field_struc_rot
+    real(kind=rk), dimension((bz*L)+1,(bz*L)+1) :: charge_struc
     character(100) :: struc_format_string, field_format_string,&
     vertex_format, avg_field_format,dir_format_string, dir_dist_format_string
 
@@ -201,14 +194,11 @@ module output
     vertex_format = "(I6, I3, I3, 6ES18.9, I3)"
     dir_dist_format_string = "(ES18.9, I9.6, ES18.9)"
 
-    field_struc = 0.0; field_struc_rot = 0.0;
-    charge_struc = 0.0; field_struc_irrot = 0.0;
+    charge_struc = 0.0
 
     prefac = 1.0 * L**2 / (temp**2)
 
     sp_he_tot = prefac * (ener_tot_sq_sum - (ener_tot_sum)**2)
-    sp_he_rot = prefac * (ener_rot_sq_sum - (ener_rot_sum)**2)
-    sp_he_irrot = prefac * (ener_irrot_sq_sum - (ener_irrot_sum)**2)
     ebar_sus = L**2 * beta * (ebar_sq_sum(1) + ebar_sq_sum(2)&
     - (ebar_sum(1)**2 + ebar_sum(2)**2))
     ebar_dip_sus = L**2 * beta * (ebar_dip_sq_sum(1) + ebar_dip_sq_sum(2)&
@@ -219,7 +209,7 @@ module output
     write(*,*)
     write (*,'(a)') "# Specific heat: total, rot., irrot."
     write (*,'(ES18.9, ES18.9, ES18.9, ES18.9)') temp,&
-    sp_he_tot, sp_he_rot, sp_he_irrot
+    sp_he_tot
     write(*,*) "E^bar averages:"
     write(*,'(a)') "<E^bar_x>, <E^bar_y>, <|E^bar|>"
     write (*,*) ebar_sum(1), ebar_sum(2),&
@@ -233,120 +223,17 @@ module output
     - (ebar_sum(1)**2 + ebar_sum(2)**2))
 
     if (do_corr) then
-      ! we can calculate s_perp up to wherever
-      sp = 8
-      allocate(s_perp((sp*L)+1,(sp*L)+1))
-      allocate(s_perp_irrot((sp*L)+1,(sp*L)+1))
-      allocate(s_perp_rot((sp*L)+1,(sp*L)+1))
-      allocate(s_par((sp*L)+1,(sp*L)+1))
-      allocate(s_par_irrot((sp*L)+1,(sp*L)+1))
-      allocate(s_par_rot((sp*L)+1,(sp*L)+1))
-      s_perp = 0.0; s_perp_rot = 0.0; s_perp_irrot = 0.0;
-      s_par = 0.0; s_par_rot = 0.0; s_par_irrot = 0.0;
 
       chi_ab = s_ab_large / temp
-      chi_ab_rot = s_ab_rot_large / temp
-      chi_ab_irrot = s_ab_irrot_large / temp
 
-      do p = (-L/2)*sp,(L/2)*sp
-        do m = (-L/2)*sp,(L/2)*sp
+      do p = (-L/2)*bz,(L/2)*bz
+        do m = (-L/2)*bz,(L/2)*bz
 
-          i = m + 1 + sp*(L/2)
-          j = p + 1 + sp*(L/2)
+          i = m + 1 + bz*(L/2)
+          j = p + 1 + bz*(L/2)
 
-          if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
-            ! can also subtract e.g. rho_k_p * conjg(rho_k_m)
-            charge_struc(i,j) = abs(ch_ch(i,j) - &
-              rho_k_p(i,j) * conjg(rho_k_m(i,j)))
-            field_struc(i,j) = abs(s_ab_large(1,1,i,j))
-            field_struc_irrot(i,j) = abs(s_ab_irrot_large(1,1,i,j))
-            field_struc_rot(i,j) = abs(s_ab_rot_large(1,1,i,j))
-          end if
-
-          ! use separate variables, we're gonna mess around with values
-          kx_float = m * ((2 * pi)/(L * lambda))
-          ky_float = p * ((2 * pi)/(L * lambda))
-
-          if (kx_float.eq.0.and.ky_float.eq.0) then
-            norm_k = 0.0
-          else
-            norm_k = 1.0/(kx_float**2 + ky_float**2)
-          end if
-
-          if (abs(p).gt.(L)*bz) then
-            ky = modulo(p,(bz*L)) + 1 + (bz*L)
-          else
-            ky = p + 1 + (bz*L)
-          end if
-          if (abs(m).gt.(L)*bz) then
-            kx = modulo(m,(bz*L)) + 1 + (bz*L)
-          else
-            kx = m + 1 + (bz*L)
-          end if
-
-          if (p.lt.(-1*(bz*(L/2)))) then
-            ky = p
-            do while (ky.lt.(-1*(bz*(L/2))))
-              ky = ky + bz*(L)
-            end do
-            ! array index
-            ky = ky + 1 + bz*(L/2)
-          else if (p.gt.(bz*(L/2))) then
-            ky = p
-            do while (ky.gt.bz*(L/2))
-              ky = ky - bz*(L)
-            end do
-            ky = ky + 1 + bz*(L/2)
-          else
-            ky = p + 1 + (bz*(L/2))
-          end if
-
-          if (m.lt.(-1*(bz*(L/2)))) then
-            kx = m
-            do while (kx.lt.(-1*(bz*(L/2))))
-              kx = kx + bz*(L)
-            end do
-            ! array index
-            kx = kx + 1 + bz*(L/2)
-          else if (m.gt.(bz*(L/2))) then
-            kx = m
-            do while (kx.gt.bz*(L/2))
-              kx = kx - bz*(L)
-            end do
-            kx = kx + 1 + bz*(L/2)
-          else
-            kx = m + 1 + (bz*(L/2))
-          end if
-
-          s_perp(i,j) = (1 - kx_float*kx_float*norm_k) *   real(s_ab_large(1,1,kx,ky))+&
-                        ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_large(1,2,kx,ky))+&
-                        ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_large(2,1,kx,ky))+&
-                        (1 - ky_float*ky_float*norm_k) *   real(s_ab_large(2,2,kx,ky))
-
-          s_perp_irrot(i,j) = (1 - kx_float*kx_float*norm_k) *  real(s_ab_irrot_large(1,1,kx,ky))+&
-                          ((-1)*kx_float*ky_float*norm_k) *     real(s_ab_irrot_large(1,2,kx,ky))+&
-                          ((-1)*ky_float*kx_float*norm_k) *     real(s_ab_irrot_large(2,1,kx,ky))+&
-                          (1 - ky_float*ky_float*norm_k) *      real(s_ab_irrot_large(2,2,kx,ky))
-
-          s_perp_rot(i,j) = (1 - kx_float*kx_float*norm_k) * real(s_ab_rot_large(1,1,kx,ky))+&
-                          ((-1)*kx_float*ky_float*norm_k) *  real(s_ab_rot_large(1,2,kx,ky))+&
-                          ((-1)*ky_float*kx_float*norm_k) *  real(s_ab_rot_large(2,1,kx,ky))+&
-                          (1 - ky_float*ky_float*norm_k) *   real(s_ab_rot_large(2,2,kx,ky))
-
-          s_par(i,j) = (kx_float*kx_float*norm_k) *   real(s_ab_large(1,1,kx,ky))+&
-                         (kx_float*ky_float*norm_k) * real(s_ab_large(1,2,kx,ky))+&
-                         (ky_float*kx_float*norm_k) * real(s_ab_large(2,1,kx,ky))+&
-                         (ky_float*ky_float*norm_k) * real(s_ab_large(2,2,kx,ky))
-
-          s_par_irrot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_irrot_large(1,1,kx,ky))+&
-                               (kx_float*ky_float*norm_k)*real(s_ab_irrot_large(1,2,kx,ky))+&
-                               (ky_float*kx_float*norm_k)*real(s_ab_irrot_large(2,1,kx,ky))+&
-                               (ky_float*ky_float*norm_k)*real(s_ab_irrot_large(2,2,kx,ky))
-
-          s_par_rot(i,j) = (kx_float*kx_float*norm_k)*  real(s_ab_rot_large(1,1,kx,ky))+&
-                             (kx_float*ky_float*norm_k)*real(s_ab_rot_large(1,2,kx,ky))+&
-                             (ky_float*kx_float*norm_k)*real(s_ab_rot_large(2,1,kx,ky))+&
-                             (ky_float*ky_float*norm_k)*real(s_ab_rot_large(2,2,kx,ky))
+          charge_struc(i,j) = abs(ch_ch(i,j) - &
+            rho_k_p(i,j) * conjg(rho_k_m(i,j)))
 
         end do
       end do ! end p, m loops
@@ -355,50 +242,30 @@ module output
       open(unit=11, file=dir_dist_file)
       open(unit=12, file=charge_st_file)
       open(unit=14, file=s_ab_file)
-      open(unit=15, file=s_perp_file)
-      open(unit=17, file=irrot_sab_file)
-      open(unit=18, file=irrot_sperp_file)
-      open(unit=20, file=rot_sab_file)
-      open(unit=21, file=rot_sperp_file)
-      open(unit=22, file=spar_file)
-      open(unit=23, file=irrot_spar_file)
-      open(unit=24, file=rot_spar_file)
       open(unit=25, file=avg_field_file)
       open(unit=26, file=chi_ab_file)
-      open(unit=27, file=irrot_chi_ab_file)
-      open(unit=28, file=rot_chi_ab_file)
       open(unit=38, file=windings_file)
       open(unit=39, file=windings_sq_file)
 
       open  (30, file=sphe_sus_file, position='append')
       write (30, '(a)') "# S_ab integrals (* L**2)!"
-      write (30, '(a)') "# S_xx: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab_large(1,1,:,:))),&
-      sum(real(s_ab_rot_large(1,1,:,:))), sum(real(s_ab_irrot_large(1,1,:,:)))
-      write (30, '(a)') "# S_xy: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab_large(1,2,:,:))),&
-      sum(real(s_ab_rot_large(1,2,:,:))), sum(real(s_ab_irrot_large(1,2,:,:)))
-      write (30, '(a)') "# S_yx: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab_large(2,1,:,:))),&
-      sum(real(s_ab_rot_large(2,1,:,:))), sum(real(s_ab_irrot_large(2,1,:,:)))
-      write (30, '(a)') "# S_yy: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(s_ab_large(2,2,:,:))),&
-      sum(real(s_ab_rot_large(2,2,:,:))), sum(real(s_ab_irrot_large(2,2,:,:)))
-      write (30, '(a)') "# S_perp integrals: total, rot, irrot"
-      write (30, '(3f20.8)') sum(s_perp), sum(s_perp_rot), sum(s_perp_irrot)
+      write (30, '(a)') "# S_xx"
+      write (30, '(3f20.8)') sum(real(s_ab_large(1,1,:,:)))
+      write (30, '(a)') "# S_xy"
+      write (30, '(3f20.8)') sum(real(s_ab_large(1,2,:,:)))
+      write (30, '(a)') "# S_yx"
+      write (30, '(3f20.8)') sum(real(s_ab_large(2,1,:,:)))
+      write (30, '(a)') "# S_yy"
+      write (30, '(3f20.8)') sum(real(s_ab_large(2,2,:,:)))
       write (30, '(a)') "# Chi_ab integrals (* L**2)!"
-      write (30, '(a)') "# Chi_xx: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(chi_ab(1,1,:,:))),&
-      sum(real(chi_ab_rot(1,1,:,:))), sum(real(chi_ab_irrot(1,1,:,:)))
-      write (30, '(a)') "# Chi_xy: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(chi_ab(1,2,:,:))),&
-      sum(real(chi_ab_rot(1,2,:,:))), sum(real(chi_ab_irrot(1,2,:,:)))
-      write (30, '(a)') "# Chi_yx: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(chi_ab(2,1,:,:))),&
-      sum(real(chi_ab_rot(2,1,:,:))), sum(real(chi_ab_irrot(2,1,:,:)))
-      write (30, '(a)') "# Chi_yy: total, rot, irrot"
-      write (30, '(3f20.8)') sum(real(chi_ab(2,2,:,:))),&
-      sum(real(chi_ab_rot(2,2,:,:))), sum(real(chi_ab_irrot(2,2,:,:)))
+      write (30, '(a)') "# Chi_xx"
+      write (30, '(3f20.8)') sum(real(chi_ab(1,1,:,:)))
+      write (30, '(a)') "# Chi_xy"
+      write (30, '(3f20.8)') sum(real(chi_ab(1,2,:,:)))
+      write (30, '(a)') "# Chi_yx"
+      write (30, '(3f20.8)') sum(real(chi_ab(2,1,:,:)))
+      write (30, '(a)') "# Chi_yy"
+      write (30, '(3f20.8)') sum(real(chi_ab(2,2,:,:)))
       close (30)
 
       !dist_r = dist_r / (no_measurements)
@@ -416,8 +283,8 @@ module output
       close(38)
       close(39)
 
-      do i = 1,sp*(L) + 1
-        do j = 1,sp*(L) + 1
+      do i = 1,bz*(L) + 1
+        do j = 1,bz*(L) + 1
 
           ! output is kx, ky, kz, S(\vec{k})
 
@@ -429,97 +296,29 @@ module output
           if (i.le.L.and.j.le.L) then
             write (25, avg_field_format)&
             i,j,e_tot_avg(1,i,j),e_tot_avg(2,i,j),&
-            e_rot_avg(1,i,j),e_rot_avg(2,i,j),&
-            e_irrot_avg(1,i,j),e_irrot_avg(2,i,j),&
             v_avg(i,j)
           end if
 
-          if (j.le.(bz*L + 1).and.i.le.(bz*L + 1)) then
+          write (12, struc_format_string)&
+          2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
+          charge_struc(i,j)
 
-            write (12, struc_format_string)&
-            2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            charge_struc(i,j)
+          write (14, field_format_string)&
+          2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+          real(s_ab_large(1,1,i,j)),&
+          real(s_ab_large(1,2,i,j)),&
+          real(s_ab_large(2,1,i,j)),&
+          real(s_ab_large(2,2,i,j))
 
-            write (14, field_format_string)&
-            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            real(s_ab_large(1,1,i,j)),&
-            real(s_ab_large(1,2,i,j)),&
-            real(s_ab_large(2,1,i,j)),&
-            real(s_ab_large(2,2,i,j))
-
-            write (26, field_format_string)&
-            2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            real(chi_ab(1,1,i,j)),&
-            real(chi_ab(1,2,i,j)),&
-            real(chi_ab(2,1,i,j)),&
-            real(chi_ab(2,2,i,j))
-
-            ! write (17, field_format_string)&
-            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            ! real(s_ab_irrot_large(1,1,i,j)),&
-            ! real(s_ab_irrot_large(1,2,i,j)),&
-            ! real(s_ab_irrot_large(2,1,i,j)),&
-            ! real(s_ab_irrot_large(2,2,i,j))
-
-            ! write (27, field_format_string)&
-            ! 2*pi*(i - 1 - bz*(L/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(L/2))/(L*lambda),&
-            ! real(chi_ab_irrot(1,1,i,j)),&
-            ! real(chi_ab_irrot(1,2,i,j)),&
-            ! real(chi_ab_irrot(2,1,i,j)),&
-            ! real(chi_ab_irrot(2,2,i,j))
-
-            ! write (20,field_format_string)&
-            ! 2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            ! real(s_ab_rot_large(1,1,i,j)),&
-            ! real(s_ab_rot_large(1,2,i,j)),&
-            ! real(s_ab_rot_large(2,1,i,j)),&
-            ! real(s_ab_rot_large(2,2,i,j))
-
-            ! write (28,field_format_string)&
-            ! 2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
-            ! 2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
-            ! real(chi_ab_rot(1,1,i,j)),&
-            ! real(chi_ab_rot(1,2,i,j)),&
-            ! real(chi_ab_rot(2,1,i,j)),&
-            ! real(chi_ab_rot(2,2,i,j))
-
-          end if
-
-          write (15, field_format_string)&
-          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          s_perp(i,j)
-
-          ! write (18, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_perp_irrot(i,j)
-
-          ! write (21, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_perp_rot(i,j)
-
-          write (22, field_format_string)&
-          2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          s_par(i,j)
-
-          ! write (23, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_par_irrot(i,j)
-
-          ! write (24, field_format_string)&
-          ! 2*pi*(i - 1 - sp*(L/2))/(L*lambda),&
-          ! 2*pi*(j - 1 - sp*(L/2))/(L*lambda),&
-          ! s_par_rot(i,j)
+          write (26, field_format_string)&
+          2*pi*(i - 1 - bz*(l/2))/(L*lambda),&
+          2*pi*(j - 1 - bz*(l/2))/(L*lambda),&
+          real(chi_ab(1,1,i,j)),&
+          real(chi_ab(1,2,i,j)),&
+          real(chi_ab(2,1,i,j)),&
+          real(chi_ab(2,2,i,j))
 
         end do
       end do
@@ -527,21 +326,9 @@ module output
       close(10)
       close(12)
       close(14)
-      close(15)
-      ! close(17)
-      ! close(18)
-      ! close(20)
-      ! close(21)
-      close(22)
-      ! close(23)
-      ! close(24)
       close(25)
       close(26)
-      ! close(27)
-      ! close(28)
 
-      deallocate(s_perp); deallocate(s_perp_rot); deallocate(s_perp_irrot);
-      deallocate(s_par); deallocate(s_par_rot); deallocate(s_par_irrot);
     end if ! do_corr
 
   end subroutine calc_correlations
