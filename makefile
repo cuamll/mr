@@ -3,7 +3,7 @@ GF = mpifort
 EXECNAME = mr2d
 MOD_DIR = mod
 OBJ_DIR = obj
-CFLAGS = -J$(MOD_DIR) -std=f2008 -fopenmp
+CFLAGS = -J$(MOD_DIR) -fopenmp
 
 $(shell mkdir -p $(MOD_DIR))
 $(shell mkdir -p $(OBJ_DIR))

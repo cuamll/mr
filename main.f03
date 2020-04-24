@@ -66,10 +66,10 @@ program mr
   use setup
   use update
   use omp_lib
-  use mpi
   use mpi_functions
   implicit none
   include 'rev.inc'
+  include 'mpif.h'
   integer(kind=4) :: i, j, k, tot_q, rank, num_procs, mpierr
   real(kind=rk) :: ener_recv
   real(kind=8) :: start_time, end_time

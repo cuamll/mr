@@ -16,8 +16,8 @@ def plot(arr, filename, plotargs):
     fig, ax = plt.subplots()
     im = ax.imshow(arr, **plotargs)
     plt.imshow(arr, **plotargs)
-    plt.xlabel(r'$ G_x $')
-    plt.ylabel(r'$ G_y $')
+    plt.xlabel(r'$ Q_x/2\pi $')
+    plt.ylabel(r'$ Q_y/2\pi $', labelpad=-5)
     plt.colorbar(im)
     fig.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
@@ -101,6 +101,7 @@ s_perp_l =   np.zeros(( (sp*args.length) + 1, (sp*args.length) + 1 ))
 s_par_tot =  np.zeros(( (sp*args.length) + 1, (sp*args.length) + 1 ))
 s_par_t =    np.zeros(( (sp*args.length) + 1, (sp*args.length) + 1 ))
 s_par_l =    np.zeros(( (sp*args.length) + 1, (sp*args.length) + 1 ))
+s_l_tr_big = np.zeros(( (sp*args.length) + 1, (sp*args.length) + 1 ))
 
 # project out to however many BZs we like
 for p in range(-lim, lim):
@@ -180,6 +181,8 @@ for p in range(-lim, lim):
                                  (kxf * kyf * kn) * s_ab_l[kx, ky, 0, 1] + \
                                  (kyf * kxf * kn) * s_ab_l[kx, ky, 1, 0] + \
                                  (kyf * kyf * kn) * s_ab_l[kx, ky, 1, 1]
+        s_l_tr_big[i, j] =         s_ab_l[kx, ky, 0, 0] + \
+                                 s_ab_l[kx, ky, 1, 1]
 
 ext = [-sp/2, sp/2, -sp/2, sp/2]
 plotargs = {'interpolation': 'None', 'cmap': 'inferno', 'origin': 'lower', 'extent': ext}
@@ -189,6 +192,8 @@ for v, ar in enumerate([s_perp_tot, s_perp_t, s_perp_l]):
 
 for v, ar in enumerate([s_par_tot, s_par_t, s_par_l]):
     plot(ar, "{0}s_par_{1}.pdf".format(path, abbrev[v]), plotargs)
+
+plot(s_l_tr_big, "{0}s_l_tr_big.pdf".format(path), plotargs)
 
 plotargs.update(extent=[-1, 1, -1, 1])
 for v, ar in enumerate([s_ab_tot, s_ab_t, s_ab_l]):
