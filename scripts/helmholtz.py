@@ -83,13 +83,15 @@ lor1 = lor(fine_mesh, popt[0], popt[1], popt[4])
 lor2 = lor(fine_mesh, popt[2], popt[3], 0.)
 
 output_file = output_dir + 'fit_params.dat'
+cut_file = output_dir + 'cut_longit.dat'
 f = open(output_file,'w')
+g = open(cut_file,'w')
 f.write("# Irrot cut: Qx = -Qy, fitted, simulated, lor1, lor2\n")
 f.write(np.array2string(
         np.column_stack((fine_mesh, fitted_data, lor1, lor2))))
-f.write("\n\n# Simulated data: Qx = -Qy, data\n")
+g.write("# Simulated data: Qx = -Qy, data\n")
 qs = np.linspace(-np.pi*np.sqrt(2.), np.pi*np.sqrt(2.), length + 1, endpoint=True)
-f.write(np.array2string( np.column_stack((qs, tc[1])) ))
+g.write(np.array2string( np.column_stack((qs, tc[1])) ))
 f.write("\n\n")
 
 # again, this one's for the two lorentzians
